@@ -203,6 +203,13 @@ scraper = VIPServerScraper()
 async def on_ready():
     logger.info(f'{bot.user} has connected to Discord!')
     logger.info(f'Bot is ready with {len(scraper.unique_vip_links)} VIP links loaded')
+    
+    # Sync slash commands after bot is ready
+    try:
+        synced = await bot.tree.sync()
+        logger.info(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        logger.error(f"Failed to sync commands: {e}")
 
 @bot.tree.command(name="servertest", description="Get a random VIP server link")
 async def servertest(interaction: discord.Interaction):
@@ -294,13 +301,6 @@ async def main():
     
     # You can uncomment this to scrape on startup
     # await asyncio.get_event_loop().run_in_executor(None, scraper.scrape_vip_links)
-    
-    # Sync slash commands
-    try:
-        synced = await bot.tree.sync()
-        logger.info(f"Synced {len(synced)} command(s)")
-    except Exception as e:
-        logger.error(f"Failed to sync commands: {e}")
     
     # Start the bot
     # Get Discord token from environment variables (Secrets)
