@@ -1,6 +1,7 @@
 
 import asyncio
 import json
+import os
 import random
 import time
 from datetime import datetime
@@ -302,8 +303,13 @@ async def main():
         logger.error(f"Failed to sync commands: {e}")
     
     # Start the bot
-    # Replace 'YOUR_BOT_TOKEN' with your actual Discord bot token
-    await bot.start('YOUR_BOT_TOKEN')
+    # Get Discord token from environment variables (Secrets)
+    discord_token = os.getenv('DISCORD_TOKEN')
+    if not discord_token:
+        logger.error("DISCORD_TOKEN not found in environment variables")
+        return
+    
+    await bot.start(discord_token)
 
 if __name__ == "__main__":
     asyncio.run(main())
