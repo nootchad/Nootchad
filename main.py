@@ -244,6 +244,81 @@ class RobloxVerificationSystem:
         allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
         return all(c in allowed_chars for c in username)
 
+    async def get_roblox_user_by_username(self, username: str) -> Optional[dict]:
+        """Get Roblox user ID and info by username"""
+        try:
+            async with aiohttp.ClientSession() as session:
+                # First, get user ID from username
+                url = "https://users.roblox.com/v1/usernames/users"
+                payload = {
+                    "usernames": [username],
+                    "excludeBannedUsers": True
+                }
+                headers = {
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("data") and len(data["data"]) > 0:
+                            user_data = data["data"][0]
+                            return {
+                                "id": user_data.get("id"),
+                                "name": user_data.get("name"),
+                                "displayName": user_data.get("displayName")
+                            }
+                    return None
+        except Exception as e:
+            logger.error(f"Error getting Roblox user by username: {e}")
+            return None
+
+    async def get_roblox_user_description(self, user_id: int) -> Optional[str]:
+        """Get Roblox user description by user ID"""
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"https://users.roblox.com/v1/users/{user_id}"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+                
+                async with session.get(url, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data.get("description", "")
+                    return None
+        except Exception as e:
+            logger.error(f"Error getting Roblox user description: {e}")
+            return None
+
+    async def verify_code_in_description(self, username: str, expected_code: str) -> bool:
+        """Verify if the verification code is present in the user's Roblox description"""
+        try:
+            # Get user info
+            user_info = await self.get_roblox_user_by_username(username)
+            if not user_info:
+                logger.warning(f"User {username} not found on Roblox")
+                return False
+            
+            user_id = user_info["id"]
+            
+            # Get user description
+            description = await self.get_roblox_user_description(user_id)
+            if description is None:
+                logger.warning(f"Could not get description for user {username} (ID: {user_id})")
+                return False
+            
+            # Check if the verification code is in the description
+            code_found = expected_code.lower() in description.lower()
+            logger.info(f"Verification check for {username}: code {'found' if code_found else 'not found'} in description")
+            
+            return code_found
+            
+        except Exception as e:
+            logger.error(f"Error verifying code in description for {username}: {e}")
+            return False
+
 class VIPServerScraper:
     def __init__(self):
         self.vip_links_file = "vip_links.json"
@@ -1020,87 +1095,43 @@ async def confirm_command(interaction: discord.Interaction):
         roblox_username = pending_data['roblox_username']
         expected_code = pending_data['verification_code']
         
-        # Manual verification instructions since we can't check automatically
-        embed = discord.Embed(
-            title="✅ Verificación Manual Requerida",
-            description=f"**Instrucciones para completar tu verificación:**\n\n1. Ve a tu perfil de Roblox\n2. Confirma que tienes el código `{expected_code}` en tu descripción\n3. Haz clic en **Confirmar Verificación** abajo",
+        # Verificación automática usando la API de Roblox
+        checking_embed = discord.Embed(
+            title="🔍 Verificando Descripción...",
+            description=f"Verificando automáticamente que el código `{expected_code}` esté en la descripción de **{roblox_username}**...",
             color=0xffaa00
         )
-        embed.add_field(
-            name="🔐 Tu código de verificación:",
-            value=f"```{expected_code}```",
-            inline=False
-        )
-        embed.add_field(
-            name="👤 Usuario de Roblox:",
-            value=f"`{roblox_username}`",
-            inline=True
-        )
-        embed.add_field(
-            name="⚠️ Importante:",
-            value="Asegúrate de que el código esté exactamente como se muestra arriba en tu descripción de Roblox.",
+        checking_embed.add_field(
+            name="⏳ Por favor espera...",
+            value="Esto puede tomar unos segundos",
             inline=False
         )
         
-        # Create view with manual confirm button
-        class ManualVerifyView(discord.ui.View):
-            def __init__(self, user_id, expected_code, roblox_username):
-                super().__init__(timeout=600)  # 10 minutes
-                self.user_id = user_id
-                self.expected_code = expected_code
-                self.roblox_username = roblox_username
+        message = await interaction.followup.send(embed=checking_embed, ephemeral=True)
+        
+        # Verificar el código en la descripción automáticamente
+        code_verified = await roblox_verification.verify_code_in_description(roblox_username, expected_code)
+        
+        if not code_verified:
+            # El código no se encontró en la descripción
+            error_embed = discord.Embed(
+                title="❌ Código No Encontrado",
+                description=f"No se pudo encontrar el código `{expected_code}` en la descripción de **{roblox_username}**.",
+                color=0xff0000
+            )
+            error_embed.add_field(
+                name="📝 Verifica que:",
+                value=f"• El código `{expected_code}` esté en tu descripción\n• Tu perfil no sea privado\n• El código esté escrito exactamente como se muestra\n• Hayas guardado los cambios en tu perfil",
+                inline=False
+            )
+            error_embed.add_field(
+                name="🔄 Reintentar:",
+                value="Puedes usar `/confirm` nuevamente después de agregar el código.",
+                inline=False
+            )
             
-            @discord.ui.button(label="✅ Confirmar Verificación", style=discord.ButtonStyle.success)
-            async def confirm_verification(self, interaction: discord.Interaction, button: discord.ui.Button):
-                if str(interaction.user.id) != self.user_id:
-                    await interaction.response.send_message(
-                        "❌ Solo quien inició la verificación puede confirmar.", 
-                        ephemeral=True
-                    )
-                    return
-                
-                # Complete verification
-                verification_success = roblox_verification.verify_user(self.user_id, self.roblox_username)
-                
-                if not verification_success:
-                    await interaction.response.send_message(
-                        "🚫 Error en la verificación. El nombre de usuario ya está siendo usado por otro Discord ID.",
-                        ephemeral=True
-                    )
-                    return
-                
-                success_embed = discord.Embed(
-                    title="✅ Verificación Completada",
-                    description=f"¡Excelente **{self.roblox_username}**! Tu verificación ha sido completada exitosamente.",
-                    color=0x00ff88
-                )
-                success_embed.add_field(
-                    name="🎮 Ahora puedes usar:",
-                    value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
-                    inline=False
-                )
-                success_embed.add_field(
-                    name="⏰ Duración:",
-                    value="24 horas",
-                    inline=True
-                )
-                success_embed.add_field(
-                    name="👤 Usuario de Roblox:",
-                    value=f"`{self.roblox_username}`",
-                    inline=True
-                )
-                success_embed.add_field(
-                    name="💡 Consejo:",
-                    value="Ya puedes **remover el código** de tu descripción de Roblox si quieres.",
-                    inline=False
-                )
-                
-                await interaction.response.edit_message(embed=success_embed, view=None)
-                logger.info(f"User {self.user_id} manually verified as {self.roblox_username}")
-        
-        view = ManualVerifyView(user_id, expected_code, roblox_username)
-        await interaction.followup.send(embed=embed, view=view)
-        return
+            await message.edit(embed=error_embed)
+            return
         
         # Verificación exitosa
         verification_success = roblox_verification.verify_user(user_id, roblox_username)
@@ -1108,7 +1139,7 @@ async def confirm_command(interaction: discord.Interaction):
         if not verification_success:
             embed = discord.Embed(
                 title="🚫 Error de Verificación",
-                description="Error, por favor no trates de mentir o no podrás usar este bot durante 7 días.",
+                description="El nombre de usuario ya está siendo usado por otro Discord ID.",
                 color=0xff0000
             )
             embed.add_field(
@@ -1116,43 +1147,43 @@ async def confirm_command(interaction: discord.Interaction):
                 value="**Duración:** 7 días\n**Razón:** Intentar usar información de otro usuario",
                 inline=False
             )
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await message.edit(embed=embed)
             return
         
         # Verificación completada exitosamente
-        embed = discord.Embed(
-            title="✅ Verificación Completada",
-            description=f"¡Excelente **{roblox_username}**! Tu verificación ha sido completada exitosamente.",
+        success_embed = discord.Embed(
+            title="✅ Verificación Completada Automáticamente",
+            description=f"¡Excelente **{roblox_username}**! El código fue encontrado en tu descripción y la verificación se completó exitosamente.",
             color=0x00ff88
         )
-        embed.add_field(
+        success_embed.add_field(
             name="🎮 Ahora puedes usar:",
             value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
             inline=False
         )
-        embed.add_field(
+        success_embed.add_field(
             name="⏰ Duración:",
             value="24 horas",
             inline=True
         )
-        embed.add_field(
+        success_embed.add_field(
             name="👤 Usuario de Roblox:",
             value=f"`{roblox_username}`",
             inline=True
         )
-        embed.add_field(
-            name="🔐 Código usado:",
+        success_embed.add_field(
+            name="🔐 Código verificado:",
             value=f"`{expected_code}`",
             inline=True
         )
-        embed.add_field(
+        success_embed.add_field(
             name="💡 Consejo:",
             value="Ya puedes **remover el código** de tu descripción de Roblox si quieres.",
             inline=False
         )
         
-        await interaction.followup.send(embed=embed, ephemeral=True)
-        logger.info(f"User {user_id} verified as {roblox_username} using description verification")
+        await message.edit(embed=success_embed)
+        logger.info(f"User {user_id} automatically verified as {roblox_username} using API description check")
         
     except Exception as e:
         logger.error(f"Error in confirm command: {e}")
