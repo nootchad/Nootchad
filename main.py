@@ -713,7 +713,7 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
             # Send initial message
             message = await interaction.followup.send(embed=start_embed, view=start_view)
 
-            ## Run scraping with real-time{{{server_id}}}```\n**Link:** ```{link}```",
+            ## Run scraping with real-time{{{server_id}}}`\n**Link:** ```{link}```",
                     inline=False
                 )
 
@@ -912,4 +912,80 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
             description=f"An error occurred during the scraping process for game ID: {game_id}",
             color=0x2F3136
         )
-        error_embed.add_field(name="Error Details", value=f"```{str(e)[:200]}
+        error_embed.add_field(name="Error Details", value=f"```{str(e)[:200]}```", inline=False)
+        error_embed.add_field(name="Retry", value="You can run /scrape again", inline=False)
+
+        # Error view with follow button
+        error_view = discord.ui.View(timeout=None)
+        follow_button_error = discord.ui.Button(
+            label="Follow hesiz",
+            style=discord.ButtonStyle.secondary,
+            url="https://www.roblox.com/users/11834624/profile"
+        )
+        error_view.add_item(follow_button_error)
+
+        await message.edit(embed=error_embed, view=error_view)
+
+    finally:
+        if driver:
+            driver.quit()
+
+@bot.tree.command(name="stats", description="Show VIP server scraping statistics")
+async def stats_command(interaction: discord.Interaction):
+    """Show detailed statistics about the VIP server scraping"""
+    await interaction.response.defer()
+
+    try:
+        total_links = sum(len(game_data['links']) for game_data in scraper.links_by_game.values())
+        total_available = sum(len(links) for links in scraper.available_links.values())
+        total_reserved = sum(len(users_dict) for users_dict in scraper.user_reserved_links.values())
+
+        embed = discord.Embed(
+            title="VIP Server Statistics",
+            description="Detailed statistics about the VIP server database",
+            color=0x00ff88
+        )
+
+        # Database stats
+        embed.add_field(name="Total Links", value=f"{total_links}", inline=True)
+        embed.add_field(name="Available Links", value=f"{total_available}", inline=True)
+        embed.add_field(name="Users with Reservations", value=f"{total_reserved}", inline=True)
+
+        # Scraping stats
+        stats = scraper.scraping_stats
+        embed.add_field(name="Total Scraped", value=f"{stats['total_scraped']}", inline=True)
+        embed.add_field(name="Successful Extractions", value=f"{stats['successful_extractions']}", inline=True)
+        embed.add_field(name="Failed Extractions", value=f"{stats['failed_extractions']}", inline=True)
+
+        # Performance stats
+        embed.add_field(name="Last Scrape Duration", value=f"{stats.get('scrape_duration', 0):.1f}s", inline=True)
+        embed.add_field(name="Processing Speed", value=f"{stats.get('servers_per_minute', 0)} servers/min", inline=True)
+
+        # Last scrape time
+        if stats.get('last_scrape_time'):
+            last_scrape = datetime.fromisoformat(stats['last_scrape_time'])
+            time_ago = datetime.now() - last_scrape
+            embed.add_field(name="Last Scrape", value=f"{time_ago.seconds // 3600}h {(time_ago.seconds % 3600) // 60}m ago", inline=True)
+
+        # Game breakdown
+        if scraper.links_by_game:
+            game_breakdown = ""
+            for game_id, game_data in scraper.links_by_game.items():
+                game_breakdown += f"Game {game_id}: {len(game_data['links'])} links\n"
+            if game_breakdown:
+                embed.add_field(name="Games in Database", value=f"```{game_breakdown[:1000]}```", inline=False)
+
+        await interaction.followup.send(embed=embed)
+
+    except Exception as e:
+        logger.error(f"Error in stats command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error Occurred",
+            description="Error al cargar las estadísticas.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+# Run the bot
+if __name__ == "__main__":
+    bot.run('YOUR_BOT_TOKEN')
