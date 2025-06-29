@@ -71,87 +71,96 @@ class VIPServerScraper:
             logger.error(f"Error saving links: {e}")
     
     def create_driver(self):
-        """Create Firefox driver with Replit-compatible configuration"""
+        """Create Chrome driver with Replit-compatible configuration"""
         try:
-            # Start Xvfb virtual display for headless environment
+            logger.info("🚀 Creating Chrome driver for Replit...")
+            
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-web-security")
+            chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+            chrome_options.add_argument("--disable-logging")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            
+            # Disable images and JavaScript for faster loading
+            prefs = {
+                "profile.managed_default_content_settings.images": 2,
+                "profile.default_content_setting_values.notifications": 2,
+                "profile.managed_default_content_settings.stylesheets": 2,
+                "profile.managed_default_content_settings.cookies": 2,
+                "profile.managed_default_content_settings.javascript": 1,
+                "profile.managed_default_content_settings.plugins": 2,
+                "profile.managed_default_content_settings.popups": 2,
+                "profile.managed_default_content_settings.geolocation": 2,
+                "profile.managed_default_content_settings.media_stream": 2,
+            }
+            chrome_options.add_experimental_option("prefs", prefs)
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+            
+            # Try to find Chrome/Chromium binary
+            possible_chrome_paths = [
+                "/usr/bin/google-chrome",
+                "/usr/bin/chromium-browser", 
+                "/usr/bin/chromium",
+                "/snap/bin/chromium"
+            ]
+            
+            chrome_binary = None
+            for path in possible_chrome_paths:
+                if Path(path).exists():
+                    chrome_binary = path
+                    break
+            
+            if chrome_binary:
+                chrome_options.binary_location = chrome_binary
+                logger.info(f"Using Chrome binary at: {chrome_binary}")
+            
+            # Create driver with Service
             try:
-                subprocess.run(['pkill', 'Xvfb'], capture_output=True, timeout=5)
-            except:
-                pass
-            
-            # Start virtual display
-            xvfb_process = subprocess.Popen([
-                'Xvfb', ':99', '-screen', '0', '1920x1080x24', '-ac'
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            
-            # Set display environment variable
-            os.environ['DISPLAY'] = ':99'
-            
-            # Wait a moment for Xvfb to start
-            time.sleep(2)
-            
-            from selenium.webdriver.firefox.options import Options as FirefoxOptions
-            from selenium.webdriver.firefox.service import Service
-            
-            firefox_options = FirefoxOptions()
-            # Remove --headless since we're using Xvfb
-            firefox_options.add_argument("--no-sandbox")
-            firefox_options.add_argument("--disable-dev-shm-usage")
-            firefox_options.add_argument("--disable-gpu")
-            firefox_options.add_argument("--disable-extensions")
-            firefox_options.add_argument("--disable-web-security")
-            firefox_options.add_argument("--disable-logging")
-            firefox_options.add_argument("--width=1920")
-            firefox_options.add_argument("--height=1080")
-            firefox_options.add_argument("--disable-blink-features=AutomationControlled")
-            
-            # Set Firefox preferences for better compatibility
-            firefox_options.set_preference("general.useragent.override", "Mozilla/5.0 (X11; Linux x86_64; rv:115.0) Gecko/20100101 Firefox/115.0")
-            firefox_options.set_preference("dom.webdriver.enabled", False)
-            firefox_options.set_preference("useAutomationExtension", False)
-            firefox_options.set_preference("marionette.logging", "FATAL")
-            firefox_options.set_preference("browser.startup.homepage_override.mstone", "ignore")
-            firefox_options.set_preference("browser.startup.homepage", "about:blank")
-            firefox_options.set_preference("startup.homepage_welcome_url", "about:blank")
-            firefox_options.set_preference("startup.homepage_welcome_url.additional", "about:blank")
-            
-            # Find geckodriver
-            result = subprocess.run(['which', 'geckodriver'], capture_output=True, text=True)
-            if result.returncode == 0:
-                geckodriver_path = result.stdout.strip()
-                logger.info(f"Using geckodriver at: {geckodriver_path}")
-                service = Service(geckodriver_path)
-            else:
-                # Fallback to default
+                from webdriver_manager.chrome import ChromeDriverManager
+                service = Service(ChromeDriverManager().install())
+                logger.info("Using ChromeDriverManager")
+            except Exception:
+                # Fallback to system chromedriver
                 service = Service()
-                logger.info("Using default geckodriver service")
+                logger.info("Using system chromedriver")
             
             # Create driver
-            driver = webdriver.Firefox(service=service, options=firefox_options)
+            driver = webdriver.Chrome(service=service, options=chrome_options)
             driver.set_page_load_timeout(30)
             driver.implicitly_wait(10)
             
-            logger.info("✅ Firefox driver created successfully with Xvfb")
+            # Execute script to hide webdriver property
+            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            
+            logger.info("✅ Chrome driver created successfully")
             return driver
             
         except Exception as e:
-            logger.error(f"Error creating Firefox driver: {e}")
-            # Try fallback with headless mode
+            logger.error(f"Error creating Chrome driver: {e}")
+            # Try minimal fallback configuration
             try:
-                logger.info("🔄 Trying fallback headless mode...")
-                firefox_options = FirefoxOptions()
-                firefox_options.add_argument("--headless")
-                firefox_options.add_argument("--no-sandbox")
-                firefox_options.add_argument("--disable-dev-shm-usage")
+                logger.info("🔄 Trying minimal fallback configuration...")
+                chrome_options = Options()
+                chrome_options.add_argument("--headless")
+                chrome_options.add_argument("--no-sandbox")
+                chrome_options.add_argument("--disable-dev-shm-usage")
                 
-                driver = webdriver.Firefox(options=firefox_options)
+                driver = webdriver.Chrome(options=chrome_options)
                 driver.set_page_load_timeout(30)
                 driver.implicitly_wait(10)
-                logger.info("✅ Firefox driver created with fallback headless mode")
+                logger.info("✅ Chrome driver created with minimal configuration")
                 return driver
             except Exception as e2:
-                logger.error(f"Fallback also failed: {e2}")
-                raise Exception(f"Firefox driver creation failed: {e}")
+                logger.error(f"Minimal fallback also failed: {e2}")
+                raise Exception(f"Chrome driver creation failed: {e}")
     
     def get_server_links(self, driver, max_retries=3):
         """Get server links with retry mechanism"""
