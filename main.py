@@ -288,7 +288,9 @@ class VIPServerScraper:
                 logger.warning("⚠️ No server links found")
                 return
             
-            logger.info(f"🎯 Processing {len(server_links)} server links...")
+            # Limit to 5 servers to avoid overloading
+            server_links = server_links[:5]
+            logger.info(f"🎯 Processing {len(server_links)} server links (limited to 5)...")
             
             for i, server_url in enumerate(server_links):
                 try:
@@ -544,12 +546,14 @@ async def scrape_with_updates(message, initial_count, start_time):
             logger.warning("⚠️ No server links found")
             return
         
-        logger.info(f"🎯 Processing {len(server_links)} server links...")
+        # Limit to 5 servers to avoid overloading
+        server_links = server_links[:5]
+        logger.info(f"🎯 Processing {len(server_links)} server links (limited to 5)...")
         
         # Update message with processing status
         processing_embed = discord.Embed(
             title="Scraping en Progreso",
-            description=f"**Procesando {len(server_links)} servidores encontrados...**\n\nBúsqueda activa de servidores VIP.",
+            description=f"**Procesando {len(server_links)} servidores (limitado a 5)...**\n\nBúsqueda activa de servidores VIP.",
             color=0xFFAA00
         )
         processing_embed.add_field(name="📊 Servidores Encontrados", value=f"**0**", inline=True)
