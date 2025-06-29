@@ -1,3 +1,4 @@
+
 import asyncio
 import json
 import os
@@ -56,7 +57,7 @@ class VIPServerScraper:
         self.links_by_user: Dict[str, Dict[str, Dict]] = {}
         self.available_links: Dict[str, List[str]] = {}
         self.reserved_links: Dict[str, Dict[str, str]] = {}
-
+        
         # New features
         self.user_cooldowns: Dict[str, datetime] = {}  # Cooldown tracking
         self.usage_history: Dict[str, List[Dict]] = {}  # Usage history per user
@@ -69,30 +70,30 @@ class VIPServerScraper:
             if Path(self.vip_links_file).exists():
                 with open(self.vip_links_file, 'r') as f:
                     data = json.load(f)
-
+                    
                     # Load user-specific links if available
                     self.links_by_user = data.get('links_by_user', {})
-
+                    
                     # Migrate old data structure if needed
                     if not self.links_by_user and 'links_by_game' in data:
                         default_user = "migrated_user"
                         self.links_by_user[default_user] = data.get('links_by_game', {})
                         logger.info(f"Migrated existing links to user: {default_user}")
-
+                    
                     self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
-
+                    
                     # Load new features
                     self.usage_history = data.get('usage_history', {})
                     self.user_favorites = data.get('user_favorites', {})
                     self.game_categories = data.get('game_categories', {})
-
+                    
                     # Initialize available_links properly
                     self.available_links = {}
                     total_users = len(self.links_by_user)
                     total_games = 0
                     for user_id, user_games in self.links_by_user.items():
                         total_games += len(user_games)
-
+                    
                     logger.info(f"Loaded links for {total_users} users with {total_games} total games.")
             else:
                 self.available_links = {}
@@ -115,7 +116,7 @@ class VIPServerScraper:
             for user_id, user_games in self.links_by_user.items():
                 for game_id, game_data in user_games.items():
                     total_count += len(game_data.get('links', []))
-
+            
             data = {
                 'links_by_user': self.links_by_user,
                 'scraping_stats': self.scraping_stats,
@@ -148,7 +149,7 @@ class VIPServerScraper:
         """Add entry to usage history"""
         if user_id not in self.usage_history:
             self.usage_history[user_id] = []
-
+        
         history_entry = {
             'game_id': game_id,
             'server_link': server_link,
@@ -156,9 +157,9 @@ class VIPServerScraper:
             'timestamp': datetime.now().isoformat(),
             'game_name': self.links_by_user.get(user_id, {}).get(game_id, {}).get('game_name', f'Game {game_id}')
         }
-
+        
         self.usage_history[user_id].append(history_entry)
-
+        
         # Keep only last 20 entries per user
         if len(self.usage_history[user_id]) > 20:
             self.usage_history[user_id] = self.usage_history[user_id][-20:]
@@ -166,19 +167,19 @@ class VIPServerScraper:
     def categorize_game(self, game_name: str) -> str:
         """Automatically categorize game based on name"""
         game_name_lower = game_name.lower()
-
+        
         for category, keywords in GAME_CATEGORIES.items():
             for keyword in keywords:
                 if keyword in game_name_lower:
                     return category
-
+        
         return "other"
 
     def toggle_favorite(self, user_id: str, game_id: str) -> bool:
         """Toggle favorite status for a game. Returns True if added, False if removed"""
         if user_id not in self.user_favorites:
             self.user_favorites[user_id] = []
-
+        
         if game_id in self.user_favorites[user_id]:
             self.user_favorites[user_id].remove(game_id)
             return False
@@ -189,7 +190,7 @@ class VIPServerScraper:
     async def search_game_by_name(self, game_name: str) -> List[Dict]:
         """Search for games by name using expanded database and fuzzy matching"""
         results = []
-
+        
         # Expanded database of popular Roblox games
         common_games = {
             # Simulators
@@ -209,7 +210,7 @@ class VIPServerScraper:
             "clicking simulator": {"id": "2674698980", "name": "🖱️ Clicking Simulator", "category": "simulator"},
             "shindo life": {"id": "4616652839", "name": "Shindo Life", "category": "rpg"},
             "shinobi life": {"id": "4616652839", "name": "Shindo Life", "category": "rpg"},
-
+            
             # RPG/Adventure
             "blox fruits": {"id": "2753915549", "name": "🌊 Blox Fruits", "category": "rpg"},
             "one piece": {"id": "2753915549", "name": "🌊 Blox Fruits", "category": "rpg"},
@@ -222,7 +223,7 @@ class VIPServerScraper:
             "world zero": {"id": "4738545896", "name": "⚔️ World // Zero", "category": "rpg"},
             "dungeon quest": {"id": "2414851778", "name": "⚔️ Dungeon Quest", "category": "rpg"},
             "arcane odyssey": {"id": "3272915504", "name": "🌊 Arcane Odyssey", "category": "rpg"},
-
+            
             # Popular Games
             "dress to impress": {"id": "15101393044", "name": "[🏖️SUMMER!!] Dress To Impress", "category": "social"},
             "dti": {"id": "15101393044", "name": "[🏖️SUMMER!!] Dress To Impress", "category": "social"},
@@ -235,7 +236,7 @@ class VIPServerScraper:
             "rh": {"id": "735030788", "name": "👑 Royale High", "category": "social"},
             "meep city": {"id": "370731277", "name": "MeepCity", "category": "social"},
             "meepcity": {"id": "370731277", "name": "MeepCity", "category": "social"},
-
+            
             # Action/Fighting
             "jailbreak": {"id": "606849621", "name": "🚓 Jailbreak", "category": "action"},
             "arsenal": {"id": "286090429", "name": "🔫 Arsenal", "category": "action"},
@@ -247,7 +248,7 @@ class VIPServerScraper:
             "the hood": {"id": "2788229376", "name": "Da Hood", "category": "action"},
             "prison life": {"id": "155615604", "name": "Prison Life", "category": "action"},
             "mad city": {"id": "1224212277", "name": "Mad City", "category": "action"},
-
+            
             # Horror
             "piggy": {"id": "4623386862", "name": "🐷 PIGGY", "category": "horror"},
             "doors": {"id": "6516141723", "name": "🚪 DOORS", "category": "horror"},
@@ -257,7 +258,7 @@ class VIPServerScraper:
             "midnight horrors": {"id": "318978013", "name": "Midnight Horrors", "category": "horror"},
             "identity fraud": {"id": "776877586", "name": "Identity Fraud", "category": "horror"},
             "survive the killer": {"id": "1320186298", "name": "Survive the Killer!", "category": "horror"},
-
+            
             # Puzzle/Strategy
             "murder mystery": {"id": "142823291", "name": "🔍 Murder Mystery 2", "category": "puzzle"},
             "mm2": {"id": "142823291", "name": "🔍 Murder Mystery 2", "category": "puzzle"},
@@ -267,7 +268,7 @@ class VIPServerScraper:
             "mega fun obby": {"id": "1499593574", "name": "Mega Fun Obby", "category": "puzzle"},
             "escape room": {"id": "4777817887", "name": "Escape Room", "category": "puzzle"},
             "find the markers": {"id": "6029715808", "name": "Find the Markers", "category": "puzzle"},
-
+            
             # Racing
             "vehicle legends": {"id": "3146619063", "name": "🏁 Vehicle Legends", "category": "racing"},
             "driving simulator": {"id": "3057042787", "name": "🚗 Driving Simulator", "category": "racing"},
@@ -275,14 +276,14 @@ class VIPServerScraper:
             "ro racing": {"id": "1047802162", "name": "RO-Racing", "category": "racing"},
             "speed run": {"id": "183364845", "name": "Speed Run 4", "category": "racing"},
             "speed run 4": {"id": "183364845", "name": "Speed Run 4", "category": "racing"},
-
+            
             # Sports
             "football fusion": {"id": "2987410699", "name": "🏈 Football Fusion 2", "category": "sports"},
             "football fusion 2": {"id": "2987410699", "name": "🏈 Football Fusion 2", "category": "sports"},
             "legendary football": {"id": "1045538060", "name": "Legendary Football", "category": "sports"},
             "ro soccer": {"id": "372226183", "name": "RO-Soccer", "category": "sports"},
             "basketball legends": {"id": "1499593574", "name": "Basketball Legends", "category": "sports"},
-
+            
             # Anime Games
             "anime fighters": {"id": "2505996599", "name": "🌟 Anime Fighting Simulator", "category": "anime"},
             "project slayers": {"id": "3823781113", "name": "Project Slayers", "category": "anime"},
@@ -293,7 +294,7 @@ class VIPServerScraper:
             "one punch man": {"id": "3297964905", "name": "Heroes Online", "category": "anime"},
             "my hero academia": {"id": "3297964905", "name": "Heroes Online", "category": "anime"},
             "mha": {"id": "3297964905", "name": "Heroes Online", "category": "anime"},
-
+            
             # Tycoon
             "retail tycoon": {"id": "1304578966", "name": "🏪 Retail Tycoon 2", "category": "simulator"},
             "retail tycoon 2": {"id": "1304578966", "name": "🏪 Retail Tycoon 2", "category": "simulator"},
@@ -304,9 +305,9 @@ class VIPServerScraper:
             "youtuber tycoon": {"id": "1345139196", "name": "📺 YouTuber Tycoon", "category": "simulator"},
             "mega mansion tycoon": {"id": "1060666313", "name": "🏠 Mega Mansion Tycoon", "category": "simulator"},
         }
-
+        
         search_lower = game_name.lower().strip()
-
+        
         # Exact match first
         if search_lower in common_games:
             game_info = common_games[search_lower]
@@ -316,7 +317,7 @@ class VIPServerScraper:
                 "category": game_info.get("category", "other"),
                 "relevance": 1.0
             })
-
+        
         # Partial matches
         for key, game_info in common_games.items():
             if key != search_lower:  # Skip exact match already added
@@ -324,7 +325,7 @@ class VIPServerScraper:
                 if (search_lower in key or key in search_lower or 
                     any(word in key for word in search_lower.split()) or
                     any(word in search_lower for word in key.split())):
-
+                    
                     # Calculate relevance based on match quality
                     if search_lower == key:
                         relevance = 1.0
@@ -334,7 +335,7 @@ class VIPServerScraper:
                         relevance = 0.8
                     else:
                         relevance = 0.7
-
+                    
                     # Avoid duplicates
                     if not any(r["id"] == game_info["id"] for r in results):
                         results.append({
@@ -343,7 +344,7 @@ class VIPServerScraper:
                             "category": game_info.get("category", "other"),
                             "relevance": relevance
                         })
-
+        
         # Sort by relevance and then by name
         results.sort(key=lambda x: (-x["relevance"], x["name"]))
         return results[:8]  # Return top 8 results
@@ -500,13 +501,13 @@ class VIPServerScraper:
 
                     # Store detailed information - now stored under user ID and game ID
                     user_id = getattr(self, 'current_user_id', 'unknown_user')
-
+                    
                     if user_id not in self.links_by_user:
                         self.links_by_user[user_id] = {}
-
+                    
                     if game_id not in self.links_by_user[user_id]:
                         self.links_by_user[user_id][game_id] = {'links': [], 'game_name': f'Game {game_id}', 'server_details': {}}
-
+                    
                     if 'server_details' not in self.links_by_user[user_id][game_id]:
                         self.links_by_user[user_id][game_id]['server_details'] = {}
 
@@ -544,8 +545,391 @@ class VIPServerScraper:
             # Try to get server description or other details
             try:
                 # Look for common server info elements
-                server_elements = driver.{game_name}```", inline=True)
+                server_elements = driver.find_elements(By.CSS_SELECTOR, ".server-info, .description, .details")
+                if server_elements:
+                    info['description'] = server_elements[0].text[:200]  # Limit to 200 chars
+            except:
+                info['description'] = "No description available"
 
+            # Extract server ID from URL
+            server_id = server_url.split('/')[-1] if '/' in server_url else "unknown"
+            info['server_id'] = server_id
+
+            return info
+
+        except Exception as e:
+            logger.debug(f"Could not extract server info: {e}")
+            return {'server_id': 'unknown', 'page_title': 'Unknown', 'description': 'No info available'}
+
+    def extract_game_info(self, driver, game_id):
+        """Extract game information including name and image from rbxservers.xyz"""
+        try:
+            info = {'game_name': f'Game {game_id}', 'game_image_url': None}
+            
+            # Navigate to the game page
+            url = f"https://rbxservers.xyz/games/{game_id}"
+            driver.get(url)
+            
+            # Wait for page to load
+            wait = WebDriverWait(driver, 10)
+            
+            # Try to get game name from title
+            try:
+                title_element = driver.find_element(By.TAG_NAME, "title")
+                page_title = title_element.get_attribute("textContent")
+                if page_title and page_title != "Unknown":
+                    # Clean up the title (remove "- rbxservers.xyz" if present)
+                    game_name = page_title.replace(" - rbxservers.xyz", "").strip()
+                    if game_name:
+                        info['game_name'] = game_name
+            except Exception as e:
+                logger.debug(f"Could not extract game name: {e}")
+            
+            # Try to get game image
+            try:
+                # Look for common image selectors that might contain the game thumbnail
+                image_selectors = [
+                    "img[src*='roblox']", 
+                    "img[src*='rbxcdn']",
+                    ".game-image img",
+                    ".thumbnail img",
+                    "img[alt*='game']"
+                ]
+                
+                for selector in image_selectors:
+                    try:
+                        img_elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                        for img in img_elements:
+                            src = img.get_attribute("src")
+                            if src and ("roblox" in src.lower() or "rbxcdn" in src.lower()):
+                                info['game_image_url'] = src
+                                logger.info(f"Found game image: {src}")
+                                break
+                        if info['game_image_url']:
+                            break
+                    except:
+                        continue
+                        
+            except Exception as e:
+                logger.debug(f"Could not extract game image: {e}")
+            
+            return info
+            
+        except Exception as e:
+            logger.error(f"Error extracting game info: {e}")
+            return {'game_name': f'Game {game_id}', 'game_image_url': None}
+
+    def scrape_vip_links(self, game_id="109983668079237", user_id=None):
+        """Main scraping function with detailed statistics"""
+        driver = None
+        start_time = time.time()
+        new_links_count = 0
+        processed_count = 0
+
+        # Set current user ID for tracking
+        self.current_user_id = user_id or 'unknown_user'
+
+        try:
+            logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id} (User: {self.current_user_id})...")
+            driver = self.create_driver()
+            server_links = self.get_server_links(driver, game_id)
+
+            if not server_links:
+                logger.warning("⚠️ No server links found")
+                return
+
+            # Limit to 5 servers to avoid overloading
+            server_links = server_links[:5]
+            logger.info(f"🎯 Processing {len(server_links)} server links (limited to 5)...")
+
+            # Initialize user and game data if not exists
+            if self.current_user_id not in self.links_by_user:
+                self.links_by_user[self.current_user_id] = {}
+            
+            if game_id not in self.links_by_user[self.current_user_id]:
+                # Extract game information first
+                game_info = self.extract_game_info(driver, game_id)
+                game_name = game_info['game_name']
+                category = self.categorize_game(game_name)
+                self.game_categories[game_id] = category
+                
+                self.links_by_user[self.current_user_id][game_id] = {
+                    'links': [],
+                    'game_name': game_name,
+                    'game_image_url': game_info.get('game_image_url'),
+                    'category': category,
+                    'server_details': {}
+                }
+
+            existing_links = set(self.links_by_user[self.current_user_id][game_id]['links'])
+
+            for i, server_url in enumerate(server_links):
+                try:
+                    processed_count += 1
+                    vip_link = self.extract_vip_link(driver, server_url, game_id)
+
+                    if vip_link and vip_link not in existing_links:
+                        self.links_by_user[self.current_user_id][game_id]['links'].append(vip_link)
+                        existing_links.add(vip_link)
+                        new_links_count += 1
+                        logger.info(f"🎉 New VIP link found for user {self.current_user_id}, game {game_id} ({new_links_count}): {vip_link}")
+                    elif vip_link:
+                        logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
+
+                    # Progress indicator with ETA
+                    if (i + 1) % 3 == 0:
+                        elapsed = time.time() - start_time
+                        eta = (elapsed / (i + 1)) * (len(server_links) - i - 1)
+                        logger.info(f"📊 Progress: {i + 1}/{len(server_links)} | New: {new_links_count} | ETA: {eta:.1f}s")
+
+                except Exception as e:
+                    logger.error(f"❌ Error processing {server_url}: {e}")
+                    continue
+
+            # Update statistics
+            total_time = time.time() - start_time
+            self.scraping_stats.update({
+                'total_scraped': self.scraping_stats['total_scraped'] + processed_count,
+                'successful_extractions': self.scraping_stats['successful_extractions'] + new_links_count,
+                'failed_extractions': self.scraping_stats['failed_extractions'] + (processed_count - new_links_count),
+                'last_scrape_time': datetime.now().isoformat(),
+                'scrape_duration': round(total_time, 2),
+                'servers_per_minute': round((processed_count / total_time) * 60, 1) if total_time > 0 else 0
+            })
+
+            logger.info(f"✅ Scraping completed in {total_time:.1f}s")
+            user_game_total = len(self.links_by_user[self.current_user_id][game_id]['links']) if self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id] else 0
+            logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {user_game_total})")
+            logger.info(f"⚡ Processing speed: {self.scraping_stats['servers_per_minute']} servers/minute")
+
+            self.save_links()
+            return new_links_count
+
+        except Exception as e:
+            logger.error(f"💥 Scraping failed: {e}")
+            raise
+        finally:
+            if driver:
+                driver.quit()
+
+    def get_random_link(self, game_id, user_id):
+        """Get a random VIP link for a specific game and user with its details"""
+        if (user_id not in self.links_by_user or 
+            game_id not in self.links_by_user[user_id] or 
+            not self.links_by_user[user_id][game_id]['links']):
+            return None, None
+
+        links = self.links_by_user[user_id][game_id]['links']
+        link = random.choice(links)
+        details = self.links_by_user[user_id][game_id]['server_details'].get(link, {})
+        return link, details
+
+    def get_all_links(self, game_id=None, user_id=None):
+        """Get all VIP links, optionally for a specific game and user"""
+        if user_id and game_id:
+            return self.links_by_user.get(user_id, {}).get(game_id, {}).get('links', [])
+        elif user_id:
+            all_links = []
+            user_games = self.links_by_user.get(user_id, {})
+            for game_data in user_games.values():
+                all_links.extend(game_data.get('links', []))
+            return all_links
+        else:
+            all_links = []
+            for user_games in self.links_by_user.values():
+                for game_data in user_games.values():
+                    all_links.extend(game_data.get('links', []))
+            return all_links
+
+# Discord Bot
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='/', intents=intents)
+
+# Global scraper instance
+scraper = VIPServerScraper()
+
+@bot.event
+async def on_ready():
+    logger.info(f'{bot.user} has connected to Discord!')
+    total_links = 0
+    for user_games in scraper.links_by_user.values():
+        for game_data in user_games.values():
+            total_links += len(game_data.get('links', []))
+    logger.info(f'Bot is ready with {total_links} VIP links loaded')
+
+    # Sync slash commands after bot is ready
+    try:
+        synced = await bot.tree.sync()
+        logger.info(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        logger.error(f"Failed to sync commands: {e}")
+
+# Server browser view with navigation buttons (user-exclusive)
+class ServerBrowserView(discord.ui.View):
+    def __init__(self, servers_list, current_index=0, game_info=None, authorized_user_id=None):
+        super().__init__(timeout=300)
+        self.servers_list = servers_list
+        self.current_index = current_index
+        self.total_servers = len(servers_list)
+        self.game_info = game_info or {}
+        self.authorized_user_id = str(authorized_user_id) if authorized_user_id else None
+
+        # Update button states
+        self.update_buttons()
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """Check if the user is authorized to use these buttons"""
+        if self.authorized_user_id and str(interaction.user.id) != self.authorized_user_id:
+            await interaction.response.send_message(
+                "❌ Solo la persona que ejecutó el comando puede usar estos botones.", 
+                ephemeral=True
+            )
+            return False
+        return True
+
+    def update_buttons(self):
+        """Update button states based on current position"""
+        # Clear existing items
+        self.clear_items()
+
+        # Previous button
+        prev_button = discord.ui.Button(
+            label="⬅️ Anterior",
+            style=discord.ButtonStyle.secondary,
+            disabled=(self.current_index == 0),
+            custom_id="prev_server"
+        )
+        prev_button.callback = self.previous_server
+        self.add_item(prev_button)
+
+        # Next button  
+        next_button = discord.ui.Button(
+            label="Siguiente ➡️",
+            style=discord.ButtonStyle.secondary,
+            disabled=(self.current_index >= self.total_servers - 1),
+            custom_id="next_server"
+        )
+        next_button.callback = self.next_server
+        self.add_item(next_button)
+
+        # Join server button
+        current_server = self.servers_list[self.current_index]
+        join_button = discord.ui.Button(
+            label="🎮 Unirse al Servidor",
+            style=discord.ButtonStyle.primary,
+            url=current_server
+        )
+        self.add_item(join_button)
+
+        # Favorite button
+        game_id = self.game_info.get('game_id')
+        user_id = self.authorized_user_id
+        is_favorite = (user_id and game_id and 
+                      user_id in scraper.user_favorites and 
+                      game_id in scraper.user_favorites[user_id])
+        
+        fav_button = discord.ui.Button(
+            label="⭐ Quitar de Favoritos" if is_favorite else "⭐ Agregar a Favoritos",
+            style=discord.ButtonStyle.success if not is_favorite else discord.ButtonStyle.danger,
+            custom_id="toggle_favorite"
+        )
+        fav_button.callback = self.toggle_favorite
+        self.add_item(fav_button)
+
+        # Follow hesiz button
+        follow_button = discord.ui.Button(
+            label="👤 Follow hesiz",
+            style=discord.ButtonStyle.secondary,
+            url="https://www.roblox.com/users/11834624/profile"
+        )
+        self.add_item(follow_button)
+
+    async def previous_server(self, interaction: discord.Interaction):
+        """Navigate to previous server"""
+        if self.current_index > 0:
+            self.current_index -= 1
+            self.update_buttons()
+
+            # Add to usage history
+            scraper.add_usage_history(
+                self.authorized_user_id, 
+                self.game_info.get('game_id'), 
+                self.servers_list[self.current_index], 
+                'navigate_previous'
+            )
+
+            embed, file = self.create_server_embed()
+            if file:
+                await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+            else:
+                await interaction.response.edit_message(embed=embed, attachments=[], view=self)
+        else:
+            await interaction.response.defer()
+
+    async def next_server(self, interaction: discord.Interaction):
+        """Navigate to next server"""
+        if self.current_index < self.total_servers - 1:
+            self.current_index += 1
+            self.update_buttons()
+
+            # Add to usage history
+            scraper.add_usage_history(
+                self.authorized_user_id, 
+                self.game_info.get('game_id'), 
+                self.servers_list[self.current_index], 
+                'navigate_next'
+            )
+
+            embed, file = self.create_server_embed()
+            if file:
+                await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+            else:
+                await interaction.response.edit_message(embed=embed, attachments=[], view=self)
+        else:
+            await interaction.response.defer()
+
+    async def toggle_favorite(self, interaction: discord.Interaction):
+        """Toggle favorite status for the current game"""
+        game_id = self.game_info.get('game_id')
+        user_id = self.authorized_user_id
+        
+        if game_id and user_id:
+            is_added = scraper.toggle_favorite(user_id, game_id)
+            scraper.save_links()
+            
+            self.update_buttons()
+            embed, file = self.create_server_embed()
+            
+            status = "agregado a" if is_added else "removido de"
+            game_name = self.game_info.get('game_name', f'Game {game_id}')
+            
+            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.followup.send(
+                f"✅ **{game_name}** ha sido {status} tus favoritos.", 
+                ephemeral=True
+            )
+        else:
+            await interaction.response.defer()
+
+    def create_server_embed(self):
+        """Create embed for current server"""
+        current_server = self.servers_list[self.current_index]
+        
+        # Get game name from game_info
+        game_name = self.game_info.get('game_name', 'Unknown Game')
+        game_id = self.game_info.get('game_id', 'Unknown')
+        category = self.game_info.get('category', 'other')
+
+        embed = discord.Embed(
+            title="🎮 ROBLOX PRIVATE SERVER LINKS",
+            description=f"Tu servidor para **{game_name}** ha sido generado exitosamente! Manténlo seguro y no lo compartas con nadie.",
+            color=0x2F3136
+        )
+
+        # Add game name field
+        embed.add_field(name="🎯 Nombre del Juego", value=f"```{game_name}```", inline=True)
+        
         # Add game ID field
         embed.add_field(name="🆔 ID del Juego", value=f"```{game_id}```", inline=True)
 
@@ -566,7 +950,7 @@ class VIPServerScraper:
         user_id = self.game_info.get('user_id')
         if user_id and user_id in scraper.links_by_user and game_id in scraper.links_by_user[user_id]:
             server_details = scraper.links_by_user[user_id][game_id].get('server_details', {}).get(current_server, {})
-
+        
         server_info = server_details.get('server_info', {})
 
         # Server ID
@@ -577,7 +961,7 @@ class VIPServerScraper:
         is_favorite = (user_id and game_id and 
                       user_id in scraper.user_favorites and 
                       game_id in scraper.user_favorites[user_id])
-
+        
         fav_status = "⭐ Favorito" if is_favorite else "☆ No Favorito"
         embed.add_field(name="⭐ Estado", value=fav_status, inline=True)
 
@@ -616,7 +1000,7 @@ class GameSearchSelect(discord.ui.Select):
     def __init__(self, search_results, user_id):
         self.search_results = search_results
         self.user_id = user_id
-
+        
         options = []
         for result in search_results[:5]:  # Limit to 5 results
             options.append(discord.SelectOption(
@@ -624,9 +1008,9 @@ class GameSearchSelect(discord.ui.Select):
                 description=f"ID: {result['id']}",
                 value=result['id']
             ))
-
+        
         super().__init__(placeholder="Selecciona un juego para hacer scraping...", options=options)
-
+    
     async def callback(self, interaction: discord.Interaction):
         if str(interaction.user.id) != self.user_id:
             await interaction.response.send_message(
@@ -634,13 +1018,13 @@ class GameSearchSelect(discord.ui.Select):
                 ephemeral=True
             )
             return
-
+        
         # Mark as selected
         self._selected = True
-
+        
         selected_game_id = self.values[0]
         selected_game = next(game for game in self.search_results if game['id'] == selected_game_id)
-
+        
         # Check cooldown
         cooldown_remaining = scraper.check_cooldown(self.user_id)
         if cooldown_remaining:
@@ -651,13 +1035,13 @@ class GameSearchSelect(discord.ui.Select):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-
+        
         # Start scraping for selected game
         await interaction.response.defer()
-
+        
         # Set cooldown
         scraper.set_cooldown(self.user_id)
-
+        
         try:
             # Initial status embed
             start_embed = discord.Embed(
@@ -668,13 +1052,13 @@ class GameSearchSelect(discord.ui.Select):
             start_embed.add_field(name="🎯 Juego", value=f"```{selected_game['name']}```", inline=True)
             start_embed.add_field(name="🆔 ID", value=f"```{selected_game_id}```", inline=True)
             start_embed.add_field(name="📊 Estado", value="Inicializando...", inline=True)
-
+            
             start_time = time.time()
             message = await interaction.followup.send(embed=start_embed)
-
+            
             # Run scraping with real-time updates
             await scrape_with_updates(message, start_time, selected_game_id, self.user_id, interaction.user)
-
+            
         except Exception as e:
             logger.error(f"Error in game search scrape: {e}")
             error_embed = discord.Embed(
@@ -693,10 +1077,10 @@ class GameSearchView(discord.ui.View):
 async def search_game_command(interaction: discord.Interaction, nombre: str):
     """Search for games by name"""
     await interaction.response.defer()
-
+    
     try:
         user_id = str(interaction.user.id)
-
+        
         # Check cooldown for searching
         cooldown_remaining = scraper.check_cooldown(user_id, 2)  # 2 minute cooldown for search
         if cooldown_remaining:
@@ -707,10 +1091,10 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
-
+        
         # Search for games
         search_results = await scraper.search_game_by_name(nombre)
-
+        
         if not search_results:
             embed = discord.Embed(
                 title="❌ No se encontraron resultados",
@@ -724,37 +1108,37 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
-
+        
         # Create search results embed
         embed = discord.Embed(
             title="🔍 Resultados de Búsqueda",
             description=f"Se encontraron **{len(search_results)}** resultados para **{nombre}**:",
             color=0x00ff88
         )
-
+        
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "🎮"
         }
-
+        
         for i, game in enumerate(search_results, 1):
             category = game.get('category', 'other')
             emoji = category_emoji.get(category, '🎮')
             relevance_stars = "⭐" * min(int(game.get('relevance', 0) * 3) + 1, 3)
-
+            
             embed.add_field(
                 name=f"{i}. {emoji} {game['name'][:45]}{'...' if len(game['name']) > 45 else ''}",
                 value=f"ID: `{game['id']}` • {relevance_stars} • {category.title()}",
                 inline=False
             )
-
+        
         embed.set_footer(text="Selecciona un juego del menú desplegable para empezar el scraping")
-
+        
         # Create view with select menu
         view = GameSearchView(search_results, user_id)
         await interaction.followup.send(embed=embed, view=view)
-
+        
     except Exception as e:
         logger.error(f"Error in search game command: {e}")
         error_embed = discord.Embed(
@@ -768,10 +1152,10 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
 async def game_command(interaction: discord.Interaction, nombre: str):
     """Search for a game by name and automatically start scraping the best match"""
     await interaction.response.defer()
-
+    
     try:
         user_id = str(interaction.user.id)
-
+        
         # Check cooldown
         cooldown_remaining = scraper.check_cooldown(user_id)
         if cooldown_remaining:
@@ -782,10 +1166,10 @@ async def game_command(interaction: discord.Interaction, nombre: str):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
-
+        
         # Search for games
         search_results = await scraper.search_game_by_name(nombre)
-
+        
         if not search_results:
             embed = discord.Embed(
                 title="❌ No se encontraron resultados",
@@ -799,15 +1183,15 @@ async def game_command(interaction: discord.Interaction, nombre: str):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
-
+        
         # Get the best match (highest relevance)
         best_match = search_results[0]
         game_id = best_match['id']
         game_name = best_match['name']
-
+        
         # Set cooldown
         scraper.set_cooldown(user_id)
-
+        
         # If multiple high-relevance results, show selection menu
         if len(search_results) > 1 and search_results[1].get('relevance', 0) >= 0.9:
             embed = discord.Embed(
@@ -815,29 +1199,29 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                 description=f"Se encontraron varios juegos similares a **{nombre}**. Selecciona el correcto:",
                 color=0xffaa00
             )
-
+            
             category_emoji = {
                 "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                 "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
                 "building": "🏗️", "anime": "🌸", "other": "🎮"
             }
-
+            
             for i, game in enumerate(search_results[:5], 1):
                 category = game.get('category', 'other')
                 emoji = category_emoji.get(category, '🎮')
                 relevance_stars = "⭐" * min(int(game.get('relevance', 0) * 3) + 1, 3)
-
+                
                 embed.add_field(
                     name=f"{i}. {emoji} {game['name'][:45]}{'...' if len(game['name']) > 45 else ''}",
                     value=f"ID: `{game['id']}` • {relevance_stars}",
                     inline=False
                 )
-
+            
             embed.set_footer(text="El primer resultado se seleccionará automáticamente en 10 segundos")
-
+            
             view = GameSearchView(search_results, user_id)
             message = await interaction.followup.send(embed=embed, view=view)
-
+            
             # Wait 10 seconds, then auto-select first option
             await asyncio.sleep(10)
             try:
@@ -849,17 +1233,281 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                     return  # User made a selection, exit
             except:
                 pass  # Continue to scraping
-
+        
         # Start scraping for best match
         try:
             # Initial status embed
             start_embed = discord.Embed(
-                title="ROBLOX PRIVATE SERVER LINKS",
-                description=f"Búsqueda automática iniciada para **{game_name}** (ID: {game_id}). Se seleccionó automáticamente la mejor coincidencia para '{nombre}'.",
+                title="🎮 ROBLOX PRIVATE SERVER LINKS",
+                description=f"¡Búsqueda automática iniciada para **{game_name}** (ID: {game_id})! Se seleccionó automáticamente la mejor coincidencia.",
                 color=0x2F3136
             )
-            start_embed.add_field(name="Juego Seleccionado", value=f"```{game_name}```", inline=True)
-            start_embed.add_field(name="ID", value=f"```{game_id}{game_id}```", inline=True)
+            start_embed.add_field(name="🎯 Juego Seleccionado", value=f"```{game_name}```", inline=True)
+            start_embed.add_field(name="🆔 ID", value=f"```{game_id}```", inline=True)
+            start_embed.add_field(name="📊 Estado", value="Inicializando...", inline=True)
+            
+            category = best_match.get('category', 'other')
+            category_emoji = {
+                "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+                "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                "building": "🏗️", "anime": "🌸", "other": "🎮"
+            }
+            start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
+            
+            relevance_percentage = int(best_match.get('relevance', 0) * 100)
+            start_embed.add_field(name="🎯 Precisión", value=f"{relevance_percentage}%", inline=True)
+            
+            start_time = time.time()
+            
+            # Create view with follow button
+            start_view = discord.ui.View(timeout=None)
+            follow_button_start = discord.ui.Button(
+                label="👤 Seguir a hesiz",
+                style=discord.ButtonStyle.secondary,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            start_view.add_item(follow_button_start)
+            
+            # Send initial message or edit existing
+            if 'message' in locals():
+                await message.edit(embed=start_embed, view=start_view)
+            else:
+                message = await interaction.followup.send(embed=start_embed, view=start_view)
+            
+            # Run scraping with real-time updates
+            await scrape_with_updates(message, start_time, game_id, user_id, interaction.user)
+            
+        except Exception as e:
+            logger.error(f"Error in auto scrape: {e}")
+            error_embed = discord.Embed(
+                title="❌ Error en Scraping Automático",
+                description="Ocurrió un error durante el scraping automático.",
+                color=0xff0000
+            )
+            error_embed.add_field(name="🔄 Alternativa", value=f"Usa `/scrape {game_id}` para intentar manualmente", inline=False)
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in game command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error en Comando",
+            description="Ocurrió un error al procesar el comando.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="favorites", description="Ver y gestionar tus juegos favoritos")
+async def favorites_command(interaction: discord.Interaction):
+    """Show user's favorite games"""
+    await interaction.response.defer()
+    
+    try:
+        user_id = str(interaction.user.id)
+        user_favorites = scraper.user_favorites.get(user_id, [])
+        
+        if not user_favorites:
+            embed = discord.Embed(
+                title="⭐ Juegos Favoritos",
+                description="No tienes juegos favoritos aún.\n\nUsa `/servertest` y haz clic en el botón ⭐ para agregar juegos a favoritos.",
+                color=0xffaa00
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        embed = discord.Embed(
+            title="⭐ Tus Juegos Favoritos",
+            description=f"Tienes **{len(user_favorites)}** juegos favoritos:",
+            color=0xffd700
+        )
+        
+        for game_id in user_favorites:
+            game_data = scraper.links_by_user.get(user_id, {}).get(game_id, {})
+            game_name = game_data.get('game_name', f'Game {game_id}')
+            category = game_data.get('category', 'other')
+            server_count = len(game_data.get('links', []))
+            
+            category_emoji = {
+                "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+                "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                "building": "🏗️", "anime": "🌸", "other": "🎮"
+            }
+            
+            embed.add_field(
+                name=f"{category_emoji.get(category, '🎮')} {game_name}",
+                value=f"**{server_count}** servidores • ID: `{game_id}`",
+                inline=False
+            )
+        
+        embed.set_footer(text="Usa /servertest para navegar por tus servidores favoritos")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in favorites command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al cargar tus favoritos.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="history", description="Ver tu historial de uso de servidores")
+async def history_command(interaction: discord.Interaction):
+    """Show user's usage history"""
+    await interaction.response.defer()
+    
+    try:
+        user_id = str(interaction.user.id)
+        user_history = scraper.usage_history.get(user_id, [])
+        
+        if not user_history:
+            embed = discord.Embed(
+                title="📜 Historial de Uso",
+                description="No tienes historial de uso aún.\n\nUsa `/servertest` para empezar a generar historial.",
+                color=0x888888
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        embed = discord.Embed(
+            title="📜 Tu Historial de Uso",
+            description=f"Últimas **{len(user_history)}** actividades:",
+            color=0x4169e1
+        )
+        
+        # Show last 10 entries
+        recent_history = user_history[-10:]
+        for entry in reversed(recent_history):
+            try:
+                timestamp = datetime.fromisoformat(entry['timestamp'])
+                time_ago = datetime.now() - timestamp
+                
+                if time_ago.days > 0:
+                    time_str = f"hace {time_ago.days}d"
+                elif time_ago.seconds > 3600:
+                    time_str = f"hace {time_ago.seconds//3600}h"
+                else:
+                    time_str = f"hace {time_ago.seconds//60}m"
+                
+                action_emojis = {
+                    'navigate_next': '➡️',
+                    'navigate_previous': '⬅️',
+                    'server_access': '🎮',
+                    'scrape_complete': '🔍'
+                }
+                
+                action_emoji = action_emojis.get(entry['action'], '📝')
+                
+                embed.add_field(
+                    name=f"{action_emoji} {entry['game_name'][:30]}",
+                    value=f"ID: `{entry['game_id']}` • {time_str}",
+                    inline=True
+                )
+            except:
+                continue
+        
+        embed.set_footer(text="Mostrando las últimas 10 actividades")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in history command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al cargar tu historial.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
+async def servertest(interaction: discord.Interaction):
+    """Browser through all available VIP servers with navigation (user-specific)"""
+    await interaction.response.defer()
+
+    try:
+        user_id = str(interaction.user.id)
+        
+        # Get all servers from user's games
+        all_servers = []
+        current_game_info = None
+        
+        # Find the first game with servers for this user
+        user_games = scraper.links_by_user.get(user_id, {})
+        for game_id, game_data in user_games.items():
+            if game_data.get('links'):
+                all_servers = game_data['links']
+                current_game_info = {
+                    'game_id': game_id,
+                    'game_name': game_data.get('game_name', f'Game {game_id}'),
+                    'game_image_url': game_data.get('game_image_url'),
+                    'category': game_data.get('category', 'other'),
+                    'user_id': user_id
+                }
+                break
+
+        if not all_servers:
+            embed = discord.Embed(
+                title="❌ No hay Enlaces VIP Disponibles",
+                description="No tienes servidores VIP en tu base de datos.\n\n**Opciones:**\n• Usa `/scrape [game_id]` para generar enlaces\n• Usa `/searchgame [nombre]` para buscar juegos",
+                color=0xff3333
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+
+        # Add to usage history
+        scraper.add_usage_history(user_id, current_game_info['game_id'], all_servers[0], 'server_access')
+
+        # Create browser view starting at index 0 with user authorization
+        view = ServerBrowserView(all_servers, 0, current_game_info, user_id)
+        embed, file = view.create_server_embed()
+
+        if file:
+            await interaction.followup.send(embed=embed, file=file, view=view)
+        else:
+            await interaction.followup.send(embed=embed, view=view)
+
+    except Exception as e:
+        logger.error(f"Error in servertest command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error Occurred",
+            description="Ocurrió un error al cargar los servidores.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP (acepta ID o nombre)")
+async def scrape_command(interaction: discord.Interaction, juego: str):
+    """Manually trigger scraping with real-time progress updates - supports both game ID and name"""
+    await interaction.response.defer()
+
+    user_id = str(interaction.user.id)
+    
+    # Check if input is a game ID (numeric) or game name
+    if juego.isdigit():
+        # It's a game ID, proceed directly
+        game_id = juego
+        
+        # Check cooldown
+        cooldown_remaining = scraper.check_cooldown(user_id)
+        if cooldown_remaining:
+            embed = discord.Embed(
+                title="⏰ Cooldown Activo",
+                description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.\n\n**Razón:** Prevención de spam y sobrecarga del sistema.",
+                color=0xff9900
+            )
+            embed.add_field(name="💡 Mientras esperas:", value="• Usa `/servertest` para ver tus servidores\n• Usa `/favorites` para ver favoritos\n• Usa `/history` para ver historial", inline=False)
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+
+        # Set cooldown
+        scraper.set_cooldown(user_id)
+
+        try:
+            # Initial status embed
+            start_embed = discord.Embed(
+                title="🎮 ROBLOX PRIVATE SERVER LINKS",
+                description=f"¡Se ha iniciado exitosamente la búsqueda de servidores para el juego ID: **{game_id}**! Manténlo seguro y no lo compartas con nadie.",
+                color=0x2F3136
+            )
+            start_embed.add_field(name="🆔 ID del Juego", value=f"```{game_id}```", inline=True)
             # Get initial count for this user and game
             initial_count = len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', []))
             start_embed.add_field(name="📊 Base de Datos Actual", value=f"{initial_count} servidores", inline=True)
@@ -901,7 +1549,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
             error_view.add_item(follow_button_error)
 
             await interaction.followup.send(embed=error_embed, view=error_view)
-
+            
     else:
         # It's a game name, search for it first
         try:
@@ -915,10 +1563,10 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-
+            
             # Search for games
             search_results = await scraper.search_game_by_name(juego)
-
+            
             if not search_results:
                 embed = discord.Embed(
                     title="❌ No se encontraron resultados",
@@ -932,12 +1580,12 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-
+            
             # Get the best match (highest relevance)
             best_match = search_results[0]
             game_id = best_match['id']
             game_name = best_match['name']
-
+            
             # If multiple high-relevance results, show selection menu
             if len(search_results) > 1 and search_results[1].get('relevance', 0) >= 0.9:
                 embed = discord.Embed(
@@ -945,29 +1593,29 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                     description=f"Se encontraron varios juegos similares a **{juego}**. Selecciona el correcto:",
                     color=0xffaa00
                 )
-
+                
                 category_emoji = {
                     "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                     "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
                     "building": "🏗️", "anime": "🌸", "other": "🎮"
                 }
-
+                
                 for i, game in enumerate(search_results[:5], 1):
                     category = game.get('category', 'other')
                     emoji = category_emoji.get(category, '🎮')
                     relevance_stars = "⭐" * min(int(game.get('relevance', 0) * 3) + 1, 3)
-
+                    
                     embed.add_field(
                         name=f"{i}. {emoji} {game['name'][:45]}{'...' if len(game['name']) > 45 else ''}",
                         value=f"ID: `{game['id']}` • {relevance_stars}",
                         inline=False
                     )
-
+                
                 embed.set_footer(text="El primer resultado se seleccionará automáticamente en 10 segundos")
-
+                
                 view = GameSearchView(search_results, user_id)
                 message = await interaction.followup.send(embed=embed, view=view)
-
+                
                 # Wait 10 seconds, then auto-select first option
                 await asyncio.sleep(10)
                 try:
@@ -979,7 +1627,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                         return  # User made a selection, exit
                 except:
                     pass  # Continue to scraping
-
+            
             # Check cooldown again before scraping
             cooldown_remaining = scraper.check_cooldown(user_id)
             if cooldown_remaining:
@@ -990,30 +1638,35 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-
+            
             # Set cooldown
             scraper.set_cooldown(user_id)
-
+            
             # Start scraping for best match
             try:
                 # Initial status embed
                 start_embed = discord.Embed(
-                    title="ROBLOX PRIVATE SERVER LINKS",
-                    description=f"Búsqueda automática iniciada para **{game_name}** (ID: {game_id}). Se seleccionó automáticamente la mejor coincidencia para '{juego}'.",
+                    title="🎮 ROBLOX PRIVATE SERVER LINKS",
+                    description=f"¡Búsqueda automática iniciada para **{game_name}** (ID: {game_id})! Se seleccionó automáticamente la mejor coincidencia para '{juego}'.",
                     color=0x2F3136
                 )
-                start_embed.add_field(name="Juego Seleccionado", value=f"```{game_name}```", inline=True)
-                start_embed.add_field(name="ID", value=f"```{game_id}```", inline=True)
-                start_embed.add_field(name="Estado", value="Inicializando...", inline=True)
-
+                start_embed.add_field(name="🎯 Juego Seleccionado", value=f"```{game_name}```", inline=True)
+                start_embed.add_field(name="🆔 ID", value=f"```{game_id}```", inline=True)
+                start_embed.add_field(name="📊 Estado", value="Inicializando...", inline=True)
+                
                 category = best_match.get('category', 'other')
-                start_embed.add_field(name="Categoría", value=f"{category.title()}", inline=True)
-
+                category_emoji = {
+                    "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+                    "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                    "building": "🏗️", "anime": "🌸", "other": "🎮"
+                }
+                start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
+                
                 relevance_percentage = int(best_match.get('relevance', 0) * 100)
-                start_embed.add_field(name="Precisión", value=f"{relevance_percentage}%", inline=True)
-
+                start_embed.add_field(name="🎯 Precisión", value=f"{relevance_percentage}%", inline=True)
+                
                 start_time = time.time()
-
+                
                 # Create view with follow button
                 start_view = discord.ui.View(timeout=None)
                 follow_button_start = discord.ui.Button(
@@ -1022,16 +1675,16 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                     url="https://www.roblox.com/users/11834624/profile"
                 )
                 start_view.add_item(follow_button_start)
-
+                
                 # Send initial message or edit existing
                 if 'message' in locals():
                     await message.edit(embed=start_embed, view=start_view)
                 else:
                     message = await interaction.followup.send(embed=start_embed, view=start_view)
-
+                
                 # Run scraping with real-time updates
                 await scrape_with_updates(message, start_time, game_id, user_id, interaction.user)
-
+                
             except Exception as e:
                 logger.error(f"Error in auto scrape: {e}")
                 error_embed = discord.Embed(
@@ -1041,7 +1694,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                 )
                 error_embed.add_field(name="🔄 Alternativa", value=f"Usa `/scrape {game_id}` para intentar manualmente", inline=False)
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
-
+                
         except Exception as e:
             logger.error(f"Error in game search: {e}")
             error_embed = discord.Embed(
@@ -1052,7 +1705,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
             await interaction.followup.send(embed=error_embed, ephemeral=True)
 
     user_id = str(interaction.user.id)
-
+    
     # Check cooldown
     cooldown_remaining = scraper.check_cooldown(user_id)
     if cooldown_remaining:
@@ -1143,14 +1796,14 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         # Initialize user and game data if not exists
         if user_id not in scraper.links_by_user:
             scraper.links_by_user[user_id] = {}
-
+        
         if game_id not in scraper.links_by_user[user_id]:
             # Extract game information first
             game_info = scraper.extract_game_info(driver, game_id)
             game_name = game_info['game_name']
             category = scraper.categorize_game(game_name)
             scraper.game_categories[game_id] = category
-
+            
             scraper.links_by_user[user_id][game_id] = {
                 'links': [],
                 'game_name': game_name,
@@ -1182,33 +1835,33 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                     # Update embed with current progress
                     game_name = scraper.links_by_user[user_id][game_id]['game_name']
                     category = scraper.links_by_user[user_id][game_id].get('category', 'other')
-
+                    
                     progress_embed = discord.Embed(
-                        title="ROBLOX PRIVATE SERVER LINKS",
+                        title="🎮 ROBLOX PRIVATE SERVER LINKS",
                         description=f"Procesando {len(server_links)} servidores encontrados para **{game_name}** (ID: {game_id})... Búsqueda activa de servidores VIP.",
                         color=0x2F3136
                     )
-
+                    
                     # Add game image if available
                     game_image_url = scraper.links_by_user[user_id][game_id].get('game_image_url')
                     if game_image_url:
                         progress_embed.set_thumbnail(url=game_image_url)
-
-                    progress_embed.add_field(name="Servidores Encontrados", value=f"**{new_links_count}**", inline=True)
-                    progress_embed.add_field(name="Progreso", value=f"{i + 1}/{len(server_links)}", inline=True)
-                    progress_embed.add_field(name="Tiempo", value=f"{elapsed:.0f}s", inline=True)
+                    
+                    progress_embed.add_field(name="🎯 Servidores Encontrados", value=f"**{new_links_count}**", inline=True)
+                    progress_embed.add_field(name="📊 Progreso", value=f"{i + 1}/{len(server_links)}", inline=True)
+                    progress_embed.add_field(name="⏱️ Tiempo", value=f"{elapsed:.0f}s", inline=True)
 
                     if eta > 0:
-                        progress_embed.add_field(name="ETA", value=f"{eta:.0f}s", inline=True)
+                        progress_embed.add_field(name="⏰ ETA", value=f"{eta:.0f}s", inline=True)
 
-                    progress_embed.add_field(name="Tu Total", value=f"{len(scraper.links_by_user[user_id][game_id]['links'])} servidores", inline=True)
-
+                    progress_embed.add_field(name="📈 Tu Total", value=f"{len(scraper.links_by_user[user_id][game_id]['links'])} servidores", inline=True)
+                    
                     category_emoji = {
                         "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                         "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
                         "building": "🏗️", "anime": "🌸", "other": "🎮"
                     }
-                    progress_embed.add_field(name="Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
+                    progress_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
 
                     # Progress bar
                     progress_percentage = ((i + 1) / len(server_links)) * 100
@@ -1216,7 +1869,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                     filled_length = int(bar_length * (i + 1) // len(server_links))
                     bar = "█" * filled_length + "░" * (bar_length - filled_length)
                     progress_embed.add_field(
-                        name="Progreso Visual", 
+                        name="📊 Progreso Visual", 
                         value=f"`{bar}` {progress_percentage:.1f}%", 
                         inline=False
                     )
@@ -1262,13 +1915,13 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         # Final completion embed
         game_name = scraper.links_by_user[user_id][game_id]['game_name']
         category = scraper.links_by_user[user_id][game_id].get('category', 'other')
-
+        
         complete_embed = discord.Embed(
             title="✅ BÚSQUEDA COMPLETADA",
             description=f"¡La búsqueda de servidores VIP ha sido completada exitosamente para **{game_name}** (ID: {game_id})! {discord_user.mention}",
             color=0x00ff88
         )
-
+        
         # Add game image if available
         game_image_url = scraper.links_by_user[user_id][game_id].get('game_image_url')
         if game_image_url:
@@ -1280,7 +1933,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
 
         complete_embed.add_field(name="⚡ Velocidad", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
         complete_embed.add_field(name="✅ Tasa de Éxito", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
-
+        
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
@@ -1349,7 +2002,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                         'category': scraper.links_by_user[self.target_user_id][self.game_id].get('category', 'other'),
                         'user_id': self.target_user_id
                     }
-
+                    
                     view = ServerBrowserView(servers, 0, game_info, self.target_user_id)
                     embed, file = view.create_server_embed()
 
@@ -1366,7 +2019,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                         color=0xff0000
                     )
                     await interaction.followup.send(embed=error_embed, ephemeral=True)
-
+        
         vip_button = ExclusiveVIPButton(
             user_id, 
             game_id, 
@@ -1392,7 +2045,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
             )
             notification_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
             notification_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
-
+            
             # Send as a separate message to ensure ping
             await message.channel.send(embed=notification_embed, delete_after=10)
 
@@ -1420,23 +2073,23 @@ async def stats(interaction: discord.Interaction):
         total_links = 0
         user_games_count = 0
         user_favorites_count = len(scraper.user_favorites.get(user_id, []))
-
+        
         # Calculate user-specific links
         user_games = scraper.links_by_user.get(user_id, {})
         user_games_count = len(user_games)
         for game_data in user_games.values():
             user_links += len(game_data.get('links', []))
-
+        
         # Calculate total links across all users
         total_users = len(scraper.links_by_user)
         for user_games in scraper.links_by_user.values():
             for game_data in user_games.values():
                 total_links += len(game_data.get('links', []))
-
+        
         embed.add_field(name="🗃️ Tus Enlaces", value=f"**{user_links}**", inline=True)
         embed.add_field(name="🎮 Tus Juegos", value=f"**{user_games_count}**", inline=True)
         embed.add_field(name="⭐ Tus Favoritos", value=f"**{user_favorites_count}**", inline=True)
-
+        
         embed.add_field(name="🌐 Enlaces Totales", value=f"**{total_links}**", inline=True)
         embed.add_field(name="👥 Usuarios Totales", value=f"**{total_users}**", inline=True)
         embed.add_field(name="📈 Total Escaneado", value=f"**{scraper.scraping_stats.get('total_scraped', 0)}**", inline=True)
@@ -1476,7 +2129,7 @@ async def stats(interaction: discord.Interaction):
             for category, count in sorted(user_categories.items(), key=lambda x: x[1], reverse=True):
                 emoji = category_emoji.get(category, '🎮')
                 category_text += f"{emoji} {category.title()}: {count}\n"
-
+            
             embed.add_field(name="📂 Tus Categorías", value=category_text[:1024], inline=True)
 
         # Last update info
