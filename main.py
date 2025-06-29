@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # Roblox verification settings
 ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
 FOLLOWERS_FILE = "followers.json"
+BANS_FILE = "bans.json"
 VERIFICATION_DURATION = 24 * 60 * 60  # 24 horas en segundos
 BAN_DURATION = 7 * 24 * 60 * 60  # 7 días en segundos
 
@@ -50,25 +51,37 @@ GAME_CATEGORIES = {
 class RobloxVerificationSystem:
     def __init__(self):
         self.followers_file = FOLLOWERS_FILE
+        self.bans_file = BANS_FILE
         self.verified_users = {}
         self.banned_users = {}
         self.load_data()
 
     def load_data(self):
-        """Cargar datos de verificación desde archivo"""
+        """Cargar datos de verificación desde archivos"""
+        # Cargar usuarios verificados
         try:
             if Path(self.followers_file).exists():
                 with open(self.followers_file, 'r') as f:
                     data = json.load(f)
                     self.verified_users = data.get('verified_users', {})
-                    self.banned_users = data.get('banned_users', {})
-                    logger.info(f"Loaded {len(self.verified_users)} verified users and {len(self.banned_users)} banned users")
+                    logger.info(f"Loaded {len(self.verified_users)} verified users")
             else:
                 self.verified_users = {}
-                self.banned_users = {}
         except Exception as e:
             logger.error(f"Error loading verification data: {e}")
             self.verified_users = {}
+        
+        # Cargar usuarios baneados desde archivo separado
+        try:
+            if Path(self.bans_file).exists():
+                with open(self.bans_file, 'r') as f:
+                    data = json.load(f)
+                    self.banned_users = data.get('banned_users', {})
+                    logger.info(f"Loaded {len(self.banned_users)} banned users")
+            else:
+                self.banned_users = {}
+        except Exception as e:
+            logger.error(f"Error loading bans data: {e}")
             self.banned_users = {}
 
     def save_data(self):
@@ -76,7 +89,6 @@ class RobloxVerificationSystem:
         try:
             data = {
                 'verified_users': self.verified_users,
-                'banned_users': self.banned_users,
                 'last_updated': datetime.now().isoformat()
             }
             with open(self.followers_file, 'w') as f:
@@ -84,6 +96,20 @@ class RobloxVerificationSystem:
             logger.info(f"Saved verification data")
         except Exception as e:
             logger.error(f"Error saving verification data: {e}")
+    
+    def save_bans(self):
+        """Guardar datos de bans instantáneamente a archivo separado"""
+        try:
+            data = {
+                'banned_users': self.banned_users,
+                'last_updated': datetime.now().isoformat(),
+                'ban_duration_days': 7
+            }
+            with open(self.bans_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            logger.info(f"Saved bans data - {len(self.banned_users)} banned users")
+        except Exception as e:
+            logger.error(f"Error saving bans data: {e}")
 
     def cleanup_expired_data(self):
         """Limpiar datos expirados"""
@@ -109,8 +135,11 @@ class RobloxVerificationSystem:
             del self.banned_users[discord_id]
             logger.info(f"Ban expired for user {discord_id}")
         
-        if expired_verified or expired_banned:
+        # Guardar archivos por separado solo si hay cambios
+        if expired_verified:
             self.save_data()
+        if expired_banned:
+            self.save_bans()
 
     def is_user_banned(self, discord_id: str) -> bool:
         """Verificar si el usuario está baneado"""
@@ -123,10 +152,10 @@ class RobloxVerificationSystem:
         return discord_id in self.verified_users
 
     def ban_user(self, discord_id: str):
-        """Banear usuario por 7 días"""
+        """Banear usuario por 7 días y guardar instantáneamente"""
         self.banned_users[discord_id] = time.time()
-        self.save_data()
-        logger.info(f"User {discord_id} banned for 7 days")
+        self.save_bans()  # Guardar instantáneamente en archivo separado
+        logger.info(f"User {discord_id} banned for 7 days and saved to {self.bans_file}")
 
     def verify_user(self, discord_id: str, roblox_username: str, roblox_user_id: str):
         """Verificar usuario y guardarlo"""
@@ -134,7 +163,8 @@ class RobloxVerificationSystem:
         for existing_discord_id, data in self.verified_users.items():
             if data['roblox_user_id'] == roblox_user_id and existing_discord_id != discord_id:
                 # Banear al usuario que intenta usar un ID ya registrado
-                self.ban_user(discord_id)
+                logger.warning(f"User {discord_id} attempted to use already registered Roblox ID {roblox_user_id}")
+                self.ban_user(discord_id)  # Esto ya guarda instantáneamente
                 return False
         
         self.verified_users[discord_id] = {
