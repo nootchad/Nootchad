@@ -179,6 +179,7 @@ class RobloxVerificationSystem:
     async def get_roblox_user_id(self, username: str) -> Optional[str]:
         """Obtener ID de usuario de Roblox por nombre de usuario"""
         try:
+            # Primero intentar sin autenticación
             async with aiohttp.ClientSession() as session:
                 url = f"https://api.roblox.com/users/get-by-username?username={username}"
                 async with session.get(url) as response:
@@ -186,23 +187,75 @@ class RobloxVerificationSystem:
                         data = await response.json()
                         if 'Id' in data:
                             return str(data['Id'])
+                    elif response.status == 429:
+                        # Rate limited, intentar con autenticación
+                        logger.info("Rate limited, trying with authentication...")
+                        return await self._get_roblox_user_id_authenticated(username, session)
                     return None
         except Exception as e:
             logger.error(f"Error getting Roblox user ID: {e}")
+            # Intentar con autenticación como fallback
+            try:
+                async with aiohttp.ClientSession() as session:
+                    return await self._get_roblox_user_id_authenticated(username, session)
+            except:
+                return None
+
+    async def _get_roblox_user_id_authenticated(self, username: str, session: aiohttp.ClientSession) -> Optional[str]:
+        """Obtener ID de usuario usando cuenta autenticada como fallback"""
+        try:
+            cookie = os.getenv('COOKIE')
+            if not cookie:
+                return None
+            
+            headers = {
+                'Cookie': f'.ROBLOSECURITY={cookie}',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/json'
+            }
+            
+            url = f"https://api.roblox.com/users/get-by-username?username={username}"
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if 'Id' in data:
+                        return str(data['Id'])
+            return None
+        except Exception as e:
+            logger.error(f"Error getting authenticated Roblox user ID: {e}")
             return None
 
     async def check_if_following(self, user_id: str) -> bool:
-        """Verificar si el usuario sigue al owner"""
+        """Verificar si el usuario sigue al owner usando cuenta bot autenticada"""
         try:
+            # Obtener cookie de los secretos del entorno
+            cookie = os.getenv('COOKIE')
+            if not cookie:
+                logger.error("COOKIE not found in environment variables")
+                return False
+            
+            # Headers con autenticación
+            headers = {
+                'Cookie': f'.ROBLOSECURITY={cookie}',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            
             async with aiohttp.ClientSession() as session:
                 url = f"https://friends.roblox.com/v1/user/following-exists?userId={user_id}&targetUserId={ROBLOX_OWNER_ID}"
-                async with session.get(url) as response:
+                async with session.get(url, headers=headers) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return data.get('isFollowing', False)
-                    return False
+                        return data.get('following', False)  # Nota: el campo se llama 'following', no 'isFollowing'
+                    elif response.status == 401:
+                        logger.error("Roblox authentication failed - invalid cookie")
+                        return False
+                    else:
+                        logger.error(f"Roblox API error: {response.status}")
+                        return False
         except Exception as e:
-            logger.error(f"Error checking follow status: {e}")
+            logger.error(f"Error checking follow status with authenticated request: {e}")
             return False
 
 class VIPServerScraper:
@@ -1012,22 +1065,27 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
-        # Verificar si está siguiendo
+        # Verificar si está siguiendo usando cuenta bot autenticada
         is_following = await roblox_verification.check_if_following(roblox_user_id)
         if not is_following:
             embed = discord.Embed(
                 title="❌ No estás siguiendo a hesiz",
-                description=f"El usuario **{roblox_username}** no está siguiendo a **hesiz**.",
+                description=f"El usuario **{roblox_username}** (ID: {roblox_user_id}) no está siguiendo a **hesiz**.",
                 color=0xff0000
             )
             embed.add_field(
                 name="📝 Para usar el bot:",
-                value="1. Ve al perfil de hesiz: https://www.roblox.com/users/11834624/profile\n2. Haz clic en **Seguir**\n3. Vuelve a usar `/verify [tu_nombre]`",
+                value="1. Ve al perfil de hesiz: https://www.roblox.com/users/11834624/profile\n2. Haz clic en **Seguir**\n3. Espera unos segundos para que se actualice\n4. Vuelve a usar `/verify [tu_nombre]`",
                 inline=False
             )
             embed.add_field(
                 name="⚠️ Importante:",
-                value="Debes seguir PRIMERO y luego verificarte. No funcionará al revés.",
+                value="• Debes seguir PRIMERO y luego verificarte\n• La verificación usa nuestro sistema bot autenticado\n• Si acabas de seguir, espera 30 segundos antes de verificarte",
+                inline=False
+            )
+            embed.add_field(
+                name="🔍 Verificación Automática:",
+                value="El bot verifica automáticamente tu estado de seguidor usando una cuenta bot autenticada.",
                 inline=False
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -1053,7 +1111,7 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
         # Verificación exitosa
         embed = discord.Embed(
             title="✅ Verificación Exitosa",
-            description=f"¡Bienvenido **{roblox_username}**! Has sido verificado exitosamente.",
+            description=f"¡Bienvenido **{roblox_username}**! Has sido verificado exitosamente usando nuestro sistema bot autenticado.",
             color=0x00ff88
         )
         embed.add_field(
@@ -1071,9 +1129,14 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
             value=f"`{roblox_user_id}`",
             inline=True
         )
+        embed.add_field(
+            name="🤖 Verificación Bot:",
+            value="Verificado con cuenta bot autenticada",
+            inline=True
+        )
         
         await interaction.followup.send(embed=embed, ephemeral=True)
-        logger.info(f"User {user_id} verified as {roblox_username} (ID: {roblox_user_id})")
+        logger.info(f"User {user_id} verified as {roblox_username} (ID: {roblox_user_id}) using authenticated bot verification")
         
     except Exception as e:
         logger.error(f"Error in verify command: {e}")
