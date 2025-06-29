@@ -389,7 +389,7 @@ class ServerBrowserView(discord.ui.View):
         
         # Previous button
         prev_button = discord.ui.Button(
-            label="⬅️ Anterior",
+            label="Previous",
             style=discord.ButtonStyle.secondary,
             disabled=(self.current_index == 0),
             custom_id="prev_server"
@@ -399,7 +399,7 @@ class ServerBrowserView(discord.ui.View):
         
         # Next button  
         next_button = discord.ui.Button(
-            label="Siguiente ➡️",
+            label="Next",
             style=discord.ButtonStyle.secondary,
             disabled=(self.current_index >= self.total_servers - 1),
             custom_id="next_server"
@@ -410,19 +410,11 @@ class ServerBrowserView(discord.ui.View):
         # Join server button
         current_server = self.servers_list[self.current_index]
         join_button = discord.ui.Button(
-            label="🎮 Unirse al Servidor",
+            label="Join Server",
             style=discord.ButtonStyle.primary,
             url=current_server
         )
         self.add_item(join_button)
-        
-        # Follow hesiz button
-        follow_button = discord.ui.Button(
-            label="👤 Seguir a hesiz",
-            style=discord.ButtonStyle.secondary,
-            url="https://www.roblox.com/users/11834624/profile"
-        )
-        self.add_item(follow_button)
     
     async def previous_server(self, interaction: discord.Interaction):
         """Navigate to previous server"""
@@ -430,8 +422,8 @@ class ServerBrowserView(discord.ui.View):
             self.current_index -= 1
             self.update_buttons()
             
-            embed = self.create_server_embed()
-            await interaction.response.edit_message(embed=embed, view=self)
+            embed, file = self.create_server_embed()
+            await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
         else:
             await interaction.response.defer()
     
@@ -441,8 +433,8 @@ class ServerBrowserView(discord.ui.View):
             self.current_index += 1
             self.update_buttons()
             
-            embed = self.create_server_embed()
-            await interaction.response.edit_message(embed=embed, view=self)
+            embed, file = self.create_server_embed()
+            await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
         else:
             await interaction.response.defer()
     
@@ -451,8 +443,8 @@ class ServerBrowserView(discord.ui.View):
         current_server = self.servers_list[self.current_index]
         
         embed = discord.Embed(
-            title="🎮 ROBLOX PRIVATE SERVER LINKS",
-            description=f"Tu servidor ha sido generado exitosamente! Mantén seguro y **no lo compartas** con nadie.\n\n**hesiz.com**",
+            title="ROBLOX PRIVATE SERVER LINKS",
+            description="Your server has been successfully generated! Keep it secure and do not share it with anyone.",
             color=0x2F3136
         )
         
@@ -460,17 +452,21 @@ class ServerBrowserView(discord.ui.View):
         details = scraper.server_details.get(current_server, {})
         server_info = details.get('server_info', {})
         
-        # Server ID como Username
+        # Server ID
         server_id = server_info.get('server_id', 'Unknown')
-        embed.add_field(name="🤖 Server ID", value=f"`{server_id}`", inline=False)
+        embed.add_field(name="Server ID", value=f"`{server_id}`", inline=False)
         
-        # Server Link como Password
-        embed.add_field(name="🔗 Server Link", value=f"`{current_server}`", inline=False)
+        # Server Link in code block
+        embed.add_field(name="Server Link", value=f"```{current_server}```", inline=False)
         
-        # Footer con información adicional
-        embed.set_footer(text=f"Servidor {self.current_index + 1}/{self.total_servers} • Powered by HESIZ")
+        # Add Roblox logo
+        file = discord.File("roblox_logo.png", filename="roblox_logo.png")
+        embed.set_thumbnail(url="attachment://roblox_logo.png")
         
-        return embed
+        # Footer with server count
+        embed.set_footer(text=f"Server {self.current_index + 1}/{self.total_servers}")
+        
+        return embed, file
 
 @bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
@@ -491,9 +487,9 @@ async def servertest(interaction: discord.Interaction):
         
         # Create browser view starting at index 0
         view = ServerBrowserView(all_servers, 0)
-        embed = view.create_server_embed()
+        embed, file = view.create_server_embed()
         
-        await interaction.followup.send(embed=embed, view=view)
+        await interaction.followup.send(embed=embed, file=file, view=view)
             
     except Exception as e:
         logger.error(f"Error in servertest command: {e}")
