@@ -1,116 +1,15 @@
 {
-  "links": [
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=74268646142357627312116744999114",
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=57506411304628157909349266829042",
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=68059231595058624554357918945445",
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=02265931302235628125474976498813",
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=50930671537363913584935315730029",
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664",
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=96356127002725551280818048611302",
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=80416528103168886348166920314627",
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60736042290142445841789946518956",
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=66738635560552395566877242118037"
-  ],
-  "server_details": {
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=02265931302235628125474976498813": {
-      "source_url": "https://rbxservers.xyz/servers/b3b460b0-1ecf-4bc9-a2da-09fd6f6ee877",
-      "discovered_at": "2025-06-29T01:09:30.575389",
-      "extraction_time": 15.27,
-      "server_info": {
-        "page_title": "[SOON] Steal a Brainrot - Awaiting Moderation - RBXServers",
-        "server_id": "b3b460b0-1ecf-4bc9-a2da-09fd6f6ee877"
-      }
-    },
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60736042290142445841789946518956": {
-      "source_url": "https://rbxservers.xyz/servers/ef9f7908-7580-4e6a-a63e-975828a56533",
-      "discovered_at": "2025-06-29T01:09:49.561299",
-      "extraction_time": 18.64,
-      "server_info": {
-        "page_title": "[SOON] Steal a Brainrot - Awaiting Moderation - RBXServers",
-        "server_id": "ef9f7908-7580-4e6a-a63e-975828a56533"
-      }
-    },
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=68059231595058624554357918945445": {
-      "source_url": "https://rbxservers.xyz/servers/f3f69d9b-05fe-4cf0-b292-5405fcd5b0c5",
-      "discovered_at": "2025-06-29T01:10:06.485977",
-      "extraction_time": 16.7,
-      "server_info": {
-        "page_title": "[SOON] Steal a Brainrot - Awaiting Moderation - RBXServers",
-        "server_id": "f3f69d9b-05fe-4cf0-b292-5405fcd5b0c5"
-      }
-    },
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664": {
-      "source_url": "https://rbxservers.xyz/servers/0e3914ae-5719-4594-a5c6-70ed9d0d3219",
-      "discovered_at": "2025-06-29T01:10:23.932640",
-      "extraction_time": 17.17,
-      "server_info": {
-        "page_title": "[SOON] Steal a Brainrot - chill (steal = ban) - RBXServers",
-        "server_id": "0e3914ae-5719-4594-a5c6-70ed9d0d3219"
-      }
-    },
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=50930671537363913584935315730029": {
-      "source_url": "https://rbxservers.xyz/servers/e453a7e4-6da8-4ce5-b6a4-b536fa2dc2bd",
-      "discovered_at": "2025-06-29T01:10:37.807458",
-      "extraction_time": 13.61,
-      "server_info": {
-        "page_title": "[SOON] Steal a Brainrot - Awaiting Moderation - RBXServers",
-        "server_id": "e453a7e4-6da8-4ce5-b6a4-b536fa2dc2bd"
-      }
-    },
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=74268646142357627312116744999114": {
-      "source_url": "https://rbxservers.xyz/servers/15a25720-df05-49e4-acfa-da6deabc3a20",
-      "discovered_at": "2025-06-29T02:15:14.695040",
-      "extraction_time": 13.6,
-      "server_info": {
-        "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 2911 - RBXServers",
-        "server_id": "15a25720-df05-49e4-acfa-da6deabc3a20"
-      }
-    },
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=80416528103168886348166920314627": {
-      "source_url": "https://rbxservers.xyz/servers/4ee4a1da-86aa-4c33-8b89-9fb8c9dad5f0",
-      "discovered_at": "2025-06-29T02:15:30.323711",
-      "extraction_time": 15.21,
-      "server_info": {
-        "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 2419 - RBXServers",
-        "server_id": "4ee4a1da-86aa-4c33-8b89-9fb8c9dad5f0"
-      }
-    },
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=66738635560552395566877242118037": {
-      "source_url": "https://rbxservers.xyz/servers/ea619790-13d5-4bc2-a0f5-39bf7f9cb421",
-      "discovered_at": "2025-06-29T02:15:43.689792",
-      "extraction_time": 12.89,
-      "server_info": {
-        "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 2104 - RBXServers",
-        "server_id": "ea619790-13d5-4bc2-a0f5-39bf7f9cb421"
-      }
-    },
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=57506411304628157909349266829042": {
-      "source_url": "https://rbxservers.xyz/servers/1fa7afab-5d16-4e62-a615-3a47ec3c4c15",
-      "discovered_at": "2025-06-29T02:16:00.758501",
-      "extraction_time": 16.59,
-      "server_info": {
-        "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 3423 - RBXServers",
-        "server_id": "1fa7afab-5d16-4e62-a615-3a47ec3c4c15"
-      }
-    },
-    "https://www.roblox.com/games/126884695634066?privateServerLinkCode=96356127002725551280818048611302": {
-      "source_url": "https://rbxservers.xyz/servers/78aa8493-bdf0-4c4e-8285-badc3be2ce29",
-      "discovered_at": "2025-06-29T02:16:15.213746",
-      "extraction_time": 13.49,
-      "server_info": {
-        "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 5486 - RBXServers",
-        "server_id": "78aa8493-bdf0-4c4e-8285-badc3be2ce29"
-      }
-    }
-  },
+  "links_by_game": {},
+  "available_links": {},
+  "user_reserved_links": {},
   "scraping_stats": {
-    "total_scraped": 15,
-    "successful_extractions": 10,
-    "failed_extractions": 5,
-    "last_scrape_time": "2025-06-29T02:16:15.414353",
-    "scrape_duration": 79.97,
-    "servers_per_minute": 3.8
+    "total_scraped": 0,
+    "successful_extractions": 0,
+    "failed_extractions": 0,
+    "last_scrape_time": null,
+    "scrape_duration": 0,
+    "servers_per_minute": 0
   },
-  "last_updated": "2025-06-29T02:16:15.414599",
-  "total_count": 10
+  "last_updated": null,
+  "total_count": 0
 }
