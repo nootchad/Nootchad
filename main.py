@@ -879,9 +879,49 @@ async def scrape_with_updates(message, start_time, game_id):
 
         test_button = discord.ui.Button(
             label="Obtener Servidor VIP",
-            style=discord.ButtonStyle.secondary,
+            style=discord.ButtonStyle.primary,
             disabled=len(scraper.links_by_game[game_id]['links']) == 0
         )
+        
+        async def get_vip_server(button_interaction):
+            await button_interaction.response.defer()
+            try:
+                # Get all servers from the game
+                servers = scraper.links_by_game[game_id]['links']
+                if not servers:
+                    error_embed = discord.Embed(
+                        title="❌ No VIP Links Available",
+                        description="No se encontraron servidores VIP para este juego.",
+                        color=0xff3333
+                    )
+                    await button_interaction.followup.send(embed=error_embed, ephemeral=True)
+                    return
+
+                # Create browser view for this specific game
+                game_info = {
+                    'game_id': game_id,
+                    'game_name': scraper.links_by_game[game_id].get('game_name', f'Game {game_id}'),
+                    'game_image_url': scraper.links_by_game[game_id].get('game_image_url')
+                }
+                
+                view = ServerBrowserView(servers, 0, game_info)
+                embed, file = view.create_server_embed()
+
+                if file:
+                    await button_interaction.followup.send(embed=embed, file=file, view=view)
+                else:
+                    await button_interaction.followup.send(embed=embed, view=view)
+
+            except Exception as e:
+                logger.error(f"Error in get_vip_server button: {e}")
+                error_embed = discord.Embed(
+                    title="❌ Error Occurred",
+                    description="Ocurrió un error al obtener el servidor VIP.",
+                    color=0xff0000
+                )
+                await button_interaction.followup.send(embed=error_embed, ephemeral=True)
+        
+        test_button.callback = get_vip_server
         complete_view.add_item(test_button)
 
         follow_button_final = discord.ui.Button(
