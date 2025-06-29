@@ -462,7 +462,7 @@ class ServerBrowserView(discord.ui.View):
         
         # Server ID
         server_id = server_info.get('server_id', 'Unknown')
-        embed.add_field(name="Server ID", value=f"`{server_id}`", inline=True)
+        embed.add_field(name="Server ID", value=f"```{{{server_id}}}```", inline=True)
         
         # Server Link in code block
         embed.add_field(name="Server Link", value=f"```{current_server}```", inline=False)
@@ -516,12 +516,12 @@ async def scrape_command(interaction: discord.Interaction):
     try:
         # Initial status embed
         start_embed = discord.Embed(
-            title="Scraping Iniciado",
-            description="**Búsqueda de servidores VIP iniciada exitosamente!**\n\nBuscando servidores disponibles en la base de datos...",
+            title="ROBLOX PRIVATE SERVER LINKS",
+            description="Server scraping has been successfully initiated! Keep it secure and do not share it with anyone.",
             color=0x2F3136
         )
-        start_embed.add_field(name="📊 Base de Datos Actual", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
-        start_embed.add_field(name="🔄 Estado", value="Inicializando...", inline=True)
+        start_embed.add_field(name="Current Database", value=f"{len(scraper.unique_vip_links)} servers", inline=True)
+        start_embed.add_field(name="Status", value="Initializing...", inline=True)
         start_time = time.time()
         
         # Create view with follow button
@@ -543,12 +543,12 @@ async def scrape_command(interaction: discord.Interaction):
     except Exception as e:
         logger.error(f"Error in scrape command: {e}")
         error_embed = discord.Embed(
-            title="Error en Scraping",
-            description="Ocurrió un error durante el proceso de scraping.",
-            color=0xff3333
+            title="ROBLOX PRIVATE SERVER LINKS",
+            description="An error occurred during the scraping process.",
+            color=0x2F3136
         )
-        error_embed.add_field(name="Detalles del Error", value=f"```{str(e)[:200]}```", inline=False)
-        error_embed.add_field(name="💡 Reintentar", value="Puedes volver a ejecutar `/scrape`", inline=False)
+        error_embed.add_field(name="Error Details", value=f"```{str(e)[:200]}```", inline=False)
+        error_embed.add_field(name="Retry", value="You can run /scrape again", inline=False)
         
         # Error view with follow button
         error_view = discord.ui.View(timeout=None)
@@ -582,13 +582,13 @@ async def scrape_with_updates(message, initial_count, start_time):
         
         # Update message with processing status
         processing_embed = discord.Embed(
-            title="Scraping en Progreso",
-            description=f"**Procesando {len(server_links)} servidores (limitado a 5)...**\n\nBúsqueda activa de servidores VIP.",
-            color=0xFFAA00
+            title="ROBLOX PRIVATE SERVER LINKS",
+            description=f"Processing {len(server_links)} servers (limited to 5)... Active search for VIP servers.",
+            color=0x2F3136
         )
-        processing_embed.add_field(name="📊 Servidores Encontrados", value=f"**0**", inline=True)
-        processing_embed.add_field(name="🔄 Progreso", value=f"0/{len(server_links)}", inline=True)
-        processing_embed.add_field(name="⏱️ Tiempo", value="0s", inline=True)
+        processing_embed.add_field(name="Servers Found", value=f"**0**", inline=True)
+        processing_embed.add_field(name="Progress", value=f"0/{len(server_links)}", inline=True)
+        processing_embed.add_field(name="Time", value="0s", inline=True)
         
         view = discord.ui.View(timeout=None)
         follow_button = discord.ui.Button(
@@ -619,18 +619,18 @@ async def scrape_with_updates(message, initial_count, start_time):
                     
                     # Update embed with current progress
                     progress_embed = discord.Embed(
-                        title="Scraping en Progreso",
-                        description=f"**Procesando {len(server_links)} servidores encontrados...**\n\nBúsqueda activa de servidores VIP.",
-                        color=0xFFAA00
+                        title="ROBLOX PRIVATE SERVER LINKS",
+                        description=f"Processing {len(server_links)} servers found... Active search for VIP servers.",
+                        color=0x2F3136
                     )
-                    progress_embed.add_field(name="📊 Servidores Encontrados", value=f"**{new_links_count}**", inline=True)
-                    progress_embed.add_field(name="🔄 Progreso", value=f"{i + 1}/{len(server_links)}", inline=True)
-                    progress_embed.add_field(name="⏱️ Tiempo", value=f"{elapsed:.0f}s", inline=True)
+                    progress_embed.add_field(name="Servers Found", value=f"**{new_links_count}**", inline=True)
+                    progress_embed.add_field(name="Progress", value=f"{i + 1}/{len(server_links)}", inline=True)
+                    progress_embed.add_field(name="Time", value=f"{elapsed:.0f}s", inline=True)
                     
                     if eta > 0:
-                        progress_embed.add_field(name="⏰ ETA", value=f"{eta:.0f}s", inline=True)
+                        progress_embed.add_field(name="ETA", value=f"{eta:.0f}s", inline=True)
                     
-                    progress_embed.add_field(name="📈 Total en BD", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
+                    progress_embed.add_field(name="Total in DB", value=f"{len(scraper.unique_vip_links)} servers", inline=True)
                     
                     # Progress bar
                     progress_percentage = ((i + 1) / len(server_links)) * 100
@@ -638,7 +638,7 @@ async def scrape_with_updates(message, initial_count, start_time):
                     filled_length = int(bar_length * (i + 1) // len(server_links))
                     bar = "█" * filled_length + "░" * (bar_length - filled_length)
                     progress_embed.add_field(
-                        name="📊 Progreso Visual", 
+                        name="Visual Progress", 
                         value=f"`{bar}` {progress_percentage:.1f}%", 
                         inline=False
                     )
@@ -672,34 +672,34 @@ async def scrape_with_updates(message, initial_count, start_time):
         
         # Final completion embed
         complete_embed = discord.Embed(
-            title="Scraping Completado",
-            description="**La búsqueda de servidores VIP ha finalizado exitosamente!** Usa `/servertest` para obtener un servidor VIP.",
-            color=0x00FF00
+            title="ROBLOX PRIVATE SERVER LINKS",
+            description="VIP server search has been successfully completed! Use /servertest to get a VIP server.",
+            color=0x2F3136
         )
         
-        complete_embed.add_field(name="🆕 Nuevos Servidores", value=f"**{new_links_count}**", inline=True)
-        complete_embed.add_field(name="📊 Total en BD", value=f"**{final_count}** servidores", inline=True)
-        complete_embed.add_field(name="⏱️ Duración", value=f"{total_time:.1f}s", inline=True)
+        complete_embed.add_field(name="New Servers", value=f"**{new_links_count}**", inline=True)
+        complete_embed.add_field(name="Total in DB", value=f"**{final_count}** servers", inline=True)
+        complete_embed.add_field(name="Duration", value=f"{total_time:.1f}s", inline=True)
         
-        complete_embed.add_field(name="⚡ Velocidad", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
-        complete_embed.add_field(name="✅ Tasa de Éxito", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
-        complete_embed.add_field(name="🎯 Siguiente Paso", value="Usa `/servertest`", inline=True)
+        complete_embed.add_field(name="Speed", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
+        complete_embed.add_field(name="Success Rate", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
+        complete_embed.add_field(name="Next Step", value="Use /servertest", inline=True)
         
-        complete_embed.add_field(name="🔍 Total Procesado", value=f"{processed_count} servidores", inline=True)
+        complete_embed.add_field(name="Total Processed", value=f"{processed_count} servers", inline=True)
         
         current_time = datetime.now().strftime('%H:%M:%S')
-        complete_embed.add_field(name="🕐 Completado", value=current_time, inline=True)
+        complete_embed.add_field(name="Completed", value=current_time, inline=True)
         
         if new_links_count > 0:
             complete_embed.add_field(
-                name="🎉 Éxito Total!", 
-                value=f"Se encontraron {new_links_count} nuevo{'s' if new_links_count != 1 else ''} servidor{'es' if new_links_count != 1 else ''}!", 
+                name="Total Success!", 
+                value=f"Found {new_links_count} new server{'s' if new_links_count != 1 else ''}!", 
                 inline=False
             )
         else:
             complete_embed.add_field(
-                name="ℹ️ Sin Nuevos Servidores", 
-                value="Todos los servidores disponibles ya están en la base de datos.", 
+                name="No New Servers", 
+                value="All available servers are already in the database.", 
                 inline=False
             )
         
