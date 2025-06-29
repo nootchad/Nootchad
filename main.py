@@ -910,4 +910,6 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
                 server_id = server_info.get('server_id', 'Unknown')
                 complete_embed.add_field(
                     name=f"Your Server {i}",
-                    value=f"**ID:** ```{{{server_id}}}```\n**Link:** ```{link}
+                    value=f"**ID:** ```{{{server_id}}}```\n**Link:** ```{link}```",
+                    inline=False
+                )
