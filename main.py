@@ -38,49 +38,60 @@ class VIPServerScraper:
             'servers_per_minute': 0
         }
         self.load_existing_links()
-        self.links_by_game: Dict[str, Dict] = {}  # Store links by game ID
+        self.links_by_user: Dict[str, Dict[str, Dict]] = {}  # Store links by user ID, then by game ID
         self.available_links: Dict[str, List[str]] = {}  # Track available links per game
         self.reserved_links: Dict[str, Dict[str, str]] = {}  # User reservations
 
     def load_existing_links(self):
-        """Load existing VIP links from JSON file"""
+        """Load existing VIP links from JSON file with user-specific data"""
         try:
             if Path(self.vip_links_file).exists():
                 with open(self.vip_links_file, 'r') as f:
                     data = json.load(f)
-                    # Load links by game if available, otherwise default to the old system
-                    self.links_by_game = data.get('links_by_game', {})
-                    # If links_by_game is empty, try to load from the old 'links' field
-                    if not self.links_by_game and 'links' in data:
-                        # Assign all links to a default game ID (e.g., "default")
-                        self.links_by_game["default"] = {
-                            "links": data.get('links', []),
-                            "server_details": data.get('server_details', {}),
-                            "game_name": "Default Game"
-                        }
-
+                    
+                    # Load user-specific links if available
+                    self.links_by_user = data.get('links_by_user', {})
+                    
+                    # Migrate old data structure if needed
+                    if not self.links_by_user and 'links_by_game' in data:
+                        # Create a default user for existing links
+                        default_user = "migrated_user"
+                        self.links_by_user[default_user] = data.get('links_by_game', {})
+                        logger.info(f"Migrated existing links to user: {default_user}")
+                    
                     self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
+                    
                     # Initialize available_links properly
                     self.available_links = {}
-                    for game_id, game_data in self.links_by_game.items():
-                        self.available_links[game_id] = game_data.get('links', []).copy()
-                    logger.info(f"Loaded links for {len(self.links_by_game)} games.")
+                    total_users = len(self.links_by_user)
+                    total_games = 0
+                    for user_id, user_games in self.links_by_user.items():
+                        total_games += len(user_games)
+                    
+                    logger.info(f"Loaded links for {total_users} users with {total_games} total games.")
             else:
                 # Initialize empty structures if file doesn't exist
                 self.available_links = {}
+                self.links_by_user = {}
         except Exception as e:
             logger.error(f"Error loading existing links: {e}")
             # Initialize empty structures on error
             self.available_links = {}
+            self.links_by_user = {}
 
     def save_links(self):
-        """Save VIP links to JSON file, organizing by game ID"""
+        """Save VIP links to JSON file, organizing by user ID and game ID"""
         try:
+            total_count = 0
+            for user_id, user_games in self.links_by_user.items():
+                for game_id, game_data in user_games.items():
+                    total_count += len(game_data.get('links', []))
+            
             data = {
-                'links_by_game': self.links_by_game,
+                'links_by_user': self.links_by_user,
                 'scraping_stats': self.scraping_stats,
                 'last_updated': datetime.now().isoformat(),
-                'total_count': sum(len(game_data['links']) for game_data in self.links_by_game.values())
+                'total_count': total_count
             }
             with open(self.vip_links_file, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -239,13 +250,19 @@ class VIPServerScraper:
                     server_info = self.extract_server_info(driver, server_url)
                     extraction_time = time.time() - start_time
 
-                    # Store detailed information - now stored under the game ID
-                    if game_id not in self.links_by_game:
-                        self.links_by_game[game_id] = {'links': [], 'game_name': f'Game {game_id}', 'server_details': {}}
-                    if 'server_details' not in self.links_by_game[game_id]:
-                        self.links_by_game[game_id]['server_details'] = {}
+                    # Store detailed information - now stored under user ID and game ID
+                    user_id = getattr(self, 'current_user_id', 'unknown_user')
+                    
+                    if user_id not in self.links_by_user:
+                        self.links_by_user[user_id] = {}
+                    
+                    if game_id not in self.links_by_user[user_id]:
+                        self.links_by_user[user_id][game_id] = {'links': [], 'game_name': f'Game {game_id}', 'server_details': {}}
+                    
+                    if 'server_details' not in self.links_by_user[user_id][game_id]:
+                        self.links_by_user[user_id][game_id]['server_details'] = {}
 
-                    self.links_by_game[game_id]['server_details'][vip_link] = {
+                    self.links_by_user[user_id][game_id]['server_details'][vip_link] = {
                         'source_url': server_url,
                         'discovered_at': datetime.now().isoformat(),
                         'extraction_time': round(extraction_time, 2),
@@ -353,15 +370,18 @@ class VIPServerScraper:
             logger.error(f"Error extracting game info: {e}")
             return {'game_name': f'Game {game_id}', 'game_image_url': None}
 
-    def scrape_vip_links(self, game_id="109983668079237"):
+    def scrape_vip_links(self, game_id="109983668079237", user_id=None):
         """Main scraping function with detailed statistics"""
         driver = None
         start_time = time.time()
         new_links_count = 0
         processed_count = 0
 
+        # Set current user ID for tracking
+        self.current_user_id = user_id or 'unknown_user'
+
         try:
-            logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id}...")
+            logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id} (User: {self.current_user_id})...")
             driver = self.create_driver()
             server_links = self.get_server_links(driver, game_id)
 
@@ -373,19 +393,21 @@ class VIPServerScraper:
             server_links = server_links[:5]
             logger.info(f"🎯 Processing {len(server_links)} server links (limited to 5)...")
 
-            # Initialize game data if not exists
-            if game_id not in self.links_by_game:
+            # Initialize user and game data if not exists
+            if self.current_user_id not in self.links_by_user:
+                self.links_by_user[self.current_user_id] = {}
+            
+            if game_id not in self.links_by_user[self.current_user_id]:
                 # Extract game information first
                 game_info = self.extract_game_info(driver, game_id)
-                self.links_by_game[game_id] = {
+                self.links_by_user[self.current_user_id][game_id] = {
                     'links': [],
                     'game_name': game_info['game_name'],
                     'game_image_url': game_info.get('game_image_url'),
                     'server_details': {}
                 }
-                self.available_links[game_id] = []
 
-            existing_links = set(self.links_by_game[game_id]['links'])
+            existing_links = set(self.links_by_user[self.current_user_id][game_id]['links'])
 
             for i, server_url in enumerate(server_links):
                 try:
@@ -393,11 +415,10 @@ class VIPServerScraper:
                     vip_link = self.extract_vip_link(driver, server_url, game_id)
 
                     if vip_link and vip_link not in existing_links:
-                        self.links_by_game[game_id]['links'].append(vip_link)
-                        self.available_links[game_id].append(vip_link)
+                        self.links_by_user[self.current_user_id][game_id]['links'].append(vip_link)
                         existing_links.add(vip_link)
                         new_links_count += 1
-                        logger.info(f"🎉 New VIP link found for game {game_id} ({new_links_count}): {vip_link}")
+                        logger.info(f"🎉 New VIP link found for user {self.current_user_id}, game {game_id} ({new_links_count}): {vip_link}")
                     elif vip_link:
                         logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
 
@@ -423,7 +444,8 @@ class VIPServerScraper:
             })
 
             logger.info(f"✅ Scraping completed in {total_time:.1f}s")
-            logger.info(f"📈 Found {new_links_count} new VIP links (Total: {len(self.links_by_game[game_id]['links']) if game_id in self.links_by_game else 0})")
+            user_game_total = len(self.links_by_user[self.current_user_id][game_id]['links']) if self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id] else 0
+            logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {user_game_total})")
             logger.info(f"⚡ Processing speed: {self.scraping_stats['servers_per_minute']} servers/minute")
 
             self.save_links()
@@ -435,24 +457,33 @@ class VIPServerScraper:
             if driver:
                 driver.quit()
 
-    def get_random_link(self, game_id):
-        """Get a random VIP link for a specific game with its details"""
-        if game_id not in self.links_by_game or not self.links_by_game[game_id]['links']:
+    def get_random_link(self, game_id, user_id):
+        """Get a random VIP link for a specific game and user with its details"""
+        if (user_id not in self.links_by_user or 
+            game_id not in self.links_by_user[user_id] or 
+            not self.links_by_user[user_id][game_id]['links']):
             return None, None
 
-        links = self.links_by_game[game_id]['links']
+        links = self.links_by_user[user_id][game_id]['links']
         link = random.choice(links)
-        details = self.links_by_game[game_id]['server_details'].get(link, {})
+        details = self.links_by_user[user_id][game_id]['server_details'].get(link, {})
         return link, details
 
-    def get_all_links(self, game_id=None):
-        """Get all VIP links, optionally for a specific game"""
-        if game_id:
-            return self.links_by_game.get(game_id, {}).get('links', [])
+    def get_all_links(self, game_id=None, user_id=None):
+        """Get all VIP links, optionally for a specific game and user"""
+        if user_id and game_id:
+            return self.links_by_user.get(user_id, {}).get(game_id, {}).get('links', [])
+        elif user_id:
+            all_links = []
+            user_games = self.links_by_user.get(user_id, {})
+            for game_data in user_games.values():
+                all_links.extend(game_data.get('links', []))
+            return all_links
         else:
             all_links = []
-            for game_data in self.links_by_game.values():
-                all_links.extend(game_data['links'])
+            for user_games in self.links_by_user.values():
+                for game_data in user_games.values():
+                    all_links.extend(game_data.get('links', []))
             return all_links
 
 # Discord Bot
@@ -578,10 +609,11 @@ class ServerBrowserView(discord.ui.View):
         # Add game ID field
         embed.add_field(name="Game ID", value=f"```{game_id}```", inline=True)
 
-        # Get server details from the correct game
+        # Get server details from the correct user and game
         server_details = {}
-        if game_id in scraper.links_by_game:
-            server_details = scraper.links_by_game[game_id].get('server_details', {}).get(current_server, {})
+        user_id = self.game_info.get('user_id')
+        if user_id and user_id in scraper.links_by_user and game_id in scraper.links_by_user[user_id]:
+            server_details = scraper.links_by_user[user_id][game_id].get('server_details', {}).get(current_server, {})
         
         server_info = server_details.get('server_info', {})
 
@@ -605,32 +637,36 @@ class ServerBrowserView(discord.ui.View):
 
 @bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
-    """Browser through all available VIP servers with navigation"""
+    """Browser through all available VIP servers with navigation (user-specific)"""
     await interaction.response.defer()
 
     try:
-        # Get all servers from all games
+        user_id = str(interaction.user.id)
+        
+        # Get all servers from user's games
         all_servers = []
         current_game_info = None
         
-        # Find the first game with servers
-        for game_id, game_data in scraper.links_by_game.items():
+        # Find the first game with servers for this user
+        user_games = scraper.links_by_user.get(user_id, {})
+        for game_id, game_data in user_games.items():
             if game_data.get('links'):
                 all_servers = game_data['links']
                 current_game_info = {
                     'game_id': game_id,
                     'game_name': game_data.get('game_name', f'Game {game_id}'),
-                    'game_image_url': game_data.get('game_image_url')
+                    'game_image_url': game_data.get('game_image_url'),
+                    'user_id': user_id
                 }
                 break
 
         if not all_servers:
             embed = discord.Embed(
                 title="❌ No VIP Links Available",
-                description="No se encontraron servidores VIP en la base de datos. Intenta ejecutar `/scrape` primero.",
+                description="No tienes servidores VIP en tu base de datos. Intenta ejecutar `/scrape` primero para generar enlaces.",
                 color=0xff3333
             )
-            await interaction.followup.send(embed=embed)
+            await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
         # Create browser view starting at index 0
@@ -693,7 +729,8 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
         message = await interaction.followup.send(embed=start_embed, view=start_view)
 
         # Run scraping with real-time updates
-        await scrape_with_updates(message, start_time, game_id)
+        user_id = str(interaction.user.id)
+        await scrape_with_updates(message, start_time, game_id, user_id)
 
     except Exception as e:
         logger.error(f"Error in scrape command: {e}")
@@ -716,14 +753,14 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
 
         await interaction.followup.send(embed=error_embed, view=error_view)
 
-async def scrape_with_updates(message, start_time, game_id):
+async def scrape_with_updates(message, start_time, game_id, user_id):
     """Run scraping with real-time Discord message updates"""
     driver = None
     new_links_count = 0
     processed_count = 0
 
     try:
-        logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id}...")
+        logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id} (User: {user_id})...")
         driver = scraper.create_driver()
         server_links = scraper.get_server_links(driver, game_id)
 
@@ -735,19 +772,24 @@ async def scrape_with_updates(message, start_time, game_id):
         server_links = server_links[:5]
         logger.info(f"🎯 Processing {len(server_links)} server links (limited to 5)...")
 
-        # Initialize game data if not exists
-        if game_id not in scraper.links_by_game:
+        # Set current user ID for tracking
+        scraper.current_user_id = user_id
+
+        # Initialize user and game data if not exists
+        if user_id not in scraper.links_by_user:
+            scraper.links_by_user[user_id] = {}
+        
+        if game_id not in scraper.links_by_user[user_id]:
             # Extract game information first
             game_info = scraper.extract_game_info(driver, game_id)
-            scraper.links_by_game[game_id] = {
+            scraper.links_by_user[user_id][game_id] = {
                 'links': [],
                 'game_name': game_info['game_name'],
                 'game_image_url': game_info.get('game_image_url'),
                 'server_details': {}
             }
-            scraper.available_links[game_id] = []
 
-        existing_links = set(scraper.links_by_game[game_id]['links'])
+        existing_links = set(scraper.links_by_user[user_id][game_id]['links'])
 
         for i, server_url in enumerate(server_links):
             try:
@@ -755,11 +797,10 @@ async def scrape_with_updates(message, start_time, game_id):
                 vip_link = scraper.extract_vip_link(driver, server_url, game_id)
 
                 if vip_link and vip_link not in existing_links:
-                    scraper.links_by_game[game_id]['links'].append(vip_link)
-                    scraper.available_links[game_id].append(vip_link)
+                    scraper.links_by_user[user_id][game_id]['links'].append(vip_link)
                     existing_links.add(vip_link)
                     new_links_count += 1
-                    logger.info(f"🎉 New VIP link found for game {game_id} ({new_links_count}): {vip_link}")
+                    logger.info(f"🎉 New VIP link found for user {user_id}, game {game_id} ({new_links_count}): {vip_link}")
                 elif vip_link:
                     logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
 
@@ -769,7 +810,7 @@ async def scrape_with_updates(message, start_time, game_id):
                     eta = (elapsed / (i + 1)) * (len(server_links) - i - 1) if i > 0 else 0
 
                     # Update embed with current progress
-                    game_name = scraper.links_by_game[game_id]['game_name']
+                    game_name = scraper.links_by_user[user_id][game_id]['game_name']
                     progress_embed = discord.Embed(
                         title="ROBLOX PRIVATE SERVER LINKS",
                         description=f"Processing {len(server_links)} servers found for **{game_name}** (ID: {game_id})... Active search for VIP servers.",
@@ -777,7 +818,7 @@ async def scrape_with_updates(message, start_time, game_id):
                     )
                     
                     # Add game image if available
-                    game_image_url = scraper.links_by_game[game_id].get('game_image_url')
+                    game_image_url = scraper.links_by_user[user_id][game_id].get('game_image_url')
                     if game_image_url:
                         progress_embed.set_thumbnail(url=game_image_url)
                     progress_embed.add_field(name="Servers Found", value=f"**{new_links_count}**", inline=True)
@@ -787,7 +828,7 @@ async def scrape_with_updates(message, start_time, game_id):
                     if eta > 0:
                         progress_embed.add_field(name="ETA", value=f"{eta:.0f}s", inline=True)
 
-                    progress_embed.add_field(name="Total in DB", value=f"{len(scraper.links_by_game[game_id]['links'])} servers", inline=True)
+                    progress_embed.add_field(name="Your Total", value=f"{len(scraper.links_by_user[user_id][game_id]['links'])} servers", inline=True)
 
                     # Progress bar
                     progress_percentage = ((i + 1) / len(server_links)) * 100
@@ -819,7 +860,7 @@ async def scrape_with_updates(message, start_time, game_id):
 
         # Final completion update
         total_time = time.time() - start_time
-        final_count = len(scraper.links_by_game[game_id]['links'])
+        final_count = len(scraper.links_by_user[user_id][game_id]['links'])
 
         # Update statistics
         scraper.scraping_stats.update({
@@ -832,11 +873,11 @@ async def scrape_with_updates(message, start_time, game_id):
         })
 
         logger.info(f"✅ Scraping completed in {total_time:.1f}s")
-        logger.info(f"📈 Found {new_links_count} new VIP links (Total: {final_count})")
+        logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {final_count})")
         scraper.save_links()
 
         # Final completion embed
-        game_name = scraper.links_by_game[game_id]['game_name']
+        game_name = scraper.links_by_user[user_id][game_id]['game_name']
         complete_embed = discord.Embed(
             title="ROBLOX PRIVATE SERVER LINKS",
             description=f"VIP server search has been successfully completed for **{game_name}** (ID: {game_id})! Use /servertest to get a VIP server.",
@@ -844,12 +885,12 @@ async def scrape_with_updates(message, start_time, game_id):
         )
         
         # Add game image if available
-        game_image_url = scraper.links_by_game[game_id].get('game_image_url')
+        game_image_url = scraper.links_by_user[user_id][game_id].get('game_image_url')
         if game_image_url:
             complete_embed.set_thumbnail(url=game_image_url)
 
         complete_embed.add_field(name="New Servers", value=f"**{new_links_count}**", inline=True)
-        complete_embed.add_field(name="Total in DB", value=f"**{final_count}** servers", inline=True)
+        complete_embed.add_field(name="Your Total", value=f"**{final_count}** servers", inline=True)
         complete_embed.add_field(name="Duration", value=f"{total_time:.1f}s", inline=True)
 
         complete_embed.add_field(name="Speed", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
@@ -886,8 +927,8 @@ async def scrape_with_updates(message, start_time, game_id):
         async def get_vip_server(button_interaction):
             await button_interaction.response.defer()
             try:
-                # Get all servers from the game
-                servers = scraper.links_by_game[game_id]['links']
+                # Get all servers from the user's game
+                servers = scraper.links_by_user[user_id][game_id]['links']
                 if not servers:
                     error_embed = discord.Embed(
                         title="❌ No VIP Links Available",
@@ -900,8 +941,9 @@ async def scrape_with_updates(message, start_time, game_id):
                 # Create browser view for this specific game
                 game_info = {
                     'game_id': game_id,
-                    'game_name': scraper.links_by_game[game_id].get('game_name', f'Game {game_id}'),
-                    'game_image_url': scraper.links_by_game[game_id].get('game_image_url')
+                    'game_name': scraper.links_by_user[user_id][game_id].get('game_name', f'Game {game_id}'),
+                    'game_image_url': scraper.links_by_user[user_id][game_id].get('game_image_url'),
+                    'user_id': user_id
                 }
                 
                 view = ServerBrowserView(servers, 0, game_info)
@@ -952,8 +994,22 @@ async def stats(interaction: discord.Interaction):
         )
 
         # Main stats
-        total_links = sum(len(game_data.get('links', [])) for game_data in scraper.links_by_game.values())
-        embed.add_field(name="🗃️ Total Unique Links", value=f"**{total_links}**", inline=True)
+        user_id = str(interaction.user.id)
+        user_links = 0
+        total_links = 0
+        
+        # Calculate user-specific links
+        user_games = scraper.links_by_user.get(user_id, {})
+        for game_data in user_games.values():
+            user_links += len(game_data.get('links', []))
+        
+        # Calculate total links across all users
+        for user_games in scraper.links_by_user.values():
+            for game_data in user_games.values():
+                total_links += len(game_data.get('links', []))
+        
+        embed.add_field(name="🗃️ Your Links", value=f"**{user_links}**", inline=True)
+        embed.add_field(name="🌐 Total Links", value=f"**{total_links}**", inline=True)
         embed.add_field(name="📈 Total Scraped", value=f"**{scraper.scraping_stats.get('total_scraped', 0)}**", inline=True)
         embed.add_field(name="✅ Successful", value=f"**{scraper.scraping_stats.get('successful_extractions', 0)}**", inline=True)
 
