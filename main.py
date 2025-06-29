@@ -60,11 +60,18 @@ class VIPServerScraper:
                         }
 
                     self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
+                    # Initialize available_links properly
+                    self.available_links = {}
                     for game_id, game_data in self.links_by_game.items():
-                        self.available_links[game_id] = game_data['links'][:] # copy
+                        self.available_links[game_id] = game_data.get('links', []).copy()
                     logger.info(f"Loaded links for {len(self.links_by_game)} games.")
+            else:
+                # Initialize empty structures if file doesn't exist
+                self.available_links = {}
         except Exception as e:
             logger.error(f"Error loading existing links: {e}")
+            # Initialize empty structures on error
+            self.available_links = {}
 
     def save_links(self):
         """Save VIP links to JSON file, organizing by game ID"""
@@ -471,11 +478,12 @@ async def on_ready():
 
 # Server browser view with navigation buttons
 class ServerBrowserView(discord.ui.View):
-    def __init__(self, servers_list, current_index=0):
+    def __init__(self, servers_list, current_index=0, game_info=None):
         super().__init__(timeout=300)
         self.servers_list = servers_list
         self.current_index = current_index
         self.total_servers = len(servers_list)
+        self.game_info = game_info or {}
 
         # Update button states
         self.update_buttons()
@@ -529,7 +537,10 @@ class ServerBrowserView(discord.ui.View):
             self.update_buttons()
 
             embed, file = self.create_server_embed()
-            await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+            if file:
+                await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+            else:
+                await interaction.response.edit_message(embed=embed, attachments=[], view=self)
         else:
             await interaction.response.defer()
 
@@ -540,23 +551,39 @@ class ServerBrowserView(discord.ui.View):
             self.update_buttons()
 
             embed, file = self.create_server_embed()
-            await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+            if file:
+                await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+            else:
+                await interaction.response.edit_message(embed=embed, attachments=[], view=self)
         else:
             await interaction.response.defer()
 
     def create_server_embed(self):
         """Create embed for current server"""
         current_server = self.servers_list[self.current_index]
+        
+        # Get game name from game_info
+        game_name = self.game_info.get('game_name', 'Unknown Game')
+        game_id = self.game_info.get('game_id', 'Unknown')
 
         embed = discord.Embed(
             title="ROBLOX PRIVATE SERVER LINKS",
-            description="Your server has been successfully generated! Keep it secure and do not share it with anyone.",
+            description=f"Your server for **{game_name}** has been successfully generated! Keep it secure and do not share it with anyone.",
             color=0x2F3136
         )
 
-        # Get server details
-        details = scraper.server_details.get(current_server, {})
-        server_info = details.get('server_info', {})
+        # Add game name field
+        embed.add_field(name="Game Name", value=f"```{game_name}```", inline=True)
+        
+        # Add game ID field
+        embed.add_field(name="Game ID", value=f"```{game_id}```", inline=True)
+
+        # Get server details from the correct game
+        server_details = {}
+        if game_id in scraper.links_by_game:
+            server_details = scraper.links_by_game[game_id].get('server_details', {}).get(current_server, {})
+        
+        server_info = server_details.get('server_info', {})
 
         # Server ID
         server_id = server_info.get('server_id', 'Unknown')
@@ -565,14 +592,24 @@ class ServerBrowserView(discord.ui.View):
         # Server Link in code block
         embed.add_field(name="Server Link", value=f"```{current_server}```", inline=False)
 
-        # Add Roblox logo
-        file = discord.File("roblox_logo.png", filename="roblox_logo.png")
-        embed.set_thumbnail(url="attachment://roblox_logo.png")
+        # Set game image as thumbnail if available
+        game_image_url = self.game_info.get('game_image_url')
+        if game_image_url:
+            embed.set_thumbnail(url=game_image_url)
+        else:
+            # Fallback to Roblox logo
+            file = discord.File("roblox_logo.png", filename="roblox_logo.png")
+            embed.set_thumbnail(url="attachment://roblox_logo.png")
 
         # Footer with server count
         embed.set_footer(text=f"Server {self.current_index + 1}/{self.total_servers}")
 
-        return embed, file
+        # Return file only if using roblox logo
+        if not game_image_url:
+            file = discord.File("roblox_logo.png", filename="roblox_logo.png")
+            return embed, file
+        else:
+            return embed, None
 
 @bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
@@ -580,10 +617,20 @@ async def servertest(interaction: discord.Interaction):
     await interaction.response.defer()
 
     try:
-        # Obtener el game_id (puedes cambiar esto a un argumento si es necesario)
-        game_id = "109983668079237" # Default game ID, consider making this configurable
-
-        all_servers = scraper.get_all_links(game_id)
+        # Get all servers from all games
+        all_servers = []
+        current_game_info = None
+        
+        # Find the first game with servers
+        for game_id, game_data in scraper.links_by_game.items():
+            if game_data.get('links'):
+                all_servers = game_data['links']
+                current_game_info = {
+                    'game_id': game_id,
+                    'game_name': game_data.get('game_name', f'Game {game_id}'),
+                    'game_image_url': game_data.get('game_image_url')
+                }
+                break
 
         if not all_servers:
             embed = discord.Embed(
@@ -595,10 +642,13 @@ async def servertest(interaction: discord.Interaction):
             return
 
         # Create browser view starting at index 0
-        view = ServerBrowserView(all_servers, 0)
+        view = ServerBrowserView(all_servers, 0, current_game_info)
         embed, file = view.create_server_embed()
 
-        await interaction.followup.send(embed=embed, file=file, view=view)
+        if file:
+            await interaction.followup.send(embed=embed, file=file, view=view)
+        else:
+            await interaction.followup.send(embed=embed, view=view)
 
     except Exception as e:
         logger.error(f"Error in servertest command: {e}")
