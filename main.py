@@ -497,7 +497,10 @@ scraper = VIPServerScraper()
 @bot.event
 async def on_ready():
     logger.info(f'{bot.user} has connected to Discord!')
-    total_links = sum(len(game_data.get('links', [])) for game_data in scraper.links_by_game.values())
+    total_links = 0
+    for user_games in scraper.links_by_user.values():
+        for game_data in user_games.values():
+            total_links += len(game_data.get('links', []))
     logger.info(f'Bot is ready with {total_links} VIP links loaded')
 
     # Sync slash commands after bot is ready
@@ -921,7 +924,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id):
         test_button = discord.ui.Button(
             label="Obtener Servidor VIP",
             style=discord.ButtonStyle.primary,
-            disabled=len(scraper.links_by_game[game_id]['links']) == 0
+            disabled=len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', [])) == 0
         )
         
         async def get_vip_server(button_interaction):
