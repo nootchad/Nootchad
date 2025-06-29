@@ -463,7 +463,7 @@ class ServerBrowserView(discord.ui.View):
         details = scraper.server_details.get(current_server, {})
         server_info = details.get('server_info', {})
         
-        # Server information
+        # Primera fila - Información del servidor
         server_id = server_info.get('server_id', 'Unknown')[:8] + '...' if server_info.get('server_id', 'Unknown') != 'Unknown' else 'Unknown'
         embed.add_field(name="🆔 Server ID", value=f"`{server_id}`", inline=True)
         
@@ -486,10 +486,9 @@ class ServerBrowserView(discord.ui.View):
         embed.add_field(name="⏰ Descubierto", value=discovered_time, inline=True)
         embed.add_field(name="📊 Total en BD", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
         
-        # Performance stats
+        # Segunda fila - Estadísticas de rendimiento
         speed = scraper.scraping_stats.get('servers_per_minute', 0)
-        if speed > 0:
-            embed.add_field(name="⚡ Velocidad", value=f"{speed} serv/min", inline=True)
+        embed.add_field(name="⚡ Velocidad", value=f"{speed} serv/min" if speed > 0 else "N/A", inline=True)
         
         # Success rate
         total_scraped = scraper.scraping_stats.get('total_scraped', 0)
@@ -497,6 +496,8 @@ class ServerBrowserView(discord.ui.View):
         if total_scraped > 0:
             success_rate = (successful / total_scraped) * 100
             embed.add_field(name="✅ Tasa de Éxito", value=f"{success_rate:.1f}%", inline=True)
+        else:
+            embed.add_field(name="✅ Tasa de Éxito", value="N/A", inline=True)
         
         # Navigation info
         embed.add_field(name="🧭 Navegación", value=f"Servidor {self.current_index + 1}/{self.total_servers}", inline=True)
