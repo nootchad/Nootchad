@@ -713,8 +713,9 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
             color=0x2F3136
         )
         start_embed.add_field(name="Game ID", value=f"```{game_id}```", inline=True)
-        # Ensure links_by_game[game_id] exists before accessing it
-        initial_count = len(scraper.links_by_game.get(game_id, {}).get('links', []))
+        # Get initial count for this user and game
+        user_id = str(interaction.user.id)
+        initial_count = len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', []))
         start_embed.add_field(name="Current Database", value=f"{initial_count} servers", inline=True)
         start_embed.add_field(name="Status", value="Initializing...", inline=True)
         start_time = time.time()
