@@ -481,7 +481,7 @@ async def servertest(interaction: discord.Interaction):
 
 @bot.tree.command(name="scrape", description="Start scraping for new VIP server links")
 async def scrape_command(interaction: discord.Interaction):
-    """Manually trigger scraping with detailed progress tracking"""
+    """Manually trigger scraping with real-time progress updates"""
     await interaction.response.defer()
     
     try:
@@ -496,7 +496,7 @@ async def scrape_command(interaction: discord.Interaction):
         start_embed.add_field(name="🌐 Fuente", value="rbxservers.xyz", inline=True)
         start_time = time.time()
         
-        # Create view with follow button for start message too
+        # Create view with follow button
         start_view = discord.ui.View(timeout=None)
         follow_button_start = discord.ui.Button(
             label="Seguir a hesiz",
@@ -505,73 +505,12 @@ async def scrape_command(interaction: discord.Interaction):
         )
         start_view.add_item(follow_button_start)
         
-        await interaction.followup.send(embed=start_embed, view=start_view)
+        # Send initial message
+        message = await interaction.followup.send(embed=start_embed, view=start_view)
         
-        # Run scraping in background
+        # Run scraping with real-time updates
         initial_count = len(scraper.unique_vip_links)
-        await asyncio.get_event_loop().run_in_executor(None, scraper.scrape_vip_links)
-        final_count = len(scraper.unique_vip_links)
-        new_found = final_count - initial_count
-        total_time = time.time() - start_time
-        
-        # Completion embed with detailed results
-        complete_embed = discord.Embed(
-            title="Scraping Completado",
-            description="**La búsqueda de servidores VIP ha finalizado exitosamente!** Usa `/servertest` para obtener un servidor VIP.",
-            color=0x2F3136
-        )
-        
-        complete_embed.add_field(name="🆕 Nuevos Servidores", value=f"**{new_found}**", inline=True)
-        complete_embed.add_field(name="📊 Total en BD", value=f"**{final_count}** servidores", inline=True)
-        complete_embed.add_field(name="⏱️ Duración", value=f"{total_time:.1f}s", inline=True)
-        
-        complete_embed.add_field(name="⚡ Velocidad", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
-        complete_embed.add_field(name="✅ Tasa de Éxito", value=f"{(scraper.scraping_stats.get('successful_extractions', 0) / max(scraper.scraping_stats.get('total_scraped', 1), 1) * 100):.1f}%", inline=True)
-        complete_embed.add_field(name="🎯 Siguiente Paso", value="Usa `/servertest`", inline=True)
-        
-        # Processing stats
-        total_processed = scraper.scraping_stats.get('total_scraped', 0)
-        complete_embed.add_field(name="🔍 Total Procesado", value=f"{total_processed} servidores", inline=True)
-        complete_embed.add_field(name="🌐 Fuente", value="rbxservers.xyz", inline=True)
-        
-        # Time stamp
-        current_time = datetime.now().strftime('%H:%M:%S')
-        complete_embed.add_field(name="🕐 Completado", value=current_time, inline=True)
-        
-        if new_found > 0:
-            complete_embed.add_field(
-                name="🎉 Éxito Total!", 
-                value=f"Se encontraron {new_found} nuevo{'s' if new_found != 1 else ''} servidor{'es' if new_found != 1 else ''}!", 
-                inline=False
-            )
-        else:
-            complete_embed.add_field(
-                name="ℹ️ Sin Nuevos Servidores", 
-                value="Todos los servidores disponibles ya están en la base de datos.", 
-                inline=False
-            )
-        
-        # Create view with buttons for completion message
-        complete_view = discord.ui.View(timeout=None)
-        
-        # Server test button
-        test_button = discord.ui.Button(
-            label="Obtener Servidor VIP",
-            style=discord.ButtonStyle.secondary,
-            disabled=len(scraper.unique_vip_links) == 0
-        )
-        # Note: We can't make this functional without custom_id, but it shows the intent
-        complete_view.add_item(test_button)
-        
-        # Follow hesiz button
-        follow_button = discord.ui.Button(
-            label="Seguir a hesiz",
-            style=discord.ButtonStyle.secondary,
-            url="https://www.roblox.com/users/11834624/profile"
-        )
-        complete_view.add_item(follow_button)
-        
-        await interaction.followup.send(embed=complete_embed, view=complete_view)
+        await scrape_with_updates(message, initial_count, start_time)
         
     except Exception as e:
         logger.error(f"Error in scrape command: {e}")
@@ -593,6 +532,174 @@ async def scrape_command(interaction: discord.Interaction):
         error_view.add_item(follow_button_error)
         
         await interaction.followup.send(embed=error_embed, view=error_view)
+
+async def scrape_with_updates(message, initial_count, start_time):
+    """Run scraping with real-time Discord message updates"""
+    driver = None
+    new_links_count = 0
+    processed_count = 0
+    
+    try:
+        logger.info("🚀 Starting VIP server scraping...")
+        driver = scraper.create_driver()
+        server_links = scraper.get_server_links(driver)
+        
+        if not server_links:
+            logger.warning("⚠️ No server links found")
+            return
+        
+        logger.info(f"🎯 Processing {len(server_links)} server links...")
+        
+        # Update message with processing status
+        processing_embed = discord.Embed(
+            title="Scraping en Progreso",
+            description=f"**Procesando {len(server_links)} servidores encontrados...**\n\nBúsqueda activa de servidores VIP.",
+            color=0xFFAA00
+        )
+        processing_embed.add_field(name="📊 Servidores Encontrados", value=f"**0**", inline=True)
+        processing_embed.add_field(name="🔄 Progreso", value=f"0/{len(server_links)}", inline=True)
+        processing_embed.add_field(name="⏱️ Tiempo", value="0s", inline=True)
+        
+        view = discord.ui.View(timeout=None)
+        follow_button = discord.ui.Button(
+            label="Seguir a hesiz",
+            style=discord.ButtonStyle.secondary,
+            url="https://www.roblox.com/users/11834624/profile"
+        )
+        view.add_item(follow_button)
+        
+        await message.edit(embed=processing_embed, view=view)
+        
+        for i, server_url in enumerate(server_links):
+            try:
+                processed_count += 1
+                vip_link = scraper.extract_vip_link(driver, server_url)
+                
+                if vip_link and vip_link not in scraper.unique_vip_links:
+                    scraper.unique_vip_links.add(vip_link)
+                    new_links_count += 1
+                    logger.info(f"🎉 New VIP link found ({new_links_count}): {vip_link}")
+                elif vip_link:
+                    logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
+                
+                # Update Discord message every 3 servers or on new find
+                if (i + 1) % 3 == 0 or vip_link:
+                    elapsed = time.time() - start_time
+                    eta = (elapsed / (i + 1)) * (len(server_links) - i - 1) if i > 0 else 0
+                    
+                    # Update embed with current progress
+                    progress_embed = discord.Embed(
+                        title="Scraping en Progreso",
+                        description=f"**Procesando {len(server_links)} servidores encontrados...**\n\nBúsqueda activa de servidores VIP.",
+                        color=0xFFAA00
+                    )
+                    progress_embed.add_field(name="📊 Servidores Encontrados", value=f"**{new_links_count}**", inline=True)
+                    progress_embed.add_field(name="🔄 Progreso", value=f"{i + 1}/{len(server_links)}", inline=True)
+                    progress_embed.add_field(name="⏱️ Tiempo", value=f"{elapsed:.0f}s", inline=True)
+                    
+                    if eta > 0:
+                        progress_embed.add_field(name="⏰ ETA", value=f"{eta:.0f}s", inline=True)
+                    
+                    progress_embed.add_field(name="📈 Total en BD", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
+                    progress_embed.add_field(name="🌐 Fuente", value="rbxservers.xyz", inline=True)
+                    
+                    # Progress bar
+                    progress_percentage = ((i + 1) / len(server_links)) * 100
+                    bar_length = 10
+                    filled_length = int(bar_length * (i + 1) // len(server_links))
+                    bar = "█" * filled_length + "░" * (bar_length - filled_length)
+                    progress_embed.add_field(
+                        name="📊 Progreso Visual", 
+                        value=f"`{bar}` {progress_percentage:.1f}%", 
+                        inline=False
+                    )
+                    
+                    try:
+                        await message.edit(embed=progress_embed, view=view)
+                    except discord.HTTPException:
+                        logger.warning("Failed to update Discord message, continuing...")
+                        
+            except Exception as e:
+                logger.error(f"❌ Error processing {server_url}: {e}")
+                continue
+        
+        # Final completion update
+        total_time = time.time() - start_time
+        final_count = len(scraper.unique_vip_links)
+        
+        # Update statistics
+        scraper.scraping_stats.update({
+            'total_scraped': scraper.scraping_stats['total_scraped'] + processed_count,
+            'successful_extractions': scraper.scraping_stats['successful_extractions'] + new_links_count,
+            'failed_extractions': scraper.scraping_stats['failed_extractions'] + (processed_count - new_links_count),
+            'last_scrape_time': datetime.now().isoformat(),
+            'scrape_duration': round(total_time, 2),
+            'servers_per_minute': round((processed_count / total_time) * 60, 1) if total_time > 0 else 0
+        })
+        
+        logger.info(f"✅ Scraping completed in {total_time:.1f}s")
+        logger.info(f"📈 Found {new_links_count} new VIP links (Total: {final_count})")
+        scraper.save_links()
+        
+        # Final completion embed
+        complete_embed = discord.Embed(
+            title="Scraping Completado",
+            description="**La búsqueda de servidores VIP ha finalizado exitosamente!** Usa `/servertest` para obtener un servidor VIP.",
+            color=0x00FF00
+        )
+        
+        complete_embed.add_field(name="🆕 Nuevos Servidores", value=f"**{new_links_count}**", inline=True)
+        complete_embed.add_field(name="📊 Total en BD", value=f"**{final_count}** servidores", inline=True)
+        complete_embed.add_field(name="⏱️ Duración", value=f"{total_time:.1f}s", inline=True)
+        
+        complete_embed.add_field(name="⚡ Velocidad", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
+        complete_embed.add_field(name="✅ Tasa de Éxito", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
+        complete_embed.add_field(name="🎯 Siguiente Paso", value="Usa `/servertest`", inline=True)
+        
+        complete_embed.add_field(name="🔍 Total Procesado", value=f"{processed_count} servidores", inline=True)
+        complete_embed.add_field(name="🌐 Fuente", value="rbxservers.xyz", inline=True)
+        
+        current_time = datetime.now().strftime('%H:%M:%S')
+        complete_embed.add_field(name="🕐 Completado", value=current_time, inline=True)
+        
+        if new_links_count > 0:
+            complete_embed.add_field(
+                name="🎉 Éxito Total!", 
+                value=f"Se encontraron {new_links_count} nuevo{'s' if new_links_count != 1 else ''} servidor{'es' if new_links_count != 1 else ''}!", 
+                inline=False
+            )
+        else:
+            complete_embed.add_field(
+                name="ℹ️ Sin Nuevos Servidores", 
+                value="Todos los servidores disponibles ya están en la base de datos.", 
+                inline=False
+            )
+        
+        # Final completion view
+        complete_view = discord.ui.View(timeout=None)
+        
+        test_button = discord.ui.Button(
+            label="Obtener Servidor VIP",
+            style=discord.ButtonStyle.secondary,
+            disabled=len(scraper.unique_vip_links) == 0
+        )
+        complete_view.add_item(test_button)
+        
+        follow_button_final = discord.ui.Button(
+            label="Seguir a hesiz",
+            style=discord.ButtonStyle.secondary,
+            url="https://www.roblox.com/users/11834624/profile"
+        )
+        complete_view.add_item(follow_button_final)
+        
+        await message.edit(embed=complete_embed, view=complete_view)
+        
+    except Exception as e:
+        logger.error(f"💥 Scraping failed: {e}")
+        raise
+    finally:
+        if driver:
+            driver.quit()
 
 @bot.tree.command(name="stats", description="Show comprehensive VIP links statistics")
 async def stats(interaction: discord.Interaction):
