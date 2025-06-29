@@ -412,8 +412,7 @@ class ServerBrowserView(discord.ui.View):
         join_button = discord.ui.Button(
             label="🎮 Unirse al Servidor",
             style=discord.ButtonStyle.primary,
-            url=current_server,
-            custom_id="join_server"
+            url=current_server
         )
         self.add_item(join_button)
         
@@ -421,8 +420,7 @@ class ServerBrowserView(discord.ui.View):
         follow_button = discord.ui.Button(
             label="👤 Seguir a hesiz",
             style=discord.ButtonStyle.secondary,
-            url="https://www.roblox.com/users/11834624/profile",
-            custom_id="follow_hesiz"
+            url="https://www.roblox.com/users/11834624/profile"
         )
         self.add_item(follow_button)
     
