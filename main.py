@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 class VIPServerScraper:
     def __init__(self):
         self.vip_links_file = "vip_links.json"
-        self.unique_vip_links: Set[str] = set()
-        self.server_details: Dict[str, Dict] = {}
+        # Organize links by game_id: {game_id: {links: set(), server_details: dict()}}
+        self.links_by_game: Dict[str, Dict] = {}
         self.scraping_stats = {
             'total_scraped': 0,
             'successful_extractions': 0,
@@ -39,53 +39,86 @@ class VIPServerScraper:
             'scrape_duration': 0,
             'servers_per_minute': 0
         }
-        # User-specific link reservations
-        self.user_reserved_links: Dict[int, List[str]] = {}  # user_id -> list of reserved links
-        self.available_links: List[str] = []  # Links available for new reservations
-        self.processing_queue: List[str] = []  # Links being processed for future use
+        # User-specific link reservations organized by game_id
+        self.user_reserved_links: Dict[str, Dict[int, List[str]]] = {}  # game_id -> user_id -> list of reserved links
+        self.available_links: Dict[str, List[str]] = {}  # game_id -> list of available links
         self.load_existing_links()
         
     def load_existing_links(self):
-        """Load existing VIP links from JSON file"""
+        """Load existing VIP links from JSON file organized by game_id"""
         try:
             if Path(self.vip_links_file).exists():
                 with open(self.vip_links_file, 'r') as f:
                     data = json.load(f)
-                    self.unique_vip_links = set(data.get('links', []))
-                    self.server_details = data.get('server_details', {})
-                    self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
-                    self.user_reserved_links = data.get('user_reserved_links', {})
-                    # Convert string keys back to integers for user IDs
-                    self.user_reserved_links = {int(k): v for k, v in self.user_reserved_links.items()}
                     
-                    # Initialize available links (links not reserved by any user)
-                    reserved_links = set()
-                    for user_links in self.user_reserved_links.values():
-                        reserved_links.update(user_links)
-                    self.available_links = [link for link in self.unique_vip_links if link not in reserved_links]
+                    # Load new format if available
+                    if 'links_by_game' in data:
+                        self.links_by_game = data.get('links_by_game', {})
+                        # Convert sets back from lists
+                        for game_id in self.links_by_game:
+                            self.links_by_game[game_id]['links'] = set(self.links_by_game[game_id].get('links', []))
+                        
+                        self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
+                        self.user_reserved_links = data.get('user_reserved_links', {})
+                        self.available_links = data.get('available_links', {})
+                        
+                    else:
+                        # Convert old format to new format
+                        old_links = set(data.get('links', []))
+                        old_details = data.get('server_details', {})
+                        
+                        # Assume old links are for the default game_id if no game_id info available
+                        default_game_id = "109983668079237"
+                        self.links_by_game[default_game_id] = {
+                            'links': old_links,
+                            'server_details': old_details
+                        }
+                        
+                        # Initialize available links
+                        self.available_links[default_game_id] = list(old_links)
+                        self.user_reserved_links[default_game_id] = {}
+                        
+                        self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
                     
-                    logger.info(f"Loaded {len(self.unique_vip_links)} existing VIP links")
-                    logger.info(f"Available for new users: {len(self.available_links)}")
+                    total_links = sum(len(game_data['links']) for game_data in self.links_by_game.values())
+                    logger.info(f"Loaded {total_links} existing VIP links across {len(self.links_by_game)} games")
+                    
+                    for game_id, game_data in self.links_by_game.items():
+                        available_count = len(self.available_links.get(game_id, []))
+                        logger.info(f"Game {game_id}: {len(game_data['links'])} total, {available_count} available")
+                        
         except Exception as e:
             logger.error(f"Error loading existing links: {e}")
     
     def save_links(self):
-        """Save VIP links to JSON file"""
+        """Save VIP links to JSON file organized by game_id"""
         try:
+            # Convert sets to lists for JSON serialization
+            links_by_game_serializable = {}
+            for game_id, game_data in self.links_by_game.items():
+                links_by_game_serializable[game_id] = {
+                    'links': list(game_data['links']),
+                    'server_details': game_data.get('server_details', {})
+                }
+            
             # Convert integer user IDs to strings for JSON serialization
-            user_reserved_str_keys = {str(k): v for k, v in self.user_reserved_links.items()}
+            user_reserved_serializable = {}
+            for game_id, users_dict in self.user_reserved_links.items():
+                user_reserved_serializable[game_id] = {str(k): v for k, v in users_dict.items()}
+            
+            total_links = sum(len(game_data['links']) for game_data in self.links_by_game.values())
             
             data = {
-                'links': list(self.unique_vip_links),
-                'server_details': self.server_details,
+                'links_by_game': links_by_game_serializable,
                 'scraping_stats': self.scraping_stats,
-                'user_reserved_links': user_reserved_str_keys,
+                'user_reserved_links': user_reserved_serializable,
+                'available_links': self.available_links,
                 'last_updated': datetime.now().isoformat(),
-                'total_count': len(self.unique_vip_links)
+                'total_count': total_links
             }
             with open(self.vip_links_file, 'w') as f:
                 json.dump(data, f, indent=2)
-            logger.info(f"Saved {len(self.unique_vip_links)} VIP links to {self.vip_links_file}")
+            logger.info(f"Saved {total_links} VIP links across {len(self.links_by_game)} games to {self.vip_links_file}")
         except Exception as e:
             logger.error(f"Error saving links: {e}")
     
@@ -218,7 +251,7 @@ class VIPServerScraper:
         
         return []
     
-    def extract_vip_link(self, driver, server_url, max_retries=2):
+    def extract_vip_link(self, driver, server_url, game_id, max_retries=2):
         """Extract VIP link from server page with detailed information"""
         start_time = time.time()
         
@@ -236,16 +269,26 @@ class VIPServerScraper:
                 
                 vip_link = vip_input.get_attribute("value")
                 if vip_link and vip_link.startswith("https://"):
+                    # Verify the link matches the game_id
+                    if f"/games/{game_id}" not in vip_link:
+                        logger.debug(f"Link doesn't match game_id {game_id}: {vip_link}")
+                        return None
+                    
                     # Extract additional server details
                     server_info = self.extract_server_info(driver, server_url)
                     extraction_time = time.time() - start_time
                     
+                    # Initialize game_id entry if needed
+                    if game_id not in self.links_by_game:
+                        self.links_by_game[game_id] = {'links': set(), 'server_details': {}}
+                    
                     # Store detailed information
-                    self.server_details[vip_link] = {
+                    self.links_by_game[game_id]['server_details'][vip_link] = {
                         'source_url': server_url,
                         'discovered_at': datetime.now().isoformat(),
                         'extraction_time': round(extraction_time, 2),
-                        'server_info': server_info
+                        'server_info': server_info,
+                        'game_id': game_id
                     }
                     
                     return vip_link
@@ -307,6 +350,14 @@ class VIPServerScraper:
                 logger.warning("⚠️ No server links found")
                 return
             
+            # Initialize game_id entry if needed
+            if game_id not in self.links_by_game:
+                self.links_by_game[game_id] = {'links': set(), 'server_details': {}}
+            if game_id not in self.available_links:
+                self.available_links[game_id] = []
+            if game_id not in self.user_reserved_links:
+                self.user_reserved_links[game_id] = {}
+            
             # Limit to 5 servers to avoid overloading
             server_links = server_links[:5]
             logger.info(f"🎯 Processing {len(server_links)} server links (limited to 5)...")
@@ -314,12 +365,13 @@ class VIPServerScraper:
             for i, server_url in enumerate(server_links):
                 try:
                     processed_count += 1
-                    vip_link = self.extract_vip_link(driver, server_url)
+                    vip_link = self.extract_vip_link(driver, server_url, game_id)
                     
-                    if vip_link and vip_link not in self.unique_vip_links:
-                        self.unique_vip_links.add(vip_link)
+                    if vip_link and vip_link not in self.links_by_game[game_id]['links']:
+                        self.links_by_game[game_id]['links'].add(vip_link)
+                        self.available_links[game_id].append(vip_link)
                         new_links_count += 1
-                        logger.info(f"🎉 New VIP link found ({new_links_count}): {vip_link}")
+                        logger.info(f"🎉 New VIP link found for game {game_id} ({new_links_count}): {vip_link}")
                     elif vip_link:
                         logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
                     
@@ -344,8 +396,9 @@ class VIPServerScraper:
                 'servers_per_minute': round((processed_count / total_time) * 60, 1) if total_time > 0 else 0
             })
             
+            total_links = sum(len(game_data['links']) for game_data in self.links_by_game.values())
             logger.info(f"✅ Scraping completed in {total_time:.1f}s")
-            logger.info(f"📈 Found {new_links_count} new VIP links (Total: {len(self.unique_vip_links)})")
+            logger.info(f"📈 Found {new_links_count} new VIP links for game {game_id} (Total across all games: {total_links})")
             logger.info(f"⚡ Processing speed: {self.scraping_stats['servers_per_minute']} servers/minute")
             
             self.save_links()
@@ -357,56 +410,68 @@ class VIPServerScraper:
             if driver:
                 driver.quit()
     
-    def get_random_link(self):
-        """Get a random VIP link with its details"""
-        if not self.unique_vip_links:
+    def get_random_link(self, game_id="109983668079237"):
+        """Get a random VIP link with its details for a specific game"""
+        if game_id not in self.links_by_game or not self.links_by_game[game_id]['links']:
             return None, None
         
-        link = random.choice(list(self.unique_vip_links))
-        details = self.server_details.get(link, {})
+        link = random.choice(list(self.links_by_game[game_id]['links']))
+        details = self.links_by_game[game_id]['server_details'].get(link, {})
         return link, details
     
-    def get_all_links(self):
-        """Get all VIP links"""
-        return list(self.unique_vip_links)
+    def get_all_links(self, game_id="109983668079237"):
+        """Get all VIP links for a specific game"""
+        if game_id not in self.links_by_game:
+            return []
+        return list(self.links_by_game[game_id]['links'])
     
-    def reserve_links_for_user(self, user_id: int, count: int = 5) -> List[str]:
-        """Reserve a specific number of links for a user"""
-        # If user already has reserved links, return them
-        if user_id in self.user_reserved_links and len(self.user_reserved_links[user_id]) >= count:
-            return self.user_reserved_links[user_id][:count]
+    def reserve_links_for_user(self, user_id: int, game_id: str, count: int = 5) -> List[str]:
+        """Reserve a specific number of links for a user for a specific game"""
+        # Initialize game_id entries if needed
+        if game_id not in self.user_reserved_links:
+            self.user_reserved_links[game_id] = {}
+        if game_id not in self.available_links:
+            self.available_links[game_id] = []
         
-        # Get available links
-        if len(self.available_links) >= count:
+        # If user already has reserved links for this game, return them
+        if user_id in self.user_reserved_links[game_id] and len(self.user_reserved_links[game_id][user_id]) >= count:
+            return self.user_reserved_links[game_id][user_id][:count]
+        
+        # Get available links for this game
+        available_game_links = self.available_links[game_id]
+        if len(available_game_links) >= count:
             # Reserve links from available pool
-            reserved = self.available_links[:count]
-            self.available_links = self.available_links[count:]
-            self.user_reserved_links[user_id] = reserved
-            logger.info(f"Reserved {count} links for user {user_id}")
+            reserved = available_game_links[:count]
+            self.available_links[game_id] = available_game_links[count:]
+            self.user_reserved_links[game_id][user_id] = reserved
+            logger.info(f"Reserved {count} links for user {user_id} for game {game_id}")
             return reserved
         else:
             # Not enough available links, return what we have
-            reserved = self.available_links.copy()
-            self.available_links = []
+            reserved = available_game_links.copy()
+            self.available_links[game_id] = []
             if reserved:
-                self.user_reserved_links[user_id] = reserved
-                logger.info(f"Reserved {len(reserved)} links for user {user_id} (requested {count})")
+                self.user_reserved_links[game_id][user_id] = reserved
+                logger.info(f"Reserved {len(reserved)} links for user {user_id} for game {game_id} (requested {count})")
             return reserved
     
-    def get_user_links(self, user_id: int) -> List[str]:
-        """Get reserved links for a specific user"""
-        return self.user_reserved_links.get(user_id, [])
+    def get_user_links(self, user_id: int, game_id: str) -> List[str]:
+        """Get reserved links for a specific user for a specific game"""
+        if game_id not in self.user_reserved_links:
+            return []
+        return self.user_reserved_links[game_id].get(user_id, [])
     
-    def has_enough_links_for_new_user(self, count: int = 5) -> bool:
-        """Check if we have enough available links for a new user"""
-        return len(self.available_links) >= count
+    def has_enough_links_for_new_user(self, game_id: str, count: int = 5) -> bool:
+        """Check if we have enough available links for a new user for a specific game"""
+        if game_id not in self.available_links:
+            return False
+        return len(self.available_links[game_id]) >= count
     
-    def add_new_links_to_available_pool(self, new_links: List[str]):
-        """Add newly found links to the available pool"""
-        for link in new_links:
-            if link not in self.unique_vip_links:
-                self.unique_vip_links.add(link)
-                self.available_links.append(link)
+    def get_server_details(self, link: str, game_id: str) -> Dict:
+        """Get server details for a specific link and game"""
+        if game_id not in self.links_by_game:
+            return {}
+        return self.links_by_game[game_id]['server_details'].get(link, {})
 
 # Discord Bot
 intents = discord.Intents.default()
@@ -513,9 +578,14 @@ class ServerBrowserView(discord.ui.View):
             color=0x2F3136
         )
         
-        # Get server details
-        details = scraper.server_details.get(current_server, {})
-        server_info = details.get('server_info', {})
+        # Get server details from any game that has this server
+        details = {}
+        server_info = {}
+        for game_id, game_data in scraper.links_by_game.items():
+            if current_server in game_data['server_details']:
+                details = game_data['server_details'][current_server]
+                server_info = details.get('server_info', {})
+                break
         
         # Server ID
         server_id = server_info.get('server_id', 'Unknown')
@@ -539,7 +609,18 @@ async def servertest(interaction: discord.Interaction):
     await interaction.response.defer()
     
     try:
-        all_servers = scraper.get_all_links()
+        # Get servers from any available game (prioritize default game)
+        default_game_id = "109983668079237"
+        all_servers = []
+        
+        if default_game_id in scraper.links_by_game:
+            all_servers = scraper.get_all_links(default_game_id)
+        else:
+            # Get from any available game
+            for game_id in scraper.links_by_game:
+                all_servers = scraper.get_all_links(game_id)
+                if all_servers:
+                    break
         
         if not all_servers:
             embed = discord.Embed(
@@ -573,19 +654,19 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
     user_id = interaction.user.id
     
     try:
-        # Check if user already has reserved links
-        existing_links = scraper.get_user_links(user_id)
+        # Check if user already has reserved links for this game
+        existing_links = scraper.get_user_links(user_id, game_id)
         if existing_links and len(existing_links) >= 5:
-            # User already has reserved links, show them
+            # User already has reserved links for this game, show them
             embed = discord.Embed(
                 title="ROBLOX PRIVATE SERVER LINKS",
-                description="You already have reserved VIP servers! Here are your personal links.",
+                description=f"You already have reserved VIP servers for game ID {game_id}! Here are your personal links.",
                 color=0x2F3136
             )
             
             # Show first 5 reserved links
             for i, link in enumerate(existing_links[:5], 1):
-                server_details = scraper.server_details.get(link, {})
+                server_details = scraper.get_server_details(link, game_id)
                 server_info = server_details.get('server_info', {})
                 server_id = server_info.get('server_id', 'Unknown')
                 embed.add_field(
@@ -605,8 +686,8 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
             await interaction.followup.send(embed=embed, view=view)
             return
         
-        # Check if we need to scrape more links
-        if not scraper.has_enough_links_for_new_user(5):
+        # Check if we need to scrape more links for this game
+        if not scraper.has_enough_links_for_new_user(game_id, 5):
             # Initial status embed
             start_embed = discord.Embed(
                 title="ROBLOX PRIVATE SERVER LINKS",
@@ -614,8 +695,10 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
                 color=0x2F3136
             )
             start_embed.add_field(name="Game ID", value=f"`{game_id}`", inline=True)
-            start_embed.add_field(name="Current Database", value=f"{len(scraper.unique_vip_links)} servers", inline=True)
-            start_embed.add_field(name="Available Pool", value=f"{len(scraper.available_links)} servers", inline=True)
+            total_links = sum(len(game_data['links']) for game_data in scraper.links_by_game.values())
+            available_for_game = len(scraper.available_links.get(game_id, []))
+            start_embed.add_field(name="Current Database", value=f"{total_links} servers", inline=True)
+            start_embed.add_field(name="Available for Game", value=f"{available_for_game} servers", inline=True)
             start_embed.add_field(name="Status", value="Searching for new servers...", inline=True)
             start_time = time.time()
             
@@ -635,19 +718,19 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
             initial_count = len(scraper.unique_vip_links)
             await scrape_with_updates(message, initial_count, start_time, user_id, game_id)
         else:
-            # We have enough links, reserve them immediately
-            reserved_links = scraper.reserve_links_for_user(user_id, 5)
+            # We have enough links for this game, reserve them immediately
+            reserved_links = scraper.reserve_links_for_user(user_id, game_id, 5)
             scraper.save_links()
             
             embed = discord.Embed(
                 title="ROBLOX PRIVATE SERVER LINKS",
-                description="Your personal VIP servers have been successfully reserved! Keep them secure and do not share with anyone.",
+                description=f"Your personal VIP servers for game ID {game_id} have been successfully reserved! Keep them secure and do not share with anyone.",
                 color=0x2F3136
             )
             
             # Show reserved links
             for i, link in enumerate(reserved_links, 1):
-                server_details = scraper.server_details.get(link, {})
+                server_details = scraper.get_server_details(link, game_id)
                 server_info = server_details.get('server_info', {})
                 server_id = server_info.get('server_id', 'Unknown')
                 embed.add_field(
@@ -656,7 +739,7 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
                     inline=False
                 )
                 
-            embed.add_field(name="Note", value="These servers are exclusively yours until you use /scrape again.", inline=False)
+            embed.add_field(name="Note", value=f"These servers are exclusively yours for game {game_id}!", inline=False)
             
             view = discord.ui.View(timeout=None)
             follow_button = discord.ui.Button(
@@ -800,7 +883,7 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
         # Reserve links for the requesting user if provided
         reserved_links = []
         if user_id and new_links_count > 0:
-            reserved_links = scraper.reserve_links_for_user(user_id, 5)
+            reserved_links = scraper.reserve_links_for_user(user_id, game_id, 5)
         
         scraper.save_links()
         
@@ -815,7 +898,7 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
             
             # Show reserved links
             for i, link in enumerate(reserved_links[:5], 1):
-                server_details = scraper.server_details.get(link, {})
+                server_details = scraper.get_server_details(link, game_id)
                 server_info = server_details.get('server_info', {})
                 server_id = server_info.get('server_id', 'Unknown')
                 complete_embed.add_field(
@@ -847,7 +930,8 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
             
             complete_embed.add_field(name="Speed", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
             complete_embed.add_field(name="Success Rate", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
-            complete_embed.add_field(name="Available Pool", value=f"{len(scraper.available_links)} servers", inline=True)
+            available_for_game = len(scraper.available_links.get(game_id, []))
+            complete_embed.add_field(name="Available for Game", value=f"{available_for_game} servers", inline=True)
             
             if new_links_count > 0:
                 complete_embed.add_field(
