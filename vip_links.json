@@ -1,16 +1,16 @@
 {
   "links": [
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664",
     "https://www.roblox.com/games/109983668079237?privateServerLinkCode=50930671537363913584935315730029",
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=68059231595058624554357918945445",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60736042290142445841789946518956",
     "https://www.roblox.com/games/109983668079237?privateServerLinkCode=02265931302235628125474976498813",
-    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60736042290142445841789946518956"
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=68059231595058624554357918945445"
   ],
   "server_details": {
     "https://www.roblox.com/games/109983668079237?privateServerLinkCode=02265931302235628125474976498813": {
       "source_url": "https://rbxservers.xyz/servers/b3b460b0-1ecf-4bc9-a2da-09fd6f6ee877",
-      "discovered_at": "2025-06-29T01:09:30.575389",
-      "extraction_time": 15.27,
+      "discovered_at": "2025-06-29T01:31:47.792290",
+      "extraction_time": 16.83,
       "server_info": {
         "page_title": "[SOON] Steal a Brainrot - Awaiting Moderation - RBXServers",
         "server_id": "b3b460b0-1ecf-4bc9-a2da-09fd6f6ee877"
@@ -18,8 +18,8 @@
     },
     "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60736042290142445841789946518956": {
       "source_url": "https://rbxservers.xyz/servers/ef9f7908-7580-4e6a-a63e-975828a56533",
-      "discovered_at": "2025-06-29T01:09:49.561299",
-      "extraction_time": 18.64,
+      "discovered_at": "2025-06-29T01:32:04.129385",
+      "extraction_time": 16.12,
       "server_info": {
         "page_title": "[SOON] Steal a Brainrot - Awaiting Moderation - RBXServers",
         "server_id": "ef9f7908-7580-4e6a-a63e-975828a56533"
@@ -27,8 +27,8 @@
     },
     "https://www.roblox.com/games/109983668079237?privateServerLinkCode=68059231595058624554357918945445": {
       "source_url": "https://rbxservers.xyz/servers/f3f69d9b-05fe-4cf0-b292-5405fcd5b0c5",
-      "discovered_at": "2025-06-29T01:10:06.485977",
-      "extraction_time": 16.7,
+      "discovered_at": "2025-06-29T01:32:21.990719",
+      "extraction_time": 17.65,
       "server_info": {
         "page_title": "[SOON] Steal a Brainrot - Awaiting Moderation - RBXServers",
         "server_id": "f3f69d9b-05fe-4cf0-b292-5405fcd5b0c5"
@@ -36,8 +36,8 @@
     },
     "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664": {
       "source_url": "https://rbxservers.xyz/servers/0e3914ae-5719-4594-a5c6-70ed9d0d3219",
-      "discovered_at": "2025-06-29T01:10:23.932640",
-      "extraction_time": 17.17,
+      "discovered_at": "2025-06-29T01:32:40.300374",
+      "extraction_time": 18.03,
       "server_info": {
         "page_title": "[SOON] Steal a Brainrot - chill (steal = ban) - RBXServers",
         "server_id": "0e3914ae-5719-4594-a5c6-70ed9d0d3219"
@@ -45,8 +45,8 @@
     },
     "https://www.roblox.com/games/109983668079237?privateServerLinkCode=50930671537363913584935315730029": {
       "source_url": "https://rbxservers.xyz/servers/e453a7e4-6da8-4ce5-b6a4-b536fa2dc2bd",
-      "discovered_at": "2025-06-29T01:10:37.807458",
-      "extraction_time": 13.61,
+      "discovered_at": "2025-06-29T01:32:54.976520",
+      "extraction_time": 14.3,
       "server_info": {
         "page_title": "[SOON] Steal a Brainrot - Awaiting Moderation - RBXServers",
         "server_id": "e453a7e4-6da8-4ce5-b6a4-b536fa2dc2bd"
@@ -54,13 +54,13 @@
     }
   },
   "scraping_stats": {
-    "total_scraped": 10,
+    "total_scraped": 15,
     "successful_extractions": 5,
-    "failed_extractions": 5,
-    "last_scrape_time": "2025-06-29T01:10:37.998930",
-    "scrape_duration": 88.23,
-    "servers_per_minute": 3.4
+    "failed_extractions": 10,
+    "last_scrape_time": "2025-06-29T01:32:55.350890",
+    "scrape_duration": 93.16,
+    "servers_per_minute": 3.2
   },
-  "last_updated": "2025-06-29T01:10:37.999197",
+  "last_updated": "2025-06-29T01:32:55.351055",
   "total_count": 5
 }
