@@ -713,28 +713,7 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
             # Send initial message
             message = await interaction.followup.send(embed=start_embed, view=start_view)
 
-            ## Run scraping with real-time updates
-            initial_count = sum(len(game_data['links']) for game_data in scraper.links_by_game.values())
-            await scrape_with_updates(message, initial_count, start_time, user_id, game_id)
-        else:
-            # We have enough links for this game, reserve them immediately
-            reserved_links = scraper.reserve_links_for_user(user_id, game_id, 5)
-            scraper.save_links()
-
-            embed = discord.Embed(
-                title="ROBLOX PRIVATE SERVER LINKS",
-                description=f"Your personal VIP servers for game ID {game_id} have been successfully reserved! Keep them secure and do not share with anyone.",
-                color=0x2F3136
-            )
-
-            # Show reserved links
-            for i, link in enumerate(reserved_links, 1):
-                server_details = scraper.get_server_details(link, game_id)
-                server_info = server_details.get('server_info', {})
-                server_id = server_info.get('server_id', 'Unknown')
-                embed.add_field(
-                    name=f"Server {i}",
-                    value=f"**ID:** ```{{{server_id}}}```\n**Link:** ```{link}```",
+            ## Run scraping with real-time{{{server_id}}}```\n**Link:** ```{link}```",
                     inline=False
                 )
 
@@ -913,3 +892,24 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
                     value=f"**ID:** ```{{{server_id}}}```\n**Link:** ```{link}```",
                     inline=False
                 )
+
+                complete_embed.add_field(name="Note", value=f"These servers are exclusively yours for game {game_id}!", inline=False)
+
+            view = discord.ui.View(timeout=None)
+            follow_button = discord.ui.Button(
+                label="Follow hesiz",
+                style=discord.ButtonStyle.secondary,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            view.add_item(follow_button)
+
+            await message.edit(embed=complete_embed, view=view)
+
+    except Exception as e:
+        logger.error(f"Error in scrape_with_updates: {e}")
+        error_embed = discord.Embed(
+            title="ROBLOX PRIVATE SERVER LINKS",
+            description=f"An error occurred during the scraping process for game ID: {game_id}",
+            color=0x2F3136
+        )
+        error_embed.add_field(name="Error Details", value=f"```{str(e)[:200]}
