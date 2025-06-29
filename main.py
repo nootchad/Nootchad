@@ -438,9 +438,6 @@ async def servertest(interaction: discord.Interaction):
             if speed > 0:
                 embed.add_field(name="⚡ Velocidad", value=f"{speed} serv/min", inline=True)
             
-            # Source website
-            embed.add_field(name="🌐 Fuente", value="rbxservers.xyz", inline=False)
-            
             # Create view with buttons
             view = discord.ui.View(timeout=None)
             
@@ -493,7 +490,6 @@ async def scrape_command(interaction: discord.Interaction):
         )
         start_embed.add_field(name="📊 Base de Datos Actual", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
         start_embed.add_field(name="🔄 Estado", value="Inicializando...", inline=True)
-        start_embed.add_field(name="🌐 Fuente", value="rbxservers.xyz", inline=True)
         start_time = time.time()
         
         # Create view with follow button
@@ -601,7 +597,6 @@ async def scrape_with_updates(message, initial_count, start_time):
                         progress_embed.add_field(name="⏰ ETA", value=f"{eta:.0f}s", inline=True)
                     
                     progress_embed.add_field(name="📈 Total en BD", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
-                    progress_embed.add_field(name="🌐 Fuente", value="rbxservers.xyz", inline=True)
                     
                     # Progress bar
                     progress_percentage = ((i + 1) / len(server_links)) * 100
@@ -657,7 +652,6 @@ async def scrape_with_updates(message, initial_count, start_time):
         complete_embed.add_field(name="🎯 Siguiente Paso", value="Usa `/servertest`", inline=True)
         
         complete_embed.add_field(name="🔍 Total Procesado", value=f"{processed_count} servidores", inline=True)
-        complete_embed.add_field(name="🌐 Fuente", value="rbxservers.xyz", inline=True)
         
         current_time = datetime.now().strftime('%H:%M:%S')
         complete_embed.add_field(name="🕐 Completado", value=current_time, inline=True)
