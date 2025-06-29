@@ -177,85 +177,195 @@ class RobloxVerificationSystem:
         return True
 
     async def get_roblox_user_id(self, username: str) -> Optional[str]:
-        """Obtener ID de usuario de Roblox por nombre de usuario"""
-        try:
-            # Primero intentar sin autenticación
-            async with aiohttp.ClientSession() as session:
-                url = f"https://api.roblox.com/users/get-by-username?username={username}"
-                async with session.get(url) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        if 'Id' in data:
-                            return str(data['Id'])
-                    elif response.status == 429:
-                        # Rate limited, intentar con autenticación
-                        logger.info("Rate limited, trying with authentication...")
-                        return await self._get_roblox_user_id_authenticated(username, session)
-                    return None
-        except Exception as e:
-            logger.error(f"Error getting Roblox user ID: {e}")
-            # Intentar con autenticación como fallback
-            try:
-                async with aiohttp.ClientSession() as session:
-                    return await self._get_roblox_user_id_authenticated(username, session)
-            except:
-                return None
-
-    async def _get_roblox_user_id_authenticated(self, username: str, session: aiohttp.ClientSession) -> Optional[str]:
-        """Obtener ID de usuario usando cuenta autenticada como fallback"""
+        """Obtener ID de usuario de Roblox por nombre de usuario usando siempre autenticación"""
         try:
             cookie = os.getenv('COOKIE')
             if not cookie:
+                logger.error("COOKIE not found in environment variables")
                 return None
             
+            # Configurar headers con autenticación
             headers = {
                 'Cookie': f'.ROBLOSECURITY={cookie}',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'application/json'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-site'
             }
             
-            url = f"https://api.roblox.com/users/get-by-username?username={username}"
-            async with session.get(url, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if 'Id' in data:
-                        return str(data['Id'])
-            return None
+            # Configurar timeout y conectores
+            timeout = aiohttp.ClientTimeout(total=30, connect=15)
+            connector = aiohttp.TCPConnector(
+                ttl_dns_cache=300,
+                use_dns_cache=True,
+                limit=10,
+                limit_per_host=5
+            )
+            
+            async with aiohttp.ClientSession(
+                timeout=timeout,
+                connector=connector,
+                headers={'User-Agent': headers['User-Agent']}
+            ) as session:
+                url = f"https://api.roblox.com/users/get-by-username?username={username}"
+                
+                # Intentar múltiples veces con diferentes configuraciones
+                for attempt in range(3):
+                    try:
+                        logger.info(f"Attempting to get Roblox user ID for {username} (attempt {attempt + 1}/3)")
+                        
+                        async with session.get(url, headers=headers, ssl=False) as response:
+                            logger.info(f"Response status: {response.status}")
+                            
+                            if response.status == 200:
+                                data = await response.json()
+                                if 'Id' in data and data['Id']:
+                                    logger.info(f"Successfully found user ID: {data['Id']}")
+                                    return str(data['Id'])
+                                elif 'errorMessage' in data:
+                                    logger.warning(f"Roblox API error: {data['errorMessage']}")
+                                    return None
+                            elif response.status == 429:
+                                logger.warning("Rate limited, waiting before retry...")
+                                await asyncio.sleep(5)
+                                continue
+                            elif response.status == 401:
+                                logger.error("Authentication failed - invalid cookie")
+                                return None
+                            else:
+                                logger.warning(f"Unexpected status code: {response.status}")
+                                response_text = await response.text()
+                                logger.debug(f"Response body: {response_text[:200]}")
+                                
+                    except aiohttp.ClientConnectorError as e:
+                        logger.warning(f"Connection error on attempt {attempt + 1}: {e}")
+                        if attempt < 2:
+                            await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                            continue
+                        else:
+                            logger.error("All connection attempts failed")
+                            return None
+                    except asyncio.TimeoutError:
+                        logger.warning(f"Timeout on attempt {attempt + 1}")
+                        if attempt < 2:
+                            await asyncio.sleep(2)
+                            continue
+                        else:
+                            logger.error("All attempts timed out")
+                            return None
+                    except Exception as e:
+                        logger.error(f"Unexpected error on attempt {attempt + 1}: {e}")
+                        if attempt < 2:
+                            await asyncio.sleep(1)
+                            continue
+                        else:
+                            return None
+                
+                return None
+                
         except Exception as e:
-            logger.error(f"Error getting authenticated Roblox user ID: {e}")
+            logger.error(f"Critical error in get_roblox_user_id: {e}")
             return None
 
     async def check_if_following(self, user_id: str) -> bool:
         """Verificar si el usuario sigue al owner usando cuenta bot autenticada"""
         try:
-            # Obtener cookie de los secretos del entorno
             cookie = os.getenv('COOKIE')
             if not cookie:
                 logger.error("COOKIE not found in environment variables")
                 return False
             
-            # Headers con autenticación
+            # Headers mejorados con autenticación
             headers = {
                 'Cookie': f'.ROBLOSECURITY={cookie}',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-site',
+                'Referer': 'https://www.roblox.com/'
             }
             
-            async with aiohttp.ClientSession() as session:
+            # Configurar timeout y conectores
+            timeout = aiohttp.ClientTimeout(total=30, connect=15)
+            connector = aiohttp.TCPConnector(
+                ttl_dns_cache=300,
+                use_dns_cache=True,
+                limit=10,
+                limit_per_host=5
+            )
+            
+            async with aiohttp.ClientSession(
+                timeout=timeout,
+                connector=connector,
+                headers={'User-Agent': headers['User-Agent']}
+            ) as session:
                 url = f"https://friends.roblox.com/v1/user/following-exists?userId={user_id}&targetUserId={ROBLOX_OWNER_ID}"
-                async with session.get(url, headers=headers) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        return data.get('following', False)  # Nota: el campo se llama 'following', no 'isFollowing'
-                    elif response.status == 401:
-                        logger.error("Roblox authentication failed - invalid cookie")
-                        return False
-                    else:
-                        logger.error(f"Roblox API error: {response.status}")
-                        return False
+                
+                # Intentar múltiples veces
+                for attempt in range(3):
+                    try:
+                        logger.info(f"Checking if user {user_id} follows {ROBLOX_OWNER_ID} (attempt {attempt + 1}/3)")
+                        
+                        async with session.get(url, headers=headers, ssl=False) as response:
+                            logger.info(f"Follow check response status: {response.status}")
+                            
+                            if response.status == 200:
+                                data = await response.json()
+                                is_following = data.get('following', False)
+                                logger.info(f"Follow status result: {is_following}")
+                                return is_following
+                            elif response.status == 401:
+                                logger.error("Roblox authentication failed - invalid cookie")
+                                return False
+                            elif response.status == 429:
+                                logger.warning("Rate limited on follow check, waiting...")
+                                await asyncio.sleep(5)
+                                continue
+                            elif response.status == 400:
+                                logger.error(f"Bad request - invalid user IDs: {user_id}, {ROBLOX_OWNER_ID}")
+                                return False
+                            else:
+                                logger.warning(f"Unexpected follow check status: {response.status}")
+                                response_text = await response.text()
+                                logger.debug(f"Follow check response: {response_text[:200]}")
+                                
+                    except aiohttp.ClientConnectorError as e:
+                        logger.warning(f"Connection error on follow check attempt {attempt + 1}: {e}")
+                        if attempt < 2:
+                            await asyncio.sleep(2 ** attempt)
+                            continue
+                        else:
+                            logger.error("All follow check connection attempts failed")
+                            return False
+                    except asyncio.TimeoutError:
+                        logger.warning(f"Timeout on follow check attempt {attempt + 1}")
+                        if attempt < 2:
+                            await asyncio.sleep(2)
+                            continue
+                        else:
+                            logger.error("All follow check attempts timed out")
+                            return False
+                    except Exception as e:
+                        logger.error(f"Unexpected error on follow check attempt {attempt + 1}: {e}")
+                        if attempt < 2:
+                            await asyncio.sleep(1)
+                            continue
+                        else:
+                            return False
+                
+                logger.error("All follow check attempts failed")
+                return False
+                
         except Exception as e:
-            logger.error(f"Error checking follow status with authenticated request: {e}")
+            logger.error(f"Critical error in check_if_following: {e}")
             return False
 
 class VIPServerScraper:
@@ -976,6 +1086,23 @@ async def on_ready():
         for game_data in user_games.values():
             total_links += len(game_data.get('links', []))
     logger.info(f'Bot is ready with {total_links} VIP links loaded')
+
+    # Test Roblox API connectivity at startup
+    try:
+        logger.info("Testing Roblox API connectivity...")
+        cookie = os.getenv('COOKIE')
+        if cookie:
+            logger.info("Cookie found, testing authentication...")
+            # Test with a known username to verify connectivity
+            test_result = await roblox_verification.get_roblox_user_id("hesiz")
+            if test_result:
+                logger.info(f"✅ Roblox API connectivity test successful! User ID: {test_result}")
+            else:
+                logger.warning("⚠️ Roblox API connectivity test failed, but bot will continue")
+        else:
+            logger.error("❌ No COOKIE found in environment variables")
+    except Exception as e:
+        logger.error(f"⚠️ Roblox API connectivity test error: {e}")
 
     # Sync slash commands after bot is ready
     try:
