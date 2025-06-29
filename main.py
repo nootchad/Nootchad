@@ -380,8 +380,8 @@ async def servertest(interaction: discord.Interaction):
         if vip_link:
             # Create professional embed similar to the image
             embed = discord.Embed(
-                title="Account Generated",
-                description="Your account has been successfully generated! Keep it safe and **do not share it with anyone.**",
+                title="Server VIP Generado",
+                description="Tu servidor VIP ha sido generado exitosamente! Úsalo responsablemente y **disfruta del juego.**",
                 color=0x2F3136
             )
             
@@ -517,7 +517,7 @@ async def scrape_command(interaction: discord.Interaction):
         # Completion embed with detailed results
         complete_embed = discord.Embed(
             title="Scraping Completado",
-            description="**La sesión de scraping ha finalizado exitosamente!** Mantén los datos seguros y **no los compartas con nadie.**",
+            description="**La búsqueda de servidores VIP ha finalizado exitosamente!** Usa `/servertest` para obtener un servidor VIP.",
             color=0x2F3136
         )
         
