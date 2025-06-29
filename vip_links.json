@@ -13,8 +13,8 @@
       "server_details": {
         "https://www.roblox.com/games/126884695634066?privateServerLinkCode=87044244490357033012179667267095": {
           "source_url": "https://rbxservers.xyz/servers/953548f3-7a2b-4b64-bd4f-0bf18e9c30c8",
-          "discovered_at": "2025-06-29T02:44:02.904117",
-          "extraction_time": 15.25,
+          "discovered_at": "2025-06-29T02:48:21.687212",
+          "extraction_time": 17.31,
           "server_info": {
             "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 6876 - RBXServers",
             "server_id": "953548f3-7a2b-4b64-bd4f-0bf18e9c30c8"
@@ -22,8 +22,8 @@
         },
         "https://www.roblox.com/games/126884695634066?privateServerLinkCode=02871198615190988064283723738892": {
           "source_url": "https://rbxservers.xyz/servers/b7335288-d8d2-49a4-86c1-08d25f728420",
-          "discovered_at": "2025-06-29T02:44:19.574448",
-          "extraction_time": 16.28,
+          "discovered_at": "2025-06-29T02:48:38.885010",
+          "extraction_time": 16.93,
           "server_info": {
             "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 2480 - RBXServers",
             "server_id": "b7335288-d8d2-49a4-86c1-08d25f728420"
@@ -31,8 +31,8 @@
         },
         "https://www.roblox.com/games/126884695634066?privateServerLinkCode=07105377236615494858673472142192": {
           "source_url": "https://rbxservers.xyz/servers/122c56bc-6266-43a9-8814-a65768d854fd",
-          "discovered_at": "2025-06-29T02:44:35.490690",
-          "extraction_time": 15.49,
+          "discovered_at": "2025-06-29T02:48:55.943969",
+          "extraction_time": 16.83,
           "server_info": {
             "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 1275 - RBXServers",
             "server_id": "122c56bc-6266-43a9-8814-a65768d854fd"
@@ -40,8 +40,8 @@
         },
         "https://www.roblox.com/games/126884695634066?privateServerLinkCode=73248554847270067528449390301815": {
           "source_url": "https://rbxservers.xyz/servers/843cf0c6-2a99-4696-8551-449e0aad02e5",
-          "discovered_at": "2025-06-29T02:44:51.148091",
-          "extraction_time": 15.43,
+          "discovered_at": "2025-06-29T02:49:09.108131",
+          "extraction_time": 12.94,
           "server_info": {
             "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 8920 - RBXServers",
             "server_id": "843cf0c6-2a99-4696-8551-449e0aad02e5"
@@ -49,8 +49,8 @@
         },
         "https://www.roblox.com/games/126884695634066?privateServerLinkCode=74268646142357627312116744999114": {
           "source_url": "https://rbxservers.xyz/servers/15a25720-df05-49e4-acfa-da6deabc3a20",
-          "discovered_at": "2025-06-29T02:45:07.612353",
-          "extraction_time": 16.23,
+          "discovered_at": "2025-06-29T02:49:22.809517",
+          "extraction_time": 13.38,
           "server_info": {
             "page_title": "[\u2600\ufe0f] Grow a Garden \ud83c\udf36\ufe0f  - Unnamed Server 2911 - RBXServers",
             "server_id": "15a25720-df05-49e4-acfa-da6deabc3a20"
@@ -60,13 +60,13 @@
     }
   },
   "scraping_stats": {
-    "total_scraped": 20,
-    "successful_extractions": 20,
+    "total_scraped": 25,
+    "successful_extractions": 25,
     "failed_extractions": 0,
-    "last_scrape_time": "2025-06-29T02:45:07.846511",
-    "scrape_duration": 86.25,
+    "last_scrape_time": "2025-06-29T02:49:23.189184",
+    "scrape_duration": 85.46,
     "servers_per_minute": 3.5
   },
-  "last_updated": "2025-06-29T02:45:07.846688",
+  "last_updated": "2025-06-29T02:49:23.190096",
   "total_count": 5
 }
