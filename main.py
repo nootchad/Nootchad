@@ -415,6 +415,14 @@ class ServerBrowserView(discord.ui.View):
             url=current_server
         )
         self.add_item(join_button)
+        
+        # Follow hesiz button
+        follow_button = discord.ui.Button(
+            label="Follow hesiz",
+            style=discord.ButtonStyle.secondary,
+            url="https://www.roblox.com/users/11834624/profile"
+        )
+        self.add_item(follow_button)
     
     async def previous_server(self, interaction: discord.Interaction):
         """Navigate to previous server"""
@@ -454,7 +462,7 @@ class ServerBrowserView(discord.ui.View):
         
         # Server ID
         server_id = server_info.get('server_id', 'Unknown')
-        embed.add_field(name="Server ID", value=f"`{server_id}`", inline=False)
+        embed.add_field(name="Server ID", value=f"`{server_id}`", inline=True)
         
         # Server Link in code block
         embed.add_field(name="Server Link", value=f"```{current_server}```", inline=False)
