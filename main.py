@@ -181,9 +181,9 @@ class VIPServerScraper:
                 logger.error(f"Minimal fallback also failed: {e2}")
                 raise Exception(f"Chrome driver creation failed: {e}")
     
-    def get_server_links(self, driver, max_retries=3):
+    def get_server_links(self, driver, game_id="109983668079237", max_retries=3):
         """Get server links with retry mechanism"""
-        url = "https://rbxservers.xyz/games/109983668079237"
+        url = f"https://rbxservers.xyz/games/{game_id}"
         
         for attempt in range(max_retries):
             try:
@@ -291,7 +291,7 @@ class VIPServerScraper:
             logger.debug(f"Could not extract server info: {e}")
             return {'server_id': 'unknown', 'page_title': 'Unknown', 'description': 'No info available'}
     
-    def scrape_vip_links(self):
+    def scrape_vip_links(self, game_id="109983668079237"):
         """Main scraping function with detailed statistics"""
         driver = None
         start_time = time.time()
@@ -299,9 +299,9 @@ class VIPServerScraper:
         processed_count = 0
         
         try:
-            logger.info("🚀 Starting VIP server scraping...")
+            logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id}...")
             driver = self.create_driver()
-            server_links = self.get_server_links(driver)
+            server_links = self.get_server_links(driver, game_id)
             
             if not server_links:
                 logger.warning("⚠️ No server links found")
@@ -566,7 +566,7 @@ async def servertest(interaction: discord.Interaction):
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 @bot.tree.command(name="scrape", description="Start scraping for new VIP server links")
-async def scrape_command(interaction: discord.Interaction):
+async def scrape_command(interaction: discord.Interaction, game_id: str):
     """Manually trigger scraping with user-specific link reservation"""
     await interaction.response.defer()
     
@@ -610,9 +610,10 @@ async def scrape_command(interaction: discord.Interaction):
             # Initial status embed
             start_embed = discord.Embed(
                 title="ROBLOX PRIVATE SERVER LINKS",
-                description="Server scraping has been successfully initiated! Searching for your personal VIP servers.",
+                description=f"Server scraping has been successfully initiated! Searching for your personal VIP servers for game ID: {game_id}",
                 color=0x2F3136
             )
+            start_embed.add_field(name="Game ID", value=f"`{game_id}`", inline=True)
             start_embed.add_field(name="Current Database", value=f"{len(scraper.unique_vip_links)} servers", inline=True)
             start_embed.add_field(name="Available Pool", value=f"{len(scraper.available_links)} servers", inline=True)
             start_embed.add_field(name="Status", value="Searching for new servers...", inline=True)
@@ -632,7 +633,7 @@ async def scrape_command(interaction: discord.Interaction):
             
             # Run scraping with real-time updates
             initial_count = len(scraper.unique_vip_links)
-            await scrape_with_updates(message, initial_count, start_time, user_id)
+            await scrape_with_updates(message, initial_count, start_time, user_id, game_id)
         else:
             # We have enough links, reserve them immediately
             reserved_links = scraper.reserve_links_for_user(user_id, 5)
@@ -671,7 +672,7 @@ async def scrape_command(interaction: discord.Interaction):
         logger.error(f"Error in scrape command: {e}")
         error_embed = discord.Embed(
             title="ROBLOX PRIVATE SERVER LINKS",
-            description="An error occurred during the scraping process.",
+            description=f"An error occurred during the scraping process for game ID: {game_id}",
             color=0x2F3136
         )
         error_embed.add_field(name="Error Details", value=f"```{str(e)[:200]}```", inline=False)
@@ -688,16 +689,16 @@ async def scrape_command(interaction: discord.Interaction):
         
         await interaction.followup.send(embed=error_embed, view=error_view)
 
-async def scrape_with_updates(message, initial_count, start_time, user_id=None):
+async def scrape_with_updates(message, initial_count, start_time, user_id=None, game_id="109983668079237"):
     """Run scraping with real-time Discord message updates"""
     driver = None
     new_links_count = 0
     processed_count = 0
     
     try:
-        logger.info("🚀 Starting VIP server scraping...")
+        logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id}...")
         driver = scraper.create_driver()
-        server_links = scraper.get_server_links(driver)
+        server_links = scraper.get_server_links(driver, game_id)
         
         if not server_links:
             logger.warning("⚠️ No server links found")
@@ -710,7 +711,7 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None):
         # Update message with processing status
         processing_embed = discord.Embed(
             title="ROBLOX PRIVATE SERVER LINKS",
-            description=f"Processing {len(server_links)} servers (limited to 5)... Active search for VIP servers.",
+            description=f"Processing {len(server_links)} servers (limited to 5)... Active search for VIP servers for game ID: {game_id}",
             color=0x2F3136
         )
         processing_embed.add_field(name="Servers Found", value=f"**0**", inline=True)
@@ -747,7 +748,7 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None):
                     # Update embed with current progress
                     progress_embed = discord.Embed(
                         title="ROBLOX PRIVATE SERVER LINKS",
-                        description=f"Processing {len(server_links)} servers found... Active search for VIP servers.",
+                        description=f"Processing {len(server_links)} servers found... Active search for VIP servers for game ID: {game_id}",
                         color=0x2F3136
                     )
                     progress_embed.add_field(name="Servers Found", value=f"**{new_links_count}**", inline=True)
@@ -808,7 +809,7 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None):
             # Show user their reserved links
             complete_embed = discord.Embed(
                 title="ROBLOX PRIVATE SERVER LINKS",
-                description="Your personal VIP servers have been successfully found and reserved! Keep them secure and do not share with anyone.",
+                description=f"Your personal VIP servers for game ID {game_id} have been successfully found and reserved! Keep them secure and do not share with anyone.",
                 color=0x2F3136
             )
             
@@ -836,7 +837,7 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None):
             # General completion message
             complete_embed = discord.Embed(
                 title="ROBLOX PRIVATE SERVER LINKS",
-                description="VIP server search has been successfully completed! Use /servertest to get a VIP server.",
+                description=f"VIP server search for game ID {game_id} has been successfully completed! Use /servertest to get a VIP server.",
                 color=0x2F3136
             )
             
