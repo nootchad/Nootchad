@@ -20,6 +20,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+import subprocess
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -70,78 +71,55 @@ class VIPServerScraper:
             logger.error(f"Error saving links: {e}")
     
     def create_driver(self):
-        """Create Chrome driver with Replit-compatible configuration"""
-        options = Options()
-        options.add_argument("--headless=new")  # Use new headless mode
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--disable-extensions")
-        options.add_argument("--disable-web-security")
-        options.add_argument("--disable-features=VizDisplayCompositor")
-        options.add_argument("--disable-background-timer-throttling")
-        options.add_argument("--disable-backgrounding-occluded-windows")
-        options.add_argument("--disable-renderer-backgrounding")
-        options.add_argument("--disable-ipc-flooding-protection")
-        options.add_argument("--single-process")  # Important for Replit
-        options.add_argument("--disable-setuid-sandbox")
-        options.add_argument("--disable-logging")
-        options.add_argument("--disable-default-apps")
-        options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-        
-        # Set display for headless environment
-        os.environ['DISPLAY'] = ':99'
-        
+        """Create Firefox driver with Replit-compatible configuration"""
+        # Use Firefox since it's included in the Replit Nix configuration
         try:
-            # Use webdriver manager to automatically handle driver
-            from selenium.webdriver.chrome.service import Service
-            from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+            from selenium.webdriver.firefox.options import Options as FirefoxOptions
+            from selenium.webdriver.firefox.service import Service
             
-            # Set capabilities for headless environment
-            caps = DesiredCapabilities.CHROME
-            caps['goog:loggingPrefs'] = {'driver': 'OFF', 'server': 'OFF', 'browser': 'OFF'}
+            firefox_options = FirefoxOptions()
+            firefox_options.add_argument("--headless")
+            firefox_options.add_argument("--no-sandbox")
+            firefox_options.add_argument("--disable-dev-shm-usage")
+            firefox_options.add_argument("--disable-gpu")
+            firefox_options.add_argument("--disable-extensions")
+            firefox_options.add_argument("--disable-web-security")
+            firefox_options.add_argument("--disable-logging")
+            firefox_options.add_argument("--width=1920")
+            firefox_options.add_argument("--height=1080")
+            firefox_options.set_preference("general.useragent.override", "Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0")
             
-            # Try Chrome with automatic driver management
+            # Set display for headless environment
+            os.environ['DISPLAY'] = ':0'
+            
+            # Use the geckodriver from Nix packages
+            service = Service('/nix/store/*/bin/geckodriver')
+            
             try:
-                from webdriver_manager.chrome import ChromeDriverManager
-                service = Service(ChromeDriverManager().install())
-                driver = webdriver.Chrome(service=service, options=options)
-                driver.set_page_load_timeout(30)
-                driver.implicitly_wait(10)
-                logger.info("✅ Chrome driver created successfully with webdriver-manager")
-                return driver
-            except:
-                # Final fallback - try without any service
-                driver = webdriver.Chrome(options=options)
-                driver.set_page_load_timeout(30)
-                driver.implicitly_wait(10)
-                logger.info("✅ Chrome driver created successfully (basic)")
-                return driver
-            
-        except Exception as e:
-            logger.error(f"Error creating Chrome driver: {e}")
-            
-            # Try with Firefox as fallback for Replit
-            try:
-                logger.info("🔄 Trying Firefox as fallback...")
-                from selenium.webdriver.firefox.options import Options as FirefoxOptions
-                from webdriver_manager.firefox import GeckoDriverManager
-                
-                firefox_options = FirefoxOptions()
-                firefox_options.add_argument("--headless")
-                firefox_options.add_argument("--no-sandbox")
-                firefox_options.add_argument("--disable-dev-shm-usage")
-                
-                service = Service(GeckoDriverManager().install())
-                driver = webdriver.Firefox(service=service, options=firefox_options)
+                # Try to use geckodriver directly from PATH
+                driver = webdriver.Firefox(options=firefox_options)
                 driver.set_page_load_timeout(30)
                 driver.implicitly_wait(10)
                 logger.info("✅ Firefox driver created successfully")
                 return driver
-                
-            except Exception as e2:
-                logger.error(f"Firefox also failed: {e2}")
-                raise Exception(f"Both Chrome and Firefox failed. Chrome: {e}, Firefox: {e2}")
+            except:
+                # Alternative approach with explicit geckodriver path
+                import subprocess
+                result = subprocess.run(['which', 'geckodriver'], capture_output=True, text=True)
+                if result.returncode == 0:
+                    geckodriver_path = result.stdout.strip()
+                    service = Service(geckodriver_path)
+                    driver = webdriver.Firefox(service=service, options=firefox_options)
+                    driver.set_page_load_timeout(30)
+                    driver.implicitly_wait(10)
+                    logger.info("✅ Firefox driver created successfully with explicit path")
+                    return driver
+                else:
+                    raise Exception("Geckodriver not found in PATH")
+            
+        except Exception as e:
+            logger.error(f"Error creating Firefox driver: {e}")
+            raise Exception(f"Firefox driver creation failed: {e}")
     
     def get_server_links(self, driver, max_retries=3):
         """Get server links with retry mechanism"""
