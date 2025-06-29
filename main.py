@@ -39,6 +39,10 @@ class VIPServerScraper:
             'scrape_duration': 0,
             'servers_per_minute': 0
         }
+        # User-specific link reservations
+        self.user_reserved_links: Dict[int, List[str]] = {}  # user_id -> list of reserved links
+        self.available_links: List[str] = []  # Links available for new reservations
+        self.processing_queue: List[str] = []  # Links being processed for future use
         self.load_existing_links()
         
     def load_existing_links(self):
@@ -50,17 +54,32 @@ class VIPServerScraper:
                     self.unique_vip_links = set(data.get('links', []))
                     self.server_details = data.get('server_details', {})
                     self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
+                    self.user_reserved_links = data.get('user_reserved_links', {})
+                    # Convert string keys back to integers for user IDs
+                    self.user_reserved_links = {int(k): v for k, v in self.user_reserved_links.items()}
+                    
+                    # Initialize available links (links not reserved by any user)
+                    reserved_links = set()
+                    for user_links in self.user_reserved_links.values():
+                        reserved_links.update(user_links)
+                    self.available_links = [link for link in self.unique_vip_links if link not in reserved_links]
+                    
                     logger.info(f"Loaded {len(self.unique_vip_links)} existing VIP links")
+                    logger.info(f"Available for new users: {len(self.available_links)}")
         except Exception as e:
             logger.error(f"Error loading existing links: {e}")
     
     def save_links(self):
         """Save VIP links to JSON file"""
         try:
+            # Convert integer user IDs to strings for JSON serialization
+            user_reserved_str_keys = {str(k): v for k, v in self.user_reserved_links.items()}
+            
             data = {
                 'links': list(self.unique_vip_links),
                 'server_details': self.server_details,
                 'scraping_stats': self.scraping_stats,
+                'user_reserved_links': user_reserved_str_keys,
                 'last_updated': datetime.now().isoformat(),
                 'total_count': len(self.unique_vip_links)
             }
@@ -350,6 +369,44 @@ class VIPServerScraper:
     def get_all_links(self):
         """Get all VIP links"""
         return list(self.unique_vip_links)
+    
+    def reserve_links_for_user(self, user_id: int, count: int = 5) -> List[str]:
+        """Reserve a specific number of links for a user"""
+        # If user already has reserved links, return them
+        if user_id in self.user_reserved_links and len(self.user_reserved_links[user_id]) >= count:
+            return self.user_reserved_links[user_id][:count]
+        
+        # Get available links
+        if len(self.available_links) >= count:
+            # Reserve links from available pool
+            reserved = self.available_links[:count]
+            self.available_links = self.available_links[count:]
+            self.user_reserved_links[user_id] = reserved
+            logger.info(f"Reserved {count} links for user {user_id}")
+            return reserved
+        else:
+            # Not enough available links, return what we have
+            reserved = self.available_links.copy()
+            self.available_links = []
+            if reserved:
+                self.user_reserved_links[user_id] = reserved
+                logger.info(f"Reserved {len(reserved)} links for user {user_id} (requested {count})")
+            return reserved
+    
+    def get_user_links(self, user_id: int) -> List[str]:
+        """Get reserved links for a specific user"""
+        return self.user_reserved_links.get(user_id, [])
+    
+    def has_enough_links_for_new_user(self, count: int = 5) -> bool:
+        """Check if we have enough available links for a new user"""
+        return len(self.available_links) >= count
+    
+    def add_new_links_to_available_pool(self, new_links: List[str]):
+        """Add newly found links to the available pool"""
+        for link in new_links:
+            if link not in self.unique_vip_links:
+                self.unique_vip_links.add(link)
+                self.available_links.append(link)
 
 # Discord Bot
 intents = discord.Intents.default()
@@ -510,35 +567,105 @@ async def servertest(interaction: discord.Interaction):
 
 @bot.tree.command(name="scrape", description="Start scraping for new VIP server links")
 async def scrape_command(interaction: discord.Interaction):
-    """Manually trigger scraping with real-time progress updates"""
+    """Manually trigger scraping with user-specific link reservation"""
     await interaction.response.defer()
     
+    user_id = interaction.user.id
+    
     try:
-        # Initial status embed
-        start_embed = discord.Embed(
-            title="ROBLOX PRIVATE SERVER LINKS",
-            description="Server scraping has been successfully initiated! Keep it secure and do not share it with anyone.",
-            color=0x2F3136
-        )
-        start_embed.add_field(name="Current Database", value=f"{len(scraper.unique_vip_links)} servers", inline=True)
-        start_embed.add_field(name="Status", value="Initializing...", inline=True)
-        start_time = time.time()
+        # Check if user already has reserved links
+        existing_links = scraper.get_user_links(user_id)
+        if existing_links and len(existing_links) >= 5:
+            # User already has reserved links, show them
+            embed = discord.Embed(
+                title="ROBLOX PRIVATE SERVER LINKS",
+                description="You already have reserved VIP servers! Here are your personal links.",
+                color=0x2F3136
+            )
+            
+            # Show first 5 reserved links
+            for i, link in enumerate(existing_links[:5], 1):
+                server_details = scraper.server_details.get(link, {})
+                server_info = server_details.get('server_info', {})
+                server_id = server_info.get('server_id', 'Unknown')
+                embed.add_field(
+                    name=f"Server {i}",
+                    value=f"**ID:** ```{{{server_id}}}```\n**Link:** ```{link}```",
+                    inline=False
+                )
+            
+            view = discord.ui.View(timeout=None)
+            follow_button = discord.ui.Button(
+                label="Follow hesiz",
+                style=discord.ButtonStyle.secondary,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            view.add_item(follow_button)
+            
+            await interaction.followup.send(embed=embed, view=view)
+            return
         
-        # Create view with follow button
-        start_view = discord.ui.View(timeout=None)
-        follow_button_start = discord.ui.Button(
-            label="Seguir a hesiz",
-            style=discord.ButtonStyle.secondary,
-            url="https://www.roblox.com/users/11834624/profile"
-        )
-        start_view.add_item(follow_button_start)
-        
-        # Send initial message
-        message = await interaction.followup.send(embed=start_embed, view=start_view)
-        
-        # Run scraping with real-time updates
-        initial_count = len(scraper.unique_vip_links)
-        await scrape_with_updates(message, initial_count, start_time)
+        # Check if we need to scrape more links
+        if not scraper.has_enough_links_for_new_user(5):
+            # Initial status embed
+            start_embed = discord.Embed(
+                title="ROBLOX PRIVATE SERVER LINKS",
+                description="Server scraping has been successfully initiated! Searching for your personal VIP servers.",
+                color=0x2F3136
+            )
+            start_embed.add_field(name="Current Database", value=f"{len(scraper.unique_vip_links)} servers", inline=True)
+            start_embed.add_field(name="Available Pool", value=f"{len(scraper.available_links)} servers", inline=True)
+            start_embed.add_field(name="Status", value="Searching for new servers...", inline=True)
+            start_time = time.time()
+            
+            # Create view with follow button
+            start_view = discord.ui.View(timeout=None)
+            follow_button_start = discord.ui.Button(
+                label="Follow hesiz",
+                style=discord.ButtonStyle.secondary,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            start_view.add_item(follow_button_start)
+            
+            # Send initial message
+            message = await interaction.followup.send(embed=start_embed, view=start_view)
+            
+            # Run scraping with real-time updates
+            initial_count = len(scraper.unique_vip_links)
+            await scrape_with_updates(message, initial_count, start_time, user_id)
+        else:
+            # We have enough links, reserve them immediately
+            reserved_links = scraper.reserve_links_for_user(user_id, 5)
+            scraper.save_links()
+            
+            embed = discord.Embed(
+                title="ROBLOX PRIVATE SERVER LINKS",
+                description="Your personal VIP servers have been successfully reserved! Keep them secure and do not share with anyone.",
+                color=0x2F3136
+            )
+            
+            # Show reserved links
+            for i, link in enumerate(reserved_links, 1):
+                server_details = scraper.server_details.get(link, {})
+                server_info = server_details.get('server_info', {})
+                server_id = server_info.get('server_id', 'Unknown')
+                embed.add_field(
+                    name=f"Server {i}",
+                    value=f"**ID:** ```{{{server_id}}}```\n**Link:** ```{link}```",
+                    inline=False
+                )
+                
+            embed.add_field(name="Note", value="These servers are exclusively yours until you use /scrape again.", inline=False)
+            
+            view = discord.ui.View(timeout=None)
+            follow_button = discord.ui.Button(
+                label="Follow hesiz",
+                style=discord.ButtonStyle.secondary,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            view.add_item(follow_button)
+            
+            await interaction.followup.send(embed=embed, view=view)
         
     except Exception as e:
         logger.error(f"Error in scrape command: {e}")
@@ -553,7 +680,7 @@ async def scrape_command(interaction: discord.Interaction):
         # Error view with follow button
         error_view = discord.ui.View(timeout=None)
         follow_button_error = discord.ui.Button(
-            label="Seguir a hesiz",
+            label="Follow hesiz",
             style=discord.ButtonStyle.secondary,
             url="https://www.roblox.com/users/11834624/profile"
         )
@@ -561,7 +688,7 @@ async def scrape_command(interaction: discord.Interaction):
         
         await interaction.followup.send(embed=error_embed, view=error_view)
 
-async def scrape_with_updates(message, initial_count, start_time):
+async def scrape_with_updates(message, initial_count, start_time, user_id=None):
     """Run scraping with real-time Discord message updates"""
     driver = None
     new_links_count = 0
@@ -668,53 +795,77 @@ async def scrape_with_updates(message, initial_count, start_time):
         
         logger.info(f"✅ Scraping completed in {total_time:.1f}s")
         logger.info(f"📈 Found {new_links_count} new VIP links (Total: {final_count})")
+        
+        # Reserve links for the requesting user if provided
+        reserved_links = []
+        if user_id and new_links_count > 0:
+            reserved_links = scraper.reserve_links_for_user(user_id, 5)
+        
         scraper.save_links()
         
         # Final completion embed
-        complete_embed = discord.Embed(
-            title="ROBLOX PRIVATE SERVER LINKS",
-            description="VIP server search has been successfully completed! Use /servertest to get a VIP server.",
-            color=0x2F3136
-        )
-        
-        complete_embed.add_field(name="New Servers", value=f"**{new_links_count}**", inline=True)
-        complete_embed.add_field(name="Total in DB", value=f"**{final_count}** servers", inline=True)
-        complete_embed.add_field(name="Duration", value=f"{total_time:.1f}s", inline=True)
-        
-        complete_embed.add_field(name="Speed", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
-        complete_embed.add_field(name="Success Rate", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
-        complete_embed.add_field(name="Next Step", value="Use /servertest", inline=True)
-        
-        complete_embed.add_field(name="Total Processed", value=f"{processed_count} servers", inline=True)
-        
-        current_time = datetime.now().strftime('%H:%M:%S')
-        complete_embed.add_field(name="Completed", value=current_time, inline=True)
-        
-        if new_links_count > 0:
+        if user_id and reserved_links:
+            # Show user their reserved links
+            complete_embed = discord.Embed(
+                title="ROBLOX PRIVATE SERVER LINKS",
+                description="Your personal VIP servers have been successfully found and reserved! Keep them secure and do not share with anyone.",
+                color=0x2F3136
+            )
+            
+            # Show reserved links
+            for i, link in enumerate(reserved_links[:5], 1):
+                server_details = scraper.server_details.get(link, {})
+                server_info = server_details.get('server_info', {})
+                server_id = server_info.get('server_id', 'Unknown')
+                complete_embed.add_field(
+                    name=f"Your Server {i}",
+                    value=f"**ID:** ```{{{server_id}}}```\n**Link:** ```{link}```",
+                    inline=False
+                )
+            
+            complete_embed.add_field(name="New Servers Found", value=f"**{new_links_count}**", inline=True)
+            complete_embed.add_field(name="Search Duration", value=f"{total_time:.1f}s", inline=True)
+            complete_embed.add_field(name="Your Reserved Links", value=f"**{len(reserved_links)}**", inline=True)
+            
             complete_embed.add_field(
-                name="Total Success!", 
-                value=f"Found {new_links_count} new server{'s' if new_links_count != 1 else ''}!", 
+                name="Note", 
+                value="These servers are exclusively yours! Other users will get different servers when they use /scrape.", 
                 inline=False
             )
         else:
-            complete_embed.add_field(
-                name="No New Servers", 
-                value="All available servers are already in the database.", 
-                inline=False
+            # General completion message
+            complete_embed = discord.Embed(
+                title="ROBLOX PRIVATE SERVER LINKS",
+                description="VIP server search has been successfully completed! Use /servertest to get a VIP server.",
+                color=0x2F3136
             )
+            
+            complete_embed.add_field(name="New Servers", value=f"**{new_links_count}**", inline=True)
+            complete_embed.add_field(name="Total in DB", value=f"**{final_count}** servers", inline=True)
+            complete_embed.add_field(name="Duration", value=f"{total_time:.1f}s", inline=True)
+            
+            complete_embed.add_field(name="Speed", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
+            complete_embed.add_field(name="Success Rate", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
+            complete_embed.add_field(name="Available Pool", value=f"{len(scraper.available_links)} servers", inline=True)
+            
+            if new_links_count > 0:
+                complete_embed.add_field(
+                    name="Success!", 
+                    value=f"Found {new_links_count} new server{'s' if new_links_count != 1 else ''}!", 
+                    inline=False
+                )
+            else:
+                complete_embed.add_field(
+                    name="No New Servers", 
+                    value="All available servers are already in the database.", 
+                    inline=False
+                )
         
         # Final completion view
         complete_view = discord.ui.View(timeout=None)
         
-        test_button = discord.ui.Button(
-            label="Obtener Servidor VIP",
-            style=discord.ButtonStyle.secondary,
-            disabled=len(scraper.unique_vip_links) == 0
-        )
-        complete_view.add_item(test_button)
-        
         follow_button_final = discord.ui.Button(
-            label="Seguir a hesiz",
+            label="Follow hesiz",
             style=discord.ButtonStyle.secondary,
             url="https://www.roblox.com/users/11834624/profile"
         )
