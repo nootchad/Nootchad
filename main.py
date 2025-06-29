@@ -72,13 +72,29 @@ class VIPServerScraper:
     
     def create_driver(self):
         """Create Firefox driver with Replit-compatible configuration"""
-        # Use Firefox since it's included in the Replit Nix configuration
         try:
+            # Start Xvfb virtual display for headless environment
+            try:
+                subprocess.run(['pkill', 'Xvfb'], capture_output=True, timeout=5)
+            except:
+                pass
+            
+            # Start virtual display
+            xvfb_process = subprocess.Popen([
+                'Xvfb', ':99', '-screen', '0', '1920x1080x24', '-ac'
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            # Set display environment variable
+            os.environ['DISPLAY'] = ':99'
+            
+            # Wait a moment for Xvfb to start
+            time.sleep(2)
+            
             from selenium.webdriver.firefox.options import Options as FirefoxOptions
             from selenium.webdriver.firefox.service import Service
             
             firefox_options = FirefoxOptions()
-            firefox_options.add_argument("--headless")
+            # Remove --headless since we're using Xvfb
             firefox_options.add_argument("--no-sandbox")
             firefox_options.add_argument("--disable-dev-shm-usage")
             firefox_options.add_argument("--disable-gpu")
@@ -87,39 +103,55 @@ class VIPServerScraper:
             firefox_options.add_argument("--disable-logging")
             firefox_options.add_argument("--width=1920")
             firefox_options.add_argument("--height=1080")
-            firefox_options.set_preference("general.useragent.override", "Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0")
+            firefox_options.add_argument("--disable-blink-features=AutomationControlled")
             
-            # Set display for headless environment
-            os.environ['DISPLAY'] = ':0'
+            # Set Firefox preferences for better compatibility
+            firefox_options.set_preference("general.useragent.override", "Mozilla/5.0 (X11; Linux x86_64; rv:115.0) Gecko/20100101 Firefox/115.0")
+            firefox_options.set_preference("dom.webdriver.enabled", False)
+            firefox_options.set_preference("useAutomationExtension", False)
+            firefox_options.set_preference("marionette.logging", "FATAL")
+            firefox_options.set_preference("browser.startup.homepage_override.mstone", "ignore")
+            firefox_options.set_preference("browser.startup.homepage", "about:blank")
+            firefox_options.set_preference("startup.homepage_welcome_url", "about:blank")
+            firefox_options.set_preference("startup.homepage_welcome_url.additional", "about:blank")
             
-            # Use the geckodriver from Nix packages
-            service = Service('/nix/store/*/bin/geckodriver')
+            # Find geckodriver
+            result = subprocess.run(['which', 'geckodriver'], capture_output=True, text=True)
+            if result.returncode == 0:
+                geckodriver_path = result.stdout.strip()
+                logger.info(f"Using geckodriver at: {geckodriver_path}")
+                service = Service(geckodriver_path)
+            else:
+                # Fallback to default
+                service = Service()
+                logger.info("Using default geckodriver service")
             
-            try:
-                # Try to use geckodriver directly from PATH
-                driver = webdriver.Firefox(options=firefox_options)
-                driver.set_page_load_timeout(30)
-                driver.implicitly_wait(10)
-                logger.info("✅ Firefox driver created successfully")
-                return driver
-            except:
-                # Alternative approach with explicit geckodriver path
-                import subprocess
-                result = subprocess.run(['which', 'geckodriver'], capture_output=True, text=True)
-                if result.returncode == 0:
-                    geckodriver_path = result.stdout.strip()
-                    service = Service(geckodriver_path)
-                    driver = webdriver.Firefox(service=service, options=firefox_options)
-                    driver.set_page_load_timeout(30)
-                    driver.implicitly_wait(10)
-                    logger.info("✅ Firefox driver created successfully with explicit path")
-                    return driver
-                else:
-                    raise Exception("Geckodriver not found in PATH")
+            # Create driver
+            driver = webdriver.Firefox(service=service, options=firefox_options)
+            driver.set_page_load_timeout(30)
+            driver.implicitly_wait(10)
+            
+            logger.info("✅ Firefox driver created successfully with Xvfb")
+            return driver
             
         except Exception as e:
             logger.error(f"Error creating Firefox driver: {e}")
-            raise Exception(f"Firefox driver creation failed: {e}")
+            # Try fallback with headless mode
+            try:
+                logger.info("🔄 Trying fallback headless mode...")
+                firefox_options = FirefoxOptions()
+                firefox_options.add_argument("--headless")
+                firefox_options.add_argument("--no-sandbox")
+                firefox_options.add_argument("--disable-dev-shm-usage")
+                
+                driver = webdriver.Firefox(options=firefox_options)
+                driver.set_page_load_timeout(30)
+                driver.implicitly_wait(10)
+                logger.info("✅ Firefox driver created with fallback headless mode")
+                return driver
+            except Exception as e2:
+                logger.error(f"Fallback also failed: {e2}")
+                raise Exception(f"Firefox driver creation failed: {e}")
     
     def get_server_links(self, driver, max_retries=3):
         """Get server links with retry mechanism"""
