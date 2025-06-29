@@ -463,10 +463,13 @@ class ServerBrowserView(discord.ui.View):
         details = scraper.server_details.get(current_server, {})
         server_info = details.get('server_info', {})
         
-        # Primera fila - Información del servidor
-        server_id = server_info.get('server_id', 'Unknown')[:8] + '...' if server_info.get('server_id', 'Unknown') != 'Unknown' else 'Unknown'
-        embed.add_field(name="🆔 Server ID", value=f"`{server_id}`", inline=True)
+        # Primera fila - Información básica (3 campos en línea)
+        server_id = server_info.get('server_id', 'Unknown')[:6] + '...' if len(server_info.get('server_id', 'Unknown')) > 6 else server_info.get('server_id', 'Unknown')
+        embed.add_field(name="🆔 ID", value=f"`{server_id}`", inline=True)
+        embed.add_field(name="📊 Total", value=f"{len(scraper.unique_vip_links)}", inline=True)
+        embed.add_field(name="🧭 Pos", value=f"{self.current_index + 1}/{self.total_servers}", inline=True)
         
+        # Segunda fila - Estadísticas (3 campos en línea)
         # Discovery time
         discovered_time = details.get('discovered_at', 'Unknown')
         if discovered_time != 'Unknown':
@@ -474,33 +477,23 @@ class ServerBrowserView(discord.ui.View):
                 discovery_dt = datetime.fromisoformat(discovered_time)
                 time_ago = datetime.now() - discovery_dt
                 if time_ago.days > 0:
-                    time_str = f"{time_ago.days} días"
+                    time_str = f"{time_ago.days}d"
                 elif time_ago.seconds > 3600:
-                    time_str = f"{time_ago.seconds//3600} horas"
+                    time_str = f"{time_ago.seconds//3600}h"
                 else:
-                    time_str = f"{time_ago.seconds//60} minutos"
-                discovered_time = f"Hace {time_str}"
+                    time_str = f"{time_ago.seconds//60}m"
+                discovered_time = time_str
             except:
-                discovered_time = "Recientemente"
+                discovered_time = "Nuevo"
         
-        embed.add_field(name="⏰ Descubierto", value=discovered_time, inline=True)
-        embed.add_field(name="📊 Total en BD", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
-        
-        # Segunda fila - Estadísticas de rendimiento
         speed = scraper.scraping_stats.get('servers_per_minute', 0)
-        embed.add_field(name="⚡ Velocidad", value=f"{speed} serv/min" if speed > 0 else "N/A", inline=True)
-        
-        # Success rate
         total_scraped = scraper.scraping_stats.get('total_scraped', 0)
         successful = scraper.scraping_stats.get('successful_extractions', 0)
-        if total_scraped > 0:
-            success_rate = (successful / total_scraped) * 100
-            embed.add_field(name="✅ Tasa de Éxito", value=f"{success_rate:.1f}%", inline=True)
-        else:
-            embed.add_field(name="✅ Tasa de Éxito", value="N/A", inline=True)
+        success_rate = (successful / total_scraped) * 100 if total_scraped > 0 else 0
         
-        # Navigation info
-        embed.add_field(name="🧭 Navegación", value=f"Servidor {self.current_index + 1}/{self.total_servers}", inline=True)
+        embed.add_field(name="⏰ Hace", value=discovered_time, inline=True)
+        embed.add_field(name="⚡ Vel", value=f"{speed}/min" if speed > 0 else "N/A", inline=True)
+        embed.add_field(name="✅ Éxito", value=f"{success_rate:.0f}%" if total_scraped > 0 else "N/A", inline=True)
         
         # Footer
         embed.set_footer(text="Usa los botones para navegar entre servidores | Powered by HESIZ")
