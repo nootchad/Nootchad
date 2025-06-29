@@ -371,109 +371,171 @@ async def on_ready():
     except Exception as e:
         logger.error(f"Failed to sync commands: {e}")
 
-@bot.tree.command(name="servertest", description="Get a random VIP server link")
+# Server browser view with navigation buttons
+class ServerBrowserView(discord.ui.View):
+    def __init__(self, servers_list, current_index=0):
+        super().__init__(timeout=300)
+        self.servers_list = servers_list
+        self.current_index = current_index
+        self.total_servers = len(servers_list)
+        
+        # Update button states
+        self.update_buttons()
+    
+    def update_buttons(self):
+        """Update button states based on current position"""
+        # Clear existing items
+        self.clear_items()
+        
+        # Previous button
+        prev_button = discord.ui.Button(
+            label="⬅️ Anterior",
+            style=discord.ButtonStyle.secondary,
+            disabled=(self.current_index == 0),
+            custom_id="prev_server"
+        )
+        prev_button.callback = self.previous_server
+        self.add_item(prev_button)
+        
+        # Next button  
+        next_button = discord.ui.Button(
+            label="Siguiente ➡️",
+            style=discord.ButtonStyle.secondary,
+            disabled=(self.current_index >= self.total_servers - 1),
+            custom_id="next_server"
+        )
+        next_button.callback = self.next_server
+        self.add_item(next_button)
+        
+        # Join server button
+        current_server = self.servers_list[self.current_index]
+        join_button = discord.ui.Button(
+            label="🎮 Unirse al Servidor",
+            style=discord.ButtonStyle.primary,
+            url=current_server,
+            custom_id="join_server"
+        )
+        self.add_item(join_button)
+        
+        # Follow hesiz button
+        follow_button = discord.ui.Button(
+            label="👤 Seguir a hesiz",
+            style=discord.ButtonStyle.secondary,
+            url="https://www.roblox.com/users/11834624/profile",
+            custom_id="follow_hesiz"
+        )
+        self.add_item(follow_button)
+    
+    async def previous_server(self, interaction: discord.Interaction):
+        """Navigate to previous server"""
+        if self.current_index > 0:
+            self.current_index -= 1
+            self.update_buttons()
+            
+            embed = self.create_server_embed()
+            await interaction.response.edit_message(embed=embed, view=self)
+        else:
+            await interaction.response.defer()
+    
+    async def next_server(self, interaction: discord.Interaction):
+        """Navigate to next server"""
+        if self.current_index < self.total_servers - 1:
+            self.current_index += 1
+            self.update_buttons()
+            
+            embed = self.create_server_embed()
+            await interaction.response.edit_message(embed=embed, view=self)
+        else:
+            await interaction.response.defer()
+    
+    def create_server_embed(self):
+        """Create embed for current server"""
+        current_server = self.servers_list[self.current_index]
+        
+        embed = discord.Embed(
+            title="🎮 ROBLOX PRIVATE SERVER LINKS",
+            description=f"**Servidor {self.current_index + 1} de {self.total_servers}**\n\nPowered by **HESIZ**",
+            color=0x2F3136
+        )
+        
+        # Add the Roblox logo image
+        embed.set_image(url="https://i.imgur.com/roblox_logo.png")  # Placeholder URL
+        
+        # Get server details
+        details = scraper.server_details.get(current_server, {})
+        server_info = details.get('server_info', {})
+        
+        # Server information
+        server_id = server_info.get('server_id', 'Unknown')[:8] + '...' if server_info.get('server_id', 'Unknown') != 'Unknown' else 'Unknown'
+        embed.add_field(name="🆔 Server ID", value=f"`{server_id}`", inline=True)
+        
+        # Discovery time
+        discovered_time = details.get('discovered_at', 'Unknown')
+        if discovered_time != 'Unknown':
+            try:
+                discovery_dt = datetime.fromisoformat(discovered_time)
+                time_ago = datetime.now() - discovery_dt
+                if time_ago.days > 0:
+                    time_str = f"{time_ago.days} días"
+                elif time_ago.seconds > 3600:
+                    time_str = f"{time_ago.seconds//3600} horas"
+                else:
+                    time_str = f"{time_ago.seconds//60} minutos"
+                discovered_time = f"Hace {time_str}"
+            except:
+                discovered_time = "Recientemente"
+        
+        embed.add_field(name="⏰ Descubierto", value=discovered_time, inline=True)
+        embed.add_field(name="📊 Total en BD", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
+        
+        # Performance stats
+        speed = scraper.scraping_stats.get('servers_per_minute', 0)
+        if speed > 0:
+            embed.add_field(name="⚡ Velocidad", value=f"{speed} serv/min", inline=True)
+        
+        # Success rate
+        total_scraped = scraper.scraping_stats.get('total_scraped', 0)
+        successful = scraper.scraping_stats.get('successful_extractions', 0)
+        if total_scraped > 0:
+            success_rate = (successful / total_scraped) * 100
+            embed.add_field(name="✅ Tasa de Éxito", value=f"{success_rate:.1f}%", inline=True)
+        
+        # Navigation info
+        embed.add_field(name="🧭 Navegación", value=f"Servidor {self.current_index + 1}/{self.total_servers}", inline=True)
+        
+        # Footer
+        embed.set_footer(text="Usa los botones para navegar entre servidores | Powered by HESIZ")
+        
+        return embed
+
+@bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
-    """Send a random VIP server link with professional design"""
+    """Browser through all available VIP servers with navigation"""
     await interaction.response.defer()
     
     try:
-        vip_link, details = scraper.get_random_link()
+        all_servers = scraper.get_all_links()
         
-        if vip_link:
-            # Create professional embed similar to the image
+        if not all_servers:
             embed = discord.Embed(
-                title="Server VIP Generado",
-                description="Tu servidor VIP ha sido generado exitosamente! Úsalo responsablemente y **disfruta del juego.**",
-                color=0x2F3136
-            )
-            
-            # Server details section with more information
-            if details:
-                server_info = details.get('server_info', {})
-                server_id = server_info.get('server_id', 'Unknown')
-                discovered_time = details.get('discovered_at', 'Unknown')
-                
-                # Format discovery time
-                if discovered_time != 'Unknown':
-                    try:
-                        discovery_dt = datetime.fromisoformat(discovered_time)
-                        time_ago = datetime.now() - discovery_dt
-                        if time_ago.days > 0:
-                            time_str = f"{time_ago.days} días"
-                        elif time_ago.seconds > 3600:
-                            time_str = f"{time_ago.seconds//3600} horas"
-                        else:
-                            time_str = f"{time_ago.seconds//60} minutos"
-                        discovered_time = f"Hace {time_str}"
-                    except:
-                        discovered_time = "Recientemente"
-                
-                embed.add_field(name="🆔 Server ID", value=f"`{server_id}`", inline=True)
-                embed.add_field(name="⏰ Descubierto", value=discovered_time, inline=True)
-                embed.add_field(name="📊 Base de Datos", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
-            
-            # Additional stats
-            total_scraped = scraper.scraping_stats.get('total_scraped', 0)
-            successful = scraper.scraping_stats.get('successful_extractions', 0)
-            if total_scraped > 0:
-                success_rate = (successful / total_scraped) * 100
-                embed.add_field(name="✅ Tasa de Éxito", value=f"{success_rate:.1f}%", inline=True)
-            
-            # Last scrape info
-            last_scrape = scraper.scraping_stats.get('last_scrape_time')
-            if last_scrape:
-                try:
-                    last_dt = datetime.fromisoformat(last_scrape)
-                    time_since = datetime.now() - last_dt
-                    if time_since.days > 0:
-                        last_str = f"Hace {time_since.days} días"
-                    elif time_since.seconds > 3600:
-                        last_str = f"Hace {time_since.seconds//3600} horas"
-                    else:
-                        last_str = f"Hace {time_since.seconds//60} minutos"
-                    embed.add_field(name="🔄 Último Scrape", value=last_str, inline=True)
-                except:
-                    pass
-            
-            # Speed info
-            speed = scraper.scraping_stats.get('servers_per_minute', 0)
-            if speed > 0:
-                embed.add_field(name="⚡ Velocidad", value=f"{speed} serv/min", inline=True)
-            
-            # Create view with buttons
-            view = discord.ui.View(timeout=None)
-            
-            # VIP Server button
-            vip_button = discord.ui.Button(
-                label="Acceder al Servidor VIP",
-                style=discord.ButtonStyle.secondary,
-                url=vip_link
-            )
-            view.add_item(vip_button)
-            
-            # Follow hesiz button
-            follow_button = discord.ui.Button(
-                label="Seguir a hesiz",
-                style=discord.ButtonStyle.secondary,
-                url="https://www.roblox.com/users/11834624/profile"
-            )
-            view.add_item(follow_button)
-            
-            await interaction.followup.send(embed=embed, view=view)
-            
-        else:
-            embed = discord.Embed(
-                title="No VIP Links Available",
+                title="❌ No VIP Links Available",
                 description="No se encontraron servidores VIP en la base de datos. Intenta ejecutar `/scrape` primero.",
                 color=0xff3333
             )
             await interaction.followup.send(embed=embed)
+            return
+        
+        # Create browser view starting at index 0
+        view = ServerBrowserView(all_servers, 0)
+        embed = view.create_server_embed()
+        
+        await interaction.followup.send(embed=embed, view=view)
             
     except Exception as e:
         logger.error(f"Error in servertest command: {e}")
         error_embed = discord.Embed(
-            title="Error Occurred",
-            description="Ocurrió un error al obtener el servidor.",
+            title="❌ Error Occurred",
+            description="Ocurrió un error al cargar los servidores.",
             color=0xff0000
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
