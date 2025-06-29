@@ -596,20 +596,12 @@ class ServerBrowserView(discord.ui.View):
         game_image_url = self.game_info.get('game_image_url')
         if game_image_url:
             embed.set_thumbnail(url=game_image_url)
-        else:
-            # Fallback to Roblox logo
-            file = discord.File("roblox_logo.png", filename="roblox_logo.png")
-            embed.set_thumbnail(url="attachment://roblox_logo.png")
 
         # Footer with server count
         embed.set_footer(text=f"Server {self.current_index + 1}/{self.total_servers}")
 
-        # Return file only if using roblox logo
-        if not game_image_url:
-            file = discord.File("roblox_logo.png", filename="roblox_logo.png")
-            return embed, file
-        else:
-            return embed, None
+        # Always return None for file since we're using URL-based images
+        return embed, None
 
 @bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
