@@ -484,7 +484,8 @@ scraper = VIPServerScraper()
 @bot.event
 async def on_ready():
     logger.info(f'{bot.user} has connected to Discord!')
-    logger.info(f'Bot is ready with {len(scraper.unique_vip_links)} VIP links loaded')
+    total_links = sum(len(game_data['links']) for game_data in scraper.links_by_game.values())
+    logger.info(f'Bot is ready with {total_links} VIP links loaded')
     
     # Sync slash commands after bot is ready
     try:
@@ -715,7 +716,7 @@ async def scrape_command(interaction: discord.Interaction, game_id: str):
             message = await interaction.followup.send(embed=start_embed, view=start_view)
             
             # Run scraping with real-time updates
-            initial_count = len(scraper.unique_vip_links)
+            initial_count = sum(len(game_data['links']) for game_data in scraper.links_by_game.values())
             await scrape_with_updates(message, initial_count, start_time, user_id, game_id)
         else:
             # We have enough links for this game, reserve them immediately
@@ -816,8 +817,15 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
                 processed_count += 1
                 vip_link = scraper.extract_vip_link(driver, server_url)
                 
-                if vip_link and vip_link not in scraper.unique_vip_links:
-                    scraper.unique_vip_links.add(vip_link)
+                if vip_link and game_id in scraper.links_by_game and vip_link not in scraper.links_by_game[game_id]['links']:
+                    # Initialize game_id entry if needed
+                    if game_id not in scraper.links_by_game:
+                        scraper.links_by_game[game_id] = {'links': set(), 'server_details': {}}
+                    if game_id not in scraper.available_links:
+                        scraper.available_links[game_id] = []
+                    
+                    scraper.links_by_game[game_id]['links'].add(vip_link)
+                    scraper.available_links[game_id].append(vip_link)
                     new_links_count += 1
                     logger.info(f"🎉 New VIP link found ({new_links_count}): {vip_link}")
                 elif vip_link:
@@ -841,7 +849,8 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
                     if eta > 0:
                         progress_embed.add_field(name="ETA", value=f"{eta:.0f}s", inline=True)
                     
-                    progress_embed.add_field(name="Total in DB", value=f"{len(scraper.unique_vip_links)} servers", inline=True)
+                    total_in_db = sum(len(game_data['links']) for game_data in scraper.links_by_game.values())
+                    progress_embed.add_field(name="Total in DB", value=f"{total_in_db} servers", inline=True)
                     
                     # Progress bar
                     progress_percentage = ((i + 1) / len(server_links)) * 100
@@ -865,7 +874,7 @@ async def scrape_with_updates(message, initial_count, start_time, user_id=None, 
         
         # Final completion update
         total_time = time.time() - start_time
-        final_count = len(scraper.unique_vip_links)
+        final_count = sum(len(game_data['links']) for game_data in scraper.links_by_game.values())
         
         # Update statistics
         scraper.scraping_stats.update({
@@ -977,7 +986,8 @@ async def stats(interaction: discord.Interaction):
         )
         
         # Main stats
-        embed.add_field(name="🗃️ Total Unique Links", value=f"**{len(scraper.unique_vip_links)}**", inline=True)
+        total_unique_links = sum(len(game_data['links']) for game_data in scraper.links_by_game.values())
+        embed.add_field(name="🗃️ Total Unique Links", value=f"**{total_unique_links}**", inline=True)
         embed.add_field(name="📈 Total Scraped", value=f"**{scraper.scraping_stats.get('total_scraped', 0)}**", inline=True)
         embed.add_field(name="✅ Successful", value=f"**{scraper.scraping_stats.get('successful_extractions', 0)}**", inline=True)
         
