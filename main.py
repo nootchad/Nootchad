@@ -9,6 +9,8 @@ from typing import List, Set, Dict, Optional
 import logging
 import re
 import aiohttp
+import string
+import secrets
 
 import discord
 from discord.ext import commands
@@ -53,6 +55,7 @@ class RobloxVerificationSystem:
         self.bans_file = BANS_FILE
         self.verified_users = {}
         self.banned_users = {}
+        self.pending_verifications = {}  # Para códigos de verificación pendientes
         self.load_data()
 
     def load_data(self):
@@ -63,12 +66,15 @@ class RobloxVerificationSystem:
                 with open(self.followers_file, 'r') as f:
                     data = json.load(f)
                     self.verified_users = data.get('verified_users', {})
+                    self.pending_verifications = data.get('pending_verifications', {})
                     logger.info(f"Loaded {len(self.verified_users)} verified users")
             else:
                 self.verified_users = {}
+                self.pending_verifications = {}
         except Exception as e:
             logger.error(f"Error loading verification data: {e}")
             self.verified_users = {}
+            self.pending_verifications = {}
         
         # Cargar usuarios baneados desde archivo separado
         try:
@@ -88,6 +94,7 @@ class RobloxVerificationSystem:
         try:
             data = {
                 'verified_users': self.verified_users,
+                'pending_verifications': self.pending_verifications,
                 'last_updated': datetime.now().isoformat()
             }
             with open(self.followers_file, 'w') as f:
@@ -124,6 +131,16 @@ class RobloxVerificationSystem:
             del self.verified_users[discord_id]
             logger.info(f"Verification expired for user {discord_id}")
         
+        # Limpiar verificaciones pendientes expiradas (10 minutos)
+        expired_pending = []
+        for discord_id, data in self.pending_verifications.items():
+            if current_time - data['created_at'] > 600:  # 10 minutos
+                expired_pending.append(discord_id)
+        
+        for discord_id in expired_pending:
+            del self.pending_verifications[discord_id]
+            logger.info(f"Pending verification expired for user {discord_id}")
+        
         # Limpiar usuarios baneados expirados
         expired_banned = []
         for discord_id, ban_time in self.banned_users.items():
@@ -135,7 +152,7 @@ class RobloxVerificationSystem:
             logger.info(f"Ban expired for user {discord_id}")
         
         # Guardar archivos por separado solo si hay cambios
-        if expired_verified:
+        if expired_verified or expired_pending:
             self.save_data()
         if expired_banned:
             self.save_bans()
@@ -156,8 +173,45 @@ class RobloxVerificationSystem:
         self.save_bans()  # Guardar instantáneamente en archivo separado
         logger.info(f"User {discord_id} banned for 7 days and saved to {self.bans_file}")
 
-    def verify_user(self, discord_id: str, roblox_username: str, roblox_user_id: str):
-        """Verificar usuario y guardarlo"""
+    def generate_verification_code(self) -> str:
+        """Generar código de verificación que no será censurado por Roblox"""
+        # Palabras base que no son censuradas
+        base_words = ["hesiz", "rbx", "vip", "server", "bot", "verify", "code", "check"]
+        
+        # Números y años
+        numbers = ["2024", "2025", str(random.randint(100, 999)), str(random.randint(10, 99))]
+        
+        # Caracteres especiales permitidos
+        separators = ["-", "_", "x", "v"]
+        
+        # Generar código aleatorio
+        base = random.choice(base_words)
+        separator1 = random.choice(separators)
+        number = random.choice(numbers)
+        separator2 = random.choice(separators)
+        suffix = random.choice(["bot", "vip", "rbx", "check", "ok"])
+        
+        code = f"{base}{separator1}{number}{separator2}{suffix}"
+        return code
+
+    def create_verification_request(self, discord_id: str, roblox_username: str) -> str:
+        """Crear solicitud de verificación con código"""
+        verification_code = self.generate_verification_code()
+        
+        self.pending_verifications[discord_id] = {
+            'roblox_username': roblox_username,
+            'verification_code': verification_code,
+            'created_at': time.time()
+        }
+        
+        self.save_data()
+        return verification_code
+
+    def verify_user(self, discord_id: str, roblox_user_id: str) -> bool:
+        """Verificar usuario después de confirmar el código en su descripción"""
+        if discord_id not in self.pending_verifications:
+            return False
+        
         # Verificar si el roblox_user_id ya está siendo usado por otro discord_id
         for existing_discord_id, data in self.verified_users.items():
             if data['roblox_user_id'] == roblox_user_id and existing_discord_id != discord_id:
@@ -166,206 +220,101 @@ class RobloxVerificationSystem:
                 self.ban_user(discord_id)  # Esto ya guarda instantáneamente
                 return False
         
+        pending_data = self.pending_verifications[discord_id]
         self.verified_users[discord_id] = {
-            'roblox_username': roblox_username,
+            'roblox_username': pending_data['roblox_username'],
             'roblox_user_id': roblox_user_id,
+            'verification_code': pending_data['verification_code'],
             'verified_at': time.time()
         }
+        
+        # Remover de pendientes
+        del self.pending_verifications[discord_id]
+        
         self.save_data()
         logger.info(f"User {discord_id} verified with Roblox ID {roblox_user_id}")
         return True
 
     async def get_roblox_user_id(self, username: str) -> Optional[str]:
-        """Obtener ID de usuario de Roblox por nombre de usuario usando siempre autenticación"""
+        """Obtener ID de usuario de Roblox por nombre de usuario"""
         try:
-            cookie = os.getenv('COOKIE')
-            if not cookie:
-                logger.error("COOKIE not found in environment variables")
-                return None
+            timeout = aiohttp.ClientTimeout(total=15, connect=5)
             
-            # Configurar headers con autenticación
-            headers = {
-                'Cookie': f'.ROBLOSECURITY={cookie}',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'application/json',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-site'
-            }
-            
-            # Configurar timeout y conectores
-            timeout = aiohttp.ClientTimeout(total=30, connect=15)
-            connector = aiohttp.TCPConnector(
-                ttl_dns_cache=300,
-                use_dns_cache=True,
-                limit=10,
-                limit_per_host=5
-            )
-            
-            async with aiohttp.ClientSession(
-                timeout=timeout,
-                connector=connector,
-                headers={'User-Agent': headers['User-Agent']}
-            ) as session:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 url = f"https://api.roblox.com/users/get-by-username?username={username}"
                 
-                # Intentar múltiples veces con diferentes configuraciones
-                for attempt in range(3):
+                for attempt in range(2):
                     try:
-                        logger.info(f"Attempting to get Roblox user ID for {username} (attempt {attempt + 1}/3)")
+                        logger.info(f"Getting Roblox user ID for {username} (attempt {attempt + 1}/2)")
                         
-                        async with session.get(url, headers=headers, ssl=False) as response:
-                            logger.info(f"Response status: {response.status}")
-                            
+                        async with session.get(url, ssl=True) as response:
                             if response.status == 200:
                                 data = await response.json()
                                 if 'Id' in data and data['Id']:
-                                    logger.info(f"Successfully found user ID: {data['Id']}")
+                                    logger.info(f"Found user ID: {data['Id']}")
                                     return str(data['Id'])
                                 elif 'errorMessage' in data:
                                     logger.warning(f"Roblox API error: {data['errorMessage']}")
                                     return None
                             elif response.status == 429:
-                                logger.warning("Rate limited, waiting before retry...")
-                                await asyncio.sleep(5)
+                                logger.warning("Rate limited, waiting...")
+                                await asyncio.sleep(3)
                                 continue
-                            elif response.status == 401:
-                                logger.error("Authentication failed - invalid cookie")
-                                return None
                             else:
-                                logger.warning(f"Unexpected status code: {response.status}")
-                                response_text = await response.text()
-                                logger.debug(f"Response body: {response_text[:200]}")
+                                logger.warning(f"Unexpected status: {response.status}")
+                                return None
                                 
-                    except aiohttp.ClientConnectorError as e:
-                        logger.warning(f"Connection error on attempt {attempt + 1}: {e}")
-                        if attempt < 2:
-                            await asyncio.sleep(2 ** attempt)  # Exponential backoff
-                            continue
-                        else:
-                            logger.error("All connection attempts failed")
-                            return None
-                    except asyncio.TimeoutError:
-                        logger.warning(f"Timeout on attempt {attempt + 1}")
-                        if attempt < 2:
+                    except Exception as e:
+                        logger.warning(f"Error on attempt {attempt + 1}: {e}")
+                        if attempt < 1:
                             await asyncio.sleep(2)
                             continue
-                        else:
-                            logger.error("All attempts timed out")
-                            return None
-                    except Exception as e:
-                        logger.error(f"Unexpected error on attempt {attempt + 1}: {e}")
-                        if attempt < 2:
-                            await asyncio.sleep(1)
-                            continue
-                        else:
-                            return None
+                        return None
                 
                 return None
                 
         except Exception as e:
-            logger.error(f"Critical error in get_roblox_user_id: {e}")
+            logger.error(f"Critical error getting user ID: {e}")
             return None
 
-    async def check_if_following(self, user_id: str) -> bool:
-        """Verificar si el usuario sigue al owner usando cuenta bot autenticada"""
+    async def get_roblox_user_description(self, user_id: str) -> Optional[str]:
+        """Obtener descripción de usuario de Roblox"""
         try:
-            cookie = os.getenv('COOKIE')
-            if not cookie:
-                logger.error("COOKIE not found in environment variables")
-                return False
+            timeout = aiohttp.ClientTimeout(total=15, connect=5)
             
-            # Headers mejorados con autenticación
-            headers = {
-                'Cookie': f'.ROBLOSECURITY={cookie}',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'application/json',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-site',
-                'Referer': 'https://www.roblox.com/'
-            }
-            
-            # Configurar timeout y conectores
-            timeout = aiohttp.ClientTimeout(total=30, connect=15)
-            connector = aiohttp.TCPConnector(
-                ttl_dns_cache=300,
-                use_dns_cache=True,
-                limit=10,
-                limit_per_host=5
-            )
-            
-            async with aiohttp.ClientSession(
-                timeout=timeout,
-                connector=connector,
-                headers={'User-Agent': headers['User-Agent']}
-            ) as session:
-                url = f"https://friends.roblox.com/v1/user/following-exists?userId={user_id}&targetUserId={ROBLOX_OWNER_ID}"
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                url = f"https://users.roblox.com/v1/users/{user_id}"
                 
-                # Intentar múltiples veces
-                for attempt in range(3):
+                for attempt in range(2):
                     try:
-                        logger.info(f"Checking if user {user_id} follows {ROBLOX_OWNER_ID} (attempt {attempt + 1}/3)")
+                        logger.info(f"Getting description for user ID {user_id} (attempt {attempt + 1}/2)")
                         
-                        async with session.get(url, headers=headers, ssl=False) as response:
-                            logger.info(f"Follow check response status: {response.status}")
-                            
+                        async with session.get(url, ssl=True) as response:
                             if response.status == 200:
                                 data = await response.json()
-                                is_following = data.get('following', False)
-                                logger.info(f"Follow status result: {is_following}")
-                                return is_following
-                            elif response.status == 401:
-                                logger.error("Roblox authentication failed - invalid cookie")
-                                return False
+                                description = data.get('description', '')
+                                logger.info(f"Retrieved description: {description[:50]}...")
+                                return description
                             elif response.status == 429:
-                                logger.warning("Rate limited on follow check, waiting...")
-                                await asyncio.sleep(5)
+                                logger.warning("Rate limited, waiting...")
+                                await asyncio.sleep(3)
                                 continue
-                            elif response.status == 400:
-                                logger.error(f"Bad request - invalid user IDs: {user_id}, {ROBLOX_OWNER_ID}")
-                                return False
                             else:
-                                logger.warning(f"Unexpected follow check status: {response.status}")
-                                response_text = await response.text()
-                                logger.debug(f"Follow check response: {response_text[:200]}")
+                                logger.warning(f"Unexpected status getting description: {response.status}")
+                                return None
                                 
-                    except aiohttp.ClientConnectorError as e:
-                        logger.warning(f"Connection error on follow check attempt {attempt + 1}: {e}")
-                        if attempt < 2:
-                            await asyncio.sleep(2 ** attempt)
-                            continue
-                        else:
-                            logger.error("All follow check connection attempts failed")
-                            return False
-                    except asyncio.TimeoutError:
-                        logger.warning(f"Timeout on follow check attempt {attempt + 1}")
-                        if attempt < 2:
+                    except Exception as e:
+                        logger.warning(f"Error getting description on attempt {attempt + 1}: {e}")
+                        if attempt < 1:
                             await asyncio.sleep(2)
                             continue
-                        else:
-                            logger.error("All follow check attempts timed out")
-                            return False
-                    except Exception as e:
-                        logger.error(f"Unexpected error on follow check attempt {attempt + 1}: {e}")
-                        if attempt < 2:
-                            await asyncio.sleep(1)
-                            continue
-                        else:
-                            return False
+                        return None
                 
-                logger.error("All follow check attempts failed")
-                return False
+                return None
                 
         except Exception as e:
-            logger.error(f"Critical error in check_if_following: {e}")
-            return False
+            logger.error(f"Critical error getting description: {e}")
+            return None
 
 class VIPServerScraper:
     def __init__(self):
@@ -1110,6 +1059,156 @@ async def on_ready():
     except Exception as e:
         logger.error(f"Failed to sync commands: {e}")
 
+@bot.tree.command(name="confirm", description="Confirmar que agregaste el código a tu descripción de Roblox")
+async def confirm_command(interaction: discord.Interaction):
+    """Comando para confirmar la verificación por descripción"""
+    await interaction.response.defer()
+    
+    try:
+        user_id = str(interaction.user.id)
+        
+        # Verificar si está baneado
+        if roblox_verification.is_user_banned(user_id):
+            ban_time = roblox_verification.banned_users[user_id]
+            remaining_time = BAN_DURATION - (time.time() - ban_time)
+            days_remaining = int(remaining_time / (24 * 60 * 60))
+            hours_remaining = int((remaining_time % (24 * 60 * 60)) / 3600)
+            
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description=f"Estás baneado por intentar usar información falsa.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar si ya está verificado
+        if roblox_verification.is_user_verified(user_id):
+            embed = discord.Embed(
+                title="✅ Ya Verificado",
+                description="Ya estás verificado y puedes usar todos los comandos del bot.",
+                color=0x00ff88
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar si tiene una verificación pendiente
+        if user_id not in roblox_verification.pending_verifications:
+            embed = discord.Embed(
+                title="❌ No hay verificación pendiente",
+                description="No tienes una verificación pendiente. Usa `/verify [tu_nombre_roblox]` primero.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        pending_data = roblox_verification.pending_verifications[user_id]
+        roblox_username = pending_data['roblox_username']
+        expected_code = pending_data['verification_code']
+        
+        # Obtener ID de usuario nuevamente para verificar
+        roblox_user_id = await roblox_verification.get_roblox_user_id(roblox_username)
+        if not roblox_user_id:
+            embed = discord.Embed(
+                title="❌ Error al verificar usuario",
+                description="No se pudo verificar tu usuario de Roblox. Inténtalo nuevamente.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Obtener descripción del usuario
+        user_description = await roblox_verification.get_roblox_user_description(roblox_user_id)
+        if user_description is None:
+            embed = discord.Embed(
+                title="❌ Error al obtener descripción",
+                description="No se pudo obtener tu descripción de Roblox. Inténtalo nuevamente en unos segundos.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar si el código está en la descripción
+        if expected_code not in user_description:
+            embed = discord.Embed(
+                title="❌ Código no encontrado",
+                description=f"El código `{expected_code}` no se encontró en tu descripción de Roblox.",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="📝 Asegúrate de:",
+                value=f"• Agregar exactamente: `{expected_code}`\n• Guardar los cambios en tu perfil\n• Esperar unos segundos después de guardar",
+                inline=False
+            )
+            embed.add_field(
+                name="🔍 Tu descripción actual:",
+                value=f"```{user_description[:200]}{'...' if len(user_description) > 200 else ''}```",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificación exitosa
+        verification_success = roblox_verification.verify_user(user_id, roblox_user_id)
+        
+        if not verification_success:
+            embed = discord.Embed(
+                title="🚫 Error de Verificación",
+                description="Error, por favor no trates de mentir o no podrás usar este bot durante 7 días.",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="⚠️ Has sido baneado",
+                value="**Duración:** 7 días\n**Razón:** Intentar usar información de otro usuario",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificación completada exitosamente
+        embed = discord.Embed(
+            title="✅ Verificación Completada",
+            description=f"¡Excelente **{roblox_username}**! Tu verificación ha sido completada exitosamente.",
+            color=0x00ff88
+        )
+        embed.add_field(
+            name="🎮 Ahora puedes usar:",
+            value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
+            inline=False
+        )
+        embed.add_field(
+            name="⏰ Duración:",
+            value="24 horas",
+            inline=True
+        )
+        embed.add_field(
+            name="🔗 ID de Roblox:",
+            value=f"`{roblox_user_id}`",
+            inline=True
+        )
+        embed.add_field(
+            name="🔐 Código usado:",
+            value=f"`{expected_code}`",
+            inline=True
+        )
+        embed.add_field(
+            name="💡 Consejo:",
+            value="Ya puedes **remover el código** de tu descripción de Roblox si quieres.",
+            inline=False
+        )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        logger.info(f"User {user_id} verified as {roblox_username} (ID: {roblox_user_id}) using description verification")
+        
+    except Exception as e:
+        logger.error(f"Error in confirm command: {e}")
+        embed = discord.Embed(
+            title="❌ Error de Confirmación",
+            description="Ocurrió un error durante la confirmación. Inténtalo nuevamente.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
 # Verificar autenticación antes de cada comando
 async def check_verification(interaction: discord.Interaction) -> bool:
     """Verificar si el usuario está autenticado"""
@@ -1144,12 +1243,12 @@ async def check_verification(interaction: discord.Interaction) -> bool:
         )
         embed.add_field(
             name="📝 Cómo verificarse:",
-            value="1. Sigue a **hesiz** en Roblox: https://www.roblox.com/users/11834624/profile\n2. Usa `/verify [tu_nombre_de_usuario]`",
+            value="1. Usa `/verify [tu_nombre_de_usuario]`\n2. Copia el código generado a tu descripción de Roblox\n3. Usa `/confirm` para completar la verificación",
             inline=False
         )
         embed.add_field(
             name="⚠️ Importante:",
-            value="• Debes seguir a hesiz ANTES de verificarte\n• No uses nombres de usuario falsos\n• La verificación dura 24 horas",
+            value="• No uses nombres de usuario falsos\n• Debes agregar el código a tu descripción\n• La verificación dura 24 horas",
             inline=False
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -1157,9 +1256,9 @@ async def check_verification(interaction: discord.Interaction) -> bool:
     
     return True
 
-@bot.tree.command(name="verify", description="Verificar que sigues a hesiz en Roblox para usar el bot")
+@bot.tree.command(name="verify", description="Verificar tu cuenta de Roblox usando descripción personalizada")
 async def verify_command(interaction: discord.Interaction, roblox_username: str):
-    """Comando de verificación de seguidor de Roblox"""
+    """Comando de verificación usando descripción de Roblox"""
     await interaction.response.defer()
     
     try:
@@ -1180,6 +1279,16 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
+        # Verificar si ya está verificado
+        if roblox_verification.is_user_verified(user_id):
+            embed = discord.Embed(
+                title="✅ Ya Verificado",
+                description="Ya estás verificado y puedes usar todos los comandos del bot.",
+                color=0x00ff88
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
         # Obtener ID de Roblox
         roblox_user_id = await roblox_verification.get_roblox_user_id(roblox_username)
         if not roblox_user_id:
@@ -1191,78 +1300,56 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
-        # Verificar si está siguiendo usando cuenta bot autenticada
-        is_following = await roblox_verification.check_if_following(roblox_user_id)
-        if not is_following:
-            embed = discord.Embed(
-                title="❌ No estás siguiendo a hesiz",
-                description=f"El usuario **{roblox_username}** (ID: {roblox_user_id}) no está siguiendo a **hesiz**.",
-                color=0xff0000
-            )
-            embed.add_field(
-                name="📝 Para usar el bot:",
-                value="1. Ve al perfil de hesiz: https://www.roblox.com/users/11834624/profile\n2. Haz clic en **Seguir**\n3. Espera unos segundos para que se actualice\n4. Vuelve a usar `/verify [tu_nombre]`",
-                inline=False
-            )
-            embed.add_field(
-                name="⚠️ Importante:",
-                value="• Debes seguir PRIMERO y luego verificarte\n• La verificación usa nuestro sistema bot autenticado\n• Si acabas de seguir, espera 30 segundos antes de verificarte",
-                inline=False
-            )
-            embed.add_field(
-                name="🔍 Verificación Automática:",
-                value="El bot verifica automáticamente tu estado de seguidor usando una cuenta bot autenticada.",
-                inline=False
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            return
+        # Crear código de verificación
+        verification_code = roblox_verification.create_verification_request(user_id, roblox_username)
         
-        # Intentar verificar usuario
-        verification_success = roblox_verification.verify_user(user_id, roblox_username, roblox_user_id)
-        
-        if not verification_success:
-            embed = discord.Embed(
-                title="🚫 Error de Verificación",
-                description="Error, por favor no trates de mentir o no podrás usar este bot durante 7 días.",
-                color=0xff0000
-            )
-            embed.add_field(
-                name="⚠️ Has sido baneado",
-                value="**Duración:** 7 días\n**Razón:** Intentar usar información de otro usuario",
-                inline=False
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            return
-        
-        # Verificación exitosa
+        # Instrucciones de verificación
         embed = discord.Embed(
-            title="✅ Verificación Exitosa",
-            description=f"¡Bienvenido **{roblox_username}**! Has sido verificado exitosamente usando nuestro sistema bot autenticado.",
-            color=0x00ff88
+            title="🔐 Verificación por Descripción",
+            description=f"Para verificar tu cuenta **{roblox_username}**, sigue estos pasos:",
+            color=0xffaa00
         )
+        
         embed.add_field(
-            name="🎮 Ahora puedes usar:",
-            value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
+            name="📝 Paso 1: Copia el código",
+            value=f"```{verification_code}```",
             inline=False
         )
+        
         embed.add_field(
-            name="⏰ Duración:",
-            value="24 horas (se renueva automáticamente si sigues a hesiz)",
+            name="📝 Paso 2: Ve a tu perfil de Roblox",
+            value=f"• Ve a tu perfil: https://www.roblox.com/users/{roblox_user_id}/profile\n• Haz clic en **Editar Perfil** o el ícono de lápiz\n• Ve a la sección **Descripción**",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="📝 Paso 3: Agrega el código",
+            value=f"• Pega el código `{verification_code}` en tu descripción\n• Puede estar junto con otro texto\n• **Guarda los cambios**",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="📝 Paso 4: Confirma la verificación",
+            value="• Usa `/confirm` para confirmar que ya agregaste el código\n• El bot verificará automáticamente tu descripción",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="⏰ Tiempo límite:",
+            value="Tienes **10 minutos** para completar la verificación",
             inline=True
         )
+        
         embed.add_field(
             name="🔗 ID de Roblox:",
             value=f"`{roblox_user_id}`",
             inline=True
         )
-        embed.add_field(
-            name="🤖 Verificación Bot:",
-            value="Verificado con cuenta bot autenticada",
-            inline=True
-        )
+        
+        embed.set_footer(text="Una vez verificado, puedes remover el código de tu descripción")
         
         await interaction.followup.send(embed=embed, ephemeral=True)
-        logger.info(f"User {user_id} verified as {roblox_username} (ID: {roblox_user_id}) using authenticated bot verification")
+        logger.info(f"Created verification request for user {user_id} with code {verification_code}")
         
     except Exception as e:
         logger.error(f"Error in verify command: {e}")
