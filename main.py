@@ -207,23 +207,22 @@ class RobloxVerificationSystem:
         self.save_data()
         return verification_code
 
-    def verify_user(self, discord_id: str, roblox_user_id: str) -> bool:
+    def verify_user(self, discord_id: str, roblox_username: str) -> bool:
         """Verificar usuario después de confirmar el código en su descripción"""
         if discord_id not in self.pending_verifications:
             return False
         
-        # Verificar si el roblox_user_id ya está siendo usado por otro discord_id
+        # Verificar si el roblox_username ya está siendo usado por otro discord_id
         for existing_discord_id, data in self.verified_users.items():
-            if data['roblox_user_id'] == roblox_user_id and existing_discord_id != discord_id:
-                # Banear al usuario que intenta usar un ID ya registrado
-                logger.warning(f"User {discord_id} attempted to use already registered Roblox ID {roblox_user_id}")
+            if data['roblox_username'].lower() == roblox_username.lower() and existing_discord_id != discord_id:
+                # Banear al usuario que intenta usar un nombre ya registrado
+                logger.warning(f"User {discord_id} attempted to use already registered Roblox username {roblox_username}")
                 self.ban_user(discord_id)  # Esto ya guarda instantáneamente
                 return False
         
         pending_data = self.pending_verifications[discord_id]
         self.verified_users[discord_id] = {
-            'roblox_username': pending_data['roblox_username'],
-            'roblox_user_id': roblox_user_id,
+            'roblox_username': roblox_username,
             'verification_code': pending_data['verification_code'],
             'verified_at': time.time()
         }
@@ -232,7 +231,7 @@ class RobloxVerificationSystem:
         del self.pending_verifications[discord_id]
         
         self.save_data()
-        logger.info(f"User {discord_id} verified with Roblox ID {roblox_user_id}")
+        logger.info(f"User {discord_id} verified with Roblox username {roblox_username}")
         return True
 
     async def get_roblox_user_id(self, username: str) -> Optional[str]:
@@ -277,23 +276,28 @@ class RobloxVerificationSystem:
             logger.error(f"Critical error getting user ID: {e}")
             return None
 
-    async def get_roblox_user_description(self, user_id: str) -> Optional[str]:
-        """Obtener descripción de usuario de Roblox"""
+    async def get_roblox_user_description(self, username: str) -> Optional[str]:
+        """Obtener descripción de usuario de Roblox usando nombre de usuario"""
         try:
             timeout = aiohttp.ClientTimeout(total=15, connect=5)
             
             async with aiohttp.ClientSession(timeout=timeout) as session:
+                # Primero obtener el ID usando el nombre de usuario
+                user_id = await self.get_roblox_user_id(username)
+                if not user_id:
+                    return None
+                
                 url = f"https://users.roblox.com/v1/users/{user_id}"
                 
                 for attempt in range(2):
                     try:
-                        logger.info(f"Getting description for user ID {user_id} (attempt {attempt + 1}/2)")
+                        logger.info(f"Getting description for {username} (ID: {user_id}) (attempt {attempt + 1}/2)")
                         
                         async with session.get(url, ssl=True) as response:
                             if response.status == 200:
                                 data = await response.json()
                                 description = data.get('description', '')
-                                logger.info(f"Retrieved description: {description[:50]}...")
+                                logger.info(f"Retrieved description for {username}: {description[:50]}...")
                                 return description
                             elif response.status == 429:
                                 logger.warning("Rate limited, waiting...")
@@ -1106,19 +1110,8 @@ async def confirm_command(interaction: discord.Interaction):
         roblox_username = pending_data['roblox_username']
         expected_code = pending_data['verification_code']
         
-        # Obtener ID de usuario nuevamente para verificar
-        roblox_user_id = await roblox_verification.get_roblox_user_id(roblox_username)
-        if not roblox_user_id:
-            embed = discord.Embed(
-                title="❌ Error al verificar usuario",
-                description="No se pudo verificar tu usuario de Roblox. Inténtalo nuevamente.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            return
-        
-        # Obtener descripción del usuario
-        user_description = await roblox_verification.get_roblox_user_description(roblox_user_id)
+        # Obtener descripción del usuario directamente con el nombre de usuario
+        user_description = await roblox_verification.get_roblox_user_description(roblox_username)
         if user_description is None:
             embed = discord.Embed(
                 title="❌ Error al obtener descripción",
@@ -1149,7 +1142,7 @@ async def confirm_command(interaction: discord.Interaction):
             return
         
         # Verificación exitosa
-        verification_success = roblox_verification.verify_user(user_id, roblox_user_id)
+        verification_success = roblox_verification.verify_user(user_id, roblox_username)
         
         if not verification_success:
             embed = discord.Embed(
@@ -1182,8 +1175,8 @@ async def confirm_command(interaction: discord.Interaction):
             inline=True
         )
         embed.add_field(
-            name="🔗 ID de Roblox:",
-            value=f"`{roblox_user_id}`",
+            name="👤 Usuario de Roblox:",
+            value=f"`{roblox_username}`",
             inline=True
         )
         embed.add_field(
@@ -1198,7 +1191,7 @@ async def confirm_command(interaction: discord.Interaction):
         )
         
         await interaction.followup.send(embed=embed, ephemeral=True)
-        logger.info(f"User {user_id} verified as {roblox_username} (ID: {roblox_user_id}) using description verification")
+        logger.info(f"User {user_id} verified as {roblox_username} using description verification")
         
     except Exception as e:
         logger.error(f"Error in confirm command: {e}")
@@ -1289,9 +1282,9 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
-        # Obtener ID de Roblox
-        roblox_user_id = await roblox_verification.get_roblox_user_id(roblox_username)
-        if not roblox_user_id:
+        # Verificar que el usuario existe intentando obtener su descripción
+        test_description = await roblox_verification.get_roblox_user_description(roblox_username)
+        if test_description is None:
             embed = discord.Embed(
                 title="❌ Usuario no encontrado",
                 description=f"No se pudo encontrar el usuario **{roblox_username}** en Roblox.\n\nVerifica que el nombre esté escrito correctamente.",
@@ -1318,7 +1311,7 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
         
         embed.add_field(
             name="📝 Paso 2: Ve a tu perfil de Roblox",
-            value=f"• Ve a tu perfil: https://www.roblox.com/users/{roblox_user_id}/profile\n• Haz clic en **Editar Perfil** o el ícono de lápiz\n• Ve a la sección **Descripción**",
+            value=f"• Ve a tu perfil de Roblox (www.roblox.com)\n• Haz clic en **Editar Perfil** o el ícono de lápiz\n• Ve a la sección **Descripción**",
             inline=False
         )
         
@@ -1341,8 +1334,8 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
         )
         
         embed.add_field(
-            name="🔗 ID de Roblox:",
-            value=f"`{roblox_user_id}`",
+            name="👤 Usuario de Roblox:",
+            value=f"`{roblox_username}`",
             inline=True
         )
         
