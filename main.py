@@ -1473,20 +1473,236 @@ async def servertest(interaction: discord.Interaction):
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-@bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP")
-async def scrape_command(interaction: discord.Interaction, game_id: str):
-    """Manually trigger scraping with real-time progress updates"""
+@bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP (acepta ID o nombre)")
+async def scrape_command(interaction: discord.Interaction, juego: str):
+    """Manually trigger scraping with real-time progress updates - supports both game ID and name"""
     await interaction.response.defer()
 
-    # Validate game_id (should be numeric)
-    if not game_id.isdigit():
-        error_embed = discord.Embed(
-            title="❌ ID de Juego Inválido",
-            description="El ID del juego debe ser numérico. Por ejemplo: `10449761463`\n\n**Tip:** Usa `/searchgame` para buscar juegos por nombre.",
-            color=0xff0000
-        )
-        await interaction.followup.send(embed=error_embed, ephemeral=True)
-        return
+    user_id = str(interaction.user.id)
+    
+    # Check if input is a game ID (numeric) or game name
+    if juego.isdigit():
+        # It's a game ID, proceed directly
+        game_id = juego
+        
+        # Check cooldown
+        cooldown_remaining = scraper.check_cooldown(user_id)
+        if cooldown_remaining:
+            embed = discord.Embed(
+                title="⏰ Cooldown Activo",
+                description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.\n\n**Razón:** Prevención de spam y sobrecarga del sistema.",
+                color=0xff9900
+            )
+            embed.add_field(name="💡 Mientras esperas:", value="• Usa `/servertest` para ver tus servidores\n• Usa `/favorites` para ver favoritos\n• Usa `/history` para ver historial", inline=False)
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+
+        # Set cooldown
+        scraper.set_cooldown(user_id)
+
+        try:
+            # Initial status embed
+            start_embed = discord.Embed(
+                title="🎮 ROBLOX PRIVATE SERVER LINKS",
+                description=f"¡Se ha iniciado exitosamente la búsqueda de servidores para el juego ID: **{game_id}**! Manténlo seguro y no lo compartas con nadie.",
+                color=0x2F3136
+            )
+            start_embed.add_field(name="🆔 ID del Juego", value=f"```{game_id}```", inline=True)
+            # Get initial count for this user and game
+            initial_count = len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', []))
+            start_embed.add_field(name="📊 Base de Datos Actual", value=f"{initial_count} servidores", inline=True)
+            start_embed.add_field(name="🔄 Estado", value="Inicializando...", inline=True)
+            start_time = time.time()
+
+            # Create view with follow button
+            start_view = discord.ui.View(timeout=None)
+            follow_button_start = discord.ui.Button(
+                label="👤 Seguir a hesiz",
+                style=discord.ButtonStyle.secondary,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            start_view.add_item(follow_button_start)
+
+            # Send initial message
+            message = await interaction.followup.send(embed=start_embed, view=start_view)
+
+            # Run scraping with real-time updates
+            await scrape_with_updates(message, start_time, game_id, user_id, interaction.user)
+
+        except Exception as e:
+            logger.error(f"Error in scrape command: {e}")
+            error_embed = discord.Embed(
+                title="🎮 ROBLOX PRIVATE SERVER LINKS",
+                description="Ocurrió un error durante el proceso de scraping.",
+                color=0x2F3136
+            )
+            error_embed.add_field(name="📝 Detalles del Error", value=f"```{str(e)[:200]}```", inline=False)
+            error_embed.add_field(name="🔄 Reintentar", value="Puedes ejecutar `/scrape` nuevamente", inline=False)
+
+            # Error view with follow button
+            error_view = discord.ui.View(timeout=None)
+            follow_button_error = discord.ui.Button(
+                label="👤 Seguir a hesiz",
+                style=discord.ButtonStyle.secondary,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            error_view.add_item(follow_button_error)
+
+            await interaction.followup.send(embed=error_embed, view=error_view)
+            
+    else:
+        # It's a game name, search for it first
+        try:
+            # Check cooldown for searching
+            cooldown_remaining = scraper.check_cooldown(user_id, 2)  # 2 minute cooldown for search
+            if cooldown_remaining:
+                embed = discord.Embed(
+                    title="⏰ Cooldown Activo",
+                    description=f"Debes esperar **{cooldown_remaining}** segundos antes de buscar nuevamente.",
+                    color=0xff9900
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Search for games
+            search_results = await scraper.search_game_by_name(juego)
+            
+            if not search_results:
+                embed = discord.Embed(
+                    title="❌ No se encontraron resultados",
+                    description=f"No se encontraron juegos con el nombre **{juego}**.\n\n**Sugerencias:**\n• Prueba con nombres más comunes\n• Usa abreviaciones (ej: DTI, MM2, TOH)\n• Usa el ID del juego directamente si lo tienes",
+                    color=0xff3333
+                )
+                embed.add_field(
+                    name="💡 Ejemplos de búsqueda:",
+                    value="• `dress to impress` o `dti`\n• `murder mystery` o `mm2`\n• `tower of hell` o `toh`\n• `blox fruits`\n• `adopt me`\n• `10449761463` (ID directo)",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Get the best match (highest relevance)
+            best_match = search_results[0]
+            game_id = best_match['id']
+            game_name = best_match['name']
+            
+            # If multiple high-relevance results, show selection menu
+            if len(search_results) > 1 and search_results[1].get('relevance', 0) >= 0.9:
+                embed = discord.Embed(
+                    title="🎯 Múltiples Coincidencias Encontradas",
+                    description=f"Se encontraron varios juegos similares a **{juego}**. Selecciona el correcto:",
+                    color=0xffaa00
+                )
+                
+                category_emoji = {
+                    "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+                    "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                    "building": "🏗️", "anime": "🌸", "other": "🎮"
+                }
+                
+                for i, game in enumerate(search_results[:5], 1):
+                    category = game.get('category', 'other')
+                    emoji = category_emoji.get(category, '🎮')
+                    relevance_stars = "⭐" * min(int(game.get('relevance', 0) * 3) + 1, 3)
+                    
+                    embed.add_field(
+                        name=f"{i}. {emoji} {game['name'][:45]}{'...' if len(game['name']) > 45 else ''}",
+                        value=f"ID: `{game['id']}` • {relevance_stars}",
+                        inline=False
+                    )
+                
+                embed.set_footer(text="El primer resultado se seleccionará automáticamente en 10 segundos")
+                
+                view = GameSearchView(search_results, user_id)
+                message = await interaction.followup.send(embed=embed, view=view)
+                
+                # Wait 10 seconds, then auto-select first option
+                await asyncio.sleep(10)
+                try:
+                    # Check if user hasn't selected anything
+                    if view.children and not any(getattr(child, '_selected', False) for child in view.children):
+                        # Auto-proceed with best match
+                        pass  # Continue to scraping below
+                    else:
+                        return  # User made a selection, exit
+                except:
+                    pass  # Continue to scraping
+            
+            # Check cooldown again before scraping
+            cooldown_remaining = scraper.check_cooldown(user_id)
+            if cooldown_remaining:
+                embed = discord.Embed(
+                    title="⏰ Cooldown Activo",
+                    description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.",
+                    color=0xff9900
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Set cooldown
+            scraper.set_cooldown(user_id)
+            
+            # Start scraping for best match
+            try:
+                # Initial status embed
+                start_embed = discord.Embed(
+                    title="🎮 ROBLOX PRIVATE SERVER LINKS",
+                    description=f"¡Búsqueda automática iniciada para **{game_name}** (ID: {game_id})! Se seleccionó automáticamente la mejor coincidencia para '{juego}'.",
+                    color=0x2F3136
+                )
+                start_embed.add_field(name="🎯 Juego Seleccionado", value=f"```{game_name}```", inline=True)
+                start_embed.add_field(name="🆔 ID", value=f"```{game_id}```", inline=True)
+                start_embed.add_field(name="📊 Estado", value="Inicializando...", inline=True)
+                
+                category = best_match.get('category', 'other')
+                category_emoji = {
+                    "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+                    "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                    "building": "🏗️", "anime": "🌸", "other": "🎮"
+                }
+                start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
+                
+                relevance_percentage = int(best_match.get('relevance', 0) * 100)
+                start_embed.add_field(name="🎯 Precisión", value=f"{relevance_percentage}%", inline=True)
+                
+                start_time = time.time()
+                
+                # Create view with follow button
+                start_view = discord.ui.View(timeout=None)
+                follow_button_start = discord.ui.Button(
+                    label="👤 Seguir a hesiz",
+                    style=discord.ButtonStyle.secondary,
+                    url="https://www.roblox.com/users/11834624/profile"
+                )
+                start_view.add_item(follow_button_start)
+                
+                # Send initial message or edit existing
+                if 'message' in locals():
+                    await message.edit(embed=start_embed, view=start_view)
+                else:
+                    message = await interaction.followup.send(embed=start_embed, view=start_view)
+                
+                # Run scraping with real-time updates
+                await scrape_with_updates(message, start_time, game_id, user_id, interaction.user)
+                
+            except Exception as e:
+                logger.error(f"Error in auto scrape: {e}")
+                error_embed = discord.Embed(
+                    title="❌ Error en Scraping Automático",
+                    description="Ocurrió un error durante el scraping automático.",
+                    color=0xff0000
+                )
+                error_embed.add_field(name="🔄 Alternativa", value=f"Usa `/scrape {game_id}` para intentar manualmente", inline=False)
+                await interaction.followup.send(embed=error_embed, ephemeral=True)
+                
+        except Exception as e:
+            logger.error(f"Error in game search: {e}")
+            error_embed = discord.Embed(
+                title="❌ Error en Búsqueda",
+                description="Ocurrió un error al buscar el juego.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
 
     user_id = str(interaction.user.id)
     
@@ -1946,7 +2162,7 @@ async def stats(interaction: discord.Interaction):
         # Commands info
         embed.add_field(
             name="🎮 Comandos Disponibles", 
-            value="• `/game [nombre]` - 🚀 **NUEVO** Buscar y scrapear automáticamente\n• `/servertest` - Ver servidores\n• `/scrape [id]` - Buscar por ID específico\n• `/searchgame [nombre]` - Buscar con opciones\n• `/favorites` - Ver favoritos\n• `/history` - Ver historial", 
+            value="• `/scrape [id_o_nombre]` - 🚀 **ACTUALIZADO** Buscar por ID o nombre automáticamente\n• `/servertest` - Ver servidores\n• `/favorites` - Ver favoritos\n• `/history` - Ver historial", 
             inline=False
         )
 

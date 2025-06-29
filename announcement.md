@@ -15,8 +15,8 @@
 
 ## 📋 Comandos disponibles
 
-### `/scrape <game_id>`
-Inicia la búsqueda de nuevos servidores VIP para el juego que especifiques. Solo necesitas el ID del juego de Roblox.
+### `/scrape <game_id_o_nombre>`
+Inicia la búsqueda de nuevos servidores VIP para el juego que especifiques. Acepta tanto el ID del juego como el nombre del juego.
 
 ### `/servertest`
 Navega por todos tus servidores VIP guardados con botones de navegación. Incluye enlaces directos para unirte al servidor.
@@ -36,17 +36,19 @@ Muestra estadísticas completas de tu base de datos personal: cuántos servidore
 
 ## 🎮 ¿Cómo empezar?
 
-1. **Usa `/scrape [ID_del_juego]`** para buscar servidores de tu juego favorito
+1. **Usa `/scrape [ID_o_nombre]`** para buscar servidores de tu juego favorito
 2. **Espera a que termine** la búsqueda automática
 3. **Usa `/servertest`** para navegar por tus servidores encontrados
 4. **¡Disfruta de servidores VIP ilimitados!**
 
-## 💡 Ejemplo de uso
+## 💡 Ejemplos de uso
 
 ```
+/scrape blox fruits
+/scrape dress to impress
 /scrape 10449761463
 ```
-Esto buscará servidores VIP para el juego con ID 10449761463
+Busca por nombre de juego o ID directamente
 
 ---
 
