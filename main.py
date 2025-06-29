@@ -369,116 +369,77 @@ async def on_ready():
     except Exception as e:
         logger.error(f"Failed to sync commands: {e}")
 
-@bot.tree.command(name="servertest", description="Get a random VIP server link with detailed information")
+@bot.tree.command(name="servertest", description="Get a random VIP server link")
 async def servertest(interaction: discord.Interaction):
-    """Send a random VIP server link with comprehensive details"""
+    """Send a random VIP server link with professional design"""
     await interaction.response.defer()
     
     try:
         vip_link, details = scraper.get_random_link()
         
         if vip_link:
-            # Create super detailed embed
+            # Create professional embed similar to the image
             embed = discord.Embed(
-                title="🎮 Random VIP Server",
-                color=0x00ff88,
-                timestamp=datetime.now()
+                title="VIP Server Generated",
+                description="Your VIP server has been successfully generated and sent to your DMs!",
+                color=0x2F3136
             )
             
-            # Main server link
-            embed.add_field(
-                name="🔗 VIP Server Link", 
-                value=f"[**Click here to join!**]({vip_link})", 
-                inline=False
-            )
-            
-            # Server details if available
+            # Server details section
             if details:
                 server_info = details.get('server_info', {})
-                
-                # Server identification
                 server_id = server_info.get('server_id', 'Unknown')
-                embed.add_field(name="🆔 Server ID", value=f"`{server_id}`", inline=True)
-                
-                # Discovery time
-                discovered = details.get('discovered_at', 'Unknown')
-                if discovered != 'Unknown':
-                    try:
-                        disc_time = datetime.fromisoformat(discovered.replace('Z', '+00:00'))
-                        time_ago = datetime.now() - disc_time.replace(tzinfo=None)
-                        if time_ago.days > 0:
-                            time_str = f"{time_ago.days}d {time_ago.seconds//3600}h ago"
-                        elif time_ago.seconds > 3600:
-                            time_str = f"{time_ago.seconds//3600}h {(time_ago.seconds%3600)//60}m ago"
-                        else:
-                            time_str = f"{time_ago.seconds//60}m ago"
-                        embed.add_field(name="🕐 Discovered", value=time_str, inline=True)
-                    except:
-                        embed.add_field(name="🕐 Discovered", value="Recently", inline=True)
-                
-                # Extraction speed
-                extraction_time = details.get('extraction_time', 0)
-                embed.add_field(name="⚡ Extraction Time", value=f"{extraction_time}s", inline=True)
-                
-                # Server description
-                description = server_info.get('description', 'No description')
-                if len(description) > 100:
-                    description = description[:97] + "..."
-                embed.add_field(name="📝 Description", value=description, inline=False)
+                embed.add_field(name="Server ID", value=f"`{server_id}`", inline=False)
             
-            # Database statistics
-            embed.add_field(name="📊 Database Stats", value=f"**{len(scraper.unique_vip_links)}** total servers", inline=True)
-            
-            # Last scrape info
-            last_scrape = scraper.scraping_stats.get('last_scrape_time')
-            if last_scrape:
-                try:
-                    last_time = datetime.fromisoformat(last_scrape)
-                    time_since = datetime.now() - last_time
-                    if time_since.days > 0:
-                        last_str = f"{time_since.days}d ago"
-                    elif time_since.seconds > 3600:
-                        last_str = f"{time_since.seconds//3600}h ago"
-                    else:
-                        last_str = f"{time_since.seconds//60}m ago"
-                    embed.add_field(name="🔄 Last Scrape", value=last_str, inline=True)
-                except:
-                    embed.add_field(name="🔄 Last Scrape", value="Unknown", inline=True)
+            # Database info
+            embed.add_field(name="Database Status", value=f"{len(scraper.unique_vip_links)} servers available", inline=True)
             
             # Success rate
             total_scraped = scraper.scraping_stats.get('total_scraped', 0)
             successful = scraper.scraping_stats.get('successful_extractions', 0)
             if total_scraped > 0:
                 success_rate = (successful / total_scraped) * 100
-                embed.add_field(name="📈 Success Rate", value=f"{success_rate:.1f}%", inline=True)
+                embed.add_field(name="Success Rate", value=f"{success_rate:.1f}%", inline=True)
             
-            # Footer with additional info
-            embed.set_footer(
-                text=f"🎯 Enjoy your gaming! • Speed: {scraper.scraping_stats.get('servers_per_minute', 0)} servers/min"
+            # Clean footer
+            embed.set_footer(text="Keep it safe and do not share it with anyone.")
+            
+            # Create view with buttons
+            view = discord.ui.View(timeout=None)
+            
+            # VIP Server button
+            vip_button = discord.ui.Button(
+                label="Join VIP Server",
+                style=discord.ButtonStyle.link,
+                url=vip_link
             )
+            view.add_item(vip_button)
             
-            # Add thumbnail (Roblox logo)
-            embed.set_thumbnail(url="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-84420265CB769E26FE22025E6E1F77F8-Png/150/150/AvatarHeadshot/Png")
+            # Follow hesiz button
+            follow_button = discord.ui.Button(
+                label="Seguir a hesiz",
+                style=discord.ButtonStyle.link,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            view.add_item(follow_button)
             
-            await interaction.followup.send(embed=embed)
+            await interaction.followup.send(embed=embed, view=view)
             
         else:
             embed = discord.Embed(
-                title="❌ No VIP Links Available",
-                description="No VIP server links found in database.\n\n**Try running the scraper first with `/scrape`**",
+                title="No VIP Links Available",
+                description="No VIP server links found in database. Try running the scraper first with `/scrape`",
                 color=0xff3333
             )
-            embed.add_field(name="💡 Tip", value="Use `/scrape` to find new servers!", inline=False)
             await interaction.followup.send(embed=embed)
             
     except Exception as e:
         logger.error(f"Error in servertest command: {e}")
         error_embed = discord.Embed(
-            title="💥 Error Occurred",
+            title="Error Occurred",
             description="An error occurred while fetching the server link.",
             color=0xff0000
         )
-        error_embed.add_field(name="Error Details", value=f"```{str(e)[:100]}```", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 @bot.tree.command(name="scrape", description="Start scraping for new VIP server links")
