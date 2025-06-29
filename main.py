@@ -452,60 +452,23 @@ class ServerBrowserView(discord.ui.View):
         
         embed = discord.Embed(
             title="🎮 ROBLOX PRIVATE SERVER LINKS",
-            description=f"**Servidor {self.current_index + 1} de {self.total_servers}**\n\nPowered by **HESIZ**",
+            description=f"Tu servidor ha sido generado exitosamente! Mantén seguro y **no lo compartas** con nadie.\n\n**hesiz.com**",
             color=0x2F3136
         )
-        
-        # Add the Roblox logo image
-        embed.set_image(url="https://i.imgur.com/roblox_logo.png")  # Placeholder URL
         
         # Get server details
         details = scraper.server_details.get(current_server, {})
         server_info = details.get('server_info', {})
         
-        # Columna izquierda
-        server_id = server_info.get('server_id', 'Unknown')[:6] + '...' if len(server_info.get('server_id', 'Unknown')) > 6 else server_info.get('server_id', 'Unknown')
-        embed.add_field(name="🆔 Server ID", value=f"`{server_id}`", inline=True)
+        # Server ID como Username
+        server_id = server_info.get('server_id', 'Unknown')
+        embed.add_field(name="🤖 Server ID", value=f"`{server_id}`", inline=False)
         
-        # Columna derecha  
-        embed.add_field(name="📊 Total en BD", value=f"{len(scraper.unique_vip_links)} servidores", inline=True)
+        # Server Link como Password
+        embed.add_field(name="🔗 Server Link", value=f"`{current_server}`", inline=False)
         
-        # Campo vacío para forzar nueva línea
-        embed.add_field(name="\u200b", value="\u200b", inline=True)
-        
-        # Segunda fila - columna izquierda
-        discovered_time = details.get('discovered_at', 'Unknown')
-        if discovered_time != 'Unknown':
-            try:
-                discovery_dt = datetime.fromisoformat(discovered_time)
-                time_ago = datetime.now() - discovery_dt
-                if time_ago.days > 0:
-                    time_str = f"Hace {time_ago.days} minutos"
-                elif time_ago.seconds > 3600:
-                    time_str = f"Hace {time_ago.seconds//3600} minutos"
-                else:
-                    time_str = f"Hace {time_ago.seconds//60} minutos"
-                discovered_time = time_str
-            except:
-                discovered_time = "Hace 5 minutos"
-        
-        embed.add_field(name="🧭 Descubierto", value=discovered_time, inline=True)
-        
-        # Segunda fila - columna derecha
-        speed = scraper.scraping_stats.get('servers_per_minute', 0)
-        embed.add_field(name="⚡ Velocidad", value=f"3.4 serv/min" if speed > 0 else "3.4 serv/min", inline=True)
-        
-        # Campo vacío para forzar nueva línea
-        embed.add_field(name="\u200b", value="\u200b", inline=True)
-        
-        # Tercera fila - columna izquierda
-        embed.add_field(name="✅ Tasa de Éxito", value="50.0%", inline=True)
-        
-        # Tercera fila - columna derecha  
-        embed.add_field(name="🧭 Navegación", value=f"Servidor {self.current_index + 1}/{self.total_servers}", inline=True)
-        
-        # Footer
-        embed.set_footer(text="Usa los botones para navegar entre servidores | Powered by HESIZ")
+        # Footer con información adicional
+        embed.set_footer(text=f"Servidor {self.current_index + 1}/{self.total_servers} • Powered by HESIZ")
         
         return embed
 
