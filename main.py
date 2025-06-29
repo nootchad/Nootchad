@@ -288,6 +288,64 @@ class VIPServerScraper:
             logger.debug(f"Could not extract server info: {e}")
             return {'server_id': 'unknown', 'page_title': 'Unknown', 'description': 'No info available'}
 
+    def extract_game_info(self, driver, game_id):
+        """Extract game information including name and image from rbxservers.xyz"""
+        try:
+            info = {'game_name': f'Game {game_id}', 'game_image_url': None}
+            
+            # Navigate to the game page
+            url = f"https://rbxservers.xyz/games/{game_id}"
+            driver.get(url)
+            
+            # Wait for page to load
+            wait = WebDriverWait(driver, 10)
+            
+            # Try to get game name from title
+            try:
+                title_element = driver.find_element(By.TAG_NAME, "title")
+                page_title = title_element.get_attribute("textContent")
+                if page_title and page_title != "Unknown":
+                    # Clean up the title (remove "- rbxservers.xyz" if present)
+                    game_name = page_title.replace(" - rbxservers.xyz", "").strip()
+                    if game_name:
+                        info['game_name'] = game_name
+            except Exception as e:
+                logger.debug(f"Could not extract game name: {e}")
+            
+            # Try to get game image
+            try:
+                # Look for common image selectors that might contain the game thumbnail
+                image_selectors = [
+                    "img[src*='roblox']", 
+                    "img[src*='rbxcdn']",
+                    ".game-image img",
+                    ".thumbnail img",
+                    "img[alt*='game']"
+                ]
+                
+                for selector in image_selectors:
+                    try:
+                        img_elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                        for img in img_elements:
+                            src = img.get_attribute("src")
+                            if src and ("roblox" in src.lower() or "rbxcdn" in src.lower()):
+                                info['game_image_url'] = src
+                                logger.info(f"Found game image: {src}")
+                                break
+                        if info['game_image_url']:
+                            break
+                    except:
+                        continue
+                        
+            except Exception as e:
+                logger.debug(f"Could not extract game image: {e}")
+            
+            return info
+            
+        except Exception as e:
+            logger.error(f"Error extracting game info: {e}")
+            return {'game_name': f'Game {game_id}', 'game_image_url': None}
+
     def scrape_vip_links(self, game_id="109983668079237"):
         """Main scraping function with detailed statistics"""
         driver = None
@@ -310,9 +368,12 @@ class VIPServerScraper:
 
             # Initialize game data if not exists
             if game_id not in self.links_by_game:
+                # Extract game information first
+                game_info = self.extract_game_info(driver, game_id)
                 self.links_by_game[game_id] = {
                     'links': [],
-                    'game_name': f'Game {game_id}',
+                    'game_name': game_info['game_name'],
+                    'game_image_url': game_info.get('game_image_url'),
                     'server_details': {}
                 }
                 self.available_links[game_id] = []
@@ -634,9 +695,12 @@ async def scrape_with_updates(message, start_time, game_id):
 
         # Initialize game data if not exists
         if game_id not in scraper.links_by_game:
+            # Extract game information first
+            game_info = scraper.extract_game_info(driver, game_id)
             scraper.links_by_game[game_id] = {
                 'links': [],
-                'game_name': f'Game {game_id}',
+                'game_name': game_info['game_name'],
+                'game_image_url': game_info.get('game_image_url'),
                 'server_details': {}
             }
             scraper.available_links[game_id] = []
@@ -663,11 +727,17 @@ async def scrape_with_updates(message, start_time, game_id):
                     eta = (elapsed / (i + 1)) * (len(server_links) - i - 1) if i > 0 else 0
 
                     # Update embed with current progress
+                    game_name = scraper.links_by_game[game_id]['game_name']
                     progress_embed = discord.Embed(
                         title="ROBLOX PRIVATE SERVER LINKS",
-                        description=f"Processing {len(server_links)} servers found for game ID **{game_id}**... Active search for VIP servers.",
+                        description=f"Processing {len(server_links)} servers found for **{game_name}** (ID: {game_id})... Active search for VIP servers.",
                         color=0x2F3136
                     )
+                    
+                    # Add game image if available
+                    game_image_url = scraper.links_by_game[game_id].get('game_image_url')
+                    if game_image_url:
+                        progress_embed.set_thumbnail(url=game_image_url)
                     progress_embed.add_field(name="Servers Found", value=f"**{new_links_count}**", inline=True)
                     progress_embed.add_field(name="Progress", value=f"{i + 1}/{len(server_links)}", inline=True)
                     progress_embed.add_field(name="Time", value=f"{elapsed:.0f}s", inline=True)
@@ -724,11 +794,17 @@ async def scrape_with_updates(message, start_time, game_id):
         scraper.save_links()
 
         # Final completion embed
+        game_name = scraper.links_by_game[game_id]['game_name']
         complete_embed = discord.Embed(
-            title="ROBLOXPRIVATE SERVER LINKS",
-            description=f"VIP server search has been successfully completed for game ID **{game_id}**! Use /servertest to get a VIP server.",
+            title="ROBLOX PRIVATE SERVER LINKS",
+            description=f"VIP server search has been successfully completed for **{game_name}** (ID: {game_id})! Use /servertest to get a VIP server.",
             color=0x2F3136
         )
+        
+        # Add game image if available
+        game_image_url = scraper.links_by_game[game_id].get('game_image_url')
+        if game_image_url:
+            complete_embed.set_thumbnail(url=game_image_url)
 
         complete_embed.add_field(name="New Servers", value=f"**{new_links_count}**", inline=True)
         complete_embed.add_field(name="Total in DB", value=f"**{final_count}** servers", inline=True)
