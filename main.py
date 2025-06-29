@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Set, Dict, Optional
 import logging
 import re
+import aiohttp
 
 import discord
 from discord.ext import commands
@@ -26,6 +27,12 @@ import subprocess
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Roblox verification settings
+ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
+FOLLOWERS_FILE = "followers.json"
+VERIFICATION_DURATION = 24 * 60 * 60  # 24 horas en segundos
+BAN_DURATION = 7 * 24 * 60 * 60  # 7 días en segundos
+
 # Game categories mapping
 GAME_CATEGORIES = {
     "rpg": ["roleplay", "adventure", "fantasy", "medieval", "simulator"],
@@ -39,6 +46,134 @@ GAME_CATEGORIES = {
     "building": ["building", "creative", "construction", "city", "town"],
     "anime": ["anime", "naruto", "dragon ball", "one piece", "manga"]
 }
+
+class RobloxVerificationSystem:
+    def __init__(self):
+        self.followers_file = FOLLOWERS_FILE
+        self.verified_users = {}
+        self.banned_users = {}
+        self.load_data()
+
+    def load_data(self):
+        """Cargar datos de verificación desde archivo"""
+        try:
+            if Path(self.followers_file).exists():
+                with open(self.followers_file, 'r') as f:
+                    data = json.load(f)
+                    self.verified_users = data.get('verified_users', {})
+                    self.banned_users = data.get('banned_users', {})
+                    logger.info(f"Loaded {len(self.verified_users)} verified users and {len(self.banned_users)} banned users")
+            else:
+                self.verified_users = {}
+                self.banned_users = {}
+        except Exception as e:
+            logger.error(f"Error loading verification data: {e}")
+            self.verified_users = {}
+            self.banned_users = {}
+
+    def save_data(self):
+        """Guardar datos de verificación a archivo"""
+        try:
+            data = {
+                'verified_users': self.verified_users,
+                'banned_users': self.banned_users,
+                'last_updated': datetime.now().isoformat()
+            }
+            with open(self.followers_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            logger.info(f"Saved verification data")
+        except Exception as e:
+            logger.error(f"Error saving verification data: {e}")
+
+    def cleanup_expired_data(self):
+        """Limpiar datos expirados"""
+        current_time = time.time()
+        
+        # Limpiar usuarios verificados expirados
+        expired_verified = []
+        for discord_id, data in self.verified_users.items():
+            if current_time - data['verified_at'] > VERIFICATION_DURATION:
+                expired_verified.append(discord_id)
+        
+        for discord_id in expired_verified:
+            del self.verified_users[discord_id]
+            logger.info(f"Verification expired for user {discord_id}")
+        
+        # Limpiar usuarios baneados expirados
+        expired_banned = []
+        for discord_id, ban_time in self.banned_users.items():
+            if current_time - ban_time > BAN_DURATION:
+                expired_banned.append(discord_id)
+        
+        for discord_id in expired_banned:
+            del self.banned_users[discord_id]
+            logger.info(f"Ban expired for user {discord_id}")
+        
+        if expired_verified or expired_banned:
+            self.save_data()
+
+    def is_user_banned(self, discord_id: str) -> bool:
+        """Verificar si el usuario está baneado"""
+        self.cleanup_expired_data()
+        return discord_id in self.banned_users
+
+    def is_user_verified(self, discord_id: str) -> bool:
+        """Verificar si el usuario está verificado y no expirado"""
+        self.cleanup_expired_data()
+        return discord_id in self.verified_users
+
+    def ban_user(self, discord_id: str):
+        """Banear usuario por 7 días"""
+        self.banned_users[discord_id] = time.time()
+        self.save_data()
+        logger.info(f"User {discord_id} banned for 7 days")
+
+    def verify_user(self, discord_id: str, roblox_username: str, roblox_user_id: str):
+        """Verificar usuario y guardarlo"""
+        # Verificar si el roblox_user_id ya está siendo usado por otro discord_id
+        for existing_discord_id, data in self.verified_users.items():
+            if data['roblox_user_id'] == roblox_user_id and existing_discord_id != discord_id:
+                # Banear al usuario que intenta usar un ID ya registrado
+                self.ban_user(discord_id)
+                return False
+        
+        self.verified_users[discord_id] = {
+            'roblox_username': roblox_username,
+            'roblox_user_id': roblox_user_id,
+            'verified_at': time.time()
+        }
+        self.save_data()
+        logger.info(f"User {discord_id} verified with Roblox ID {roblox_user_id}")
+        return True
+
+    async def get_roblox_user_id(self, username: str) -> Optional[str]:
+        """Obtener ID de usuario de Roblox por nombre de usuario"""
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"https://api.roblox.com/users/get-by-username?username={username}"
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if 'Id' in data:
+                            return str(data['Id'])
+                    return None
+        except Exception as e:
+            logger.error(f"Error getting Roblox user ID: {e}")
+            return None
+
+    async def check_if_following(self, user_id: str) -> bool:
+        """Verificar si el usuario sigue al owner"""
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"https://friends.roblox.com/v1/user/following-exists?userId={user_id}&targetUserId={ROBLOX_OWNER_ID}"
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data.get('isFollowing', False)
+                    return False
+        except Exception as e:
+            logger.error(f"Error checking follow status: {e}")
+            return False
 
 class VIPServerScraper:
     def __init__(self):
@@ -746,8 +881,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='/', intents=intents)
 
-# Global scraper instance
+# Global instances
 scraper = VIPServerScraper()
+roblox_verification = RobloxVerificationSystem()
 
 @bot.event
 async def on_ready():
@@ -764,6 +900,159 @@ async def on_ready():
         logger.info(f"Synced {len(synced)} command(s)")
     except Exception as e:
         logger.error(f"Failed to sync commands: {e}")
+
+# Verificar autenticación antes de cada comando
+async def check_verification(interaction: discord.Interaction) -> bool:
+    """Verificar si el usuario está autenticado"""
+    user_id = str(interaction.user.id)
+    
+    # Verificar si está baneado
+    if roblox_verification.is_user_banned(user_id):
+        ban_time = roblox_verification.banned_users[user_id]
+        remaining_time = BAN_DURATION - (time.time() - ban_time)
+        days_remaining = int(remaining_time / (24 * 60 * 60))
+        hours_remaining = int((remaining_time % (24 * 60 * 60)) / 3600)
+        
+        embed = discord.Embed(
+            title="🚫 Usuario Baneado",
+            description=f"Estás baneado por intentar usar información falsa.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
+            color=0xff0000
+        )
+        embed.add_field(
+            name="📅 Fecha de desbaneo",
+            value=f"<t:{int(ban_time + BAN_DURATION)}:F>",
+            inline=False
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return False
+    
+    # Verificar si está verificado
+    if not roblox_verification.is_user_verified(user_id):
+        embed = discord.Embed(
+            title="🔒 Verificación Requerida",
+            description="Debes verificar que sigues a **hesiz** en Roblox para usar este bot.",
+            color=0xffaa00
+        )
+        embed.add_field(
+            name="📝 Cómo verificarse:",
+            value="1. Sigue a **hesiz** en Roblox: https://www.roblox.com/users/11834624/profile\n2. Usa `/verify [tu_nombre_de_usuario]`",
+            inline=False
+        )
+        embed.add_field(
+            name="⚠️ Importante:",
+            value="• Debes seguir a hesiz ANTES de verificarte\n• No uses nombres de usuario falsos\n• La verificación dura 24 horas",
+            inline=False
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return False
+    
+    return True
+
+@bot.tree.command(name="verify", description="Verificar que sigues a hesiz en Roblox para usar el bot")
+async def verify_command(interaction: discord.Interaction, roblox_username: str):
+    """Comando de verificación de seguidor de Roblox"""
+    await interaction.response.defer()
+    
+    try:
+        user_id = str(interaction.user.id)
+        
+        # Verificar si está baneado
+        if roblox_verification.is_user_banned(user_id):
+            ban_time = roblox_verification.banned_users[user_id]
+            remaining_time = BAN_DURATION - (time.time() - ban_time)
+            days_remaining = int(remaining_time / (24 * 60 * 60))
+            hours_remaining = int((remaining_time % (24 * 60 * 60)) / 3600)
+            
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description=f"Estás baneado por intentar usar información falsa.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Obtener ID de Roblox
+        roblox_user_id = await roblox_verification.get_roblox_user_id(roblox_username)
+        if not roblox_user_id:
+            embed = discord.Embed(
+                title="❌ Usuario no encontrado",
+                description=f"No se pudo encontrar el usuario **{roblox_username}** en Roblox.\n\nVerifica que el nombre esté escrito correctamente.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar si está siguiendo
+        is_following = await roblox_verification.check_if_following(roblox_user_id)
+        if not is_following:
+            embed = discord.Embed(
+                title="❌ No estás siguiendo a hesiz",
+                description=f"El usuario **{roblox_username}** no está siguiendo a **hesiz**.",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="📝 Para usar el bot:",
+                value="1. Ve al perfil de hesiz: https://www.roblox.com/users/11834624/profile\n2. Haz clic en **Seguir**\n3. Vuelve a usar `/verify [tu_nombre]`",
+                inline=False
+            )
+            embed.add_field(
+                name="⚠️ Importante:",
+                value="Debes seguir PRIMERO y luego verificarte. No funcionará al revés.",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Intentar verificar usuario
+        verification_success = roblox_verification.verify_user(user_id, roblox_username, roblox_user_id)
+        
+        if not verification_success:
+            embed = discord.Embed(
+                title="🚫 Error de Verificación",
+                description="Error, por favor no trates de mentir o no podrás usar este bot durante 7 días.",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="⚠️ Has sido baneado",
+                value="**Duración:** 7 días\n**Razón:** Intentar usar información de otro usuario",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificación exitosa
+        embed = discord.Embed(
+            title="✅ Verificación Exitosa",
+            description=f"¡Bienvenido **{roblox_username}**! Has sido verificado exitosamente.",
+            color=0x00ff88
+        )
+        embed.add_field(
+            name="🎮 Ahora puedes usar:",
+            value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
+            inline=False
+        )
+        embed.add_field(
+            name="⏰ Duración:",
+            value="24 horas (se renueva automáticamente si sigues a hesiz)",
+            inline=True
+        )
+        embed.add_field(
+            name="🔗 ID de Roblox:",
+            value=f"`{roblox_user_id}`",
+            inline=True
+        )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        logger.info(f"User {user_id} verified as {roblox_username} (ID: {roblox_user_id})")
+        
+    except Exception as e:
+        logger.error(f"Error in verify command: {e}")
+        embed = discord.Embed(
+            title="❌ Error de Verificación",
+            description="Ocurrió un error durante la verificación. Inténtalo nuevamente.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 # Server browser view with navigation buttons (user-exclusive)
 class ServerBrowserView(discord.ui.View):
@@ -1076,6 +1365,10 @@ class GameSearchView(discord.ui.View):
 @bot.tree.command(name="searchgame", description="Buscar un juego por nombre para hacer scraping")
 async def search_game_command(interaction: discord.Interaction, nombre: str):
     """Search for games by name"""
+    # Verificar autenticación
+    if not await check_verification(interaction):
+        return
+    
     await interaction.response.defer()
     
     try:
@@ -1151,6 +1444,10 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
 @bot.tree.command(name="game", description="Buscar y hacer scraping automáticamente por nombre de juego")
 async def game_command(interaction: discord.Interaction, nombre: str):
     """Search for a game by name and automatically start scraping the best match"""
+    # Verificar autenticación
+    if not await check_verification(interaction):
+        return
+    
     await interaction.response.defer()
     
     try:
@@ -1299,6 +1596,10 @@ async def game_command(interaction: discord.Interaction, nombre: str):
 @bot.tree.command(name="favorites", description="Ver y gestionar tus juegos favoritos")
 async def favorites_command(interaction: discord.Interaction):
     """Show user's favorite games"""
+    # Verificar autenticación
+    if not await check_verification(interaction):
+        return
+    
     await interaction.response.defer()
     
     try:
@@ -1353,6 +1654,10 @@ async def favorites_command(interaction: discord.Interaction):
 @bot.tree.command(name="history", description="Ver tu historial de uso de servidores")
 async def history_command(interaction: discord.Interaction):
     """Show user's usage history"""
+    # Verificar autenticación
+    if not await check_verification(interaction):
+        return
+    
     await interaction.response.defer()
     
     try:
@@ -1420,6 +1725,10 @@ async def history_command(interaction: discord.Interaction):
 @bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
     """Browser through all available VIP servers with navigation (user-specific)"""
+    # Verificar autenticación
+    if not await check_verification(interaction):
+        return
+    
     await interaction.response.defer()
 
     try:
@@ -1476,6 +1785,10 @@ async def servertest(interaction: discord.Interaction):
 @bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP (acepta ID o nombre)")
 async def scrape_command(interaction: discord.Interaction, juego: str):
     """Manually trigger scraping with real-time progress updates - supports both game ID and name"""
+    # Verificar autenticación
+    if not await check_verification(interaction):
+        return
+    
     await interaction.response.defer()
 
     user_id = str(interaction.user.id)
@@ -2059,6 +2372,10 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
 @bot.tree.command(name="stats", description="Mostrar estadísticas completas de enlaces VIP")
 async def stats(interaction: discord.Interaction):
     """Show detailed statistics about collected VIP links"""
+    # Verificar autenticación
+    if not await check_verification(interaction):
+        return
+    
     try:
         embed = discord.Embed(
             title="📊 Estadísticas de Base de Datos VIP",
@@ -2162,7 +2479,7 @@ async def stats(interaction: discord.Interaction):
         # Commands info
         embed.add_field(
             name="🎮 Comandos Disponibles", 
-            value="• `/scrape [id_o_nombre]` - 🚀 **ACTUALIZADO** Buscar por ID o nombre automáticamente\n• `/servertest` - Ver servidores\n• `/favorites` - Ver favoritos\n• `/history` - Ver historial", 
+            value="• `/verify [usuario_roblox]` - 🔒 **REQUERIDO** Verificarse para usar el bot\n• `/scrape [id_o_nombre]` - 🚀 Buscar por ID o nombre automáticamente\n• `/servertest` - Ver servidores\n• `/favorites` - Ver favoritos\n• `/history` - Ver historial", 
             inline=False
         )
 
