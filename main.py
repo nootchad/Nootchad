@@ -195,7 +195,15 @@ class RobloxVerificationSystem:
         return code
 
     def create_verification_request(self, discord_id: str, roblox_username: str) -> str:
-        """Crear solicitud de verificación con código"""
+        """Crear solicitud de verificación con código, verificando duplicados primero"""
+        # Verificar si el roblox_username ya está siendo usado por otro discord_id
+        for existing_discord_id, data in self.verified_users.items():
+            if data['roblox_username'].lower() == roblox_username.lower() and existing_discord_id != discord_id:
+                # Banear al usuario que intenta usar un nombre ya registrado
+                logger.warning(f"User {discord_id} attempted to use already registered Roblox username {roblox_username} (owned by {existing_discord_id})")
+                self.ban_user(discord_id)  # Esto ya guarda instantáneamente
+                raise ValueError(f"El nombre de usuario {roblox_username} ya está registrado por otro usuario Discord.")
+        
         verification_code = self.generate_verification_code()
         
         self.pending_verifications[discord_id] = {
@@ -1305,8 +1313,28 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
-        # Crear código de verificación
-        verification_code = roblox_verification.create_verification_request(user_id, roblox_username)
+        # Crear código de verificación (verificará duplicados automáticamente)
+        try:
+            verification_code = roblox_verification.create_verification_request(user_id, roblox_username)
+        except ValueError as e:
+            # El usuario ya está baneado por usar un nombre duplicado
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description=str(e),
+                color=0xff0000
+            )
+            embed.add_field(
+                name="⚠️ Has sido baneado automáticamente",
+                value="**Duración:** 7 días\n**Razón:** Intentar usar un nombre de usuario ya registrado por otro Discord ID",
+                inline=False
+            )
+            embed.add_field(
+                name="📅 Fecha de desbaneo",
+                value=f"<t:{int(time.time() + BAN_DURATION)}:F>",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
         
         # Instrucciones de verificación
         embed = discord.Embed(
