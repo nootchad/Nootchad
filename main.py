@@ -3060,63 +3060,101 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
 
         # Send notification ping if new servers were found
         if new_links_count > 0:
+            notification_sent = False
+            
+            # Crear embed de notificación reutilizable
+            notification_embed = discord.Embed(
+                title="🔔 ¡Nuevos Servidores Encontrados!",
+                description=f"¡Se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**!",
+                color=0x00ff88
+            )
+            notification_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
+            notification_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
+            
+            # Intentar enviar en el canal primero
             try:
-                # Check if the bot has permission to send messages in this channel
                 channel = message.channel
+                can_send_in_channel = True
                 
                 # Verificaciones completas de permisos y contexto
-                if not hasattr(channel, 'guild') or channel.guild is None:
-                    logger.debug(f"Notificación en DM o canal sin guild, omitiendo verificación de permisos")
-                    # En DMs o canales sin guild, intentar enviar directamente
-                else:
+                if hasattr(channel, 'guild') and channel.guild is not None:
                     # Verificar si el bot está en el servidor
                     bot_member = channel.guild.get_member(bot.user.id)
                     if not bot_member:
-                        logger.warning(f"Bot no es miembro del servidor {channel.guild.id}, no se puede enviar notificación")
-                        return
-                    
-                    # Verificar permisos específicos
-                    permissions = channel.permissions_for(bot_member)
-                    if not permissions.send_messages:
-                        logger.warning(f"Bot no tiene permisos para enviar mensajes en canal {channel.id} del servidor {channel.guild.name}")
-                        return
-                    
-                    if not permissions.embed_links:
-                        logger.warning(f"Bot no tiene permisos para enviar embeds en canal {channel.id}")
-                        # Intentar enviar mensaje simple sin embed
-                        try:
-                            simple_message = f"🔔 ¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**! Usa `/servertest` para acceder."
-                            await channel.send(simple_message, delete_after=10)
-                            logger.info(f"Notificación simple enviada exitosamente en canal {channel.id}")
-                            return
-                        except Exception as e:
-                            logger.error(f"Error enviando notificación simple: {e}")
-                            return
+                        logger.warning(f"Bot no es miembro del servidor {channel.guild.id}")
+                        can_send_in_channel = False
+                    else:
+                        # Verificar permisos específicos
+                        permissions = channel.permissions_for(bot_member)
+                        if not permissions.send_messages:
+                            logger.warning(f"Bot no tiene permisos para enviar mensajes en canal {channel.id}")
+                            can_send_in_channel = False
+                        elif not permissions.embed_links:
+                            logger.warning(f"Bot no tiene permisos para enviar embeds en canal {channel.id}")
+                            # Intentar mensaje simple sin embed
+                            try:
+                                simple_message = f"🔔 ¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**! Usa `/servertest` para acceder."
+                                await channel.send(simple_message, delete_after=10)
+                                logger.info(f"Notificación simple enviada exitosamente en canal {channel.id}")
+                                notification_sent = True
+                            except Exception as e:
+                                logger.error(f"Error enviando notificación simple en canal: {e}")
+                                can_send_in_channel = False
                 
-                # Crear y enviar embed de notificación
-                notification_embed = discord.Embed(
-                    title="🔔 ¡Nuevos Servidores Encontrados!",
-                    description=f"¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**!",
-                    color=0x00ff88
-                )
-                notification_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
-                notification_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
-                notification_embed.set_footer(text="Notificación automática • Se eliminará en 10 segundos")
-                
-                # Send as a separate message to ensure ping
-                await channel.send(embed=notification_embed, delete_after=10)
-                logger.info(f"Notificación de {new_links_count} nuevos servidores enviada exitosamente en canal {channel.id}")
+                # Si tiene permisos, enviar embed completo en el canal
+                if can_send_in_channel and not notification_sent:
+                    notification_embed.set_footer(text="Notificación automática • Se eliminará en 10 segundos")
+                    await channel.send(embed=notification_embed, delete_after=10)
+                    logger.info(f"Notificación embed enviada exitosamente en canal {channel.id}")
+                    notification_sent = True
                 
             except discord.Forbidden as e:
                 logger.warning(f"Sin permisos para enviar notificación en canal {getattr(channel, 'id', 'unknown')}: {e}")
+                can_send_in_channel = False
             except discord.HTTPException as e:
-                logger.error(f"Error HTTP al enviar notificación: {e}")
-            except AttributeError as e:
-                logger.error(f"Error de atributo al enviar notificación (objeto channel inválido): {e}")
-            except discord.NotFound as e:
-                logger.error(f"Canal no encontrado al enviar notificación: {e}")
+                logger.error(f"Error HTTP al enviar notificación en canal: {e}")
+                can_send_in_channel = False
             except Exception as e:
-                logger.error(f"Error inesperado al enviar notificación: {type(e).__name__}: {e}")
+                logger.error(f"Error inesperado al enviar notificación en canal: {type(e).__name__}: {e}")
+                can_send_in_channel = False
+            
+            # Si no se pudo enviar en el canal, enviar por DM como respaldo
+            if not notification_sent:
+                try:
+                    logger.info(f"Intentando enviar notificación por DM al usuario {discord_user.id}")
+                    
+                    # Crear embed específico para DM
+                    dm_embed = discord.Embed(
+                        title="🔔 ¡Nuevos Servidores Encontrados!",
+                        description=f"¡Se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**!",
+                        color=0x00ff88
+                    )
+                    dm_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
+                    dm_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
+                    dm_embed.add_field(
+                        name="💬 Enviado por DM",
+                        value="Esta notificación se envió por mensaje directo porque el bot no tiene permisos para enviar mensajes en el canal.",
+                        inline=False
+                    )
+                    dm_embed.set_footer(text=f"Desde: {channel.guild.name if hasattr(channel, 'guild') and channel.guild else 'Discord'}")
+                    
+                    # Enviar DM al usuario
+                    await discord_user.send(embed=dm_embed)
+                    logger.info(f"✅ Notificación enviada exitosamente por DM al usuario {discord_user.id}")
+                    notification_sent = True
+                    
+                except discord.Forbidden:
+                    logger.warning(f"❌ No se puede enviar DM al usuario {discord_user.id} - DMs deshabilitados")
+                except discord.HTTPException as e:
+                    logger.error(f"❌ Error HTTP al enviar DM al usuario {discord_user.id}: {e}")
+                except Exception as e:
+                    logger.error(f"❌ Error inesperado al enviar DM al usuario {discord_user.id}: {type(e).__name__}: {e}")
+            
+            # Log del resultado final
+            if notification_sent:
+                logger.info(f"✅ Notificación de {new_links_count} nuevos servidores entregada exitosamente al usuario {discord_user.id}")
+            else:
+                logger.error(f"❌ No se pudo entregar notificación al usuario {discord_user.id} - ni por canal ni por DM")
 
     except Exception as e:
         logger.error(f"💥 Scraping async failed: {e}")
