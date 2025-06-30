@@ -1,57 +1,105 @@
 
-# 🎮 NUEVO BOT: Generador de Servidores VIP de Roblox
+# 🎉 LANZAMIENTO OFICIAL DEL BOT DE SERVIDORES VIP
 
-## ¿Qué es este bot?
+## ¡El bot está completamente funcional al 100%!
 
-**RbxServers** es un bot de Discord que **genera enlaces de servidores VIP** para tus juegos favoritos de Roblox de forma completamente automática y gratuita.
+Después de múltiples actualizaciones y mejoras, me complace anunciar que **RbxServers** está oficialmente listo y funcionando perfectamente. Todas las funciones han sido optimizadas y el sistema de verificación está completamente operativo.
 
-## 🚀 ¿Qué hace exactamente?
+## 🔐 VERIFICACIÓN OBLIGATORIA - PASO A PASO
 
-- **Genera servidores VIP automáticamente** para casi cualquier juego de Roblox
-- **Búsqueda inteligente** de servidores disponibles en tiempo real
-- **Base de datos personal** - cada usuario tiene sus propios enlaces guardados
-- **Navegación fácil** entre múltiples servidores con botones interactivos
-- **Estadísticas detalladas** de tu colección de servidores
+### ¿Por qué necesitas verificarte?
+Para garantizar la seguridad y evitar el abuso del bot, **todos los usuarios deben verificarse** antes de poder acceder a las funciones de generación de servidores VIP.
 
-## 📋 Comandos disponibles
+### 📝 Proceso de Verificación Completo
+
+#### Paso 1: Iniciar la verificación
+- Usa el comando `/verify [tu_nombre_de_usuario_de_roblox]`
+- **IMPORTANTE:** Usa únicamente TU propio nombre de usuario de Roblox
+- El bot generará un código único para ti
+
+#### Paso 2: Seguir las instrucciones del bot
+- El bot te mostrará un código especial que debes copiar
+- Lee cuidadosamente todas las instrucciones que aparecen en el embed
+- Tienes **10 minutos** para completar el proceso
+
+#### Paso 3: Modificar tu perfil de Roblox
+- Ve a tu perfil de Roblox (www.roblox.com)
+- Haz clic en **"Editar Perfil"** o el ícono de lápiz
+- Busca la sección **"Descripción"**
+- Pega el código que te dio el bot en tu descripción
+- **Guarda los cambios** en tu perfil
+
+#### Paso 4: Confirmar la verificación
+- Regresa a Discord
+- Haz clic en el **botón verde "Confirmar Verificación"**
+- El bot verificará automáticamente que hayas agregado el código
+- ¡Listo! Ya estarás verificado por 24 horas
+
+## ⚠️ ADVERTENCIAS IMPORTANTES
+
+### 🚫 NO USES NOMBRES DE USUARIOS YA VERIFICADOS
+Esta es la regla más importante del bot:
+
+- **NUNCA** intentes usar el nombre de usuario de otra persona
+- **NUNCA** uses nombres que ya estén registrados por otros usuarios de Discord
+- Solo usa **TU PROPIO** nombre de usuario de Roblox
+
+### 📋 Sistema de Advertencias y Baneos
+
+#### Primera infracción:
+- Recibirás una **advertencia oficial**
+- Podrás intentar verificarte nuevamente con tu nombre real
+- Se registrará en el sistema
+
+#### Segunda infracción:
+- **BAN AUTOMÁTICO de 7 días**
+- No podrás usar ninguna función del bot durante este período
+- El ban es irreversible hasta que expire
+
+## 🎮 Funciones Disponibles Después de Verificarte
 
 ### `/scrape <game_id_o_nombre>`
-Inicia la búsqueda de nuevos servidores VIP para el juego que especifiques. Acepta tanto el ID del juego como el nombre del juego.
+- Busca nuevos servidores VIP para cualquier juego de Roblox
+- Acepta tanto ID numérico como nombre del juego
+- Almacena automáticamente los enlaces encontrados
 
 ### `/servertest`
-Navega por todos tus servidores VIP guardados con botones de navegación. Incluye enlaces directos para unirte al servidor.
+- Navega por todos tus servidores VIP guardados
+- Botones interactivos para cambiar entre servidores
+- Enlaces directos para unirte inmediatamente
 
 ### `/stats`
-Muestra estadísticas completas de tu base de datos personal: cuántos servidores tienes, velocidad de búsqueda, y más.
+- Estadísticas completas de tu base de datos personal
+- Información sobre velocidad de búsqueda
+- Contadores de servidores encontrados
 
-## ✨ Características principales
+## 💡 Consejos para el Mejor Rendimiento
 
-- **🆓 100% GRATIS** (actualmente)
-- **🎯 Funciona con casi todos los juegos** de Roblox
-- **⚡ Búsqueda rápida** con actualizaciones en tiempo real
-- **💾 Almacenamiento personal** - tus enlaces se guardan automáticamente
-- **🔄 Navegación intuitiva** con botones de siguiente/anterior
-- **📊 Estadísticas detalladas** de rendimiento
-- **🔒 Privado y seguro** - cada usuario tiene su propia base de datos
+1. **Verifica tu cuenta inmediatamente** para evitar interrupciones
+2. **Usa nombres de juegos específicos** para mejores resultados de búsqueda
+3. **Guarda múltiples servidores** para tener opciones disponibles
+4. **Revisa tus estadísticas** regularmente para optimizar tu uso
 
-## 🎮 ¿Cómo empezar?
+## 🔄 Duración de la Verificación
 
-1. **Usa `/scrape [ID_o_nombre]`** para buscar servidores de tu juego favorito
-2. **Espera a que termine** la búsqueda automática
-3. **Usa `/servertest`** para navegar por tus servidores encontrados
-4. **¡Disfruta de servidores VIP ilimitados!**
+- La verificación dura **24 horas**
+- Después de este tiempo, deberás verificarte nuevamente
+- El proceso es rápido la segunda vez ya que conoces los pasos
 
-## 💡 Ejemplos de uso
+## 🆘 Soporte y Problemas
 
-```
-/scrape blox fruits
-/scrape dress to impress
-/scrape 10449761463
-```
-Busca por nombre de juego o ID directamente
+Si tienes algún problema durante la verificación:
+- Asegúrate de seguir **todos los pasos** exactamente como se indica
+- Verifica que hayas **guardado los cambios** en tu perfil de Roblox
+- Espera unos segundos antes de hacer clic en "Confirmar Verificación"
+- Si persisten los problemas, revisa que estés usando tu propio nombre de usuario
 
 ---
 
-**¡Empieza ahora y obtén acceso a servidores VIP de forma gratuita!** 🎉
+## 🎊 ¡Disfruta del Bot!
 
-*Bot desarrollado para la comunidad - actualmente sin costo alguno*
+Una vez verificado, tendrás acceso ilimitado a servidores VIP de Roblox completamente **GRATIS**. El bot está optimizado para funcionar con la mayoría de juegos populares y se actualiza constantemente para mejorar el rendimiento.
+
+**¡Empieza tu verificación ahora y obtén acceso a servidores VIP ilimitados!** 🚀
+
+*Bot desarrollado para la comunidad - Mantén tu cuenta segura siguiendo las reglas*
