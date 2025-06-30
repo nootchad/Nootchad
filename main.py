@@ -2711,24 +2711,29 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
 
         await interaction.followup.send(embed=error_embed, view=error_view)
 
-async def scrape_with_updates(message, start_time, game_id, user_id, discord_user):
-    """Run scraping with real-time Discord message updates and user notification"""
+def run_scraping_sync(game_id, user_id):
+    """Función síncrona para ejecutar el scraping sin bloquear Discord"""
     driver = None
     new_links_count = 0
     processed_count = 0
-    username = f"{discord_user.name}#{discord_user.discriminator}"
+    results = {
+        'new_links_count': 0,
+        'processed_count': 0,
+        'total_time': 0,
+        'success': False,
+        'error': None,
+        'game_info': None
+    }
 
     try:
-        logger.info(f"🚀 Iniciando scraping VIP para game ID: {game_id} | Usuario: {username} (ID: {user_id}) | Mensaje ID: {message.id}")
-        user_logger.info(f"🔧 Creando driver Chrome para usuario {username}")
+        logger.info(f"🚀 Iniciando scraping VIP para game ID: {game_id} | Usuario: {user_id}")
         driver = scraper.create_driver()
         
-        user_logger.info(f"🔍 Obteniendo enlaces de servidor para game {game_id} - Usuario: {username}")
         server_links = scraper.get_server_links(driver, game_id)
-
         if not server_links:
             logger.warning("⚠️ No server links found")
-            return
+            results['error'] = "No se encontraron enlaces de servidor"
+            return results
 
         # Limit to 5 servers to avoid overloading
         server_links = server_links[:5]
@@ -2771,73 +2776,116 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                 elif vip_link:
                     logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
 
-                # Update Discord message every 3 servers or on new find
-                if (i + 1) % 3 == 0 or vip_link:
-                    elapsed = time.time() - start_time
-                    eta = (elapsed / (i + 1)) * (len(server_links) - i - 1) if i > 0 else 0
-
-                    # Update embed with current progress
-                    game_name = scraper.links_by_user[user_id][game_id]['game_name']
-                    category = scraper.links_by_user[user_id][game_id].get('category', 'other')
-                    
-                    progress_embed = discord.Embed(
-                        title="🎮 ROBLOX PRIVATE SERVER LINKS",
-                        description=f"Procesando {len(server_links)} servidores encontrados para **{game_name}** (ID: {game_id})... Búsqueda activa de servidores VIP.",
-                        color=0x2F3136
-                    )
-                    
-                    # Add game image if available
-                    game_image_url = scraper.links_by_user[user_id][game_id].get('game_image_url')
-                    if game_image_url:
-                        progress_embed.set_thumbnail(url=game_image_url)
-                    
-                    progress_embed.add_field(name="🎯 Servidores Encontrados", value=f"**{new_links_count}**", inline=True)
-                    progress_embed.add_field(name="📊 Progreso", value=f"{i + 1}/{len(server_links)}", inline=True)
-                    progress_embed.add_field(name="⏱️ Tiempo", value=f"{elapsed:.0f}s", inline=True)
-
-                    if eta > 0:
-                        progress_embed.add_field(name="⏰ ETA", value=f"{eta:.0f}s", inline=True)
-
-                    progress_embed.add_field(name="📈 Tu Total", value=f"{len(scraper.links_by_user[user_id][game_id]['links'])} servidores", inline=True)
-                    
-                    category_emoji = {
-                        "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-                        "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-                        "building": "🏗️", "anime": "🌸", "other": "🎮"
-                    }
-                    progress_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
-
-                    # Progress bar
-                    progress_percentage = ((i + 1) / len(server_links)) * 100
-                    bar_length = 10
-                    filled_length = int(bar_length * (i + 1) // len(server_links))
-                    bar = "█" * filled_length + "░" * (bar_length - filled_length)
-                    progress_embed.add_field(
-                        name="📊 Progreso Visual", 
-                        value=f"`{bar}` {progress_percentage:.1f}%", 
-                        inline=False
-                    )
-
-                    view = discord.ui.View(timeout=None)
-                    follow_button = discord.ui.Button(
-                        label="👤 Seguir a hesiz",
-                        style=discord.ButtonStyle.secondary,
-                        url="https://www.roblox.com/users/11834624/profile"
-                    )
-                    view.add_item(follow_button)
-
-                    try:
-                        await message.edit(embed=progress_embed, view=view)
-                    except discord.HTTPException:
-                        logger.warning("Failed to update Discord message, continuing...")
-
             except Exception as e:
                 logger.error(f"❌ Error processing {server_url}: {e}")
                 continue
 
-        # Final completion update
+        # Prepare results
+        results['new_links_count'] = new_links_count
+        results['processed_count'] = processed_count
+        results['success'] = True
+        results['game_info'] = {
+            'game_name': scraper.links_by_user[user_id][game_id]['game_name'],
+            'category': scraper.links_by_user[user_id][game_id].get('category', 'other'),
+            'game_image_url': scraper.links_by_user[user_id][game_id].get('game_image_url'),
+            'total_links': len(scraper.links_by_user[user_id][game_id]['links'])
+        }
+
+        return results
+
+    except Exception as e:
+        logger.error(f"💥 Scraping failed: {e}")
+        results['error'] = str(e)
+        return results
+    finally:
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
+
+async def scrape_with_updates(message, start_time, game_id, user_id, discord_user):
+    """Run scraping with real-time Discord message updates and user notification"""
+    username = f"{discord_user.name}#{discord_user.discriminator}"
+
+    try:
+        logger.info(f"🚀 Iniciando scraping async para game ID: {game_id} | Usuario: {username} (ID: {user_id}) | Mensaje ID: {message.id}")
+        
+        # Crear una tarea para ejecutar el scraping en un hilo separado
+        scraping_task = asyncio.create_task(
+            asyncio.to_thread(run_scraping_sync, game_id, user_id)
+        )
+        
+        # Mientras se ejecuta el scraping, actualizar el mensaje periódicamente
+        while not scraping_task.done():
+            try:
+                elapsed = time.time() - start_time
+                
+                # Embed de progreso genérico
+                progress_embed = discord.Embed(
+                    title="🎮 ROBLOX PRIVATE SERVER LINKS",
+                    description=f"Procesando servidores para el juego ID: **{game_id}**... Búsqueda activa de servidores VIP.",
+                    color=0x2F3136
+                )
+                
+                progress_embed.add_field(name="⏱️ Tiempo Transcurrido", value=f"{elapsed:.0f}s", inline=True)
+                progress_embed.add_field(name="🔄 Estado", value="Procesando...", inline=True)
+                progress_embed.add_field(name="🆔 ID del Juego", value=f"```{game_id}```", inline=True)
+
+                # Animación de progreso
+                dots = "." * (int(elapsed) % 4)
+                progress_embed.add_field(
+                    name="📊 Progreso", 
+                    value=f"Analizando servidores{dots}", 
+                    inline=False
+                )
+
+                view = discord.ui.View(timeout=None)
+                follow_button = discord.ui.Button(
+                    label="👤 Seguir a hesiz",
+                    style=discord.ButtonStyle.secondary,
+                    url="https://www.roblox.com/users/11834624/profile"
+                )
+                view.add_item(follow_button)
+
+                try:
+                    await message.edit(embed=progress_embed, view=view)
+                except (discord.HTTPException, discord.NotFound):
+                    logger.warning("Failed to update Discord message, continuing...")
+                
+                # Esperar 5 segundos antes de la próxima actualización
+                await asyncio.sleep(5)
+                
+            except Exception as e:
+                logger.warning(f"Error updating progress: {e}")
+                await asyncio.sleep(5)
+        
+        # Obtener resultados del scraping
+        results = await scraping_task
+
+        # Verificar si hubo error
+        if not results['success']:
+            error_embed = discord.Embed(
+                title="❌ Error en Scraping",
+                description=f"Ocurrió un error durante el scraping: {results.get('error', 'Error desconocido')}",
+                color=0xff0000
+            )
+            view = discord.ui.View(timeout=None)
+            follow_button = discord.ui.Button(
+                label="👤 Seguir a hesiz",
+                style=discord.ButtonStyle.secondary,
+                url="https://www.roblox.com/users/11834624/profile"
+            )
+            view.add_item(follow_button)
+            
+            await message.edit(embed=error_embed, view=view)
+            return
+
+        # Obtener datos de los resultados
+        new_links_count = results['new_links_count']
+        processed_count = results['processed_count']
+        game_info = results['game_info']
         total_time = time.time() - start_time
-        final_count = len(scraper.links_by_user[user_id][game_id]['links'])
 
         # Update statistics
         scraper.scraping_stats.update({
@@ -2853,12 +2901,12 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         scraper.add_usage_history(user_id, game_id, f"Found {new_links_count} servers", 'scrape_complete')
 
         logger.info(f"✅ Scraping completed in {total_time:.1f}s")
-        logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {final_count})")
+        logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {game_info['total_links']})")
         scraper.save_links()
 
         # Final completion embed
-        game_name = scraper.links_by_user[user_id][game_id]['game_name']
-        category = scraper.links_by_user[user_id][game_id].get('category', 'other')
+        game_name = game_info['game_name']
+        category = game_info['category']
         
         complete_embed = discord.Embed(
             title="✅ BÚSQUEDA COMPLETADA",
@@ -2867,12 +2915,12 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         )
         
         # Add game image if available
-        game_image_url = scraper.links_by_user[user_id][game_id].get('game_image_url')
+        game_image_url = game_info.get('game_image_url')
         if game_image_url:
             complete_embed.set_thumbnail(url=game_image_url)
 
         complete_embed.add_field(name="🆕 Nuevos Servidores", value=f"**{new_links_count}**", inline=True)
-        complete_embed.add_field(name="📊 Tu Total", value=f"**{final_count}** servidores", inline=True)
+        complete_embed.add_field(name="📊 Tu Total", value=f"**{game_info['total_links']}** servidores", inline=True)
         complete_embed.add_field(name="⏱️ Duración", value=f"{total_time:.1f}s", inline=True)
 
         complete_embed.add_field(name="⚡ Velocidad", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
@@ -2967,7 +3015,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         vip_button = ExclusiveVIPButton(
             user_id, 
             game_id, 
-            disabled=len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', [])) == 0
+            disabled=game_info['total_links'] == 0
         )
         complete_view.add_item(vip_button)
 
@@ -2994,11 +3042,24 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
             await message.channel.send(embed=notification_embed, delete_after=10)
 
     except Exception as e:
-        logger.error(f"💥 Scraping failed: {e}")
-        raise
-    finally:
-        if driver:
-            driver.quit()
+        logger.error(f"💥 Scraping async failed: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error Crítico",
+            description=f"Ocurrió un error crítico durante el scraping: {str(e)[:200]}",
+            color=0xff0000
+        )
+        view = discord.ui.View(timeout=None)
+        follow_button = discord.ui.Button(
+            label="👤 Seguir a hesiz",
+            style=discord.ButtonStyle.secondary,
+            url="https://www.roblox.com/users/11834624/profile"
+        )
+        view.add_item(follow_button)
+        
+        try:
+            await message.edit(embed=error_embed, view=view)
+        except:
+            pass
 
 @bot.tree.command(name="stats", description="Mostrar estadísticas completas de enlaces VIP")
 async def stats(interaction: discord.Interaction):
