@@ -1130,7 +1130,8 @@ class VIPServerScraper:
 # Discord Bot
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='/', intents=intents)
+intents.guilds = True
+bot = commands.Bot(command_prefix='/', intents=intents, case_insensitive=True)
 
 # Global instances
 scraper = VIPServerScraper()
