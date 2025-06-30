@@ -1,54 +1,78 @@
+
 # 🎉 LANZAMIENTO OFICIAL DEL BOT
 
 ## ¡El bot funciona al 100%!
 
-**RbxServers** está listo y funcionando perfectamente. **VERIFICACIÓN OBLIGATORIA** para usar el bot.
+**RbxServers** está listo. **VERIFICACIÓN OBLIGATORIA** para usar el bot.
 
 ## 🔐 VERIFICACIÓN - PASOS
 
 ### Paso 1: Comando
 - Usa `/verify [tu_nombre_de_cuenta_de_roblox]`
-- **IMPORTANTE:** Tu nombre real de cuenta (@nombrereal), NO tu sobrenombre
-- **EJEMPLO:** Si eres "@JuanGamer123" pero tu display es "Juan Pro", usa "JuanGamer123"
+- **IMPORTANTE:** Tu nombre real (@nombrereal), NO tu sobrenombre
+- **EJEMPLO:** "@JuanGamer123" usa "JuanGamer123"
 
 ### Paso 2: Código en perfil
 - El bot te dará un código único
-- Ve a tu perfil de Roblox → "Editar Perfil" → "Descripción"
-- Pega el código en tu descripción y guarda
+- Ve a Roblox → "Editar Perfil" → "Descripción"
+- Pega el código y guarda
 
 ### Paso 3: Confirmar
-- Regresa a Discord
-- Haz clic en el **botón verde "Confirmar Verificación"**
+- Haz clic en **botón verde "Confirmar Verificación"**
 - ¡Verificado por 24 horas!
 
 ## ⚠️ REGLAS IMPORTANTES
 
 ### 🚫 NO USES NOMBRES AJENOS
-- **NUNCA** uses el nombre de otra persona
-- Solo **TU PROPIO** nombre de cuenta real
+- **NUNCA** uses nombres de otros usuarios
+- Solo **TU PROPIO** nombre real
 - **Primera vez:** Advertencia
 - **Segunda vez:** BAN 7 DÍAS automático
 
-## 🎮 Funciones Disponibles
+## 🎮 COMANDOS DISPONIBLES
 
 ### `/scrape <juego>`
-- Busca servidores VIP para cualquier juego
+- Busca servidores VIP por ID o nombre
+- **Ejemplo:** `/scrape adopt me` o `/scrape 920587237`
 
 ### `/servertest`
-- Navega tus servidores VIP guardados
+- **Navega tus servidores guardados**
+- Botones ⬅️➡️ para cambiar servidores
+- Botón ⭐ para agregar/quitar favoritos
+- **¡Aquí ves TODOS tus servidores!**
+
+### `/favorites`
+- **Ver tus juegos favoritos**
+- Lista completa con conteo de servidores
+- Acceso rápido a tus juegos preferidos
+
+### `/history`
+- **Tu historial de actividad**
+- Últimas búsquedas y navegación
+- Seguimiento de uso del bot
+
+### `/searchgame <nombre>`
+- Buscar juegos con menú de selección
+- Múltiples opciones si hay coincidencias
+
+### `/game <nombre>`
+- Búsqueda automática más rápida
+- Selecciona la mejor coincidencia
 
 ### `/stats`
 - Estadísticas completas de tu base de datos
+- Total de servidores, juegos, favoritos
+- Rendimiento y categorías
 
-## 💡 Consejos
+## 💡 CONSEJOS
 
 1. **Verifica inmediatamente** para evitar interrupciones
-2. **Encuentra tu @nombre real** en tu perfil de Roblox
-3. **Usa nombres específicos** para mejores resultados
+2. **Usa `/favorites`** para gestionar juegos preferidos
+3. **Usa `/servertest`** para ver TODOS tus servidores
 4. La verificación dura **24 horas**
 
 ## 🎊 ¡Disfruta!
 
-Una vez verificado, acceso **GRATIS** a servidores VIP ilimitados.
+Acceso **GRATIS** a servidores VIP ilimitados una vez verificado.
 
-**¡Empieza tu verificación ahora!** 🚀
+**¡Empieza con `/verify [tu_nombre]`!** 🚀
