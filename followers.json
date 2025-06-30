@@ -6,6 +6,12 @@
       "verified_at": 1751229018.5157757
     }
   },
-  "pending_verifications": {},
-  "last_updated": "2025-06-29T20:30:18.515780"
+  "pending_verifications": {
+    "1348850482118131733": {
+      "roblox_username": "Dartt908",
+      "verification_code": "verifyv2025vrbx",
+      "created_at": 1751244268.1818058
+    }
+  },
+  "last_updated": "2025-06-30T00:44:28.181810"
 }
