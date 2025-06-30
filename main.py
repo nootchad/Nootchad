@@ -3176,6 +3176,118 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         except:
             pass
 
+@bot.tree.command(name="dm", description="[TEMPORAL] Probar sistema de mensajes directos")
+async def dm_test_command(interaction: discord.Interaction):
+    """Comando temporal para probar el sistema de DMs"""
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        user_id = str(interaction.user.id)
+        username = f"{interaction.user.name}#{interaction.user.discriminator}"
+        
+        user_logger.info(f"🧪 Comando /dm ejecutado por {username} (ID: {user_id})")
+        
+        # Crear embed de prueba para DM
+        dm_embed = discord.Embed(
+            title="✅ Prueba de DM Exitosa",
+            description="¡El sistema de mensajes directos está funcionando correctamente!",
+            color=0x00ff88
+        )
+        
+        dm_embed.add_field(
+            name="📊 Información de Prueba",
+            value=f"**Usuario:** {username}\n**ID:** {user_id}\n**Servidor:** {interaction.guild.name if interaction.guild else 'DM'}\n**Canal:** #{interaction.channel.name if hasattr(interaction.channel, 'name') else 'DM'}",
+            inline=False
+        )
+        
+        dm_embed.add_field(
+            name="🔧 Características Probadas",
+            value="• ✅ Envío de embeds por DM\n• ✅ Detección de usuario\n• ✅ Logging de actividad\n• ✅ Manejo de errores",
+            inline=False
+        )
+        
+        dm_embed.add_field(
+            name="💡 Estado del Sistema",
+            value="Todos los sistemas de DM operativos",
+            inline=True
+        )
+        
+        dm_embed.set_footer(text="Comando temporal de prueba • Se eliminará pronto")
+        
+        # Intentar enviar DM
+        try:
+            await interaction.user.send(embed=dm_embed)
+            logger.info(f"✅ DM de prueba enviado exitosamente al usuario {user_id}")
+            
+            # Confirmar en el canal
+            success_embed = discord.Embed(
+                title="✅ Prueba de DM Completada",
+                description="El mensaje de prueba fue enviado exitosamente a tu DM. ¡El sistema funciona perfectamente!",
+                color=0x00ff88
+            )
+            success_embed.add_field(
+                name="📨 Estado",
+                value="DM enviado con éxito",
+                inline=True
+            )
+            success_embed.add_field(
+                name="🔍 Revisa",
+                value="Tu bandeja de mensajes directos",
+                inline=True
+            )
+            
+            await interaction.followup.send(embed=success_embed, ephemeral=True)
+            
+        except discord.Forbidden:
+            logger.warning(f"❌ No se puede enviar DM al usuario {user_id} - DMs deshabilitados")
+            
+            error_embed = discord.Embed(
+                title="❌ DMs Deshabilitados",
+                description="No se pudo enviar el mensaje de prueba porque tienes los DMs deshabilitados.",
+                color=0xff9900
+            )
+            error_embed.add_field(
+                name="🔧 Solución",
+                value="• Ve a Configuración de Usuario\n• Privacidad y Seguridad\n• Permitir mensajes directos de miembros del servidor\n• Activa la opción",
+                inline=False
+            )
+            error_embed.add_field(
+                name="ℹ️ Nota",
+                value="El bot funciona igual sin DMs, solo las notificaciones se enviarán en el canal.",
+                inline=False
+            )
+            
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+            
+        except discord.HTTPException as e:
+            logger.error(f"❌ Error HTTP al enviar DM de prueba al usuario {user_id}: {e}")
+            
+            error_embed = discord.Embed(
+                title="❌ Error de Conexión",
+                description=f"Error técnico al enviar DM: {str(e)[:100]}",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"❌ Error inesperado al enviar DM de prueba al usuario {user_id}: {type(e).__name__}: {e}")
+            
+            error_embed = discord.Embed(
+                title="❌ Error Inesperado",
+                description=f"Error desconocido: {type(e).__name__}",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in dm test command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error en Comando de Prueba",
+            description="Ocurrió un error durante la prueba de DM.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="stats", description="Mostrar estadísticas completas de enlaces VIP")
 async def stats(interaction: discord.Interaction):
     """Show detailed statistics about collected VIP links"""
