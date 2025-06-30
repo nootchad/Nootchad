@@ -15,6 +15,8 @@ Para garantizar la seguridad y evitar el abuso del bot, **todos los usuarios deb
 #### Paso 1: Iniciar la verificación
 - Usa el comando `/verify [tu_nombre_de_usuario_de_roblox]`
 - **IMPORTANTE:** Usa únicamente TU propio nombre de usuario de Roblox
+- **DEBE SER:** Tu nombre de cuenta real de Roblox (no tu sobrenombre/display name)
+- **EJEMPLO:** Si tu cuenta es "@JuanGamer123" pero tu sobrenombre es "Juan Pro", usa "JuanGamer123"
 - El bot generará un código único para ti
 
 #### Paso 2: Seguir las instrucciones del bot
@@ -43,6 +45,7 @@ Esta es la regla más importante del bot:
 - **NUNCA** intentes usar el nombre de usuario de otra persona
 - **NUNCA** uses nombres que ya estén registrados por otros usuarios de Discord
 - Solo usa **TU PROPIO** nombre de usuario de Roblox
+- **IMPORTANTE:** Usa tu nombre de cuenta real (@nombrereal), NO tu sobrenombre o display name
 
 ### 📋 Sistema de Advertencias y Baneos
 
@@ -76,9 +79,10 @@ Esta es la regla más importante del bot:
 ## 💡 Consejos para el Mejor Rendimiento
 
 1. **Verifica tu cuenta inmediatamente** para evitar interrupciones
-2. **Usa nombres de juegos específicos** para mejores resultados de búsqueda
-3. **Guarda múltiples servidores** para tener opciones disponibles
-4. **Revisa tus estadísticas** regularmente para optimizar tu uso
+2. **Encuentra tu nombre real:** Ve a tu perfil de Roblox, tu nombre de cuenta aparece como "@tunombrereal" debajo de tu sobrenombre
+3. **Usa nombres de juegos específicos** para mejores resultados de búsqueda
+4. **Guarda múltiples servidores** para tener opciones disponibles
+5. **Revisa tus estadísticas** regularmente para optimizar tu uso
 
 ## 🔄 Duración de la Verificación
 
