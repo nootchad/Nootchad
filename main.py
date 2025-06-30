@@ -24,9 +24,24 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import subprocess
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Configure logging with more detailed format
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(name)s - %(levelname)s - [%(funcName)s:%(lineno)d] - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('bot_debug.log', encoding='utf-8')
+    ]
+)
 logger = logging.getLogger(__name__)
+
+# Set Discord logging to DEBUG for more details
+discord_logger = logging.getLogger('discord')
+discord_logger.setLevel(logging.INFO)
+
+# Create a separate logger for user interactions
+user_logger = logging.getLogger('user_interactions')
+user_logger.setLevel(logging.INFO)
 
 # Roblox verification settings
 ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
@@ -499,9 +514,15 @@ class VIPServerScraper:
         """Save VIP links to JSON file, organizing by user ID and game ID"""
         try:
             total_count = 0
+            user_count = len(self.links_by_user)
+            
             for user_id, user_games in self.links_by_user.items():
+                user_total = 0
                 for game_id, game_data in user_games.items():
-                    total_count += len(game_data.get('links', []))
+                    game_links = len(game_data.get('links', []))
+                    user_total += game_links
+                    total_count += game_links
+                logger.debug(f"💾 Usuario {user_id}: {user_total} enlaces en {len(user_games)} juegos")
             
             data = {
                 'links_by_user': self.links_by_user,
@@ -512,24 +533,35 @@ class VIPServerScraper:
                 'last_updated': datetime.now().isoformat(),
                 'total_count': total_count
             }
+            
+            logger.info(f"💾 Guardando datos: {user_count} usuarios, {total_count} enlaces totales")
             with open(self.vip_links_file, 'w') as f:
                 json.dump(data, f, indent=2)
-            logger.info(f"Saved VIP links to {self.vip_links_file}")
+            logger.info(f"✅ Enlaces VIP guardados exitosamente en {self.vip_links_file}")
         except Exception as e:
-            logger.error(f"Error saving links: {e}")
+            logger.error(f"❌ Error guardando enlaces: {e}")
 
     def check_cooldown(self, user_id: str, cooldown_minutes: int = 5) -> Optional[int]:
         """Check if user is on cooldown. Returns remaining seconds if on cooldown, None otherwise"""
+        logger.debug(f"🕐 Verificando cooldown para usuario {user_id} (cooldown: {cooldown_minutes}min)")
+        
         if user_id in self.user_cooldowns:
             time_diff = datetime.now() - self.user_cooldowns[user_id]
             if time_diff.total_seconds() < cooldown_minutes * 60:
                 remaining = cooldown_minutes * 60 - time_diff.total_seconds()
+                logger.info(f"⏰ Usuario {user_id} en cooldown - {int(remaining)}s restantes")
                 return int(remaining)
+            else:
+                logger.debug(f"✅ Cooldown expirado para usuario {user_id}")
+        else:
+            logger.debug(f"✅ No hay cooldown previo para usuario {user_id}")
         return None
 
     def set_cooldown(self, user_id: str):
         """Set cooldown for user"""
-        self.user_cooldowns[user_id] = datetime.now()
+        current_time = datetime.now()
+        self.user_cooldowns[user_id] = current_time
+        logger.info(f"🕐 Cooldown activado para usuario {user_id} a las {current_time.strftime('%H:%M:%S')}")
 
     def add_usage_history(self, user_id: str, game_id: str, server_link: str, action: str):
         """Add entry to usage history"""
@@ -1139,22 +1171,38 @@ roblox_verification = RobloxVerificationSystem()
 
 @bot.event
 async def on_ready():
-    logger.info(f'{bot.user} has connected to Discord!')
+    logger.info(f'🤖 {bot.user} ha conectado exitosamente a Discord!')
+    
+    # Log estadísticas detalladas
     total_links = 0
-    for user_games in scraper.links_by_user.values():
+    total_users = len(scraper.links_by_user)
+    total_games = 0
+    
+    for user_id, user_games in scraper.links_by_user.items():
+        user_links = 0
         for game_data in user_games.values():
-            total_links += len(game_data.get('links', []))
-    logger.info(f'Bot is ready with {total_links} VIP links loaded')
+            game_links = len(game_data.get('links', []))
+            user_links += game_links
+            total_links += game_links
+        total_games += len(user_games)
+        logger.debug(f"📊 Usuario {user_id}: {user_links} enlaces en {len(user_games)} juegos")
+    
+    logger.info(f'🎮 Bot listo con {total_links} enlaces VIP cargados para {total_users} usuarios en {total_games} juegos')
+    logger.info(f"📈 Usuarios verificados: {len(roblox_verification.verified_users)}")
+    logger.info(f"🚫 Usuarios baneados: {len(roblox_verification.banned_users)}")
+    logger.info(f"⚠️ Usuarios con advertencias: {len(roblox_verification.warnings)}")
 
     # Verification system is now manual-based, no API needed
-    logger.info("✅ Manual verification system initialized successfully")
+    logger.info("✅ Sistema de verificación manual inicializado exitosamente")
 
     # Sync slash commands after bot is ready
     try:
         synced = await bot.tree.sync()
-        logger.info(f"Synced {len(synced)} command(s)")
+        logger.info(f"🔄 Sincronizado {len(synced)} comando(s) slash exitosamente")
+        for cmd in synced:
+            logger.debug(f"  ↳ Comando: /{cmd.name} - {cmd.description[:50]}...")
     except Exception as e:
-        logger.error(f"Failed to sync commands: {e}")
+        logger.error(f"❌ Error sincronizando comandos: {e}")
 
 # Botón de confirmación de verificación
 class VerificationConfirmButton(discord.ui.Button):
@@ -1168,13 +1216,20 @@ class VerificationConfirmButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         """Callback para confirmar la verificación por descripción"""
-        if str(interaction.user.id) != self.target_user_id:
+        caller_id = str(interaction.user.id)
+        username = f"{interaction.user.name}#{interaction.user.discriminator}"
+        
+        user_logger.info(f"🔘 Botón de verificación presionado por {username} (ID: {caller_id}) - Target: {self.target_user_id}")
+        
+        if caller_id != self.target_user_id:
+            user_logger.warning(f"⚠️ Usuario no autorizado {username} intentó usar botón de verificación para target {self.target_user_id}")
             await interaction.response.send_message(
                 "❌ Solo quien ejecutó el comando puede usar este botón.", 
                 ephemeral=True
             )
             return
         
+        user_logger.info(f"✅ Usuario autorizado {username} confirmando verificación")
         await interaction.response.defer()
         
         try:
@@ -1342,6 +1397,9 @@ class VerificationView(discord.ui.View):
 async def check_verification(interaction: discord.Interaction) -> bool:
     """Verificar si el usuario está autenticado"""
     user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    user_logger.info(f"🔍 Verificando autenticación para usuario {username} (ID: {user_id})")
     
     # Verificar si está baneado
     if roblox_verification.is_user_banned(user_id):
@@ -1349,6 +1407,8 @@ async def check_verification(interaction: discord.Interaction) -> bool:
         remaining_time = BAN_DURATION - (time.time() - ban_time)
         days_remaining = int(remaining_time / (24 * 60 * 60))
         hours_remaining = int((remaining_time % (24 * 60 * 60)) / 3600)
+        
+        user_logger.warning(f"🚫 Usuario baneado intentó usar el bot: {username} (ID: {user_id}) - Tiempo restante: {days_remaining}d {hours_remaining}h")
         
         embed = discord.Embed(
             title="🚫 Usuario Baneado",
@@ -1365,6 +1425,8 @@ async def check_verification(interaction: discord.Interaction) -> bool:
     
     # Verificar si está verificado
     if not roblox_verification.is_user_verified(user_id):
+        user_logger.info(f"🔒 Usuario no verificado intentó usar comando: {username} (ID: {user_id})")
+        
         embed = discord.Embed(
             title="🔒 Verificación Requerida",
             description="Debes verificar que sigues a **hesiz** en Roblox para usar este bot.",
@@ -1383,6 +1445,7 @@ async def check_verification(interaction: discord.Interaction) -> bool:
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return False
     
+    user_logger.info(f"✅ Usuario verificado exitosamente: {username} (ID: {user_id})")
     return True
 
 @bot.tree.command(name="verify", description="Verificar tu cuenta de Roblox usando descripción personalizada")
@@ -1537,12 +1600,20 @@ class ServerBrowserView(discord.ui.View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check if the user is authorized to use these buttons"""
-        if self.authorized_user_id and str(interaction.user.id) != self.authorized_user_id:
+        caller_id = str(interaction.user.id)
+        username = f"{interaction.user.name}#{interaction.user.discriminator}"
+        
+        user_logger.debug(f"🔍 Verificando autorización para botón de navegación: {username} (ID: {caller_id}) vs autorizado: {self.authorized_user_id}")
+        
+        if self.authorized_user_id and caller_id != self.authorized_user_id:
+            user_logger.warning(f"⚠️ Usuario no autorizado {username} intentó usar navegación de servidor autorizada para {self.authorized_user_id}")
             await interaction.response.send_message(
                 "❌ Solo la persona que ejecutó el comando puede usar estos botones.", 
                 ephemeral=True
             )
             return False
+            
+        user_logger.debug(f"✅ Usuario autorizado {username} puede usar navegación")
         return True
 
     def update_buttons(self):
@@ -2193,10 +2264,17 @@ async def history_command(interaction: discord.Interaction):
 @bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
     """Browser through all available VIP servers with navigation (user-specific)"""
+    user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    user_logger.info(f"🎮 Comando /servertest ejecutado por {username} (ID: {user_id})")
+    
     # Verificar autenticación
     if not await check_verification(interaction):
+        user_logger.warning(f"❌ Verificación fallida para {username} en comando /servertest")
         return
     
+    user_logger.info(f"✅ Verificación exitosa para {username}, cargando servidores")
     await interaction.response.defer()
 
     try:
@@ -2253,10 +2331,17 @@ async def servertest(interaction: discord.Interaction):
 @bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP (acepta ID o nombre)")
 async def scrape_command(interaction: discord.Interaction, juego: str):
     """Manually trigger scraping with real-time progress updates - supports both game ID and name"""
+    user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    user_logger.info(f"🎮 Comando /scrape ejecutado por {username} (ID: {user_id}) con parámetro: '{juego}'")
+    
     # Verificar autenticación
     if not await check_verification(interaction):
+        user_logger.warning(f"❌ Verificación fallida para {username} en comando /scrape")
         return
     
+    user_logger.info(f"✅ Verificación exitosa para {username}, procediendo con scrape")
     await interaction.response.defer()
 
     user_id = str(interaction.user.id)
@@ -2557,10 +2642,14 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
     driver = None
     new_links_count = 0
     processed_count = 0
+    username = f"{discord_user.name}#{discord_user.discriminator}"
 
     try:
-        logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id} (User: {user_id})...")
+        logger.info(f"🚀 Iniciando scraping VIP para game ID: {game_id} | Usuario: {username} (ID: {user_id}) | Mensaje ID: {message.id}")
+        user_logger.info(f"🔧 Creando driver Chrome para usuario {username}")
         driver = scraper.create_driver()
+        
+        user_logger.info(f"🔍 Obteniendo enlaces de servidor para game {game_id} - Usuario: {username}")
         server_links = scraper.get_server_links(driver, game_id)
 
         if not server_links:
