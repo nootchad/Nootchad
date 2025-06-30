@@ -246,7 +246,7 @@ class RobloxVerificationSystem:
 
     def create_verification_request(self, discord_id: str, roblox_username: str) -> str:
         """Crear solicitud de verificación con código, verificando duplicados primero"""
-        # Verificar si el roblox_username ya está siendo usado por otro discord_id
+        # Verificar si el roblox_username ya está siendo usado por otro discord_id en verified_users
         for existing_discord_id, data in self.verified_users.items():
             if data['roblox_username'].lower() == roblox_username.lower() and existing_discord_id != discord_id:
                 # Agregar advertencia al usuario que intenta usar un nombre ya registrado
@@ -261,6 +261,22 @@ class RobloxVerificationSystem:
                 else:
                     # Primera advertencia
                     raise ValueError(f"⚠️ **ADVERTENCIA #{current_warnings + 1}/2** ⚠️\n\nEl nombre de usuario '{roblox_username}' ya está registrado por otro usuario Discord. \n\n**Si intentas usar otro nombre ya registrado serás baneado por 7 días.**")
+        
+        # Verificar si el roblox_username ya está siendo usado en pending_verifications
+        for existing_discord_id, data in self.pending_verifications.items():
+            if data['roblox_username'].lower() == roblox_username.lower() and existing_discord_id != discord_id:
+                # Agregar advertencia al usuario que intenta usar un nombre ya en proceso de verificación
+                logger.warning(f"User {discord_id} attempted to use Roblox username {roblox_username} already pending verification by {existing_discord_id}")
+                
+                current_warnings = self.get_user_warnings(discord_id)
+                should_ban = self.add_warning(discord_id, f"Intentar usar nombre de usuario en proceso de verificación: {roblox_username}")
+                
+                if should_ban:
+                    # Segunda advertencia = ban
+                    raise ValueError(f"Has sido baneado por 7 días. **Razón:** Segunda advertencia por intentar usar nombres de usuario ya en uso. El nombre '{roblox_username}' está siendo verificado por otro usuario Discord.")
+                else:
+                    # Primera advertencia
+                    raise ValueError(f"⚠️ **ADVERTENCIA #{current_warnings + 1}/2** ⚠️\n\nEl nombre de usuario '{roblox_username}' ya está siendo verificado por otro usuario Discord. \n\n**Si intentas usar otro nombre ya en uso serás baneado por 7 días.**")
         
         verification_code = self.generate_verification_code()
         
@@ -278,7 +294,7 @@ class RobloxVerificationSystem:
         if discord_id not in self.pending_verifications:
             return False, "No hay verificación pendiente"
         
-        # Verificar si el roblox_username ya está siendo usado por otro discord_id
+        # Verificar si el roblox_username ya está siendo usado por otro discord_id en verified_users
         for existing_discord_id, data in self.verified_users.items():
             if data['roblox_username'].lower() == roblox_username.lower() and existing_discord_id != discord_id:
                 # Agregar advertencia al usuario que intenta usar un nombre ya registrado
@@ -293,6 +309,23 @@ class RobloxVerificationSystem:
                 else:
                     # Primera advertencia
                     return False, f"⚠️ **ADVERTENCIA #{current_warnings + 1}/2** ⚠️\n\nEl nombre de usuario '{roblox_username}' ya está registrado por otro usuario Discord. \n\n**Si intentas usar otro nombre ya registrado serás baneado por 7 días.**"
+        
+        # Verificar si el roblox_username está siendo usado por otro usuario en pending_verifications
+        for existing_discord_id, data in self.pending_verifications.items():
+            if (data['roblox_username'].lower() == roblox_username.lower() and 
+                existing_discord_id != discord_id):
+                # Agregar advertencia al usuario que intenta usar un nombre ya en proceso
+                logger.warning(f"User {discord_id} attempted to verify with Roblox username {roblox_username} already being verified by {existing_discord_id}")
+                
+                current_warnings = self.get_user_warnings(discord_id)
+                should_ban = self.add_warning(discord_id, f"Intentar verificar nombre de usuario en uso durante verificación: {roblox_username}")
+                
+                if should_ban:
+                    # Segunda advertencia = ban
+                    return False, f"Has sido baneado por 7 días. **Razón:** Segunda advertencia por intentar usar nombres de usuario ya en proceso de verificación."
+                else:
+                    # Primera advertencia
+                    return False, f"⚠️ **ADVERTENCIA #{current_warnings + 1}/2** ⚠️\n\nEl nombre de usuario '{roblox_username}' está siendo verificado por otro usuario Discord. \n\n**Si intentas usar otro nombre ya en uso serás baneado por 7 días.**"
         
         pending_data = self.pending_verifications[discord_id]
         self.verified_users[discord_id] = {
