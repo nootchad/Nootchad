@@ -543,7 +543,12 @@ class VIPServerScraper:
 
     def check_cooldown(self, user_id: str, cooldown_minutes: int = 5) -> Optional[int]:
         """Check if user is on cooldown. Returns remaining seconds if on cooldown, None otherwise"""
+        # Asegurar conversión explícita a string para evitar mezcla entre usuarios
+        user_id = str(user_id)
         logger.debug(f"🕐 Verificando cooldown para usuario {user_id} (cooldown: {cooldown_minutes}min)")
+        
+        # Limpiar cooldowns expirados automáticamente
+        self.cleanup_expired_cooldowns()
         
         if user_id in self.user_cooldowns:
             time_diff = datetime.now() - self.user_cooldowns[user_id]
@@ -553,18 +558,41 @@ class VIPServerScraper:
                 return int(remaining)
             else:
                 logger.debug(f"✅ Cooldown expirado para usuario {user_id}")
+                # Remover cooldown expirado
+                del self.user_cooldowns[user_id]
         else:
             logger.debug(f"✅ No hay cooldown previo para usuario {user_id}")
         return None
 
     def set_cooldown(self, user_id: str):
         """Set cooldown for user"""
+        # Asegurar conversión explícita a string para evitar mezcla entre usuarios
+        user_id = str(user_id)
         current_time = datetime.now()
         self.user_cooldowns[user_id] = current_time
         logger.info(f"🕐 Cooldown activado para usuario {user_id} a las {current_time.strftime('%H:%M:%S')}")
 
+    def cleanup_expired_cooldowns(self):
+        """Limpiar cooldowns expirados automáticamente para evitar acumulación de memoria"""
+        current_time = datetime.now()
+        expired_users = []
+        
+        for user_id, cooldown_time in self.user_cooldowns.items():
+            # Cooldown máximo de 10 minutos para limpiar automáticamente
+            if (current_time - cooldown_time).total_seconds() > 600:  # 10 minutos
+                expired_users.append(user_id)
+        
+        for user_id in expired_users:
+            del self.user_cooldowns[user_id]
+            logger.debug(f"🧹 Cooldown expirado removido para usuario {user_id}")
+        
+        if expired_users:
+            logger.info(f"🧹 Limpieza automática: {len(expired_users)} cooldowns expirados removidos")
+
     def add_usage_history(self, user_id: str, game_id: str, server_link: str, action: str):
         """Add entry to usage history"""
+        # Asegurar conversión explícita a string para evitar mezcla entre usuarios
+        user_id = str(user_id)
         if user_id not in self.usage_history:
             self.usage_history[user_id] = []
         
@@ -595,6 +623,8 @@ class VIPServerScraper:
 
     def toggle_favorite(self, user_id: str, game_id: str) -> bool:
         """Toggle favorite status for a game. Returns True if added, False if removed"""
+        # Asegurar conversión explícita a string para evitar mezcla entre usuarios
+        user_id = str(user_id)
         if user_id not in self.user_favorites:
             self.user_favorites[user_id] = []
         
@@ -3034,15 +3064,36 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                 # Check if the bot has permission to send messages in this channel
                 channel = message.channel
                 
-                # Verify permissions before attempting to send
-                if hasattr(channel, 'permissions_for'):
-                    bot_member = channel.guild.get_member(bot.user.id) if hasattr(channel, 'guild') else None
-                    if bot_member:
-                        permissions = channel.permissions_for(bot_member)
-                        if not permissions.send_messages:
-                            logger.warning(f"No permission to send messages in channel {channel.id}")
+                # Verificaciones completas de permisos y contexto
+                if not hasattr(channel, 'guild') or channel.guild is None:
+                    logger.debug(f"Notificación en DM o canal sin guild, omitiendo verificación de permisos")
+                    # En DMs o canales sin guild, intentar enviar directamente
+                else:
+                    # Verificar si el bot está en el servidor
+                    bot_member = channel.guild.get_member(bot.user.id)
+                    if not bot_member:
+                        logger.warning(f"Bot no es miembro del servidor {channel.guild.id}, no se puede enviar notificación")
+                        return
+                    
+                    # Verificar permisos específicos
+                    permissions = channel.permissions_for(bot_member)
+                    if not permissions.send_messages:
+                        logger.warning(f"Bot no tiene permisos para enviar mensajes en canal {channel.id} del servidor {channel.guild.name}")
+                        return
+                    
+                    if not permissions.embed_links:
+                        logger.warning(f"Bot no tiene permisos para enviar embeds en canal {channel.id}")
+                        # Intentar enviar mensaje simple sin embed
+                        try:
+                            simple_message = f"🔔 ¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**! Usa `/servertest` para acceder."
+                            await channel.send(simple_message, delete_after=10)
+                            logger.info(f"Notificación simple enviada exitosamente en canal {channel.id}")
+                            return
+                        except Exception as e:
+                            logger.error(f"Error enviando notificación simple: {e}")
                             return
                 
+                # Crear y enviar embed de notificación
                 notification_embed = discord.Embed(
                     title="🔔 ¡Nuevos Servidores Encontrados!",
                     description=f"¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**!",
@@ -3050,16 +3101,22 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                 )
                 notification_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
                 notification_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
+                notification_embed.set_footer(text="Notificación automática • Se eliminará en 10 segundos")
                 
                 # Send as a separate message to ensure ping
                 await channel.send(embed=notification_embed, delete_after=10)
+                logger.info(f"Notificación de {new_links_count} nuevos servidores enviada exitosamente en canal {channel.id}")
                 
             except discord.Forbidden as e:
-                logger.warning(f"Permission denied when sending notification: {e}")
+                logger.warning(f"Sin permisos para enviar notificación en canal {getattr(channel, 'id', 'unknown')}: {e}")
             except discord.HTTPException as e:
-                logger.error(f"HTTP error when sending notification: {e}")
+                logger.error(f"Error HTTP al enviar notificación: {e}")
+            except AttributeError as e:
+                logger.error(f"Error de atributo al enviar notificación (objeto channel inválido): {e}")
+            except discord.NotFound as e:
+                logger.error(f"Canal no encontrado al enviar notificación: {e}")
             except Exception as e:
-                logger.error(f"Unexpected error when sending notification: {e}")
+                logger.error(f"Error inesperado al enviar notificación: {type(e).__name__}: {e}")
 
     except Exception as e:
         logger.error(f"💥 Scraping async failed: {e}")
