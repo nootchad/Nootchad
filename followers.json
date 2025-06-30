@@ -1,11 +1,11 @@
 {
-  "verified_users": {},
-  "pending_verifications": {
+  "verified_users": {
     "1348850482118131733": {
       "roblox_username": "Dartt908",
-      "verification_code": "code_2025-check",
-      "created_at": 1751244638.4438205
+      "verification_code": "checkx2025xrbx",
+      "verified_at": 1751244854.2590854
     }
   },
-  "last_updated": "2025-06-30T00:50:38.443826"
+  "pending_verifications": {},
+  "last_updated": "2025-06-30T00:54:14.259089"
 }
