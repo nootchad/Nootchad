@@ -1170,6 +1170,40 @@ scraper = VIPServerScraper()
 roblox_verification = RobloxVerificationSystem()
 
 @bot.event
+async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+    """Manejo global de errores para comandos slash"""
+    user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    if isinstance(error, discord.app_commands.CommandInvokeError):
+        if isinstance(error.original, discord.errors.NotFound):
+            user_logger.error(f"❌ Interacción no encontrada para {username} (ID: {user_id}): {error.original}")
+            # No intentar responder a una interacción ya expirada
+            return
+        elif isinstance(error.original, discord.errors.InteractionResponded):
+            user_logger.warning(f"⚠️ Interacción ya respondida para {username} (ID: {user_id})")
+            return
+    
+    # Log el error para debugging
+    logger.error(f"❌ Error en comando para {username} (ID: {user_id}): {error}")
+    
+    # Intentar enviar un mensaje de error si es posible
+    try:
+        error_embed = discord.Embed(
+            title="❌ Error Temporal",
+            description="Ocurrió un error temporal. Por favor, intenta nuevamente en unos segundos.",
+            color=0xff0000
+        )
+        
+        if not interaction.response.is_done():
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+        else:
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+    except:
+        # Si no se puede enviar el mensaje, simplemente ignorar
+        pass
+
+@bot.event
 async def on_ready():
     logger.info(f'🤖 {bot.user} ha conectado exitosamente a Discord!')
     
@@ -1394,59 +1428,99 @@ class VerificationView(discord.ui.View):
         self.add_item(VerificationConfirmButton(user_id))
 
 # Verificar autenticación antes de cada comando
-async def check_verification(interaction: discord.Interaction) -> bool:
-    """Verificar si el usuario está autenticado"""
+async def check_verification(interaction: discord.Interaction, defer_response: bool = True) -> bool:
+    """Verificar si el usuario está autenticado con manejo mejorado de errores"""
     user_id = str(interaction.user.id)
     username = f"{interaction.user.name}#{interaction.user.discriminator}"
     
     user_logger.info(f"🔍 Verificando autenticación para usuario {username} (ID: {user_id})")
     
-    # Verificar si está baneado
-    if roblox_verification.is_user_banned(user_id):
-        ban_time = roblox_verification.banned_users[user_id]
-        remaining_time = BAN_DURATION - (time.time() - ban_time)
-        days_remaining = int(remaining_time / (24 * 60 * 60))
-        hours_remaining = int((remaining_time % (24 * 60 * 60)) / 3600)
+    try:
+        # Verificar si la interacción ya fue respondida o está expirada
+        if interaction.response.is_done():
+            user_logger.warning(f"⚠️ Interacción ya respondida para {username} (ID: {user_id})")
+            return False
+            
+        # Defer la respuesta temprano para evitar timeouts
+        if defer_response:
+            try:
+                await interaction.response.defer(ephemeral=True)
+            except discord.errors.InteractionResponded:
+                user_logger.warning(f"⚠️ Interacción ya fue respondida para {username}")
+                return False
+            except discord.errors.NotFound as e:
+                user_logger.error(f"❌ Interacción no encontrada para {username}: {e}")
+                return False
         
-        user_logger.warning(f"🚫 Usuario baneado intentó usar el bot: {username} (ID: {user_id}) - Tiempo restante: {days_remaining}d {hours_remaining}h")
+        # Verificar si está baneado
+        if roblox_verification.is_user_banned(user_id):
+            ban_time = roblox_verification.banned_users[user_id]
+            remaining_time = BAN_DURATION - (time.time() - ban_time)
+            days_remaining = int(remaining_time / (24 * 60 * 60))
+            hours_remaining = int((remaining_time % (24 * 60 * 60)) / 3600)
+            
+            user_logger.warning(f"🚫 Usuario baneado intentó usar el bot: {username} (ID: {user_id}) - Tiempo restante: {days_remaining}d {hours_remaining}h")
+            
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description=f"Estás baneado por intentar usar información falsa.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="📅 Fecha de desbaneo",
+                value=f"<t:{int(ban_time + BAN_DURATION)}:F>",
+                inline=False
+            )
+            
+            try:
+                if defer_response:
+                    await interaction.followup.send(embed=embed, ephemeral=True)
+                else:
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+            except (discord.errors.NotFound, discord.errors.InteractionResponded) as e:
+                user_logger.error(f"❌ No se pudo enviar mensaje de ban para {username}: {e}")
+            
+            return False
         
-        embed = discord.Embed(
-            title="🚫 Usuario Baneado",
-            description=f"Estás baneado por intentar usar información falsa.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
-            color=0xff0000
-        )
-        embed.add_field(
-            name="📅 Fecha de desbaneo",
-            value=f"<t:{int(ban_time + BAN_DURATION)}:F>",
-            inline=False
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        # Verificar si está verificado
+        if not roblox_verification.is_user_verified(user_id):
+            user_logger.info(f"🔒 Usuario no verificado intentó usar comando: {username} (ID: {user_id})")
+            
+            embed = discord.Embed(
+                title="🔒 Verificación Requerida",
+                description="Debes verificar que sigues a **hesiz** en Roblox para usar este bot.",
+                color=0xffaa00
+            )
+            embed.add_field(
+                name="📝 Cómo verificarse:",
+                value="1. Usa `/verify [tu_nombre_de_usuario]`\n2. Copia el código generado a tu descripción de Roblox\n3. Haz clic en el botón de confirmación para completar la verificación",
+                inline=False
+            )
+            embed.add_field(
+                name="⚠️ Importante:",
+                value="• No uses nombres de usuario falsos\n• Debes agregar el código a tu descripción\n• La verificación dura 24 horas",
+                inline=False
+            )
+            
+            try:
+                if defer_response:
+                    await interaction.followup.send(embed=embed, ephemeral=True)
+                else:
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+            except (discord.errors.NotFound, discord.errors.InteractionResponded) as e:
+                user_logger.error(f"❌ No se pudo enviar mensaje de verificación para {username}: {e}")
+            
+            return False
+        
+        user_logger.info(f"✅ Usuario verificado exitosamente: {username} (ID: {user_id})")
+        return True
+        
+    except discord.errors.NotFound as e:
+        user_logger.error(f"❌ Interacción no encontrada para {username}: {e}")
         return False
-    
-    # Verificar si está verificado
-    if not roblox_verification.is_user_verified(user_id):
-        user_logger.info(f"🔒 Usuario no verificado intentó usar comando: {username} (ID: {user_id})")
-        
-        embed = discord.Embed(
-            title="🔒 Verificación Requerida",
-            description="Debes verificar que sigues a **hesiz** en Roblox para usar este bot.",
-            color=0xffaa00
-        )
-        embed.add_field(
-            name="📝 Cómo verificarse:",
-            value="1. Usa `/verify [tu_nombre_de_usuario]`\n2. Copia el código generado a tu descripción de Roblox\n3. Haz clic en el botón de confirmación para completar la verificación",
-            inline=False
-        )
-        embed.add_field(
-            name="⚠️ Importante:",
-            value="• No uses nombres de usuario falsos\n• Debes agregar el código a tu descripción\n• La verificación dura 24 horas",
-            inline=False
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+    except Exception as e:
+        user_logger.error(f"❌ Error en verificación para {username}: {e}")
         return False
-    
-    user_logger.info(f"✅ Usuario verificado exitosamente: {username} (ID: {user_id})")
-    return True
 
 @bot.tree.command(name="verify", description="Verificar tu cuenta de Roblox usando descripción personalizada")
 async def verify_command(interaction: discord.Interaction, roblox_username: str):
@@ -1905,10 +1979,8 @@ class GameSearchView(discord.ui.View):
 async def search_game_command(interaction: discord.Interaction, nombre: str):
     """Search for games by name"""
     # Verificar autenticación
-    if not await check_verification(interaction):
+    if not await check_verification(interaction, defer_response=True):
         return
-    
-    await interaction.response.defer()
     
     try:
         user_id = str(interaction.user.id)
@@ -1984,10 +2056,8 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
 async def game_command(interaction: discord.Interaction, nombre: str):
     """Search for a game by name and automatically start scraping the best match"""
     # Verificar autenticación
-    if not await check_verification(interaction):
+    if not await check_verification(interaction, defer_response=True):
         return
-    
-    await interaction.response.defer()
     
     try:
         user_id = str(interaction.user.id)
@@ -2136,10 +2206,8 @@ async def game_command(interaction: discord.Interaction, nombre: str):
 async def favorites_command(interaction: discord.Interaction):
     """Show user's favorite games"""
     # Verificar autenticación
-    if not await check_verification(interaction):
+    if not await check_verification(interaction, defer_response=True):
         return
-    
-    await interaction.response.defer()
     
     try:
         user_id = str(interaction.user.id)
@@ -2194,10 +2262,8 @@ async def favorites_command(interaction: discord.Interaction):
 async def history_command(interaction: discord.Interaction):
     """Show user's usage history"""
     # Verificar autenticación
-    if not await check_verification(interaction):
+    if not await check_verification(interaction, defer_response=True):
         return
-    
-    await interaction.response.defer()
     
     try:
         user_id = str(interaction.user.id)
@@ -2269,13 +2335,12 @@ async def servertest(interaction: discord.Interaction):
     
     user_logger.info(f"🎮 Comando /servertest ejecutado por {username} (ID: {user_id})")
     
-    # Verificar autenticación
-    if not await check_verification(interaction):
+    # Verificar autenticación (no defer aquí, se hará en check_verification)
+    if not await check_verification(interaction, defer_response=True):
         user_logger.warning(f"❌ Verificación fallida para {username} en comando /servertest")
         return
     
     user_logger.info(f"✅ Verificación exitosa para {username}, cargando servidores")
-    await interaction.response.defer()
 
     try:
         user_id = str(interaction.user.id)
@@ -2314,10 +2379,15 @@ async def servertest(interaction: discord.Interaction):
         view = ServerBrowserView(all_servers, 0, current_game_info, user_id)
         embed, file = view.create_server_embed()
 
-        if file:
-            await interaction.followup.send(embed=embed, file=file, view=view)
-        else:
-            await interaction.followup.send(embed=embed, view=view)
+        try:
+            if file:
+                await interaction.followup.send(embed=embed, file=file, view=view)
+            else:
+                await interaction.followup.send(embed=embed, view=view)
+        except discord.errors.NotFound as e:
+            user_logger.error(f"❌ No se pudo enviar respuesta de servertest para {username}: {e}")
+        except Exception as e:
+            user_logger.error(f"❌ Error enviando respuesta de servertest para {username}: {e}")
 
     except Exception as e:
         logger.error(f"Error in servertest command: {e}")
@@ -2326,7 +2396,12 @@ async def servertest(interaction: discord.Interaction):
             description="Ocurrió un error al cargar los servidores.",
             color=0xff0000
         )
-        await interaction.followup.send(embed=error_embed, ephemeral=True)
+        try:
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+        except discord.errors.NotFound:
+            user_logger.error(f"❌ No se pudo enviar error de servertest para {username}")
+        except Exception:
+            pass
 
 @bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP (acepta ID o nombre)")
 async def scrape_command(interaction: discord.Interaction, juego: str):
@@ -2336,13 +2411,12 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
     
     user_logger.info(f"🎮 Comando /scrape ejecutado por {username} (ID: {user_id}) con parámetro: '{juego}'")
     
-    # Verificar autenticación
-    if not await check_verification(interaction):
+    # Verificar autenticación (defer en check_verification)
+    if not await check_verification(interaction, defer_response=True):
         user_logger.warning(f"❌ Verificación fallida para {username} en comando /scrape")
         return
     
     user_logger.info(f"✅ Verificación exitosa para {username}, procediendo con scrape")
-    await interaction.response.defer()
 
     user_id = str(interaction.user.id)
     
@@ -2930,7 +3004,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
 async def stats(interaction: discord.Interaction):
     """Show detailed statistics about collected VIP links"""
     # Verificar autenticación
-    if not await check_verification(interaction):
+    if not await check_verification(interaction, defer_response=False):
         return
     
     try:
