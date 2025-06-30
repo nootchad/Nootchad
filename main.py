@@ -1111,7 +1111,11 @@ class VIPServerScraper:
         return link, details
 
     def get_all_links(self, game_id=None, user_id=None):
-        """Get all VIP links, optionally for a specific game and user"""
+        """Get all VIP links, optionally for a specific game and user - ALWAYS USER ISOLATED"""
+        # Always require user_id for security
+        if not user_id:
+            return []
+            
         if user_id and game_id:
             return self.links_by_user.get(user_id, {}).get(game_id, {}).get('links', [])
         elif user_id:
@@ -1121,11 +1125,22 @@ class VIPServerScraper:
                 all_links.extend(game_data.get('links', []))
             return all_links
         else:
-            all_links = []
-            for user_games in self.links_by_user.values():
-                for game_data in user_games.values():
-                    all_links.extend(game_data.get('links', []))
-            return all_links
+            # Never return cross-user data
+            return []
+
+    def get_user_server_count(self, user_id):
+        """Get total server count for a specific user"""
+        if user_id not in self.links_by_user:
+            return 0
+        
+        total = 0
+        for game_data in self.links_by_user[user_id].values():
+            total += len(game_data.get('links', []))
+        return total
+
+    def get_user_game_count(self, user_id):
+        """Get total game count for a specific user"""
+        return len(self.links_by_user.get(user_id, {}))
 
 # Discord Bot
 intents = discord.Intents.default()
@@ -1167,14 +1182,15 @@ class VerificationConfirmButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         """Callback para confirmar la verificación por descripción"""
-        if str(interaction.user.id) != self.target_user_id:
-            await interaction.response.send_message(
-                "❌ Solo quien ejecutó el comando puede usar este botón.", 
-                ephemeral=True
-            )
-            return
-        
-        await interaction.response.defer()
+        try:
+            if str(interaction.user.id) != self.target_user_id:
+                await interaction.response.send_message(
+                    "❌ Solo quien ejecutó el comando puede usar este botón.", 
+                    ephemeral=True
+                )
+                return
+            
+            await interaction.response.defer(ephemeral=True)
         
         try:
             user_id = str(interaction.user.id)
@@ -1330,7 +1346,13 @@ class VerificationConfirmButton(discord.ui.Button):
                 description="Ocurrió un error durante la confirmación. Inténtalo nuevamente.",
                 color=0xff0000
             )
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            try:
+                if interaction.response.is_done():
+                    await interaction.followup.send(embed=embed, ephemeral=True)
+                else:
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+            except:
+                logger.error(f"Failed to send error message in verification callback: {e}")
 
 class VerificationView(discord.ui.View):
     def __init__(self, user_id: str):
@@ -1338,9 +1360,8 @@ class VerificationView(discord.ui.View):
         self.add_item(VerificationConfirmButton(user_id))
 
 # Verificar autenticación antes de cada comando
-async def check_verification(interaction: discord.Interaction) -> bool:
-    """Verificar si el usuario está autenticado"""
-    user_id = str(interaction.user.id)
+def check_verification_sync(user_id: str) -> tuple[bool, discord.Embed]:
+    """Verificar si el usuario está autenticado (versión síncrona)"""
     
     # Verificar si está baneado
     if roblox_verification.is_user_banned(user_id):
@@ -1359,8 +1380,7 @@ async def check_verification(interaction: discord.Interaction) -> bool:
             value=f"<t:{int(ban_time + BAN_DURATION)}:F>",
             inline=False
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return False
+        return False, embed
     
     # Verificar si está verificado
     if not roblox_verification.is_user_verified(user_id):
@@ -1379,7 +1399,20 @@ async def check_verification(interaction: discord.Interaction) -> bool:
             value="• No uses nombres de usuario falsos\n• Debes agregar el código a tu descripción\n• La verificación dura 24 horas",
             inline=False
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return False, embed
+    
+    return True, None
+
+async def check_verification(interaction: discord.Interaction) -> bool:
+    """Verificar si el usuario está autenticado (versión async para compatibilidad)"""
+    user_id = str(interaction.user.id)
+    is_verified, error_embed = check_verification_sync(user_id)
+    
+    if not is_verified:
+        if interaction.response.is_done():
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+        else:
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
         return False
     
     return True
@@ -1832,11 +1865,15 @@ class GameSearchView(discord.ui.View):
 @bot.tree.command(name="searchgame", description="Buscar un juego por nombre para hacer scraping")
 async def search_game_command(interaction: discord.Interaction, nombre: str):
     """Search for games by name"""
-    # Verificar autenticación
-    if not await check_verification(interaction):
+    user_id = str(interaction.user.id)
+    
+    # Verificar autenticación ANTES de defer
+    is_verified, error_embed = check_verification_sync(user_id)
+    if not is_verified:
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
         return
     
-    await interaction.response.defer()
+    await interaction.response.defer(ephemeral=True)
     
     try:
         user_id = str(interaction.user.id)
@@ -1911,11 +1948,15 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
 @bot.tree.command(name="game", description="Buscar y hacer scraping automáticamente por nombre de juego")
 async def game_command(interaction: discord.Interaction, nombre: str):
     """Search for a game by name and automatically start scraping the best match"""
-    # Verificar autenticación
-    if not await check_verification(interaction):
+    user_id = str(interaction.user.id)
+    
+    # Verificar autenticación ANTES de defer
+    is_verified, error_embed = check_verification_sync(user_id)
+    if not is_verified:
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
         return
     
-    await interaction.response.defer()
+    await interaction.response.defer(ephemeral=True)
     
     try:
         user_id = str(interaction.user.id)
@@ -2063,11 +2104,15 @@ async def game_command(interaction: discord.Interaction, nombre: str):
 @bot.tree.command(name="favorites", description="Ver y gestionar tus juegos favoritos")
 async def favorites_command(interaction: discord.Interaction):
     """Show user's favorite games"""
-    # Verificar autenticación
-    if not await check_verification(interaction):
+    user_id = str(interaction.user.id)
+    
+    # Verificar autenticación ANTES de defer
+    is_verified, error_embed = check_verification_sync(user_id)
+    if not is_verified:
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
         return
     
-    await interaction.response.defer()
+    await interaction.response.defer(ephemeral=True)
     
     try:
         user_id = str(interaction.user.id)
@@ -2121,11 +2166,15 @@ async def favorites_command(interaction: discord.Interaction):
 @bot.tree.command(name="history", description="Ver tu historial de uso de servidores")
 async def history_command(interaction: discord.Interaction):
     """Show user's usage history"""
-    # Verificar autenticación
-    if not await check_verification(interaction):
+    user_id = str(interaction.user.id)
+    
+    # Verificar autenticación ANTES de defer
+    is_verified, error_embed = check_verification_sync(user_id)
+    if not is_verified:
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
         return
     
-    await interaction.response.defer()
+    await interaction.response.defer(ephemeral=True)
     
     try:
         user_id = str(interaction.user.id)
@@ -2192,14 +2241,42 @@ async def history_command(interaction: discord.Interaction):
 @bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
     """Browser through all available VIP servers with navigation (user-specific)"""
-    # Verificar autenticación
-    if not await check_verification(interaction):
-        return
-    
-    await interaction.response.defer()
-
     try:
+        # Verificar autenticación ANTES de defer
         user_id = str(interaction.user.id)
+        
+        # Verificar si está baneado
+        if roblox_verification.is_user_banned(user_id):
+            ban_time = roblox_verification.banned_users[user_id]
+            remaining_time = BAN_DURATION - (time.time() - ban_time)
+            days_remaining = int(remaining_time / (24 * 60 * 60))
+            hours_remaining = int((remaining_time % (24 * 60 * 60)) / 3600)
+            
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description=f"Estás baneado por intentar usar información falsa.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar si está verificado
+        if not roblox_verification.is_user_verified(user_id):
+            embed = discord.Embed(
+                title="🔒 Verificación Requerida",
+                description="Debes verificar que sigues a **hesiz** en Roblox para usar este bot.",
+                color=0xffaa00
+            )
+            embed.add_field(
+                name="📝 Cómo verificarse:",
+                value="1. Usa `/verify [tu_nombre_de_usuario]`\n2. Copia el código generado a tu descripción de Roblox\n3. Haz clic en el botón de confirmación para completar la verificación",
+                inline=False
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        # AHORA defer después de las verificaciones rápidas
+        await interaction.response.defer(ephemeral=True)
         
         # Get all servers from user's games
         all_servers = []
@@ -2247,16 +2324,26 @@ async def servertest(interaction: discord.Interaction):
             description="Ocurrió un error al cargar los servidores.",
             color=0xff0000
         )
-        await interaction.followup.send(embed=error_embed, ephemeral=True)
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(embed=error_embed, ephemeral=True)
+            else:
+                await interaction.response.send_message(embed=error_embed, ephemeral=True)
+        except:
+            logger.error(f"Failed to send error message for servertest: {e}")
 
 @bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP (acepta ID o nombre)")
 async def scrape_command(interaction: discord.Interaction, juego: str):
     """Manually trigger scraping with real-time progress updates - supports both game ID and name"""
-    # Verificar autenticación
-    if not await check_verification(interaction):
+    user_id = str(interaction.user.id)
+    
+    # Verificar autenticación ANTES de defer
+    is_verified, error_embed = check_verification_sync(user_id)
+    if not is_verified:
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
         return
     
-    await interaction.response.defer()
+    await interaction.response.defer(ephemeral=True)
 
     user_id = str(interaction.user.id)
     
@@ -2839,9 +2926,16 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
 @bot.tree.command(name="stats", description="Mostrar estadísticas completas de enlaces VIP")
 async def stats(interaction: discord.Interaction):
     """Show detailed statistics about collected VIP links"""
-    # Verificar autenticación
-    if not await check_verification(interaction):
+    user_id = str(interaction.user.id)
+    
+    # Verificar autenticación ANTES de defer
+    is_verified, error_embed = check_verification_sync(user_id)
+    if not is_verified:
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
         return
+    
+    # Defer después de verificación rápida
+    await interaction.response.defer(ephemeral=True)
     
     try:
         embed = discord.Embed(
