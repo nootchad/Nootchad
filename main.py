@@ -3030,16 +3030,36 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
 
         # Send notification ping if new servers were found
         if new_links_count > 0:
-            notification_embed = discord.Embed(
-                title="🔔 ¡Nuevos Servidores Encontrados!",
-                description=f"¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**!",
-                color=0x00ff88
-            )
-            notification_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
-            notification_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
-            
-            # Send as a separate message to ensure ping
-            await message.channel.send(embed=notification_embed, delete_after=10)
+            try:
+                # Check if the bot has permission to send messages in this channel
+                channel = message.channel
+                
+                # Verify permissions before attempting to send
+                if hasattr(channel, 'permissions_for'):
+                    bot_member = channel.guild.get_member(bot.user.id) if hasattr(channel, 'guild') else None
+                    if bot_member:
+                        permissions = channel.permissions_for(bot_member)
+                        if not permissions.send_messages:
+                            logger.warning(f"No permission to send messages in channel {channel.id}")
+                            return
+                
+                notification_embed = discord.Embed(
+                    title="🔔 ¡Nuevos Servidores Encontrados!",
+                    description=f"¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**!",
+                    color=0x00ff88
+                )
+                notification_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
+                notification_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
+                
+                # Send as a separate message to ensure ping
+                await channel.send(embed=notification_embed, delete_after=10)
+                
+            except discord.Forbidden as e:
+                logger.warning(f"Permission denied when sending notification: {e}")
+            except discord.HTTPException as e:
+                logger.error(f"HTTP error when sending notification: {e}")
+            except Exception as e:
+                logger.error(f"Unexpected error when sending notification: {e}")
 
     except Exception as e:
         logger.error(f"💥 Scraping async failed: {e}")
