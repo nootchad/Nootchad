@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
 FOLLOWERS_FILE = "followers.json"
 BANS_FILE = "bans.json"
+WARNINGS_FILE = "warnings.json"
 VERIFICATION_DURATION = 24 * 60 * 60  # 24 horas en segundos
 BAN_DURATION = 7 * 24 * 60 * 60  # 7 días en segundos
 
@@ -53,8 +54,10 @@ class RobloxVerificationSystem:
     def __init__(self):
         self.followers_file = FOLLOWERS_FILE
         self.bans_file = BANS_FILE
+        self.warnings_file = WARNINGS_FILE
         self.verified_users = {}
         self.banned_users = {}
+        self.warnings = {}  # Para rastrear advertencias de usuarios
         self.pending_verifications = {}  # Para códigos de verificación pendientes
         self.load_data()
 
@@ -88,6 +91,19 @@ class RobloxVerificationSystem:
         except Exception as e:
             logger.error(f"Error loading bans data: {e}")
             self.banned_users = {}
+        
+        # Cargar advertencias desde archivo separado
+        try:
+            if Path(self.warnings_file).exists():
+                with open(self.warnings_file, 'r') as f:
+                    data = json.load(f)
+                    self.warnings = data.get('warnings', {})
+                    logger.info(f"Loaded warnings for {len(self.warnings)} users")
+            else:
+                self.warnings = {}
+        except Exception as e:
+            logger.error(f"Error loading warnings data: {e}")
+            self.warnings = {}
 
     def save_data(self):
         """Guardar datos de verificación a archivo"""
@@ -116,6 +132,19 @@ class RobloxVerificationSystem:
             logger.info(f"Saved bans data - {len(self.banned_users)} banned users")
         except Exception as e:
             logger.error(f"Error saving bans data: {e}")
+    
+    def save_warnings(self):
+        """Guardar datos de advertencias instantáneamente a archivo separado"""
+        try:
+            data = {
+                'warnings': self.warnings,
+                'last_updated': datetime.now().isoformat()
+            }
+            with open(self.warnings_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            logger.info(f"Saved warnings data for {len(self.warnings)} users")
+        except Exception as e:
+            logger.error(f"Error saving warnings data: {e}")
 
     def cleanup_expired_data(self):
         """Limpiar datos expirados"""
@@ -167,6 +196,27 @@ class RobloxVerificationSystem:
         self.cleanup_expired_data()
         return discord_id in self.verified_users
 
+    def get_user_warnings(self, discord_id: str) -> int:
+        """Obtener número de advertencias del usuario"""
+        return self.warnings.get(discord_id, 0)
+    
+    def add_warning(self, discord_id: str, reason: str = "Intentar usar nombre de usuario duplicado") -> bool:
+        """Agregar advertencia al usuario. Retorna True si debe ser baneado (segunda advertencia)"""
+        current_warnings = self.get_user_warnings(discord_id)
+        new_warning_count = current_warnings + 1
+        
+        self.warnings[discord_id] = new_warning_count
+        self.save_warnings()
+        
+        logger.info(f"User {discord_id} received warning #{new_warning_count} for: {reason}")
+        
+        # Si es la segunda advertencia, banear al usuario
+        if new_warning_count >= 2:
+            self.ban_user(discord_id)
+            return True
+        
+        return False
+    
     def ban_user(self, discord_id: str):
         """Banear usuario por 7 días y guardar instantáneamente"""
         self.banned_users[discord_id] = time.time()
@@ -199,10 +249,18 @@ class RobloxVerificationSystem:
         # Verificar si el roblox_username ya está siendo usado por otro discord_id
         for existing_discord_id, data in self.verified_users.items():
             if data['roblox_username'].lower() == roblox_username.lower() and existing_discord_id != discord_id:
-                # Banear al usuario que intenta usar un nombre ya registrado
+                # Agregar advertencia al usuario que intenta usar un nombre ya registrado
                 logger.warning(f"User {discord_id} attempted to use already registered Roblox username {roblox_username} (owned by {existing_discord_id})")
-                self.ban_user(discord_id)  # Esto ya guarda instantáneamente
-                raise ValueError(f"El nombre de usuario {roblox_username} ya está registrado por otro usuario Discord.")
+                
+                current_warnings = self.get_user_warnings(discord_id)
+                should_ban = self.add_warning(discord_id, f"Intentar usar nombre de usuario duplicado: {roblox_username}")
+                
+                if should_ban:
+                    # Segunda advertencia = ban
+                    raise ValueError(f"Has sido baneado por 7 días. **Razón:** Segunda advertencia por intentar usar nombres de usuario ya registrados. El nombre '{roblox_username}' ya está registrado por otro usuario Discord.")
+                else:
+                    # Primera advertencia
+                    raise ValueError(f"⚠️ **ADVERTENCIA #{current_warnings + 1}/2** ⚠️\n\nEl nombre de usuario '{roblox_username}' ya está registrado por otro usuario Discord. \n\n**Si intentas usar otro nombre ya registrado serás baneado por 7 días.**")
         
         verification_code = self.generate_verification_code()
         
@@ -215,18 +273,26 @@ class RobloxVerificationSystem:
         self.save_data()
         return verification_code
 
-    def verify_user(self, discord_id: str, roblox_username: str) -> bool:
-        """Verificar usuario después de confirmar el código en su descripción"""
+    def verify_user(self, discord_id: str, roblox_username: str) -> tuple[bool, str]:
+        """Verificar usuario después de confirmar el código en su descripción. Retorna (success, error_message)"""
         if discord_id not in self.pending_verifications:
-            return False
+            return False, "No hay verificación pendiente"
         
         # Verificar si el roblox_username ya está siendo usado por otro discord_id
         for existing_discord_id, data in self.verified_users.items():
             if data['roblox_username'].lower() == roblox_username.lower() and existing_discord_id != discord_id:
-                # Banear al usuario que intenta usar un nombre ya registrado
+                # Agregar advertencia al usuario que intenta usar un nombre ya registrado
                 logger.warning(f"User {discord_id} attempted to use already registered Roblox username {roblox_username}")
-                self.ban_user(discord_id)  # Esto ya guarda instantáneamente
-                return False
+                
+                current_warnings = self.get_user_warnings(discord_id)
+                should_ban = self.add_warning(discord_id, f"Intentar usar nombre de usuario duplicado durante verificación: {roblox_username}")
+                
+                if should_ban:
+                    # Segunda advertencia = ban
+                    return False, f"Has sido baneado por 7 días. **Razón:** Segunda advertencia por intentar usar nombres de usuario ya registrados."
+                else:
+                    # Primera advertencia
+                    return False, f"⚠️ **ADVERTENCIA #{current_warnings + 1}/2** ⚠️\n\nEl nombre de usuario '{roblox_username}' ya está registrado por otro usuario Discord. \n\n**Si intentas usar otro nombre ya registrado serás baneado por 7 días.**"
         
         pending_data = self.pending_verifications[discord_id]
         self.verified_users[discord_id] = {
@@ -240,7 +306,7 @@ class RobloxVerificationSystem:
         
         self.save_data()
         logger.info(f"User {discord_id} verified with Roblox username {roblox_username}")
-        return True
+        return True, ""
 
     async def validate_roblox_username(self, username: str) -> bool:
         """Simple validation for Roblox username format"""
@@ -1158,19 +1224,34 @@ class VerificationConfirmButton(discord.ui.Button):
                 return
             
             # Verificación exitosa
-            verification_success = roblox_verification.verify_user(user_id, roblox_username)
+            verification_success, error_message = roblox_verification.verify_user(user_id, roblox_username)
             
             if not verification_success:
-                embed = discord.Embed(
-                    title="🚫 Error de Verificación",
-                    description="El nombre de usuario ya está siendo usado por otro Discord ID.",
-                    color=0xff0000
-                )
-                embed.add_field(
-                    name="⚠️ Has sido baneado",
-                    value="**Duración:** 7 días\n**Razón:** Intentar usar información de otro usuario",
-                    inline=False
-                )
+                if "baneado por 7 días" in error_message:
+                    # Usuario fue baneado (segunda advertencia)
+                    embed = discord.Embed(
+                        title="🚫 Usuario Baneado",
+                        description=error_message,
+                        color=0xff0000
+                    )
+                    embed.add_field(
+                        name="📅 Fecha de desbaneo",
+                        value=f"<t:{int(time.time() + BAN_DURATION)}:F>",
+                        inline=False
+                    )
+                else:
+                    # Primera advertencia
+                    embed = discord.Embed(
+                        title="⚠️ Advertencia",
+                        description=error_message,
+                        color=0xff9900
+                    )
+                    embed.add_field(
+                        name="💡 ¿Qué hacer ahora?",
+                        value="• Usa tu propio nombre de usuario de Roblox\n• Ejecuta `/verify` nuevamente con tu nombre real\n• **Una segunda advertencia resultará en ban de 7 días**",
+                        inline=False
+                    )
+                
                 await message.edit(embed=embed)
                 return
             
@@ -1317,22 +1398,33 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
         try:
             verification_code = roblox_verification.create_verification_request(user_id, roblox_username)
         except ValueError as e:
-            # El usuario ya está baneado por usar un nombre duplicado
-            embed = discord.Embed(
-                title="🚫 Usuario Baneado",
-                description=str(e),
-                color=0xff0000
-            )
-            embed.add_field(
-                name="⚠️ Has sido baneado automáticamente",
-                value="**Duración:** 7 días\n**Razón:** Intentar usar un nombre de usuario ya registrado por otro Discord ID",
-                inline=False
-            )
-            embed.add_field(
-                name="📅 Fecha de desbaneo",
-                value=f"<t:{int(time.time() + BAN_DURATION)}:F>",
-                inline=False
-            )
+            error_message = str(e)
+            
+            if "baneado por 7 días" in error_message:
+                # El usuario fue baneado (segunda advertencia)
+                embed = discord.Embed(
+                    title="🚫 Usuario Baneado",
+                    description=error_message,
+                    color=0xff0000
+                )
+                embed.add_field(
+                    name="📅 Fecha de desbaneo",
+                    value=f"<t:{int(time.time() + BAN_DURATION)}:F>",
+                    inline=False
+                )
+            else:
+                # Primera advertencia
+                embed = discord.Embed(
+                    title="⚠️ Advertencia",
+                    description=error_message,
+                    color=0xff9900
+                )
+                embed.add_field(
+                    name="💡 ¿Qué hacer ahora?",
+                    value="• Usa tu propio nombre de usuario de Roblox\n• No intentes usar nombres de otros usuarios\n• **Una segunda advertencia resultará en ban de 7 días**",
+                    inline=False
+                )
+            
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
