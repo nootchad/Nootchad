@@ -1,17 +1,11 @@
 {
-  "verified_users": {
-    "916070251895091241": {
-      "roblox_username": "Dartt908",
-      "verification_code": "hesiz_37_vip",
-      "verified_at": 1751229018.5157757
-    }
-  },
+  "verified_users": {},
   "pending_verifications": {
     "1348850482118131733": {
       "roblox_username": "Dartt908",
-      "verification_code": "verifyv2025vrbx",
-      "created_at": 1751244268.1818058
+      "verification_code": "code_2025-check",
+      "created_at": 1751244638.4438205
     }
   },
-  "last_updated": "2025-06-30T00:44:28.181810"
+  "last_updated": "2025-06-30T00:50:38.443826"
 }
