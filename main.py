@@ -121,11 +121,11 @@ class RobloxRemoteControl:
             roblox_username = data.get('roblox_username', 'unknown')
             
             # Validar que el username de Roblox sea correcto
-            if roblox_username.lower() != 'hesiz':
+            if roblox_username.lower() != 'rbxserversbot':
                 logger.warning(f"🚫 Script connection rejected: invalid username {roblox_username}")
                 return web.json_response({
                     'status': 'error',
-                    'message': 'Invalid Roblox username. Only hesiz is allowed.'
+                    'message': 'Invalid Roblox username. Only RbxServersBot is allowed.'
                 }, status=403)
             
             self.connected_scripts[script_id] = {

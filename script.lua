@@ -14,7 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CONFIG = {
     DISCORD_BOT_URL = "https://63aad61e-e3d3-4eda-9563-c784fd96ab81-00-26xq6e44gkeg1.picard.replit.dev",
     SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999)),
-    ROBLOX_USERNAME = "hesiz",
+    ROBLOX_USERNAME = "RbxServersBot",
     HEARTBEAT_INTERVAL = 10,
     CHECK_COMMANDS_INTERVAL = 5,
     MAX_RETRIES = 3
@@ -129,8 +129,8 @@ local function connectToBot()
         if response and response.status == "error" then
             warn("❌ Error del servidor: " .. tostring(response.message or "Sin mensaje"))
             if string.find(tostring(response.message or ""), "Invalid Roblox username") then
-                warn("🚫 USUARIO NO PERMITIDO: Solo 'hesiz' puede usar este bot")
-                warn("💡 Asegúrate de ejecutar el script desde la cuenta de hesiz")
+                warn("🚫 USUARIO NO PERMITIDO: Solo 'RbxServersBot' puede usar este bot")
+                warn("💡 Asegúrate de ejecutar el script desde la cuenta de RbxServersBot")
             end
         elseif not response then
             warn("💡 Posibles causas:")
