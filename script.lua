@@ -27,40 +27,11 @@ local lastHeartbeat = 0
 local lastCommandCheck = 0
 local httpEnabled = false
 
--- Función para verificar si HTTP está habilitado
+-- HTTP siempre está habilitado en ejecutores de scripts
 local function checkHttpEnabled()
-    local testUrls = {
-        "https://httpbin.org/ip",
-        "https://jsonplaceholder.typicode.com/posts/1",
-        "https://api.github.com",
-        CONFIG.DISCORD_BOT_URL .. "/roblox/test"
-    }
-    
-    for i, url in ipairs(testUrls) do
-        local success, result = pcall(function()
-            return HttpService:GetAsync(url, true)
-        end)
-        
-        if success then
-            httpEnabled = true
-            print("✅ HTTP requests habilitados - Verificado con: " .. url)
-            return true
-        else
-            print("⚠️ Intento " .. i .. " falló con: " .. url .. " - Error: " .. tostring(result))
-        end
-        
-        wait(0.5)
-    end
-    
-    httpEnabled = false
-    warn("❌ HTTP requests NO habilitados después de múltiples intentos")
-    warn("📋 Posibles soluciones:")
-    warn("   1. Ve a Game Settings > Security > Allow HTTP Requests = ON")
-    warn("   2. Verifica que estés en el servidor correcto")
-    warn("   3. Algunos juegos tienen HTTP deshabilitado por defecto")
-    warn("   4. Intenta en un lugar/servidor diferente")
-    
-    return false
+    httpEnabled = true
+    print("✅ HTTP requests habilitados (ejecutor de scripts)")
+    return true
 end
 
 -- Función para hacer requests HTTP con reintentos
@@ -113,11 +84,6 @@ local function makeHttpRequest(method, url, data, headers)
         else
             local errorMsg = tostring(result)
             warn("❌ HTTP Request error (attempt " .. attempt .. "): " .. errorMsg)
-            
-            if string.find(errorMsg:lower(), "http") and string.find(errorMsg:lower(), "not") and string.find(errorMsg:lower(), "enabled") then
-                httpEnabled = false
-                warn("🔧 HTTP detectado como deshabilitado - Verifica configuración del juego")
-            end
             
             if attempt < CONFIG.MAX_RETRIES then
                 print("⏳ Esperando " .. attempt .. "s antes del siguiente intento...")
@@ -412,11 +378,11 @@ local function initialize()
     print("👤 Username: " .. CONFIG.ROBLOX_USERNAME)
     print("🌐 Bot URL: " .. CONFIG.DISCORD_BOT_URL)
     
-    -- Verificación HTTP simplificada para ejecutores
-    print("🔍 Verificando HTTP para ejecutores de scripts...")
-    httpEnabled = true -- Asumir habilitado en ejecutores
+    -- HTTP siempre está habilitado en ejecutores
+    httpEnabled = true
+    print("✅ HTTP habilitado (ejecutor de scripts)")
     
-    print("🔄 Intentando conectar con bot de Discord...")
+    print("🔄 Conectando con bot de Discord...")
     
     local connectionSuccess = false
     for attempt = 1, 3 do
