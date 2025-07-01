@@ -226,95 +226,81 @@ class RobloxRemoteControl:
             return web.json_response({'status': 'error', 'message': str(e)}, status=400)
     
     async def handle_get_join_script(self, request):
-        """Generar script de Roblox para unirse directamente a servidor privado"""
+        """Generar script de Roblox simplificado para unirse por placeId y jobId"""
         try:
-            game_id = request.query.get('game_id')
-            user_id = request.query.get('user_id')
+            place_id = request.query.get('place_id')
+            job_id = request.query.get('job_id')
             
-            if not game_id or not user_id:
+            if not place_id or not job_id:
                 return web.json_response({
                     'status': 'error',
-                    'message': 'game_id and user_id parameters required'
+                    'message': 'place_id and job_id parameters required'
                 }, status=400)
             
-            # Obtener un enlace VIP aleatorio para el usuario y juego
-            user_games = scraper.links_by_user.get(user_id, {})
-            if game_id not in user_games or not user_games[game_id].get('links'):
+            # Validar que place_id sea numérico
+            try:
+                numeric_place_id = int(place_id)
+            except ValueError:
                 return web.json_response({
                     'status': 'error',
-                    'message': 'No VIP links available for this game and user'
-                }, status=404)
-            
-            # Seleccionar enlace aleatorio
-            import random
-            vip_link = random.choice(user_games[game_id]['links'])
-            game_name = user_games[game_id].get('game_name', f'Game {game_id}')
-            
-            # Extraer game ID y private code del enlace
-            import re
-            match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', vip_link)
-            if not match:
-                return web.json_response({
-                    'status': 'error',
-                    'message': 'Invalid VIP link format'
+                    'message': 'place_id must be numeric'
                 }, status=400)
             
-            roblox_game_id, private_code = match.groups()
+            # Validar que job_id no esté vacío
+            if not job_id.strip():
+                return web.json_response({
+                    'status': 'error',
+                    'message': 'job_id cannot be empty'
+                }, status=400)
             
-            # Generar script de Roblox
-            roblox_script = f'''-- 🎮 RbxServers Auto-Join Script
--- Generado automáticamente para unirse a servidor privado
--- Juego: {game_name}
--- Usuario: {user_id}
+            # Generar script simplificado de Roblox
+            roblox_script = f'''-- 🎮 RbxServers Auto-Join Script (Simplificado)
+-- Generado automáticamente para unirse a servidor específico
+-- ⚠️ Script corregido - sin errores de casting
 
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
+local placeId = {numeric_place_id}  -- ID del juego
+local jobId = "{job_id}"  -- El JobId al que te quieres unir
 
 print("🤖 RbxServers Auto-Join Script iniciando...")
-print("🎯 Juego: {game_name}")
-print("🆔 Game ID: {roblox_game_id}")
-print("🔑 Private Code: {private_code}")
+print("🆔 Place ID: " .. tostring(placeId))
+print("🎯 Job ID: " .. jobId)
 
--- Función para unirse al servidor privado
-local function joinPrivateServer()
-    local gameId = {roblox_game_id}
-    local privateCode = "{private_code}"
-    
-    print("🚀 Iniciando teleport al servidor privado...")
+-- Función simplificada de teleport
+local function joinServer()
+    print("🚀 Iniciando teleport al servidor específico...")
     
     local success, errorMessage = pcall(function()
-        TeleportService:TeleportToPrivateServer(gameId, privateCode, {{Players.LocalPlayer}})
+        game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)
     end)
     
     if success then
         print("✅ Teleport iniciado exitosamente!")
-        print("⏳ Esperando conexión al servidor...")
+        print("⏳ Conectando al servidor...")
     else
         print("❌ Error en teleport: " .. tostring(errorMessage))
         print("🔄 Reintentando en 3 segundos...")
         wait(3)
-        joinPrivateServer()
+        joinServer()
     end
 end
 
--- Verificar que estamos en un juego (no en el lobby)
+-- Verificar que estamos en un juego
 if game.PlaceId and game.PlaceId > 0 then
     print("✅ Ejecutándose desde dentro del juego")
-    joinPrivateServer()
+    joinServer()
 else
-    print("❌ Este script debe ejecutarse desde dentro de un juego de Roblox")
-    print("💡 Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
+    print("❌ Debes estar dentro de un juego de Roblox")
+    print("💡 Ve a cualquier juego y ejecuta este script en la consola (F9)")
 end
 
-print("🎮 Script cargado - by RbxServers (hesiz)")'''
+print("🎮 Script by RbxServers (hesiz) - Versión Corregida")'''
 
             return web.json_response({
                 'status': 'success',
                 'script': roblox_script,
-                'game_name': game_name,
-                'game_id': roblox_game_id,
-                'private_code': private_code,
-                'vip_link': vip_link
+                'place_id': numeric_place_id,
+                'job_id': job_id,
+                'script_type': 'simplified_teleport'
             })
             
         except Exception as e:
@@ -348,23 +334,23 @@ print("🎮 Script cargado - by RbxServers (hesiz)")'''
                 </style>
                 <script>
                 function generateScript() {{
-                    const gameId = document.getElementById('gameId').value;
-                    const userId = document.getElementById('userId').value;
+                    const placeId = document.getElementById('placeId').value;
+                    const jobId = document.getElementById('jobId').value;
                     
-                    if (!gameId || !userId) {{
-                        alert('Por favor ingresa Game ID y User ID');
+                    if (!placeId || !jobId) {{
+                        alert('Por favor ingresa Place ID y Job ID');
                         return;
                     }}
                     
-                    fetch(`/roblox/get_join_script?game_id=${{gameId}}&user_id=${{userId}}`)
+                    fetch(`/roblox/get_join_script?place_id=${{placeId}}&job_id=${{jobId}}`)
                         .then(response => response.json())
                         .then(data => {{
                             if (data.status === 'success') {{
                                 document.getElementById('generatedScript').textContent = data.script;
                                 document.getElementById('scriptInfo').innerHTML = `
-                                    <strong>Juego:</strong> ${{data.game_name}}<br>
-                                    <strong>Game ID:</strong> ${{data.game_id}}<br>
-                                    <strong>Private Code:</strong> ${{data.private_code}}
+                                    <strong>Place ID:</strong> ${{data.place_id}}<br>
+                                    <strong>Job ID:</strong> ${{data.job_id}}<br>
+                                    <strong>Tipo:</strong> ${{data.script_type}}
                                 `;
                                 document.getElementById('scriptSection').style.display = 'block';
                             }} else {{
@@ -397,9 +383,9 @@ print("🎮 Script cargado - by RbxServers (hesiz)")'''
                     
                     <div class="status">
                         <h2>🎮 Generador de Script de Unión Directa</h2>
-                        <p>Genera un script de Roblox para unirse directamente a un servidor privado:</p>
-                        <p><strong>Game ID:</strong> <input type="text" id="gameId" placeholder="ej: 2753915549" style="background: #1e2124; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;"></p>
-                        <p><strong>User ID:</strong> <input type="text" id="userId" placeholder="ej: 916070251895091241" style="background: #1e2124; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;"></p>
+                        <p>Genera un script de Roblox para unirse directamente a un servidor específico por Job ID:</p>
+                        <p><strong>Place ID:</strong> <input type="text" id="placeId" placeholder="ej: 2753915549" style="background: #1e2124; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;"></p>
+                        <p><strong>Job ID:</strong> <input type="text" id="jobId" placeholder="ej: 0088ab2c-2d58-4f13-b8d3-7c00f9b46bd0" style="background: #1e2124; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;"></p>
                         <button onclick="generateScript()" class="copy-btn">🚀 Generar Script</button>
                         
                         <div id="scriptSection" style="display: none; margin-top: 20px;">
@@ -411,10 +397,11 @@ print("🎮 Script cargado - by RbxServers (hesiz)")'''
                             <button onclick="copyScript()" class="copy-btn">📋 Copiar Script</button>
                             <p style="color: #faa61a; font-size: 14px;">
                                 💡 <strong>Instrucciones:</strong><br>
-                                1. Copia el script<br>
+                                1. Copia el script generado<br>
                                 2. Ve a cualquier juego de Roblox<br>
                                 3. Presiona F9 para abrir la consola<br>
-                                4. Pega y ejecuta el script
+                                4. Pega y ejecuta el script<br>
+                                5. El script te llevará al servidor específico usando el Job ID
                             </p>
                         </div>
                     </div>
