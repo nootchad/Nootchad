@@ -85,6 +85,9 @@ class RobloxRemoteControl:
         """Iniciar servidor web para comunicación con Roblox"""
         self.app = web.Application()
         
+        # Ruta raíz para información del bot
+        self.app.router.add_get('/', self.handle_root)
+        
         # Rutas para el script de Roblox
         self.app.router.add_post('/roblox/connect', self.handle_script_connect)
         self.app.router.add_post('/roblox/heartbeat', self.handle_heartbeat)
@@ -211,6 +214,61 @@ class RobloxRemoteControl:
             logger.error(f"Error in command result: {e}")
             return web.json_response({'status': 'error', 'message': str(e)}, status=400)
     
+    async def handle_root(self, request):
+        """Manejar ruta raíz - mostrar información del bot"""
+        try:
+            connected_scripts = len(self.get_connected_scripts())
+            active_commands = len([cmd for cmd in self.active_commands.values() if cmd['status'] == 'pending'])
+            
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>RbxServers Bot - Control Remoto</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 40px; background: #2c2f33; color: #ffffff; }}
+                    .container {{ max-width: 600px; margin: 0 auto; }}
+                    .status {{ background: #23272a; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
+                    .green {{ color: #43b581; }}
+                    .orange {{ color: #faa61a; }}
+                    h1 {{ color: #7289da; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>🤖 RbxServers Bot - Control Remoto</h1>
+                    <div class="status">
+                        <h2>📊 Estado del Sistema</h2>
+                        <p><strong>Bot de Discord:</strong> <span class="green">✅ Conectado</span></p>
+                        <p><strong>Servidor Web:</strong> <span class="green">✅ Activo en puerto 8080</span></p>
+                        <p><strong>Scripts de Roblox Conectados:</strong> <span class="orange">{connected_scripts}</span></p>
+                        <p><strong>Comandos Pendientes:</strong> <span class="orange">{active_commands}</span></p>
+                    </div>
+                    <div class="status">
+                        <h2>🔌 API Endpoints</h2>
+                        <p><strong>POST</strong> /roblox/connect - Conectar script de Roblox</p>
+                        <p><strong>POST</strong> /roblox/heartbeat - Heartbeat de script</p>
+                        <p><strong>GET</strong> /roblox/get_commands - Obtener comandos pendientes</p>
+                        <p><strong>POST</strong> /roblox/command_result - Enviar resultado de comando</p>
+                        <p><strong>POST</strong> /discord/send_command - Enviar comando desde Discord</p>
+                    </div>
+                    <div class="status">
+                        <h2>ℹ️ Información</h2>
+                        <p>Este es el servidor de control remoto para el bot de RbxServers.</p>
+                        <p>Para usar el bot, ve a Discord y usa los comandos slash disponibles.</p>
+                        <p><strong>Creado por:</strong> hesiz</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            return web.Response(text=html_content, content_type='text/html')
+            
+        except Exception as e:
+            logger.error(f"Error in root handler: {e}")
+            return web.Response(text="Error interno del servidor", status=500)
+
     async def handle_discord_command(self, request):
         """Manejar comando enviado desde Discord"""
         try:
