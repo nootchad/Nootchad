@@ -5603,65 +5603,83 @@ async def roblox_control_command(interaction: discord.Interaction,
             if not servidor_link:
                 embed = discord.Embed(
                     title="❌ Parámetros Faltantes",
-                    description="Uso: `/roblox_control join_server [link_servidor] [usuario_objetivo]`",
+                    description="Uso: `/roblox_control join_server [place_id] [job_id]`\n\n**Nota:** Ahora usa Place ID y Job ID en lugar de enlaces de servidor privado.",
                     color=0xff0000
+                )
+                embed.add_field(
+                    name="📝 Ejemplo:",
+                    value="`/roblox_control join_server 2753915549 12345678-1234-1234-1234-123456789abc`",
+                    inline=False
+                )
+                embed.add_field(
+                    name="💡 Cómo obtener Job ID:",
+                    value="• Ve al servidor donde quieres que se una el bot\n• Usa `/joinscript` o consulta la consola del juego\n• El Job ID aparece en game.JobId",
+                    inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            # Extraer placeId y privateServerCode del enlace
-            import re
-            # Patrón más flexible que acepta enlaces con o sin nombre de juego
-            match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', servidor_link)
-            if not match:
+            # Ahora servidor_link es el place_id y usuario_objetivo es el job_id
+            place_id = servidor_link
+            job_id = usuario_objetivo
+            
+            if not job_id:
                 embed = discord.Embed(
-                    title="❌ Enlace Inválido",
-                    description="El enlace del servidor privado no tiene el formato correcto.\n\n**Formatos aceptados:**\n`https://www.roblox.com/games/GAME_ID?privateServerLinkCode=CODE`\n`https://www.roblox.com/games/GAME_ID/GAME_NAME?privateServerLinkCode=CODE`",
+                    title="❌ Job ID Requerido",
+                    description="Debes proporcionar tanto el Place ID como el Job ID.\n\nUso: `/roblox_control join_server [place_id] [job_id]`",
                     color=0xff0000
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            place_id, private_code = match.groups()
+            # Validar que place_id sea numérico
+            if not place_id.isdigit():
+                embed = discord.Embed(
+                    title="❌ Place ID Inválido",
+                    description="El Place ID debe ser numérico.\n\nEjemplo: `2753915549`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
             
-            # Generar script de Lua con la información extraída
-            lua_script = f'''-- 🎮 RbxServers Auto-Teleport Script
+            # Generar script de Lua con TeleportToPlaceInstance
+            lua_script = f'''-- 🎮 RbxServers Auto-Join Script
 -- Generado automáticamente por Discord Bot
--- EJECUTAR EN CUALQUIER JUEGO DE ROBLOX
+-- EJECUTAR DESDE CUALQUIER JUEGO DE ROBLOX
 
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
-print("🤖 RbxServers Auto-Teleport iniciando...")
+print("🤖 RbxServers Auto-Join Script iniciando...")
 print("🆔 Place ID: {place_id}")
-print("🔑 Private Code: {private_code}")
+print("🎯 Job ID: {job_id}")
 
--- Función de teleport
-local function teleportToPrivateServer()
+-- Función de teleport usando TeleportToPlaceInstance
+local function teleportToServer()
     local placeId = {place_id}
-    local privateServerCode = "{private_code}"
+    local jobId = "{job_id}"
     
-    print("🚀 Iniciando teleport al servidor privado...")
+    print("🚀 Iniciando teleport al servidor específico...")
     
     local success, errorMessage = pcall(function()
-        TeleportService:TeleportToPrivateServer(placeId, privateServerCode, {{Players.LocalPlayer}})
+        TeleportService:TeleportToPlaceInstance(placeId, jobId, {{Players.LocalPlayer}})
     end)
     
     if success then
         print("✅ Teleport iniciado exitosamente!")
-        print("⏳ Conectando al servidor privado...")
+        print("⏳ Conectando al servidor...")
     else
         print("❌ Error en teleport: " .. tostring(errorMessage))
         print("🔄 Reintentando en 3 segundos...")
         wait(3)
-        teleportToPrivateServer()
+        teleportToServer()
     end
 end
 
 -- Verificar que estamos en un juego
 if game.PlaceId and game.PlaceId > 0 then
     print("✅ Ejecutándose desde dentro del juego")
-    teleportToPrivateServer()
+    teleportToServer()
 else
     print("❌ Debes estar dentro de un juego de Roblox")
     print("💡 Ve a cualquier juego y ejecuta este script en la consola (F9)")
@@ -5672,27 +5690,33 @@ print("🎮 Script by RbxServers (hesiz)")'''
             # Enviar comando al script de Roblox con el script Lua generado
             result = await remote_control.send_command_to_roblox(
                 action='execute_script',
-                server_link=servidor_link,
-                target_user=usuario_objetivo,
+                server_link=f"PlaceId:{place_id}|JobId:{job_id}",
+                target_user=None,
                 message='bot by RbxServers **Testing** 🤖',
                 lua_script=lua_script
             )
             
             embed = discord.Embed(
-                title="🚀 Script de Teleport Generado y Enviado",
-                description=f"Se generó automáticamente el script de Lua con la información del servidor y se envió al bot de Roblox.",
+                title="🚀 Script de Join por Job ID Generado",
+                description=f"Se generó automáticamente el script de Lua para unirse al servidor específico usando TeleportToPlaceInstance.",
                 color=0x00ff88
             )
             embed.add_field(name="🆔 Place ID", value=f"`{place_id}`", inline=True)
-            embed.add_field(name="🔑 Private Code", value=f"`{private_code}`", inline=True)
-            embed.add_field(name="🎯 Usuario Objetivo", value=usuario_objetivo or "Ninguno específico", inline=True)
-            embed.add_field(name="🔗 Servidor Original", value=f"```{servidor_link}```", inline=False)
+            embed.add_field(name="🎯 Job ID", value=f"`{job_id}`", inline=True)
+            embed.add_field(name="📝 Método", value="TeleportToPlaceInstance", inline=True)
             embed.add_field(name="🆔 ID Comando", value=f"`{result.get('command_id', 'unknown')}`", inline=True)
-            embed.add_field(name="📝 Acción", value="Script de teleport automático", inline=True)
+            embed.add_field(name="🔧 Acción", value="Join por Job ID", inline=True)
+            embed.add_field(name="✅ Compatibilidad", value="Cliente y Ejecutor", inline=True)
             
             # Mostrar preview del script generado
             script_preview = lua_script[:200] + "..." if len(lua_script) > 200 else lua_script
             embed.add_field(name="📜 Preview del Script", value=f"```lua\n{script_preview}\n```", inline=False)
+            
+            embed.add_field(
+                name="💡 Ventajas del Nuevo Método:",
+                value="• ✅ Funciona desde cliente (ejecutores)\n• ✅ No requiere privateServerLinkCode\n• ✅ Unión directa al servidor específico\n• ✅ Compatible con TeleportService",
+                inline=False
+            )
             
             await interaction.followup.send(embed=embed, ephemeral=True)
             
@@ -5748,12 +5772,12 @@ print("🎮 Script by RbxServers (hesiz)")'''
             )
             embed.add_field(
                 name="📋 Comandos Disponibles:",
-                value="• `status` - Ver estado de scripts conectados\n• `join_server [link] [usuario]` - Extraer info y generar script automático\n• `send_message [usuario]` - Enviar mensaje en chat\n• `follow_user [usuario]` - Seguir a un usuario",
+                value="• `status` - Ver estado de scripts conectados\n• `join_server [place_id] [job_id]` - Unirse a servidor específico por Job ID\n• `send_message [usuario]` - Enviar mensaje en chat\n• `follow_user [usuario]` - Seguir a un usuario",
                 inline=False
             )
             embed.add_field(
-                name="🚀 Nuevo: Script Automático",
-                value="El comando `join_server` ahora extrae automáticamente el Place ID y Private Code del enlace y genera un script de Lua listo para ejecutar.",
+                name="🚀 Actualizado: Join por Job ID",
+                value="El comando `join_server` ahora usa Place ID y Job ID para unirse directamente a servidores específicos usando TeleportToPlaceInstance.",
                 inline=False
             )
             await interaction.followup.send(embed=embed, ephemeral=True)

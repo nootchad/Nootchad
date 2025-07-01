@@ -318,30 +318,23 @@ local function openPrivateServerLink(serverLink)
     return true, "Enlace mostrado en consola - copia y pega en tu navegador"
 end
 
--- Función para unirse a un servidor privado (CORREGIDA)
-local function joinPrivateServer(serverLink)
-    print("🚀 Procesando servidor privado...")
-    print("🔗 Link: " .. serverLink)
+-- Función para unirse a un servidor por Job ID
+local function joinServerByJobId(placeId, jobId)
+    print("🚀 Procesando unión por Job ID...")
+    print("🆔 Place ID: " .. tostring(placeId))
+    print("🎯 Job ID: " .. tostring(jobId))
 
-    -- Extraer gameId y privateCode del enlace
-    local gameId, privateCode = serverLink:match("roblox%.com/games/(%d+)/[^?]*%?privateServerLinkCode=([%w%-_]+)")
+    -- Usar TeleportToPlaceInstance para unirse al servidor específico
+    local success, errorMessage = pcall(function()
+        TeleportService:TeleportToPlaceInstance(placeId, jobId, {Players.LocalPlayer})
+    end)
 
-    if not gameId or not privateCode then
-        gameId, privateCode = serverLink:match("roblox%.com/games/(%d+).-privateServerLinkCode=([%w%-_]+)")
-    end
-
-    if gameId and privateCode then
-        print("🎮 Game ID: " .. gameId)
-        print("🔑 Private Code: " .. privateCode)
-
-        -- MÉTODO CORREGIDO: En lugar de TeleportToPrivateServer (que solo funciona desde server)
-        -- Usamos el enlace directo que funciona desde cliente
-        
-        -- Opción 1: Abrir en navegador o copiar al portapapeles
-        return openPrivateServerLink(serverLink)
+    if success then
+        print("✅ Teleport por Job ID iniciado exitosamente!")
+        return true, "Teleport iniciado - conectando al servidor"
     else
-        warn("❌ No se pudo extraer game ID y private code del link")
-        return false, "Formato de enlace inválido"
+        print("❌ Error en teleport por Job ID: " .. tostring(errorMessage))
+        return false, "Error en teleport: " .. tostring(errorMessage)
     end
 end
 
@@ -371,21 +364,28 @@ local function processCommand(command)
 
     if command.action == "join_server" then
         if command.server_link then
-            success, resultMessage = joinPrivateServer(command.server_link)
-            if success then
-                -- Enviar mensaje después de procesar el enlace
-                spawn(function()
-                    wait(2)
-                    sendChatMessage(command.message or "bot by RbxServers **Testing** 🤖")
-
-                    if command.target_user then
+            -- El server_link ahora contiene "PlaceId:XXXX|JobId:YYYY"
+            local placeId, jobId = command.server_link:match("PlaceId:(%d+)|JobId:([%w%-]+)")
+            
+            if placeId and jobId then
+                print("📥 Comando join_server recibido:")
+                print("🆔 Place ID: " .. placeId)
+                print("🎯 Job ID: " .. jobId)
+                
+                success, resultMessage = joinServerByJobId(tonumber(placeId), jobId)
+                
+                if success then
+                    -- Enviar mensaje después del teleport
+                    spawn(function()
                         wait(2)
-                        followUser(command.target_user)
-                    end
-                end)
+                        sendChatMessage(command.message or "bot by RbxServers **Testing** 🤖")
+                    end)
+                end
+            else
+                resultMessage = "Formato de server_link inválido - esperado PlaceId:XXXX|JobId:YYYY"
             end
         else
-            resultMessage = "Link de servidor no proporcionado"
+            resultMessage = "Server link no proporcionado"
         end
 
     elseif command.action == "execute_script" then
@@ -553,6 +553,6 @@ else
     end)
 end
 
-print("✅ Script de control remoto CORREGIDO para ejecutores cargado")
-print("🔧 CAMBIOS: TeleportToPrivateServer reemplazado por método compatible con cliente")
+print("✅ Script de control remoto ACTUALIZADO para ejecutores cargado")
+print("🔧 NUEVA FUNCIONALIDAD: TeleportToPlaceInstance con Job ID para unión directa")
 print("🌐 URL actualizada: https://48d641a6-49be-4fce-8559-1ba7297b4a80-00-39jmkm5qd4nug.riker.replit.dev")
