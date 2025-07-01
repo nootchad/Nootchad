@@ -120,12 +120,19 @@ local function connectToBot()
         print("✅ Conectado exitosamente al bot de Discord")
         print("🆔 Script ID: " .. CONFIG.SCRIPT_ID)
         print("🕐 Server Time: " .. tostring(response.server_time or "Unknown"))
+        print("👤 Usuario permitido: " .. CONFIG.ROBLOX_USERNAME)
         return true
     else
         warn("❌ Error al conectar con bot de Discord")
         warn("📋 Respuesta recibida: " .. tostring(response and response.status or "nil"))
         
-        if not response then
+        if response and response.status == "error" then
+            warn("❌ Error del servidor: " .. tostring(response.message or "Sin mensaje"))
+            if string.find(tostring(response.message or ""), "Invalid Roblox username") then
+                warn("🚫 USUARIO NO PERMITIDO: Solo 'hesiz' puede usar este bot")
+                warn("💡 Asegúrate de ejecutar el script desde la cuenta de hesiz")
+            end
+        elseif not response then
             warn("💡 Posibles causas:")
             warn("   • Bot de Discord no está ejecutándose")
             warn("   • URL incorrecta: " .. CONFIG.DISCORD_BOT_URL)

@@ -120,6 +120,14 @@ class RobloxRemoteControl:
             script_id = data.get('script_id', 'unknown')
             roblox_username = data.get('roblox_username', 'unknown')
             
+            # Validar que el username de Roblox sea correcto
+            if roblox_username.lower() != 'hesiz':
+                logger.warning(f"🚫 Script connection rejected: invalid username {roblox_username}")
+                return web.json_response({
+                    'status': 'error',
+                    'message': 'Invalid Roblox username. Only hesiz is allowed.'
+                }, status=403)
+            
             self.connected_scripts[script_id] = {
                 'roblox_username': roblox_username,
                 'last_heartbeat': asyncio.get_event_loop().time(),
@@ -131,7 +139,8 @@ class RobloxRemoteControl:
             return web.json_response({
                 'status': 'success',
                 'message': 'Script connected successfully',
-                'server_time': asyncio.get_event_loop().time()
+                'server_time': asyncio.get_event_loop().time(),
+                'allowed': True
             })
         except Exception as e:
             logger.error(f"Error in script connect: {e}")
