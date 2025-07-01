@@ -3,18 +3,18 @@
 
 ## Información General
 
-Este bot de Discord está diseñado para extraer enlaces de servidores privados VIP de Roblox desde rbxservers.xyz y proporcionarlos a usuarios verificados a través de comandos slash.
+Este bot de Discord está diseñado para extraer enlaces de servidores privados VIP de Roblox y proporcionarlos a usuarios verificados a través de comandos slash.
 
 ## Limitaciones de Hosting
 
 ### Disponibilidad del Servicio
 
-El bot funciona en una plataforma de desarrollo gratuita (Replit) que tiene las siguientes limitaciones:
+El bot funciona en una plataforma de desarrollo gratuita que tiene las siguientes limitaciones:
 
 - **No disponibilidad 24/7**: El bot no puede mantenerse ejecutándose continuamente debido a las restricciones de la plataforma gratuita
 - **Activación manual requerida**: Debe ser activado manualmente cada cierto tiempo
 - **Suspensión automática**: El servicio se suspende después de períodos de inactividad
-- **Recursos limitados**: CPU y memoria restringidos que pueden afectar el rendimiento durante picos de uso
+- **Recursos limitados**: Puede afectar el rendimiento durante picos de uso
 
 ### Recomendaciones para Usuarios
 
@@ -51,7 +51,7 @@ El bot requiere verificación obligatoria antes del uso:
 ### Propósito
 
 - Prevenir spam y sobrecarga del sistema
-- Proteger la fuente de datos (rbxservers.xyz) de requests excesivos
+- Proteger las fuentes de datos de requests excesivos
 - Mantener estabilidad del servicio para todos los usuarios
 
 ## Arquitectura de Datos
@@ -74,8 +74,7 @@ El bot requiere verificación obligatoria antes del uso:
 ### Scraping
 
 - **Límite por sesión**: Máximo 5 servidores procesados por ejecución
-- **Dependencia externa**: Requiere acceso a rbxservers.xyz
-- **Selenium WebDriver**: Necesita Chrome/Chromium instalado en el sistema
+- **Dependencia externa**: Requiere acceso a fuentes externas de datos
 - **Tiempo de procesamiento**: 30-60 segundos promedio por sesión de scraping
 
 ### Capacidad
