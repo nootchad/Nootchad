@@ -1,153 +1,159 @@
 
-# Guión Promocional - VIP Server Bot para Discord
+# Bot de Enlaces VIP de Roblox para Discord
 
-## Qué es este Bot
+## Tu Acceso Gratuito a Servidores VIP Privados
 
-Un bot revolucionario de Discord que te da acceso GRATUITO a servidores VIP privados de Roblox. Miles de enlaces exclusivos al alcance de tus manos.
-
-## Por qué es Único
-
-### Acceso Ilimitado
-- Servidores VIP de los juegos más populares de Roblox
-- Enlaces frescos actualizados constantemente
-- Categorías organizadas automáticamente
-- Sistema de favoritos personalizado
-
-### Completamente Gratis
-- Sin pagos mensuales
-- Sin límites de uso después de verificación
-- Acceso permanente a tu colección personal
-- Exporta todos tus enlaces cuando quieras
-
-## Cómo Funciona
-
-### Verificación Simple
-1. Únete al servidor de Discord
-2. Usa el comando de verificación con tu usuario de Roblox
-3. Agrega el código generado a tu perfil de Roblox
-4. Listo, acceso completo desbloqueado
-
-### Comandos Principales
-
-**Búsqueda Automática**
-- Busca por nombre del juego
-- Sistema inteligente que encuentra la mejor coincidencia
-- Resultados instantáneos
-
-**Navegación de Servidores**
-- Navega por todos tus enlaces guardados
-- Información detallada de cada servidor
-- Sistema de reservas para guardar favoritos
-
-**Gestión Personal**
-- Tus propios favoritos organizados
-- Estadísticas completas de tu uso
-- Exportación de datos personal
-
-## Características Destacadas
-
-### Sistema Anti-Spam
-- Cooldowns inteligentes para mantener el servicio estable
-- Protección contra abuso del sistema
-- Experiencia fluida para todos los usuarios
-
-### Organización Automática
-- Juegos categorizados por género
-- RPG, Simuladores, Acción, Terror y más
-- Fácil navegación por categorías
-
-### Datos Personalizados
-- Cada usuario tiene su propia base de datos
-- Enlaces únicos y personalizados
-- Historial completo de actividad
-
-## Ventajas Exclusivas
-
-### Para Usuarios Regulares
-- Acceso a servidores premium sin pagar
-- Miles de opciones disponibles
-- Actualizaciones constantes de contenido
-- Sistema de favoritos ilimitado
-
-### Seguridad Garantizada
-- Verificación real contra Roblox
-- Sistema de advertencias justo
-- Protección contra usuarios falsos
-- Datos seguros y privados
-
-## Limitaciones Importantes
-
-### Disponibilidad
-- El bot requiere activación manual periódica
-- No está disponible 24/7 debido a hosting gratuito
-- Puede haber períodos de inactividad
-- Se recomienda exportar enlaces importantes
-
-### Uso Responsable
-- Sistema de cooldowns entre comandos
-- Verificación obligatoria para prevenir spam
-- Límites de procesamiento por sesión
-- Respeto a las fuentes de datos
+¿Cansado de pagar por servidores VIP de Roblox? Este bot te da acceso completamente GRATUITO a miles de enlaces de servidores privados de los juegos más populares. Sin suscripciones, sin pagos mensuales, sin límites.
 
 ## Cómo Empezar
 
-### Paso 1: Únete
-- Encuentra el enlace de invitación del bot
-- Únete al servidor de Discord
+### Verificación (Paso Obligatorio)
 
-### Paso 2: Verifica
-- Usa el comando de verificación
-- Sigue las instrucciones exactas
-- Espera confirmación automática
+Para usar el bot necesitas verificar que sigues a hesiz en Roblox. Es un proceso simple de 2 minutos:
 
-### Paso 3: Disfruta
-- Comienza a buscar tus juegos favoritos
-- Explora todas las categorías disponibles
-- Guarda tus servidores preferidos
+**1. Ejecuta el comando de verificación**
+```
+/verify tu_nombre_de_roblox
+```
 
-## Consejos Pro
+**2. Copia el código que te aparece**
+- El bot te dará un código único como `hesiz-2024-vip-bot`
+- Copia exactamente este código
 
-### Maximiza tu Experiencia
-- Verifica inmediatamente al unirte
-- Usa favoritos para juegos frecuentes
-- Exporta regularmente tus enlaces
-- Respeta los tiempos de cooldown
+**3. Ve a tu perfil de Roblox**
+- Entra a www.roblox.com
+- Ve a tu perfil
+- Haz clic en "Editar Perfil"
+- Pega el código en tu descripción
+
+**4. Confirma la verificación**
+- Regresa a Discord
+- Haz clic en el botón verde "Confirmar Verificación"
+- El bot verificará automáticamente tu descripción
+
+**¡Listo!** Ya tienes acceso completo por 24 horas.
+
+### Comandos Principales
+
+Una vez verificado, puedes usar estos comandos:
+
+**Buscar servidores por nombre de juego:**
+```
+/game dress to impress
+/game mm2
+/game blox fruits
+```
+
+**Buscar por ID específico:**
+```
+/scrape 123456789
+```
+
+**Ver tus servidores guardados:**
+```
+/servertest
+```
+
+**Explorar por categorías:**
+```
+/categories
+```
+
+## Qué Hace Especial a Este Bot
+
+### Búsqueda Inteligente
+- Busca cualquier juego por nombre
+- Sistema que encuentra automáticamente la mejor coincidencia
+- Funciona con abreviaciones como "DTI", "MM2", "TOH"
+
+### Organización Automática
+- Categoriza tus juegos por género automáticamente
+- RPG, Simuladores, Acción, Terror, Social y más
+- Sistema de favoritos personalizado
+
+### Tu Propia Base de Datos
+- Cada usuario tiene su colección personal de enlaces
+- Guarda automáticamente todos los servidores que encuentres
+- Navega fácilmente entre todos tus enlaces
+- Exporta todos tus datos cuando quieras
+
+### Funciones Avanzadas
+- **Favoritos**: Marca tus juegos preferidos
+- **Reservas**: Guarda servidores específicos para después
+- **Historial**: Ve tu actividad reciente
+- **Estadísticas**: Información completa de tu uso
+
+## Limitaciones Importantes
+
+### Disponibilidad del Bot
+- **No está disponible 24/7**: El bot funciona en hosting gratuito y necesita ser activado manualmente cada cierto tiempo
+- **Períodos de inactividad**: Puede estar offline por horas mientras se reactiva
+- **Recomendación**: Exporta tus enlaces importantes regularmente
+
+### Sistema de Protección
+- **Cooldowns**: Esperas de 5 minutos entre comandos para evitar spam
+- **Verificación obligatoria**: Previene el abuso del sistema
+- **Límites por sesión**: Máximo 5 servidores procesados por vez
+
+## Tips para Maximizar tu Experiencia
+
+### Uso Eficiente
+- Verifica tu cuenta inmediatamente al unirte
+- Usa el comando `/game` para búsquedas rápidas por nombre
+- Guarda tus juegos favoritos para acceso rápido
+- Exporta regularmente con `/export` para tener respaldo
 
 ### Evita Problemas
-- No uses nombres falsos de Roblox
-- No compartas tus enlaces privados
-- Respeta las reglas del servidor
-- Reporta cualquier problema
+- **NUNCA uses nombres falsos de Roblox** - Te pueden banear del bot
+- No compartas tus enlaces con otros (son personales)
+- Respeta los cooldowns (intentar saltárselos puede resultar en ban)
+- Usa tu propio nombre de usuario de Roblox real
 
-## Por qué Elegir Este Bot
+## Ventajas vs Otros Servicios
 
-### Ventajas Competitivas
-- Completamente gratuito vs servicios premium
-- Interfaz intuitiva y fácil de usar
-- Comunidad activa y soporte
-- Actualizaciones regulares de funciones
+### Completamente Gratis
+- Otros servicios cobran $5-15 mensuales
+- Este bot es 100% gratuito para siempre
+- Sin límites de uso después de verificación
 
-### Resultados Garantizados
-- Miles de enlaces verificados
-- Juegos populares siempre disponibles
-- Sistema confiable y estable
-- Experiencia de usuario premium
+### Datos Personalizados
+- Tu propia base de datos personal
+- Enlaces únicos que otros no pueden ver
+- Sistema de favoritos ilimitado
 
-## Llamada a la Acción
+### Interfaz Fácil
+- Comandos simples e intuitivos
+- Navegación con botones
+- Información detallada de cada servidor
 
-### Únete Ahora
-No pierdas más tiempo pagando por servidores VIP. Únete a miles de usuarios que ya disfrutan acceso gratuito e ilimitado a los mejores servidores privados de Roblox.
+## Comandos Útiles Adicionales
 
-### Es Tu Momento
-- Acceso inmediato después de verificación
-- Sin costos ocultos ni suscripciones
-- Comunidad creciente de usuarios
-- Soporte activo y constante
+```
+/favorites - Ver tus juegos favoritos
+/reservas - Ver servidores guardados
+/history - Tu historial de actividad
+/stats - Estadísticas completas
+/export - Descargar todos tus enlaces
+/searchgame [nombre] - Buscar con opciones múltiples
+```
 
-## Disclaimer
+## ¿Por Qué Verificar con Roblox?
 
-Este bot no está afiliado oficialmente con Roblox Corporation. Todos los enlaces provienen de fuentes públicas disponibles. El uso está sujeto a los términos de servicio de Discord y Roblox.
+La verificación con tu usuario de Roblox sirve para:
+- Prevenir spam y abuso del sistema
+- Mantener el servicio estable para todos
+- Evitar cuentas falsas múltiples
+- Proteger las fuentes de datos
+
+## Soporte y Comunidad
+
+- Comunidad activa de usuarios
+- Soporte para problemas técnicos
+- Actualizaciones regulares con nuevas funciones
+- Miles de usuarios satisfechos
 
 ---
 
-**¿Listo para acceso VIP gratuito? ¡Únete ahora y comienza tu experiencia premium en Roblox!**
+**¿Listo para acceso VIP gratuito e ilimitado? ¡Únete ahora y comienza tu experiencia premium en Roblox sin pagar un centavo!**
+
+*Nota: Este bot no está afiliado con Roblox Corporation. Todos los enlaces provienen de fuentes públicas. El uso está sujeto a los términos de Discord y Roblox.*
