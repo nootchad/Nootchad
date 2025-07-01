@@ -3689,6 +3689,334 @@ async def categories_command(interaction: discord.Interaction):
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
+@bot.tree.command(name="admin", description="[OWNER ONLY] Comandos de administración del bot")
+async def admin_command(interaction: discord.Interaction, 
+                       accion: str, 
+                       usuario_id: str = None, 
+                       roblox_username: str = None):
+    """Admin commands for bot owner only"""
+    await interaction.response.defer(ephemeral=True)
+    
+    # Verificar que es el owner (tu ID de Discord)
+    OWNER_DISCORD_ID = "916070251895091241"  # Tu ID de Discord
+    
+    if str(interaction.user.id) != OWNER_DISCORD_ID:
+        embed = discord.Embed(
+            title="🚫 Acceso Denegado",
+            description="Solo el owner del bot puede usar comandos de administración.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        return
+    
+    try:
+        if accion.lower() == "autoverify":
+            if not usuario_id or not roblox_username:
+                embed = discord.Embed(
+                    title="❌ Parámetros Faltantes",
+                    description="Uso: `/admin autoverify [usuario_id] [roblox_username]`",
+                    color=0xff0000
+                )
+                embed.add_field(
+                    name="📝 Ejemplo:",
+                    value="`/admin autoverify 123456789 username_roblox`",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Validar formato del usuario ID
+            try:
+                int(usuario_id)  # Verificar que es un número
+            except ValueError:
+                embed = discord.Embed(
+                    title="❌ ID de Usuario Inválido",
+                    description="El ID de usuario debe ser numérico.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Validar formato del nombre de usuario de Roblox
+            if not await roblox_verification.validate_roblox_username(roblox_username):
+                embed = discord.Embed(
+                    title="❌ Nombre de Usuario Inválido",
+                    description=f"El nombre de usuario **{roblox_username}** no tiene un formato válido.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Verificar si el usuario ya está verificado
+            if roblox_verification.is_user_verified(usuario_id):
+                existing_data = roblox_verification.verified_users[usuario_id]
+                embed = discord.Embed(
+                    title="⚠️ Usuario Ya Verificado",
+                    description=f"El usuario <@{usuario_id}> ya está verificado como **{existing_data['roblox_username']}**.",
+                    color=0xffaa00
+                )
+                embed.add_field(
+                    name="🔄 Para actualizar:",
+                    value="Primero usa `/admin unverify` y luego `/admin autoverify` nuevamente.",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Verificar si está baneado
+            if roblox_verification.is_user_banned(usuario_id):
+                embed = discord.Embed(
+                    title="🚫 Usuario Baneado",
+                    description=f"El usuario <@{usuario_id}> está baneado. Usa `/admin unban` primero.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Verificar si el roblox_username ya está siendo usado
+            for existing_discord_id, data in roblox_verification.verified_users.items():
+                if data['roblox_username'].lower() == roblox_username.lower() and existing_discord_id != usuario_id:
+                    embed = discord.Embed(
+                        title="❌ Nombre de Usuario en Uso",
+                        description=f"El nombre de usuario **{roblox_username}** ya está registrado por <@{existing_discord_id}>.",
+                        color=0xff0000
+                    )
+                    await interaction.followup.send(embed=embed, ephemeral=True)
+                    return
+            
+            # Auto-verificar al usuario
+            verification_code = roblox_verification.generate_verification_code()
+            roblox_verification.verified_users[usuario_id] = {
+                'roblox_username': roblox_username,
+                'verification_code': verification_code,
+                'verified_at': time.time()
+            }
+            
+            # Remover de pendientes si existía
+            if usuario_id in roblox_verification.pending_verifications:
+                del roblox_verification.pending_verifications[usuario_id]
+            
+            roblox_verification.save_data()
+            
+            # Embed de éxito
+            embed = discord.Embed(
+                title="✅ Usuario Auto-Verificado",
+                description=f"El usuario <@{usuario_id}> ha sido verificado automáticamente como **{roblox_username}**.",
+                color=0x00ff88
+            )
+            embed.add_field(name="👤 Usuario Discord", value=f"<@{usuario_id}>", inline=True)
+            embed.add_field(name="🎮 Usuario Roblox", value=f"`{roblox_username}`", inline=True)
+            embed.add_field(name="🔐 Código Asignado", value=f"`{verification_code}`", inline=True)
+            embed.add_field(name="⏰ Duración", value="24 horas", inline=True)
+            embed.add_field(name="👨‍💼 Verificado por", value=f"<@{interaction.user.id}> (Owner)", inline=True)
+            
+            current_time = datetime.now().strftime('%H:%M:%S')
+            embed.add_field(name="🕐 Hora", value=current_time, inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            logger.info(f"ADMIN: User {usuario_id} auto-verified as {roblox_username} by owner {interaction.user.id}")
+            
+            # Intentar notificar al usuario por DM
+            try:
+                user = bot.get_user(int(usuario_id))
+                if user:
+                    dm_embed = discord.Embed(
+                        title="✅ Verificación Automática Completada",
+                        description=f"Has sido verificado automáticamente por un administrador como **{roblox_username}**.",
+                        color=0x00ff88
+                    )
+                    dm_embed.add_field(
+                        name="🎮 Ahora puedes usar:",
+                        value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
+                        inline=False
+                    )
+                    dm_embed.add_field(name="⏰ Duración:", value="24 horas", inline=True)
+                    dm_embed.add_field(name="👤 Usuario de Roblox:", value=f"`{roblox_username}`", inline=True)
+                    
+                    await user.send(embed=dm_embed)
+                    logger.info(f"ADMIN: Auto-verification notification sent to user {usuario_id}")
+            except Exception as e:
+                logger.warning(f"ADMIN: Could not send DM notification to user {usuario_id}: {e}")
+        
+        elif accion.lower() == "unverify":
+            if not usuario_id:
+                embed = discord.Embed(
+                    title="❌ Parámetros Faltantes",
+                    description="Uso: `/admin unverify [usuario_id]`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            if usuario_id in roblox_verification.verified_users:
+                old_username = roblox_verification.verified_users[usuario_id]['roblox_username']
+                del roblox_verification.verified_users[usuario_id]
+                roblox_verification.save_data()
+                
+                embed = discord.Embed(
+                    title="✅ Usuario Desverificado",
+                    description=f"El usuario <@{usuario_id}> ha sido desverificado (era **{old_username}**).",
+                    color=0x00ff88
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                logger.info(f"ADMIN: User {usuario_id} unverified by owner {interaction.user.id}")
+            else:
+                embed = discord.Embed(
+                    title="❌ Usuario No Verificado",
+                    description=f"El usuario <@{usuario_id}> no está verificado.",
+                    color=0xff3333
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        elif accion.lower() == "ban":
+            if not usuario_id:
+                embed = discord.Embed(
+                    title="❌ Parámetros Faltantes",
+                    description="Uso: `/admin ban [usuario_id]`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            roblox_verification.ban_user(usuario_id)
+            
+            # Remover de verificados si estaba verificado
+            if usuario_id in roblox_verification.verified_users:
+                del roblox_verification.verified_users[usuario_id]
+                roblox_verification.save_data()
+            
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description=f"El usuario <@{usuario_id}> ha sido baneado manualmente por 7 días.",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="📅 Fecha de desbaneo",
+                value=f"<t:{int(time.time() + BAN_DURATION)}:F>",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            logger.info(f"ADMIN: User {usuario_id} banned by owner {interaction.user.id}")
+        
+        elif accion.lower() == "unban":
+            if not usuario_id:
+                embed = discord.Embed(
+                    title="❌ Parámetros Faltantes",
+                    description="Uso: `/admin unban [usuario_id]`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            if usuario_id in roblox_verification.banned_users:
+                del roblox_verification.banned_users[usuario_id]
+                roblox_verification.save_bans()
+                
+                embed = discord.Embed(
+                    title="✅ Usuario Desbaneado",
+                    description=f"El usuario <@{usuario_id}> ha sido desbaneado.",
+                    color=0x00ff88
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                logger.info(f"ADMIN: User {usuario_id} unbanned by owner {interaction.user.id}")
+            else:
+                embed = discord.Embed(
+                    title="❌ Usuario No Baneado",
+                    description=f"El usuario <@{usuario_id}> no está baneado.",
+                    color=0xff3333
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        elif accion.lower() == "info":
+            if not usuario_id:
+                embed = discord.Embed(
+                    title="❌ Parámetros Faltantes",
+                    description="Uso: `/admin info [usuario_id]`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Información del usuario
+            embed = discord.Embed(
+                title="📊 Información de Usuario",
+                description=f"Información detallada para <@{usuario_id}>:",
+                color=0x4169e1
+            )
+            
+            # Estado de verificación
+            is_verified = roblox_verification.is_user_verified(usuario_id)
+            if is_verified:
+                data = roblox_verification.verified_users[usuario_id]
+                verified_time = datetime.fromtimestamp(data['verified_at'])
+                embed.add_field(
+                    name="✅ Verificado",
+                    value=f"**Roblox:** {data['roblox_username']}\n**Código:** {data['verification_code']}\n**Desde:** {verified_time.strftime('%d/%m/%Y %H:%M')}",
+                    inline=False
+                )
+            else:
+                embed.add_field(name="❌ No Verificado", value="Usuario no verificado", inline=False)
+            
+            # Estado de ban
+            is_banned = roblox_verification.is_user_banned(usuario_id)
+            if is_banned:
+                ban_time = roblox_verification.banned_users[usuario_id]
+                ban_date = datetime.fromtimestamp(ban_time)
+                unban_date = datetime.fromtimestamp(ban_time + BAN_DURATION)
+                embed.add_field(
+                    name="🚫 Baneado",
+                    value=f"**Desde:** {ban_date.strftime('%d/%m/%Y %H:%M')}\n**Hasta:** {unban_date.strftime('%d/%m/%Y %H:%M')}",
+                    inline=False
+                )
+            else:
+                embed.add_field(name="✅ No Baneado", value="Usuario no está baneado", inline=False)
+            
+            # Advertencias
+            warnings = roblox_verification.get_user_warnings(usuario_id)
+            embed.add_field(name="⚠️ Advertencias", value=f"{warnings}/2", inline=True)
+            
+            # Estadísticas de uso
+            user_games = scraper.links_by_user.get(usuario_id, {})
+            total_servers = sum(len(game_data.get('links', [])) for game_data in user_games.values())
+            embed.add_field(name="🎮 Juegos", value=str(len(user_games)), inline=True)
+            embed.add_field(name="🔗 Servidores", value=str(total_servers), inline=True)
+            
+            favorites_count = len(scraper.user_favorites.get(usuario_id, []))
+            reservations_count = len(scraper.get_reserved_servers(usuario_id))
+            embed.add_field(name="⭐ Favoritos", value=str(favorites_count), inline=True)
+            embed.add_field(name="📌 Reservas", value=str(reservations_count), inline=True)
+            
+            # Cooldown
+            cooldown_remaining = scraper.check_cooldown(usuario_id)
+            if cooldown_remaining:
+                embed.add_field(name="⏰ Cooldown", value=f"{cooldown_remaining}s", inline=True)
+            else:
+                embed.add_field(name="✅ Sin Cooldown", value="Disponible", inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        else:
+            embed = discord.Embed(
+                title="❌ Acción No Válida",
+                description="Acciones disponibles:",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="📝 Comandos Disponibles:",
+                value="• `autoverify [user_id] [roblox_username]` - Verificar automáticamente\n• `unverify [user_id]` - Desverificar usuario\n• `ban [user_id]` - Banear usuario\n• `unban [user_id]` - Desbanear usuario\n• `info [user_id]` - Ver información de usuario",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    except Exception as e:
+        logger.error(f"Error in admin command: {e}")
+        embed = discord.Embed(
+            title="❌ Error en Comando Admin",
+            description="Ocurrió un error al ejecutar el comando de administración.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
 @bot.tree.command(name="stats", description="Mostrar estadísticas completas de enlaces VIP")
 async def stats(interaction: discord.Interaction):
     """Show detailed statistics about collected VIP links"""
