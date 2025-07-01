@@ -93,6 +93,7 @@ class RobloxRemoteControl:
         self.app.router.add_post('/roblox/heartbeat', self.handle_heartbeat)
         self.app.router.add_get('/roblox/get_commands', self.handle_get_commands)
         self.app.router.add_post('/roblox/command_result', self.handle_command_result)
+        self.app.router.add_get('/roblox/get_join_script', self.handle_get_join_script)
         
         # Rutas para Discord (owner)
         self.app.router.add_post('/discord/send_command', self.handle_discord_command)
@@ -223,6 +224,105 @@ class RobloxRemoteControl:
             logger.error(f"Error in command result: {e}")
             return web.json_response({'status': 'error', 'message': str(e)}, status=400)
     
+    async def handle_get_join_script(self, request):
+        """Generar script de Roblox para unirse directamente a servidor privado"""
+        try:
+            game_id = request.query.get('game_id')
+            user_id = request.query.get('user_id')
+            
+            if not game_id or not user_id:
+                return web.json_response({
+                    'status': 'error',
+                    'message': 'game_id and user_id parameters required'
+                }, status=400)
+            
+            # Obtener un enlace VIP aleatorio para el usuario y juego
+            user_games = scraper.links_by_user.get(user_id, {})
+            if game_id not in user_games or not user_games[game_id].get('links'):
+                return web.json_response({
+                    'status': 'error',
+                    'message': 'No VIP links available for this game and user'
+                }, status=404)
+            
+            # Seleccionar enlace aleatorio
+            import random
+            vip_link = random.choice(user_games[game_id]['links'])
+            game_name = user_games[game_id].get('game_name', f'Game {game_id}')
+            
+            # Extraer game ID y private code del enlace
+            import re
+            match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', vip_link)
+            if not match:
+                return web.json_response({
+                    'status': 'error',
+                    'message': 'Invalid VIP link format'
+                }, status=400)
+            
+            roblox_game_id, private_code = match.groups()
+            
+            # Generar script de Roblox
+            roblox_script = f'''-- 🎮 RbxServers Auto-Join Script
+-- Generado automáticamente para unirse a servidor privado
+-- Juego: {game_name}
+-- Usuario: {user_id}
+
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+
+print("🤖 RbxServers Auto-Join Script iniciando...")
+print("🎯 Juego: {game_name}")
+print("🆔 Game ID: {roblox_game_id}")
+print("🔑 Private Code: {private_code}")
+
+-- Función para unirse al servidor privado
+local function joinPrivateServer()
+    local gameId = {roblox_game_id}
+    local privateCode = "{private_code}"
+    
+    print("🚀 Iniciando teleport al servidor privado...")
+    
+    local success, errorMessage = pcall(function()
+        TeleportService:TeleportToPrivateServer(gameId, privateCode, {{Players.LocalPlayer}})
+    end)
+    
+    if success then
+        print("✅ Teleport iniciado exitosamente!")
+        print("⏳ Esperando conexión al servidor...")
+    else
+        print("❌ Error en teleport: " .. tostring(errorMessage))
+        print("🔄 Reintentando en 3 segundos...")
+        wait(3)
+        joinPrivateServer()
+    end
+end
+
+-- Verificar que estamos en un juego (no en el lobby)
+if game.PlaceId and game.PlaceId > 0 then
+    print("✅ Ejecutándose desde dentro del juego")
+    joinPrivateServer()
+else
+    print("❌ Este script debe ejecutarse desde dentro de un juego de Roblox")
+    print("💡 Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
+end
+
+print("🎮 Script cargado - by RbxServers (hesiz)")'''
+
+            return web.json_response({
+                'status': 'success',
+                'script': roblox_script,
+                'game_name': game_name,
+                'game_id': roblox_game_id,
+                'private_code': private_code,
+                'vip_link': vip_link
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating join script: {e}")
+            return web.json_response({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+
     async def handle_root(self, request):
         """Manejar ruta raíz - mostrar información del bot"""
         try:
@@ -240,8 +340,48 @@ class RobloxRemoteControl:
                     .status {{ background: #23272a; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
                     .green {{ color: #43b581; }}
                     .orange {{ color: #faa61a; }}
+                    .blue {{ color: #7289da; }}
                     h1 {{ color: #7289da; }}
+                    .script-box {{ background: #1e2124; padding: 15px; border-radius: 5px; margin: 10px 0; }}
+                    .copy-btn {{ background: #7289da; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; }}
                 </style>
+                <script>
+                function generateScript() {{
+                    const gameId = document.getElementById('gameId').value;
+                    const userId = document.getElementById('userId').value;
+                    
+                    if (!gameId || !userId) {{
+                        alert('Por favor ingresa Game ID y User ID');
+                        return;
+                    }}
+                    
+                    fetch(`/roblox/get_join_script?game_id=${{gameId}}&user_id=${{userId}}`)
+                        .then(response => response.json())
+                        .then(data => {{
+                            if (data.status === 'success') {{
+                                document.getElementById('generatedScript').textContent = data.script;
+                                document.getElementById('scriptInfo').innerHTML = `
+                                    <strong>Juego:</strong> ${{data.game_name}}<br>
+                                    <strong>Game ID:</strong> ${{data.game_id}}<br>
+                                    <strong>Private Code:</strong> ${{data.private_code}}
+                                `;
+                                document.getElementById('scriptSection').style.display = 'block';
+                            }} else {{
+                                alert('Error: ' + data.message);
+                            }}
+                        }})
+                        .catch(error => {{
+                            alert('Error de conexión: ' + error);
+                        }});
+                }}
+                
+                function copyScript() {{
+                    const scriptText = document.getElementById('generatedScript').textContent;
+                    navigator.clipboard.writeText(scriptText).then(() => {{
+                        alert('¡Script copiado al portapapeles!');
+                    }});
+                }}
+                </script>
             </head>
             <body>
                 <div class="container">
@@ -253,13 +393,38 @@ class RobloxRemoteControl:
                         <p><strong>Scripts de Roblox Conectados:</strong> <span class="orange">{connected_scripts}</span></p>
                         <p><strong>Comandos Pendientes:</strong> <span class="orange">{active_commands}</span></p>
                     </div>
+                    
+                    <div class="status">
+                        <h2>🎮 Generador de Script de Unión Directa</h2>
+                        <p>Genera un script de Roblox para unirse directamente a un servidor privado:</p>
+                        <p><strong>Game ID:</strong> <input type="text" id="gameId" placeholder="ej: 2753915549" style="background: #1e2124; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;"></p>
+                        <p><strong>User ID:</strong> <input type="text" id="userId" placeholder="ej: 916070251895091241" style="background: #1e2124; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;"></p>
+                        <button onclick="generateScript()" class="copy-btn">🚀 Generar Script</button>
+                        
+                        <div id="scriptSection" style="display: none; margin-top: 20px;">
+                            <h3>📋 Script Generado:</h3>
+                            <div id="scriptInfo" class="script-box"></div>
+                            <div class="script-box">
+                                <pre id="generatedScript" style="color: #43b581; white-space: pre-wrap; font-size: 12px;"></pre>
+                            </div>
+                            <button onclick="copyScript()" class="copy-btn">📋 Copiar Script</button>
+                            <p style="color: #faa61a; font-size: 14px;">
+                                💡 <strong>Instrucciones:</strong><br>
+                                1. Copia el script<br>
+                                2. Ve a cualquier juego de Roblox<br>
+                                3. Presiona F9 para abrir la consola<br>
+                                4. Pega y ejecuta el script
+                            </p>
+                        </div>
+                    </div>
+                    
                     <div class="status">
                         <h2>🔌 API Endpoints</h2>
                         <p><strong>POST</strong> /roblox/connect - Conectar script de Roblox</p>
                         <p><strong>POST</strong> /roblox/heartbeat - Heartbeat de script</p>
                         <p><strong>GET</strong> /roblox/get_commands - Obtener comandos pendientes</p>
                         <p><strong>POST</strong> /roblox/command_result - Enviar resultado de comando</p>
-                        <p><strong>POST</strong> /discord/send_command - Enviar comando desde Discord</p>
+                        <p><strong>GET</strong> /roblox/get_join_script - Generar script de unión directa</p>
                     </div>
                     <div class="status">
                         <h2>ℹ️ Información</h2>
@@ -2163,6 +2328,15 @@ class ServerBrowserView(discord.ui.View):
         reserve_button.callback = self.reserve_server
         self.add_item(reserve_button)
 
+        # Generate join script button
+        generate_script_button = discord.ui.Button(
+            label="🚀 Generar Script",
+            style=discord.ButtonStyle.success,
+            custom_id="generate_join_script"
+        )
+        generate_script_button.callback = self.generate_join_script
+        self.add_item(generate_script_button)
+
         # Follow hesiz button
         follow_button = discord.ui.Button(
             label="👤 Follow hesiz",
@@ -2261,6 +2435,118 @@ class ServerBrowserView(discord.ui.View):
                 )
         else:
             await interaction.response.defer()
+
+    async def generate_join_script(self, interaction: discord.Interaction):
+        """Generate join script for current server"""
+        current_server = self.servers_list[self.current_index]
+        game_id = self.game_info.get('game_id')
+        game_name = self.game_info.get('game_name', f'Game {game_id}')
+        
+        try:
+            # Extraer game ID y private code del enlace
+            import re
+            match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', current_server)
+            if not match:
+                await interaction.response.send_message(
+                    "❌ No se pudo procesar el enlace del servidor.", 
+                    ephemeral=True
+                )
+                return
+            
+            roblox_game_id, private_code = match.groups()
+            
+            # Generar script
+            roblox_script = f'''-- 🎮 RbxServers Auto-Join Script
+-- Servidor específico para {game_name}
+
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+
+print("🤖 RbxServers Auto-Join Script iniciando...")
+print("🎯 Juego: {game_name}")
+print("🆔 Game ID: {roblox_game_id}")
+print("🔑 Private Code: {private_code}")
+
+-- Función para unirse al servidor privado
+local function joinPrivateServer()
+    local gameId = {roblox_game_id}
+    local privateCode = "{private_code}"
+    
+    print("🚀 Iniciando teleport al servidor privado...")
+    
+    local success, errorMessage = pcall(function()
+        TeleportService:TeleportToPrivateServer(gameId, privateCode, {{Players.LocalPlayer}})
+    end)
+    
+    if success then
+        print("✅ Teleport iniciado exitosamente!")
+        print("⏳ Esperando conexión al servidor...")
+    else
+        print("❌ Error en teleport: " .. tostring(errorMessage))
+        print("🔄 Reintentando en 3 segundos...")
+        wait(3)
+        joinPrivateServer()
+    end
+end
+
+-- Verificar que estamos en un juego
+if game.PlaceId and game.PlaceId > 0 then
+    print("✅ Ejecutándose desde dentro del juego")
+    joinPrivateServer()
+else
+    print("❌ Este script debe ejecutarse desde dentro de un juego de Roblox")
+    print("💡 Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
+end
+
+print("🎮 Script cargado - by RbxServers (hesiz)")'''
+
+            # Crear embed
+            embed = discord.Embed(
+                title="🚀 Script de Unión Directa",
+                description=f"Script para servidor específico de **{game_name}**",
+                color=0x00ff88
+            )
+            
+            embed.add_field(name="🎯 Juego", value=f"```{game_name}```", inline=True)
+            embed.add_field(name="🔢 Servidor", value=f"{self.current_index + 1}/{len(self.servers_list)}", inline=True)
+            embed.add_field(name="🆔 Game ID", value=f"```{roblox_game_id}```", inline=True)
+            
+            embed.add_field(
+                name="📋 Cómo usar:",
+                value="1. **Descarga** el archivo .lua\n2. **Ve a cualquier juego** de Roblox\n3. **Presiona F9** para abrir consola\n4. **Copia y pega** el contenido del archivo\n5. **Presiona Enter** para ejecutar",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="⚡ Ventaja del Script:",
+                value="• **Unión instantánea** sin usar navegador\n• **Funciona desde cualquier juego** de Roblox\n• **No necesita ejecutores** externos",
+                inline=False
+            )
+            
+            # Crear archivo
+            import io
+            script_file = io.BytesIO(roblox_script.encode('utf-8'))
+            timestamp = datetime.now().strftime('%H%M%S')
+            filename = f"join_script_{game_id}_{self.current_index + 1}_{timestamp}.lua"
+            discord_file = discord.File(script_file, filename=filename)
+            
+            await interaction.response.send_message(embed=embed, file=discord_file, ephemeral=True)
+            
+            # Agregar a historial
+            if self.authorized_user_id:
+                scraper.add_usage_history(
+                    self.authorized_user_id, 
+                    game_id, 
+                    current_server, 
+                    'join_script_generated'
+                )
+            
+        except Exception as e:
+            logger.error(f"Error generating join script: {e}")
+            await interaction.response.send_message(
+                "❌ Error al generar el script de unión.", 
+                ephemeral=True
+            )
 
     def create_server_embed(self):
         """Create embed for current server"""
@@ -3763,12 +4049,153 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                     )
                     await interaction.followup.send(embed=error_embed, ephemeral=True)
         
+        # Join script button (user-exclusive)  
+        class ExclusiveJoinScriptButton(discord.ui.Button):
+            def __init__(self, target_user_id, game_id, disabled=False):
+                super().__init__(
+                    label="🚀 Generar Script de Unión",
+                    style=discord.ButtonStyle.secondary,
+                    disabled=disabled
+                )
+                self.target_user_id = target_user_id
+                self.game_id = game_id
+
+            async def callback(self, interaction: discord.Interaction):
+                if str(interaction.user.id) != self.target_user_id:
+                    await interaction.response.send_message(
+                        "❌ Solo quien ejecutó el comando puede usar este botón.", 
+                        ephemeral=True
+                    )
+                    return
+
+                await interaction.response.defer()
+                try:
+                    # Obtener enlace aleatorio
+                    servers = scraper.links_by_user[self.target_user_id][self.game_id]['links']
+                    if not servers:
+                        error_embed = discord.Embed(
+                            title="❌ No hay Enlaces Disponibles",
+                            description="No hay enlaces VIP para generar el script.",
+                            color=0xff3333
+                        )
+                        await interaction.followup.send(embed=error_embed, ephemeral=True)
+                        return
+                    
+                    import random
+                    vip_link = random.choice(servers)
+                    game_name = scraper.links_by_user[self.target_user_id][self.game_id].get('game_name', f'Game {self.game_id}')
+                    
+                    # Extraer game ID y private code del enlace
+                    import re
+                    match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', vip_link)
+                    if not match:
+                        error_embed = discord.Embed(
+                            title="❌ Enlace VIP Inválido",
+                            description="El enlace VIP no tiene el formato correcto.",
+                            color=0xff0000
+                        )
+                        await interaction.followup.send(embed=error_embed, ephemeral=True)
+                        return
+                    
+                    roblox_game_id, private_code = match.groups()
+                    
+                    # Generar script de Roblox
+                    roblox_script = f'''-- 🎮 RbxServers Auto-Join Script
+-- Generado automáticamente para unirse a servidor privado
+-- Juego: {game_name}
+
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+
+print("🤖 RbxServers Auto-Join Script iniciando...")
+print("🎯 Juego: {game_name}")
+print("🆔 Game ID: {roblox_game_id}")
+print("🔑 Private Code: {private_code}")
+
+-- Función para unirse al servidor privado
+local function joinPrivateServer()
+    local gameId = {roblox_game_id}
+    local privateCode = "{private_code}"
+    
+    print("🚀 Iniciando teleport al servidor privado...")
+    
+    local success, errorMessage = pcall(function()
+        TeleportService:TeleportToPrivateServer(gameId, privateCode, {{Players.LocalPlayer}})
+    end)
+    
+    if success then
+        print("✅ Teleport iniciado exitosamente!")
+        print("⏳ Esperando conexión al servidor...")
+    else
+        print("❌ Error en teleport: " .. tostring(errorMessage))
+        print("🔄 Reintentando en 3 segundos...")
+        wait(3)
+        joinPrivateServer()
+    end
+end
+
+-- Verificar que estamos en un juego (no en el lobby)
+if game.PlaceId and game.PlaceId > 0 then
+    print("✅ Ejecutándose desde dentro del juego")
+    joinPrivateServer()
+else
+    print("❌ Este script debe ejecutarse desde dentro de un juego de Roblox")
+    print("💡 Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
+end
+
+print("🎮 Script cargado - by RbxServers (hesiz)")'''
+
+                    # Crear embed
+                    embed = discord.Embed(
+                        title="🚀 Script de Unión Directa Generado",
+                        description=f"Script generado para **{game_name}**",
+                        color=0x00ff88
+                    )
+                    
+                    embed.add_field(name="🎯 Juego", value=f"```{game_name}```", inline=True)
+                    embed.add_field(name="🆔 Game ID", value=f"```{roblox_game_id}```", inline=True)
+                    embed.add_field(name="🔑 Private Code", value=f"```{private_code}```", inline=True)
+                    
+                    embed.add_field(
+                        name="📋 Instrucciones",
+                        value="1. **Copia** el script del archivo\n2. **Ve a cualquier juego** de Roblox\n3. **Presiona F9** (consola)\n4. **Pega y ejecuta** el script",
+                        inline=False
+                    )
+                    
+                    # Crear archivo
+                    import io
+                    script_file = io.BytesIO(roblox_script.encode('utf-8'))
+                    timestamp = datetime.now().strftime('%H%M%S')
+                    filename = f"join_script_{self.game_id}_{timestamp}.lua"
+                    discord_file = discord.File(script_file, filename=filename)
+                    
+                    await interaction.followup.send(embed=embed, file=discord_file)
+                    
+                    # Log
+                    scraper.add_usage_history(self.target_user_id, self.game_id, vip_link, 'join_script_generated')
+
+                except Exception as e:
+                    logger.error(f"Error generating join script: {e}")
+                    error_embed = discord.Embed(
+                        title="❌ Error al Generar Script",
+                        description="Ocurrió un error al generar el script.",
+                        color=0xff0000
+                    )
+                    await interaction.followup.send(embed=error_embed, ephemeral=True)
+        
         vip_button = ExclusiveVIPButton(
             user_id, 
             game_id, 
             disabled=game_info['total_links'] == 0
         )
         complete_view.add_item(vip_button)
+        
+        join_script_button = ExclusiveJoinScriptButton(
+            user_id,
+            game_id,
+            disabled=game_info['total_links'] == 0
+        )
+        complete_view.add_item(join_script_button)
 
         follow_button_final = discord.ui.Button(
             label="👤 Seguir a hesiz",
@@ -5265,6 +5692,144 @@ async def roblox_control_command(interaction: discord.Interaction,
             color=0xff0000
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="joinscript", description="Generar script de Roblox para unirse directamente a un servidor privado")
+async def join_script_command(interaction: discord.Interaction, game_id: str):
+    """Generate Roblox script for direct server joining"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        
+        # Verificar que el usuario tenga enlaces para este juego
+        user_games = scraper.links_by_user.get(user_id, {})
+        if game_id not in user_games or not user_games[game_id].get('links'):
+            embed = discord.Embed(
+                title="❌ Sin Enlaces Disponibles",
+                description=f"No tienes enlaces VIP para el juego ID: `{game_id}`.\n\nUsa `/scrape {game_id}` para generar enlaces primero.",
+                color=0xff3333
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Obtener enlace aleatorio
+        import random
+        vip_link = random.choice(user_games[game_id]['links'])
+        game_name = user_games[game_id].get('game_name', f'Game {game_id}')
+        
+        # Extraer game ID y private code del enlace
+        import re
+        match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', vip_link)
+        if not match:
+            embed = discord.Embed(
+                title="❌ Enlace VIP Inválido",
+                description="El enlace VIP no tiene el formato correcto.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        roblox_game_id, private_code = match.groups()
+        
+        # Generar script de Roblox
+        roblox_script = f'''-- 🎮 RbxServers Auto-Join Script
+-- Generado automáticamente para unirse a servidor privado
+-- Juego: {game_name}
+-- Usuario: {interaction.user.name}
+
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+
+print("🤖 RbxServers Auto-Join Script iniciando...")
+print("🎯 Juego: {game_name}")
+print("🆔 Game ID: {roblox_game_id}")
+print("🔑 Private Code: {private_code}")
+
+-- Función para unirse al servidor privado
+local function joinPrivateServer()
+    local gameId = {roblox_game_id}
+    local privateCode = "{private_code}"
+    
+    print("🚀 Iniciando teleport al servidor privado...")
+    
+    local success, errorMessage = pcall(function()
+        TeleportService:TeleportToPrivateServer(gameId, privateCode, {{Players.LocalPlayer}})
+    end)
+    
+    if success then
+        print("✅ Teleport iniciado exitosamente!")
+        print("⏳ Esperando conexión al servidor...")
+    else
+        print("❌ Error en teleport: " .. tostring(errorMessage))
+        print("🔄 Reintentando en 3 segundos...")
+        wait(3)
+        joinPrivateServer()
+    end
+end
+
+-- Verificar que estamos en un juego (no en el lobby)
+if game.PlaceId and game.PlaceId > 0 then
+    print("✅ Ejecutándose desde dentro del juego")
+    joinPrivateServer()
+else
+    print("❌ Este script debe ejecutarse desde dentro de un juego de Roblox")
+    print("💡 Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
+end
+
+print("🎮 Script cargado - by RbxServers (hesiz)")'''
+        
+        # Crear embed con el script
+        embed = discord.Embed(
+            title="🚀 Script de Unión Directa Generado",
+            description=f"Script generado para **{game_name}** (ID: {game_id})",
+            color=0x00ff88
+        )
+        
+        embed.add_field(name="🎯 Juego", value=f"```{game_name}```", inline=True)
+        embed.add_field(name="🆔 Roblox Game ID", value=f"```{roblox_game_id}```", inline=True)
+        embed.add_field(name="🔑 Private Code", value=f"```{private_code}```", inline=True)
+        
+        embed.add_field(
+            name="📋 Instrucciones de Uso",
+            value="1. **Copia** el script del archivo adjunto\n2. **Ve a cualquier juego** de Roblox\n3. **Presiona F9** para abrir la consola\n4. **Pega y ejecuta** el script\n5. **¡El script te llevará automáticamente al servidor privado!**",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="⚠️ Importante",
+            value="• Debes estar **dentro de un juego** (no en el lobby)\n• El script funciona desde **cualquier juego** de Roblox\n• Se conectará automáticamente al servidor privado",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🌐 Alternativa Web",
+            value=f"También puedes generar el script en: [Control Remoto Web](https://63aad61e-e3d3-4eda-9563-c784fd96ab81-00-26xq6e44gkeg1.picard.replit.dev)",
+            inline=False
+        )
+        
+        # Crear archivo con el script
+        import io
+        script_file = io.BytesIO(roblox_script.encode('utf-8'))
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"roblox_join_script_{game_id}_{timestamp}.lua"
+        discord_file = discord.File(script_file, filename=filename)
+        
+        await interaction.followup.send(embed=embed, file=discord_file)
+        
+        # Log y historial
+        logger.info(f"User {user_id} generated join script for game {game_id}")
+        scraper.add_usage_history(user_id, game_id, vip_link, 'join_script_generated')
+        
+    except Exception as e:
+        logger.error(f"Error in join script command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error al Generar Script",
+            description="Ocurrió un error al generar el script de unión.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 @bot.tree.command(name="export", description="Exportar todos tus enlaces VIP a un archivo de texto")
 async def export_command(interaction: discord.Interaction):
