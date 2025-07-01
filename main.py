@@ -253,47 +253,12 @@ class RobloxRemoteControl:
                     'message': 'job_id cannot be empty'
                 }, status=400)
             
-            # Generar script simplificado de Roblox
-            roblox_script = f'''-- 🎮 RbxServers Auto-Join Script (Simplificado)
--- Generado automáticamente para unirse a servidor específico
--- ⚠️ Script corregido - sin errores de casting
+            # Generar script simplificado de Roblox (formato exacto del usuario)
+            roblox_script = f'''-- ⚠️ Reemplaza los valores por los reales:
+local placeId = {numeric_place_id}  -- ID del juego (por ejemplo, Blox Fruits)
+local jobId = "{job_id}" -- El JobId al que te quieres unir
 
-local placeId = {numeric_place_id}  -- ID del juego
-local jobId = "{job_id}"  -- El JobId al que te quieres unir
-
-print("🤖 RbxServers Auto-Join Script iniciando...")
-print("🆔 Place ID: " .. tostring(placeId))
-print("🎯 Job ID: " .. jobId)
-
--- Función simplificada de teleport
-local function joinServer()
-    print("🚀 Iniciando teleport al servidor específico...")
-    
-    local success, errorMessage = pcall(function()
-        game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)
-    end)
-    
-    if success then
-        print("✅ Teleport iniciado exitosamente!")
-        print("⏳ Conectando al servidor...")
-    else
-        print("❌ Error en teleport: " .. tostring(errorMessage))
-        print("🔄 Reintentando en 3 segundos...")
-        wait(3)
-        joinServer()
-    end
-end
-
--- Verificar que estamos en un juego
-if game.PlaceId and game.PlaceId > 0 then
-    print("✅ Ejecutándose desde dentro del juego")
-    joinServer()
-else
-    print("❌ Debes estar dentro de un juego de Roblox")
-    print("💡 Ve a cualquier juego y ejecuta este script en la consola (F9)")
-end
-
-print("🎮 Script by RbxServers (hesiz) - Versión Corregida")'''
+game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)'''
 
             return web.json_response({
                 'status': 'success',
