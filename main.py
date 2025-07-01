@@ -11,6 +11,9 @@ import re
 import aiohttp
 import string
 import secrets
+from aiohttp import web
+import asyncio
+import json
 
 import discord
 from discord.ext import commands
@@ -51,6 +54,11 @@ WARNINGS_FILE = "warnings.json"
 VERIFICATION_DURATION = 24 * 60 * 60  # 24 horas en segundos
 BAN_DURATION = 7 * 24 * 60 * 60  # 7 días en segundos
 
+# Remote control settings
+DISCORD_OWNER_ID = "916070251895091241"  # Tu Discord ID
+WEBHOOK_SECRET = "rbxservers_webhook_secret_2024"
+REMOTE_CONTROL_PORT = 8080
+
 # Game categories mapping
 GAME_CATEGORIES = {
     "rpg": ["roleplay", "adventure", "fantasy", "medieval", "simulator"],
@@ -64,6 +72,206 @@ GAME_CATEGORIES = {
     "building": ["building", "creative", "construction", "city", "town"],
     "anime": ["anime", "naruto", "dragon ball", "one piece", "manga"]
 }
+
+class RobloxRemoteControl:
+    def __init__(self):
+        self.active_commands = {}  # Comandos pendientes para el script de Roblox
+        self.connected_scripts = {}  # Scripts conectados
+        self.app = None
+        self.runner = None
+        self.site = None
+        
+    async def start_web_server(self):
+        """Iniciar servidor web para comunicación con Roblox"""
+        self.app = web.Application()
+        
+        # Rutas para el script de Roblox
+        self.app.router.add_post('/roblox/connect', self.handle_script_connect)
+        self.app.router.add_post('/roblox/heartbeat', self.handle_heartbeat)
+        self.app.router.add_get('/roblox/get_commands', self.handle_get_commands)
+        self.app.router.add_post('/roblox/command_result', self.handle_command_result)
+        
+        # Rutas para Discord (owner)
+        self.app.router.add_post('/discord/send_command', self.handle_discord_command)
+        
+        try:
+            self.runner = web.AppRunner(self.app)
+            await self.runner.setup()
+            self.site = web.TCPSite(self.runner, '0.0.0.0', REMOTE_CONTROL_PORT)
+            await self.site.start()
+            logger.info(f"🌐 Remote control server started on port {REMOTE_CONTROL_PORT}")
+        except Exception as e:
+            logger.error(f"❌ Failed to start remote control server: {e}")
+    
+    async def stop_web_server(self):
+        """Detener servidor web"""
+        if self.site:
+            await self.site.stop()
+        if self.runner:
+            await self.runner.cleanup()
+    
+    async def handle_script_connect(self, request):
+        """Manejar conexión del script de Roblox"""
+        try:
+            data = await request.json()
+            script_id = data.get('script_id', 'unknown')
+            roblox_username = data.get('roblox_username', 'unknown')
+            
+            self.connected_scripts[script_id] = {
+                'roblox_username': roblox_username,
+                'last_heartbeat': asyncio.get_event_loop().time(),
+                'status': 'connected'
+            }
+            
+            logger.info(f"🤖 Roblox script connected: {script_id} ({roblox_username})")
+            
+            return web.json_response({
+                'status': 'success',
+                'message': 'Script connected successfully',
+                'server_time': asyncio.get_event_loop().time()
+            })
+        except Exception as e:
+            logger.error(f"Error in script connect: {e}")
+            return web.json_response({'status': 'error', 'message': str(e)}, status=400)
+    
+    async def handle_heartbeat(self, request):
+        """Manejar heartbeat del script"""
+        try:
+            data = await request.json()
+            script_id = data.get('script_id', 'unknown')
+            
+            if script_id in self.connected_scripts:
+                self.connected_scripts[script_id]['last_heartbeat'] = asyncio.get_event_loop().time()
+                self.connected_scripts[script_id]['status'] = data.get('status', 'active')
+                
+                return web.json_response({
+                    'status': 'success',
+                    'server_time': asyncio.get_event_loop().time()
+                })
+            else:
+                return web.json_response({'status': 'error', 'message': 'Script not registered'}, status=404)
+                
+        except Exception as e:
+            logger.error(f"Error in heartbeat: {e}")
+            return web.json_response({'status': 'error', 'message': str(e)}, status=400)
+    
+    async def handle_get_commands(self, request):
+        """Enviar comandos pendientes al script"""
+        try:
+            script_id = request.query.get('script_id', 'unknown')
+            
+            if script_id in self.connected_scripts:
+                # Buscar comandos pendientes para este script
+                pending_commands = []
+                for cmd_id, cmd_data in list(self.active_commands.items()):
+                    if cmd_data.get('target_script') == script_id or cmd_data.get('target_script') == 'any':
+                        pending_commands.append({
+                            'command_id': cmd_id,
+                            'action': cmd_data['action'],
+                            'server_link': cmd_data.get('server_link'),
+                            'target_user': cmd_data.get('target_user'),
+                            'message': cmd_data.get('message', 'bot by RbxServers **Testing** 🤖'),
+                            'timestamp': cmd_data['timestamp']
+                        })
+                        # Marcar como enviado
+                        cmd_data['status'] = 'sent'
+                
+                return web.json_response({
+                    'status': 'success',
+                    'commands': pending_commands
+                })
+            else:
+                return web.json_response({'status': 'error', 'message': 'Script not registered'}, status=404)
+                
+        except Exception as e:
+            logger.error(f"Error in get commands: {e}")
+            return web.json_response({'status': 'error', 'message': str(e)}, status=400)
+    
+    async def handle_command_result(self, request):
+        """Recibir resultado de comando ejecutado"""
+        try:
+            data = await request.json()
+            command_id = data.get('command_id')
+            script_id = data.get('script_id')
+            success = data.get('success', False)
+            message = data.get('message', '')
+            
+            if command_id in self.active_commands:
+                self.active_commands[command_id]['status'] = 'completed' if success else 'failed'
+                self.active_commands[command_id]['result'] = message
+                self.active_commands[command_id]['completed_at'] = asyncio.get_event_loop().time()
+                
+                logger.info(f"📝 Command {command_id} result: {'✅' if success else '❌'} - {message}")
+                
+                return web.json_response({'status': 'success'})
+            else:
+                return web.json_response({'status': 'error', 'message': 'Command not found'}, status=404)
+                
+        except Exception as e:
+            logger.error(f"Error in command result: {e}")
+            return web.json_response({'status': 'error', 'message': str(e)}, status=400)
+    
+    async def handle_discord_command(self, request):
+        """Manejar comando enviado desde Discord"""
+        try:
+            # Verificar webhook secret
+            auth_header = request.headers.get('Authorization', '')
+            if auth_header != f"Bearer {WEBHOOK_SECRET}":
+                return web.json_response({'status': 'error', 'message': 'Unauthorized'}, status=401)
+            
+            data = await request.json()
+            return await self.send_command_to_roblox(
+                action=data.get('action'),
+                server_link=data.get('server_link'),
+                target_user=data.get('target_user'),
+                target_script=data.get('target_script', 'any'),
+                message=data.get('message')
+            )
+            
+        except Exception as e:
+            logger.error(f"Error in discord command: {e}")
+            return web.json_response({'status': 'error', 'message': str(e)}, status=400)
+    
+    async def send_command_to_roblox(self, action, server_link=None, target_user=None, target_script='any', message=None):
+        """Enviar comando a script de Roblox"""
+        command_id = f"cmd_{int(asyncio.get_event_loop().time())}_{secrets.token_hex(4)}"
+        
+        command_data = {
+            'command_id': command_id,
+            'action': action,
+            'server_link': server_link,
+            'target_user': target_user,
+            'target_script': target_script,
+            'message': message or 'bot by RbxServers **Testing** 🤖',
+            'timestamp': asyncio.get_event_loop().time(),
+            'status': 'pending'
+        }
+        
+        self.active_commands[command_id] = command_data
+        
+        logger.info(f"📤 Command sent to Roblox: {command_id} - {action}")
+        
+        return web.json_response({
+            'status': 'success',
+            'command_id': command_id,
+            'message': 'Command queued for Roblox script'
+        })
+    
+    def get_connected_scripts(self):
+        """Obtener scripts conectados"""
+        current_time = asyncio.get_event_loop().time()
+        active_scripts = {}
+        
+        for script_id, script_data in self.connected_scripts.items():
+            # Considerar activo si el último heartbeat fue hace menos de 60 segundos
+            if current_time - script_data['last_heartbeat'] < 60:
+                active_scripts[script_id] = script_data
+                
+        return active_scripts
+    
+    def get_command_status(self, command_id):
+        """Obtener estado de comando"""
+        return self.active_commands.get(command_id)
 
 class RobloxVerificationSystem:
     def __init__(self):
@@ -1300,6 +1508,7 @@ bot = commands.Bot(command_prefix='/', intents=intents, case_insensitive=True)
 # Global instances
 scraper = VIPServerScraper()
 roblox_verification = RobloxVerificationSystem()
+remote_control = RobloxRemoteControl()
 
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
@@ -1338,6 +1547,13 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
 @bot.event
 async def on_ready():
     logger.info(f'🤖 {bot.user} ha conectado exitosamente a Discord!')
+    
+    # Inicializar servidor web para control remoto
+    try:
+        await remote_control.start_web_server()
+        logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
+    except Exception as e:
+        logger.error(f"❌ Error al inicializar control remoto: {e}")
     
     # Log estadísticas detalladas
     total_links = 0
@@ -4814,6 +5030,175 @@ async def admin_command(interaction: discord.Interaction,
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+@bot.tree.command(name="roblox_control", description="[OWNER ONLY] Enviar comandos al bot de Roblox")
+async def roblox_control_command(interaction: discord.Interaction, 
+                                accion: str, 
+                                servidor_link: str = None, 
+                                usuario_objetivo: str = None):
+    """Control remoto del bot de Roblox - solo para owner"""
+    await interaction.response.defer(ephemeral=True)
+    
+    # Verificar que es el owner
+    if str(interaction.user.id) != DISCORD_OWNER_ID:
+        embed = discord.Embed(
+            title="🚫 Acceso Denegado",
+            description="Solo el owner del bot puede usar el control remoto de Roblox.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        return
+    
+    try:
+        if accion.lower() == "status":
+            # Mostrar estado de scripts conectados
+            connected_scripts = remote_control.get_connected_scripts()
+            
+            embed = discord.Embed(
+                title="🤖 Estado del Control Remoto de Roblox",
+                description="Scripts conectados y comandos activos",
+                color=0x3366ff,
+                timestamp=datetime.now()
+            )
+            
+            if connected_scripts:
+                scripts_text = ""
+                for script_id, script_data in connected_scripts.items():
+                    last_heartbeat = asyncio.get_event_loop().time() - script_data['last_heartbeat']
+                    scripts_text += f"• **{script_id}** ({script_data['roblox_username']})\n"
+                    scripts_text += f"  📡 Último ping: {int(last_heartbeat)}s ago\n"
+                    scripts_text += f"  🔄 Estado: {script_data['status']}\n\n"
+                
+                embed.add_field(
+                    name="🔗 Scripts Conectados",
+                    value=scripts_text,
+                    inline=False
+                )
+            else:
+                embed.add_field(
+                    name="❌ Sin Scripts Conectados",
+                    value="No hay scripts de Roblox conectados actualmente.",
+                    inline=False
+                )
+            
+            # Comandos activos
+            active_commands = [cmd for cmd in remote_control.active_commands.values() if cmd['status'] == 'pending']
+            embed.add_field(
+                name="📋 Comandos Pendientes",
+                value=f"**{len(active_commands)}** comandos en cola",
+                inline=True
+            )
+            
+            completed_commands = [cmd for cmd in remote_control.active_commands.values() if cmd['status'] in ['completed', 'failed']]
+            embed.add_field(
+                name="✅ Comandos Completados",
+                value=f"**{len(completed_commands)}** comandos procesados",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="🌐 Servidor Web",
+                value=f"Puerto {REMOTE_CONTROL_PORT} activo",
+                inline=True
+            )
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        elif accion.lower() == "join_server":
+            if not servidor_link:
+                embed = discord.Embed(
+                    title="❌ Parámetros Faltantes",
+                    description="Uso: `/roblox_control join_server [link_servidor] [usuario_objetivo]`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Enviar comando al script de Roblox
+            result = await remote_control.send_command_to_roblox(
+                action='join_server',
+                server_link=servidor_link,
+                target_user=usuario_objetivo,
+                message='bot by RbxServers **Testing** 🤖'
+            )
+            
+            embed = discord.Embed(
+                title="🚀 Comando Enviado al Bot de Roblox",
+                description=f"Se envió la orden de unirse al servidor privado.",
+                color=0x00ff88
+            )
+            embed.add_field(name="🔗 Servidor", value=f"```{servidor_link}```", inline=False)
+            embed.add_field(name="🎯 Usuario Objetivo", value=usuario_objetivo or "Ninguno específico", inline=True)
+            embed.add_field(name="🆔 ID Comando", value=f"`{result.get('command_id', 'unknown')}`", inline=True)
+            embed.add_field(name="📝 Acción", value="Unirse a servidor y enviar mensaje", inline=False)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        elif accion.lower() == "send_message":
+            # Enviar solo mensaje en el chat actual
+            result = await remote_control.send_command_to_roblox(
+                action='send_message',
+                target_user=usuario_objetivo,
+                message='bot by RbxServers **Testing** 🤖'
+            )
+            
+            embed = discord.Embed(
+                title="💬 Mensaje Enviado al Bot de Roblox",
+                description="Se envió la orden de escribir en el chat de Roblox.",
+                color=0x00ff88
+            )
+            embed.add_field(name="📝 Mensaje", value="bot by RbxServers **Testing** 🤖", inline=False)
+            embed.add_field(name="🎯 Usuario Objetivo", value=usuario_objetivo or "Ninguno específico", inline=True)
+            embed.add_field(name="🆔 ID Comando", value=f"`{result.get('command_id', 'unknown')}`", inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        elif accion.lower() == "follow_user":
+            if not usuario_objetivo:
+                embed = discord.Embed(
+                    title="❌ Usuario Objetivo Requerido",
+                    description="Uso: `/roblox_control follow_user [usuario_objetivo]`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            result = await remote_control.send_command_to_roblox(
+                action='follow_user',
+                target_user=usuario_objetivo
+            )
+            
+            embed = discord.Embed(
+                title="👥 Seguimiento Activado",
+                description=f"El bot de Roblox ahora seguirá a **{usuario_objetivo}**.",
+                color=0x00ff88
+            )
+            embed.add_field(name="🎯 Usuario a Seguir", value=usuario_objetivo, inline=True)
+            embed.add_field(name="🆔 ID Comando", value=f"`{result.get('command_id', 'unknown')}`", inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        else:
+            embed = discord.Embed(
+                title="❌ Acción No Válida",
+                description="Acciones disponibles:",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="📋 Comandos Disponibles:",
+                value="• `status` - Ver estado de scripts conectados\n• `join_server [link] [usuario]` - Unirse a servidor privado\n• `send_message [usuario]` - Enviar mensaje en chat\n• `follow_user [usuario]` - Seguir a un usuario",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+    except Exception as e:
+        logger.error(f"Error in roblox control command: {e}")
+        embed = discord.Embed(
+            title="❌ Error en Control Remoto",
+            description="Ocurrió un error al procesar el comando.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
 @bot.tree.command(name="export", description="Exportar todos tus enlaces VIP a un archivo de texto")
 async def export_command(interaction: discord.Interaction):
     """Export all user's VIP links to a text file"""
@@ -5125,7 +5510,13 @@ async def main():
         logger.error("❌ DISCORD_TOKEN not found in environment variables")
         return
 
-    await bot.start(discord_token)
+    try:
+        await bot.start(discord_token)
+    finally:
+        # Cleanup on shutdown
+        if remote_control.site:
+            await remote_control.stop_web_server()
+            logger.info("🔴 Remote control server stopped")
 
 if __name__ == "__main__":
     asyncio.run(main())
