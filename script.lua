@@ -29,30 +29,49 @@ local httpEnabled = false
 
 -- Función para verificar si HTTP está habilitado
 local function checkHttpEnabled()
-    local success, result = pcall(function()
-        return HttpService:GetAsync("https://httpbin.org/ip", true)
-    end)
+    -- Intentar múltiples métodos de verificación
+    local testUrls = {
+        "https://httpbin.org/ip",
+        "https://jsonplaceholder.typicode.com/posts/1",
+        "https://api.github.com",
+        CONFIG.DISCORD_BOT_URL .. "/roblox/test"
+    }
     
-    if success then
-        httpEnabled = true
-        print("✅ HTTP requests habilitados")
-        return true
-    else
-        httpEnabled = false
-        warn("❌ HTTP requests NO habilitados. Habilita 'Allow HTTP Requests' en Game Settings")
-        return false
+    for i, url in ipairs(testUrls) do
+        local success, result = pcall(function()
+            return HttpService:GetAsync(url, true)
+        end)
+        
+        if success then
+            httpEnabled = true
+            print("✅ HTTP requests habilitados - Verificado con: " .. url)
+            return true
+        else
+            print("⚠️ Intento " .. i .. " falló con: " .. url .. " - Error: " .. tostring(result))
+        end
+        
+        wait(0.5) -- Pequeña pausa entre intentos
     end
+    
+    -- Si todos fallan, mostrar información detallada
+    httpEnabled = false
+    warn("❌ HTTP requests NO habilitados después de múltiples intentos")
+    warn("📋 Posibles soluciones:")
+    warn("   1. Ve a Game Settings > Security > Allow HTTP Requests = ON")
+    warn("   2. Verifica que estés en el servidor correcto")
+    warn("   3. Algunos juegos tienen HTTP deshabilitado por defecto")
+    warn("   4. Intenta en un lugar/servidor diferente")
+    
+    return false
 end
 
 -- Función para hacer requests HTTP con reintentos
 local function makeHttpRequest(method, url, data, headers)
-    if not httpEnabled then
-        warn("HTTP no está habilitado")
-        return nil
-    end
+    -- Intentar hacer el request incluso si httpEnabled es false (por si acaso)
     
     headers = headers or {}
     headers["Content-Type"] = "application/json"
+    headers["User-Agent"] = "RobloxStudio/1.0"
     
     local requestData = {
         Url = url,
@@ -61,53 +80,98 @@ local function makeHttpRequest(method, url, data, headers)
     }
     
     if data then
-        requestData.Body = HttpService:JSONEncode(data)
+        local encodeSuccess, encodedData = pcall(function()
+            return HttpService:JSONEncode(data)
+        end)
+        
+        if encodeSuccess then
+            requestData.Body = encodedData
+        else
+            warn("❌ Error encoding JSON data: " .. tostring(encodedData))
+            return nil
+        end
     end
     
     for attempt = 1, CONFIG.MAX_RETRIES do
+        print("🔄 HTTP Request attempt " .. attempt .. " to: " .. url)
+        
         local success, result = pcall(function()
             return HttpService:RequestAsync(requestData)
         end)
         
-        if success and result.Success then
-            local responseSuccess, responseData = pcall(function()
-                return HttpService:JSONDecode(result.Body)
-            end)
-            
-            if responseSuccess then
-                return responseData
+        if success then
+            if result.Success then
+                print("✅ HTTP Request successful")
+                local responseSuccess, responseData = pcall(function()
+                    return HttpService:JSONDecode(result.Body)
+                end)
+                
+                if responseSuccess then
+                    return responseData
+                else
+                    return {status = "success", body = result.Body}
+                end
             else
-                return {status = "success", body = result.Body}
+                warn("❌ HTTP Request failed with status: " .. tostring(result.StatusCode) .. " - " .. tostring(result.StatusMessage))
             end
         else
-            warn("HTTP request failed (attempt " .. attempt .. "): " .. tostring(result))
+            local errorMsg = tostring(result)
+            warn("❌ HTTP Request error (attempt " .. attempt .. "): " .. errorMsg)
+            
+            -- Si el error contiene "HTTP requests are not enabled", actualizar httpEnabled
+            if string.find(errorMsg:lower(), "http") and string.find(errorMsg:lower(), "not") and string.find(errorMsg:lower(), "enabled") then
+                httpEnabled = false
+                warn("🔧 HTTP detectado como deshabilitado - Verifica configuración del juego")
+            end
+            
             if attempt < CONFIG.MAX_RETRIES then
-                wait(1)
+                print("⏳ Esperando " .. attempt .. "s antes del siguiente intento...")
+                wait(attempt) -- Incrementar tiempo de espera
             end
         end
     end
     
+    warn("💥 Todos los intentos HTTP fallaron para: " .. url)
     return nil
 end
 
 -- Función para conectar con el bot de Discord
 local function connectToBot()
     print("🔄 Conectando con bot de Discord...")
+    print("📡 URL: " .. CONFIG.DISCORD_BOT_URL .. "/roblox/connect")
+    print("🎮 Game ID: " .. tostring(game.PlaceId))
+    print("👤 Username: " .. CONFIG.ROBLOX_USERNAME)
     
-    local response = makeHttpRequest("POST", CONFIG.DISCORD_BOT_URL .. "/roblox/connect", {
+    local connectData = {
         script_id = CONFIG.SCRIPT_ID,
         roblox_username = CONFIG.ROBLOX_USERNAME,
         game_id = tostring(game.PlaceId),
-        timestamp = tick()
-    })
+        timestamp = tick(),
+        game_name = game.Name or "Unknown Game"
+    }
+    
+    print("📦 Enviando datos de conexión...")
+    local response = makeHttpRequest("POST", CONFIG.DISCORD_BOT_URL .. "/roblox/connect", connectData)
     
     if response and response.status == "success" then
         isConnected = true
+        httpEnabled = true -- Si llegamos aquí, HTTP definitivamente funciona
         print("✅ Conectado exitosamente al bot de Discord")
         print("🆔 Script ID: " .. CONFIG.SCRIPT_ID)
+        print("🕐 Server Time: " .. tostring(response.server_time or "Unknown"))
         return true
     else
         warn("❌ Error al conectar con bot de Discord")
+        warn("📋 Respuesta recibida: " .. tostring(response and response.status or "nil"))
+        
+        if not response then
+            warn("💡 Posibles causas:")
+            warn("   • Bot de Discord no está ejecutándose")
+            warn("   • URL incorrecta: " .. CONFIG.DISCORD_BOT_URL)
+            warn("   • HTTP requests bloqueados en este juego")
+            warn("   • Problemas de red temporales")
+        end
+        
         return false
     end
 end
@@ -354,16 +418,38 @@ local function initialize()
     print("🤖 RbxServers Remote Control Script iniciando...")
     print("🔧 Script ID: " .. CONFIG.SCRIPT_ID)
     print("👤 Username: " .. CONFIG.ROBLOX_USERNAME)
+    print("🌐 Bot URL: " .. CONFIG.DISCORD_BOT_URL)
     
-    -- Verificar HTTP
-    if not checkHttpEnabled() then
-        error("HTTP requests no están habilitados. Por favor habilita 'Allow HTTP Requests' en Game Settings")
-        return
+    -- Verificar HTTP (pero no fallar si falla la verificación inicial)
+    print("🔍 Verificando HTTP...")
+    local httpCheck = checkHttpEnabled()
+    
+    if not httpCheck then
+        warn("⚠️ Verificación HTTP inicial falló, pero intentando conectar de todos modos...")
+        warn("💡 Esto podría funcionar si HTTP está realmente habilitado")
+        httpEnabled = true -- Forzar habilitado para intentar
     end
     
-    -- Conectar con el bot
-    if connectToBot() then
-        print("🟢 Sistema de control remoto activado")
+    -- Intentar conectar con el bot (independientemente de la verificación HTTP)
+    print("🔄 Intentando conectar con bot de Discord...")
+    
+    local connectionSuccess = false
+    for attempt = 1, 3 do
+        print("🔄 Intento de conexión " .. attempt .. "/3")
+        
+        if connectToBot() then
+            connectionSuccess = true
+            break
+        else
+            warn("❌ Intento " .. attempt .. " falló")
+            if attempt < 3 then
+                wait(2)
+            end
+        end
+    end
+    
+    if connectionSuccess then
+        print("🟢 Sistema de control remoto activado exitosamente")
         
         -- Loop principal
         spawn(function()
@@ -390,7 +476,25 @@ local function initialize()
         sendChatMessage("🤖 Bot de RbxServers conectado y listo para recibir comandos")
         
     else
-        error("No se pudo conectar con el bot de Discord")
+        warn("💥 No se pudo conectar con el bot de Discord después de 3 intentos")
+        warn("🔧 Posibles problemas:")
+        warn("   1. HTTP requests realmente no están habilitados")
+        warn("   2. URL del bot incorrecta: " .. CONFIG.DISCORD_BOT_URL)
+        warn("   3. Bot de Discord no está ejecutándose")
+        warn("   4. Problemas de conectividad de red")
+        warn("   5. Firewall del juego bloqueando conexiones")
+        
+        -- Intentar de nuevo cada 30 segundos
+        spawn(function()
+            while not isConnected do
+                wait(30)
+                print("🔄 Reintentando conexión...")
+                if connectToBot() then
+                    print("🟢 Conexión exitosa en reintento")
+                    break
+                end
+            end
+        end)
     end
 end
 
