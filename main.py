@@ -253,10 +253,10 @@ class RobloxRemoteControl:
                     'message': 'job_id cannot be empty'
                 }, status=400)
             
-            # Generar script simplificado de Roblox con Job ID real
-            roblox_script = f'''-- Script de teleport automático
-local placeId = {numeric_place_id} -- ID del juego
-local jobId = "{job_id}" -- Job ID real del servidor
+            # Generar script simplificado de Roblox (formato exacto del usuario)
+            roblox_script = f'''-- ⚠️ Reemplaza los valores por los reales:
+local placeId = {numeric_place_id} -- ID del juego (por ejemplo, Blox Fruits)
+local jobId = "PON_AQUI_EL_JOBID" -- El JobId al que te quieres unir
 
 game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)'''
 
@@ -5591,10 +5591,10 @@ async def roblox_control_command(interaction: discord.Interaction,
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            # Generar script de Lua con TeleportToPlaceInstance usando el Job ID real
-            lua_script = f'''-- Script de teleport automático generado
-local placeId = {place_id} -- ID del juego
-local jobId = "{job_id}" -- Job ID real del servidor
+            # Generar script de Lua con TeleportToPlaceInstance
+            lua_script = f'''-- ⚠️ Reemplaza los valores por los reales:
+local placeId = {place_id} -- ID del juego (por ejemplo, Blox Fruits)
+local jobId = "PON_AQUI_EL_JOBID" -- El JobId al que te quieres unir
 
 game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)'''
 
