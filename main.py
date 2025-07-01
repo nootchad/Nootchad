@@ -5529,7 +5529,8 @@ async def admin_command(interaction: discord.Interaction,
 @bot.tree.command(name="roblox_control", description="[OWNER ONLY] Enviar comandos al bot de Roblox")
 async def roblox_control_command(interaction: discord.Interaction, 
                                 accion: str, 
-                                servidor_link: str = None, 
+                                place_id: str = None, 
+                                job_id: str = None, 
                                 usuario_objetivo: str = None):
     """Control remoto del bot de Roblox - solo para owner"""
     await interaction.response.defer(ephemeral=True)
@@ -5600,10 +5601,10 @@ async def roblox_control_command(interaction: discord.Interaction,
             await interaction.followup.send(embed=embed, ephemeral=True)
             
         elif accion.lower() == "join_server":
-            if not servidor_link:
+            if not place_id:
                 embed = discord.Embed(
                     title="❌ Parámetros Faltantes",
-                    description="Uso: `/roblox_control join_server [place_id] [job_id]`\n\n**Nota:** Ahora usa Place ID y Job ID en lugar de enlaces de servidor privado.",
+                    description="Uso: `/roblox_control join_server [place_id] [job_id]`\n\n**Nota:** Usa Place ID y Job ID para unirse a un servidor específico.",
                     color=0xff0000
                 )
                 embed.add_field(
@@ -5618,10 +5619,6 @@ async def roblox_control_command(interaction: discord.Interaction,
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
-            # Ahora servidor_link es el place_id y usuario_objetivo es el job_id
-            place_id = servidor_link
-            job_id = usuario_objetivo
             
             if not job_id:
                 embed = discord.Embed(
@@ -5772,12 +5769,12 @@ print("🎮 Script by RbxServers (hesiz)")'''
             )
             embed.add_field(
                 name="📋 Comandos Disponibles:",
-                value="• `status` - Ver estado de scripts conectados\n• `join_server [place_id] [job_id]` - Unirse a servidor específico por Job ID\n• `send_message [usuario]` - Enviar mensaje en chat\n• `follow_user [usuario]` - Seguir a un usuario",
+                value="• `status` - Ver estado de scripts conectados\n• `join_server [place_id] [job_id]` - Unirse a servidor específico\n• `send_message [usuario]` - Enviar mensaje en chat\n• `follow_user [usuario]` - Seguir a un usuario",
                 inline=False
             )
             embed.add_field(
-                name="🚀 Actualizado: Join por Job ID",
-                value="El comando `join_server` ahora usa Place ID y Job ID para unirse directamente a servidores específicos usando TeleportToPlaceInstance.",
+                name="🚀 Join por Job ID",
+                value="El comando `join_server` usa Place ID y Job ID separados para unirse directamente a servidores específicos usando TeleportToPlaceInstance.",
                 inline=False
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
