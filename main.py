@@ -252,7 +252,7 @@ class RobloxRemoteControl:
             
             # Extraer game ID y private code del enlace
             import re
-            match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', vip_link)
+            match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', vip_link)
             if not match:
                 return web.json_response({
                     'status': 'error',
@@ -2447,7 +2447,7 @@ class ServerBrowserView(discord.ui.View):
         try:
             # Extraer game ID y private code del enlace
             import re
-            match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', current_server)
+            match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', current_server)
             if not match:
                 await interaction.response.send_message(
                     "❌ No se pudo procesar el enlace del servidor.", 
@@ -4089,7 +4089,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                     
                     # Extraer game ID y private code del enlace
                     import re
-                    match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', vip_link)
+                    match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', vip_link)
                     if not match:
                         error_embed = discord.Embed(
                             title="❌ Enlace VIP Inválido",
@@ -5611,11 +5611,12 @@ async def roblox_control_command(interaction: discord.Interaction,
             
             # Extraer placeId y privateServerCode del enlace
             import re
-            match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', servidor_link)
+            # Patrón más flexible que acepta enlaces con o sin nombre de juego
+            match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', servidor_link)
             if not match:
                 embed = discord.Embed(
                     title="❌ Enlace Inválido",
-                    description="El enlace del servidor privado no tiene el formato correcto.\n\n**Formato esperado:**\n`https://www.roblox.com/games/GAME_ID/GAME_NAME?privateServerLinkCode=CODE`",
+                    description="El enlace del servidor privado no tiene el formato correcto.\n\n**Formatos aceptados:**\n`https://www.roblox.com/games/GAME_ID?privateServerLinkCode=CODE`\n`https://www.roblox.com/games/GAME_ID/GAME_NAME?privateServerLinkCode=CODE`",
                     color=0xff0000
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -5794,7 +5795,7 @@ async def join_script_command(interaction: discord.Interaction, game_id: str):
         
         # Extraer game ID y private code del enlace
         import re
-        match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', vip_link)
+        match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', vip_link)
         if not match:
             embed = discord.Embed(
                 title="❌ Enlace VIP Inválido",
