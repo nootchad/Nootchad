@@ -12,9 +12,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Configuración
 local CONFIG = {
-    DISCORD_BOT_URL = "https://tu-repl-name.tu-username.repl.co", -- Cambiar por tu URL de Replit
+    DISCORD_BOT_URL = "https://63aad61e-e3d3-4eda-9563-c784fd96ab81-00-26xq6e44gkeg1.picard.replit.dev", -- URL actual de tu Replit
     SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999)),
-    ROBLOX_USERNAME = "TU_USERNAME_AQUI", -- Cambiar por tu username de Roblox
+    ROBLOX_USERNAME = "hesiz", -- Tu username de Roblox
     HEARTBEAT_INTERVAL = 10, -- segundos
     CHECK_COMMANDS_INTERVAL = 5, -- segundos
     MAX_RETRIES = 3
