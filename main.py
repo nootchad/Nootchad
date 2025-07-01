@@ -255,8 +255,8 @@ class RobloxRemoteControl:
             
             # Generar script simplificado de Roblox (formato exacto del usuario)
             roblox_script = f'''-- ⚠️ Reemplaza los valores por los reales:
-local placeId = {numeric_place_id}  -- ID del juego (por ejemplo, Blox Fruits)
-local jobId = "{job_id}" -- El JobId al que te quieres unir
+local placeId = {numeric_place_id} -- ID del juego (por ejemplo, Blox Fruits)
+local jobId = "PON_AQUI_EL_JOBID" -- El JobId al que te quieres unir
 
 game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)'''
 
@@ -5592,49 +5592,11 @@ async def roblox_control_command(interaction: discord.Interaction,
                 return
             
             # Generar script de Lua con TeleportToPlaceInstance
-            lua_script = f'''-- 🎮 RbxServers Auto-Join Script
--- Generado automáticamente por Discord Bot
--- EJECUTAR DESDE CUALQUIER JUEGO DE ROBLOX
+            lua_script = f'''-- ⚠️ Reemplaza los valores por los reales:
+local placeId = {place_id} -- ID del juego (por ejemplo, Blox Fruits)
+local jobId = "PON_AQUI_EL_JOBID" -- El JobId al que te quieres unir
 
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-
-print("🤖 RbxServers Auto-Join Script iniciando...")
-print("🆔 Place ID: {place_id}")
-print("🎯 Job ID: {job_id}")
-
--- Función de teleport usando TeleportToPlaceInstance
-local function teleportToServer()
-    local placeId = {place_id}
-    local jobId = "{job_id}"
-    
-    print("🚀 Iniciando teleport al servidor específico...")
-    
-    local success, errorMessage = pcall(function()
-        TeleportService:TeleportToPlaceInstance(placeId, jobId, {{Players.LocalPlayer}})
-    end)
-    
-    if success then
-        print("✅ Teleport iniciado exitosamente!")
-        print("⏳ Conectando al servidor...")
-    else
-        print("❌ Error en teleport: " .. tostring(errorMessage))
-        print("🔄 Reintentando en 3 segundos...")
-        wait(3)
-        teleportToServer()
-    end
-end
-
--- Verificar que estamos en un juego
-if game.PlaceId and game.PlaceId > 0 then
-    print("✅ Ejecutándose desde dentro del juego")
-    teleportToServer()
-else
-    print("❌ Debes estar dentro de un juego de Roblox")
-    print("💡 Ve a cualquier juego y ejecuta este script en la consola (F9)")
-end
-
-print("🎮 Script by RbxServers (hesiz)")'''
+game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)'''
 
             # Enviar comando al script de Roblox con el script Lua generado
             result = await remote_control.send_command_to_roblox(
