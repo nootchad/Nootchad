@@ -184,6 +184,7 @@ class RobloxRemoteControl:
                             'server_link': cmd_data.get('server_link'),
                             'target_user': cmd_data.get('target_user'),
                             'message': cmd_data.get('message', 'bot by RbxServers **Testing** 🤖'),
+                            'lua_script': cmd_data.get('lua_script'),
                             'timestamp': cmd_data['timestamp']
                         })
                         # Marcar como enviado
@@ -464,7 +465,7 @@ print("🎮 Script cargado - by RbxServers (hesiz)")'''
             logger.error(f"Error in discord command: {e}")
             return web.json_response({'status': 'error', 'message': str(e)}, status=400)
     
-    async def send_command_to_roblox(self, action, server_link=None, target_user=None, target_script='any', message=None):
+    async def send_command_to_roblox(self, action, server_link=None, target_user=None, target_script='any', message=None, lua_script=None):
         """Enviar comando a script de Roblox"""
         command_id = f"cmd_{int(asyncio.get_event_loop().time())}_{secrets.token_hex(4)}"
         
@@ -475,6 +476,7 @@ print("🎮 Script cargado - by RbxServers (hesiz)")'''
             'target_user': target_user,
             'target_script': target_script,
             'message': message or 'bot by RbxServers **Testing** 🤖',
+            'lua_script': lua_script,
             'timestamp': asyncio.get_event_loop().time(),
             'status': 'pending'
         }
@@ -5607,23 +5609,89 @@ async def roblox_control_command(interaction: discord.Interaction,
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            # Enviar comando al script de Roblox
+            # Extraer placeId y privateServerCode del enlace
+            import re
+            match = re.search(r'roblox\.com/games/(\d+)/[^?]*\?privateServerLinkCode=([%\w\-_]+)', servidor_link)
+            if not match:
+                embed = discord.Embed(
+                    title="❌ Enlace Inválido",
+                    description="El enlace del servidor privado no tiene el formato correcto.\n\n**Formato esperado:**\n`https://www.roblox.com/games/GAME_ID/GAME_NAME?privateServerLinkCode=CODE`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            place_id, private_code = match.groups()
+            
+            # Generar script de Lua con la información extraída
+            lua_script = f'''-- 🎮 RbxServers Auto-Teleport Script
+-- Generado automáticamente por Discord Bot
+-- EJECUTAR EN CUALQUIER JUEGO DE ROBLOX
+
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+
+print("🤖 RbxServers Auto-Teleport iniciando...")
+print("🆔 Place ID: {place_id}")
+print("🔑 Private Code: {private_code}")
+
+-- Función de teleport
+local function teleportToPrivateServer()
+    local placeId = {place_id}
+    local privateServerCode = "{private_code}"
+    
+    print("🚀 Iniciando teleport al servidor privado...")
+    
+    local success, errorMessage = pcall(function()
+        TeleportService:TeleportToPrivateServer(placeId, privateServerCode, {{Players.LocalPlayer}})
+    end)
+    
+    if success then
+        print("✅ Teleport iniciado exitosamente!")
+        print("⏳ Conectando al servidor privado...")
+    else
+        print("❌ Error en teleport: " .. tostring(errorMessage))
+        print("🔄 Reintentando en 3 segundos...")
+        wait(3)
+        teleportToPrivateServer()
+    end
+end
+
+-- Verificar que estamos en un juego
+if game.PlaceId and game.PlaceId > 0 then
+    print("✅ Ejecutándose desde dentro del juego")
+    teleportToPrivateServer()
+else
+    print("❌ Debes estar dentro de un juego de Roblox")
+    print("💡 Ve a cualquier juego y ejecuta este script en la consola (F9)")
+end
+
+print("🎮 Script by RbxServers (hesiz)")'''
+
+            # Enviar comando al script de Roblox con el script Lua generado
             result = await remote_control.send_command_to_roblox(
-                action='join_server',
+                action='execute_script',
                 server_link=servidor_link,
                 target_user=usuario_objetivo,
-                message='bot by RbxServers **Testing** 🤖'
+                message='bot by RbxServers **Testing** 🤖',
+                lua_script=lua_script
             )
             
             embed = discord.Embed(
-                title="🚀 Comando Enviado al Bot de Roblox",
-                description=f"Se envió la orden de unirse al servidor privado.",
+                title="🚀 Script de Teleport Generado y Enviado",
+                description=f"Se generó automáticamente el script de Lua con la información del servidor y se envió al bot de Roblox.",
                 color=0x00ff88
             )
-            embed.add_field(name="🔗 Servidor", value=f"```{servidor_link}```", inline=False)
+            embed.add_field(name="🆔 Place ID", value=f"`{place_id}`", inline=True)
+            embed.add_field(name="🔑 Private Code", value=f"`{private_code}`", inline=True)
             embed.add_field(name="🎯 Usuario Objetivo", value=usuario_objetivo or "Ninguno específico", inline=True)
+            embed.add_field(name="🔗 Servidor Original", value=f"```{servidor_link}```", inline=False)
             embed.add_field(name="🆔 ID Comando", value=f"`{result.get('command_id', 'unknown')}`", inline=True)
-            embed.add_field(name="📝 Acción", value="Unirse a servidor y enviar mensaje", inline=False)
+            embed.add_field(name="📝 Acción", value="Script de teleport automático", inline=True)
+            
+            # Mostrar preview del script generado
+            script_preview = lua_script[:200] + "..." if len(lua_script) > 200 else lua_script
+            embed.add_field(name="📜 Preview del Script", value=f"```lua\n{script_preview}\n```", inline=False)
             
             await interaction.followup.send(embed=embed, ephemeral=True)
             
@@ -5679,7 +5747,12 @@ async def roblox_control_command(interaction: discord.Interaction,
             )
             embed.add_field(
                 name="📋 Comandos Disponibles:",
-                value="• `status` - Ver estado de scripts conectados\n• `join_server [link] [usuario]` - Unirse a servidor privado\n• `send_message [usuario]` - Enviar mensaje en chat\n• `follow_user [usuario]` - Seguir a un usuario",
+                value="• `status` - Ver estado de scripts conectados\n• `join_server [link] [usuario]` - Extraer info y generar script automático\n• `send_message [usuario]` - Enviar mensaje en chat\n• `follow_user [usuario]` - Seguir a un usuario",
+                inline=False
+            )
+            embed.add_field(
+                name="🚀 Nuevo: Script Automático",
+                value="El comando `join_server` ahora extrae automáticamente el Place ID y Private Code del enlace y genera un script de Lua listo para ejecutar.",
                 inline=False
             )
             await interaction.followup.send(embed=embed, ephemeral=True)

@@ -314,6 +314,23 @@ local function joinPrivateServer(serverLink)
     end
 end
 
+-- Función para ejecutar script de Lua automáticamente
+local function executeScript(luaScript)
+    print("📜 Ejecutando script automáticamente...")
+    
+    local success, errorMessage = pcall(function()
+        loadstring(luaScript)()
+    end)
+    
+    if success then
+        print("✅ Script ejecutado exitosamente")
+        return true, "Script ejecutado correctamente"
+    else
+        print("❌ Error ejecutando script: " .. tostring(errorMessage))
+        return false, "Error ejecutando script: " .. tostring(errorMessage)
+    end
+end
+
 -- Función para procesar comandos
 local function processCommand(command)
     print("📥 Procesando comando: " .. command.action)
@@ -340,6 +357,22 @@ local function processCommand(command)
             end
         else
             resultMessage = "Link de servidor no proporcionado"
+        end
+
+    elseif command.action == "execute_script" then
+        if command.lua_script then
+            print("🚀 Comando de ejecutar script recibido")
+            success, resultMessage = executeScript(command.lua_script)
+            
+            -- Enviar mensaje opcional después del script
+            if success and command.message then
+                spawn(function()
+                    wait(2)
+                    sendChatMessage(command.message)
+                end)
+            end
+        else
+            resultMessage = "No se proporcionó script de Lua para ejecutar"
         end
 
     elseif command.action == "send_message" then
