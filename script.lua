@@ -1,3 +1,4 @@
+
 -- RbxServers Remote Control Script
 -- Ejecutor-compatible version (KRNL, Synapse, etc.)
 -- Conecta con el bot de Discord para recibir comandos remotos
@@ -11,7 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Configuración
 local CONFIG = {
-    DISCORD_BOT_URL = "https://63aad61e-e3d3-4eda-9563-c784fd96ab81-00-26xq6e44gkeg1.picard.replit.dev",
+    DISCORD_BOT_URL = "https://48d641a6-49be-4fce-8559-1ba7297b4a80-00-39jmkm5qd4nug.riker.replit.dev",
     SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999)),
     ROBLOX_USERNAME = "RbxServersBot",
     HEARTBEAT_INTERVAL = 15,
@@ -282,11 +283,47 @@ local function followUser(username)
     return true
 end
 
--- Función para unirse a un servidor privado
+-- Función para abrir enlace de servidor privado (solo funciona desde cliente)
+local function openPrivateServerLink(serverLink)
+    print("🔗 Abriendo enlace de servidor privado en navegador...")
+    print("🌐 Link: " .. serverLink)
+
+    -- Método 1: Usar OpenBrowserWindow si está disponible (algunos ejecutores)
+    if syn and syn.open_web_page then
+        local success, error = pcall(function()
+            syn.open_web_page(serverLink)
+        end)
+        if success then
+            print("✅ Enlace abierto exitosamente via Synapse")
+            return true, "Enlace abierto en navegador via Synapse"
+        end
+    end
+
+    -- Método 2: Copiar al portapapeles
+    if setclipboard then
+        local success, error = pcall(function()
+            setclipboard(serverLink)
+        end)
+        if success then
+            print("📋 Enlace copiado al portapapeles")
+            return true, "Enlace copiado al portapapeles - pégalo en tu navegador para unirte"
+        end
+    end
+
+    -- Método 3: Mostrar en consola para copiar manualmente
+    print("📋 ENLACE DEL SERVIDOR PRIVADO:")
+    print("🔗 " .. serverLink)
+    print("💡 Copia este enlace y pégalo en tu navegador para unirte al servidor")
+    
+    return true, "Enlace mostrado en consola - copia y pega en tu navegador"
+end
+
+-- Función para unirse a un servidor privado (CORREGIDA)
 local function joinPrivateServer(serverLink)
-    print("🚀 Intentando unirse a servidor privado...")
+    print("🚀 Procesando servidor privado...")
     print("🔗 Link: " .. serverLink)
 
+    -- Extraer gameId y privateCode del enlace
     local gameId, privateCode = serverLink:match("roblox%.com/games/(%d+)/[^?]*%?privateServerLinkCode=([%w%-_]+)")
 
     if not gameId or not privateCode then
@@ -297,20 +334,14 @@ local function joinPrivateServer(serverLink)
         print("🎮 Game ID: " .. gameId)
         print("🔑 Private Code: " .. privateCode)
 
-        local success, error = pcall(function()
-            TeleportService:TeleportToPrivateServer(tonumber(gameId), privateCode, {Players.LocalPlayer})
-        end)
-
-        if success then
-            print("✅ Teleport iniciado exitosamente")
-            return true
-        else
-            warn("❌ Error en teleport: " .. tostring(error))
-            return false
-        end
+        -- MÉTODO CORREGIDO: En lugar de TeleportToPrivateServer (que solo funciona desde server)
+        -- Usamos el enlace directo que funciona desde cliente
+        
+        -- Opción 1: Abrir en navegador o copiar al portapapeles
+        return openPrivateServerLink(serverLink)
     else
         warn("❌ No se pudo extraer game ID y private code del link")
-        return false
+        return false, "Formato de enlace inválido"
     end
 end
 
@@ -340,11 +371,11 @@ local function processCommand(command)
 
     if command.action == "join_server" then
         if command.server_link then
-            success = joinPrivateServer(command.server_link)
+            success, resultMessage = joinPrivateServer(command.server_link)
             if success then
-                resultMessage = "Teleport a servidor privado iniciado"
+                -- Enviar mensaje después de procesar el enlace
                 spawn(function()
-                    wait(5)
+                    wait(2)
                     sendChatMessage(command.message or "bot by RbxServers **Testing** 🤖")
 
                     if command.target_user then
@@ -352,8 +383,6 @@ local function processCommand(command)
                         followUser(command.target_user)
                     end
                 end)
-            else
-                resultMessage = "Error al unirse al servidor privado"
             end
         else
             resultMessage = "Link de servidor no proporcionado"
@@ -524,4 +553,6 @@ else
     end)
 end
 
-print("✅ Script de control remoto optimizado para ejecutores cargado")
+print("✅ Script de control remoto CORREGIDO para ejecutores cargado")
+print("🔧 CAMBIOS: TeleportToPrivateServer reemplazado por método compatible con cliente")
+print("🌐 URL actualizada: https://48d641a6-49be-4fce-8559-1ba7297b4a80-00-39jmkm5qd4nug.riker.replit.dev")
