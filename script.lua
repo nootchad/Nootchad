@@ -27,18 +27,28 @@ local lastHeartbeat = 0
 local lastCommandCheck = 0
 local httpEnabled = false
 
--- HTTP siempre está habilitado en ejecutores de scripts
+-- Verificar y validar HTTP en ejecutores de scripts
 local function checkHttpEnabled()
-    httpEnabled = true
-    print("✅ HTTP requests habilitados (ejecutor de scripts)")
-    return true
+    local testSuccess, testResult = pcall(function()
+        return HttpService:GetAsync("https://httpbin.org/status/200", true)
+    end)
+    
+    if testSuccess then
+        httpEnabled = true
+        print("✅ HTTP requests habilitados y funcionando correctamente")
+        return true
+    else
+        warn("⚠️ HTTP habilitado pero con problemas: " .. tostring(testResult))
+        httpEnabled = true  -- Asumir que está habilitado en ejecutores
+        return true
+    end
 end
 
 -- Función para hacer requests HTTP con reintentos
 local function makeHttpRequest(method, url, data, headers)
     headers = headers or {}
     headers["Content-Type"] = "application/json"
-    headers["User-Agent"] = "RobloxExecutor/1.0"
+    -- No incluir User-Agent ya que Roblox no lo permite
     
     local requestData = {
         Url = url,
@@ -68,7 +78,7 @@ local function makeHttpRequest(method, url, data, headers)
         
         if success then
             if result.Success then
-                print("✅ HTTP Request successful")
+                print("✅ HTTP Request successful - Status: " .. tostring(result.StatusCode))
                 local responseSuccess, responseData = pcall(function()
                     return HttpService:JSONDecode(result.Body)
                 end)
@@ -76,24 +86,36 @@ local function makeHttpRequest(method, url, data, headers)
                 if responseSuccess then
                     return responseData
                 else
+                    print("📝 Response body: " .. tostring(result.Body))
                     return {status = "success", body = result.Body}
                 end
             else
                 warn("❌ HTTP Request failed with status: " .. tostring(result.StatusCode) .. " - " .. tostring(result.StatusMessage))
+                if result.StatusCode == 403 then
+                    warn("🚫 Error 403: Acceso denegado - Verifica el username de Roblox")
+                    return {status = "error", message = "Access denied - Invalid username"}
+                end
             end
         else
             local errorMsg = tostring(result)
             warn("❌ HTTP Request error (attempt " .. attempt .. "): " .. errorMsg)
             
+            -- Detectar errores específicos
+            if string.find(errorMsg, "User%-Agent") then
+                warn("🚫 Error: User-Agent header no permitido por Roblox")
+            elseif string.find(errorMsg, "HttpError") then
+                warn("🌐 Error de red - Verificando conectividad...")
+            end
+            
             if attempt < CONFIG.MAX_RETRIES then
-                print("⏳ Esperando " .. attempt .. "s antes del siguiente intento...")
-                wait(attempt)
+                print("⏳ Esperando " .. (attempt * 2) .. "s antes del siguiente intento...")
+                wait(attempt * 2)  -- Incrementar tiempo de espera
             end
         end
     end
     
     warn("💥 Todos los intentos HTTP fallaron para: " .. url)
-    return nil
+    return {status = "error", message = "All HTTP attempts failed"}
 end
 
 -- Función para conectar con el bot de Discord
@@ -131,13 +153,22 @@ local function connectToBot()
             if string.find(tostring(response.message or ""), "Invalid Roblox username") then
                 warn("🚫 USUARIO NO PERMITIDO: Solo 'RbxServersBot' puede usar este bot")
                 warn("💡 Asegúrate de ejecutar el script desde la cuenta de RbxServersBot")
+            elseif string.find(tostring(response.message or ""), "Access denied") then
+                warn("🚫 ACCESO DENEGADO: Username no autorizado")
+                warn("💡 Solo RbxServersBot puede conectarse al bot")
             end
         elseif not response then
-            warn("💡 Posibles causas:")
-            warn("   • Bot de Discord no está ejecutándose")
-            warn("   • URL incorrecta: " .. CONFIG.DISCORD_BOT_URL)
-            warn("   • HTTP requests bloqueados en este juego")
-            warn("   • Problemas de red temporales")
+            warn("💡 Diagnóstico de problemas de conexión:")
+            warn("   📡 Bot de Discord: " .. (bot and "🟢 Activo" or "🔴 Inactivo"))
+            warn("   🌐 URL del bot: " .. CONFIG.DISCORD_BOT_URL)
+            warn("   🔗 Puerto: 8080")
+            warn("   🎮 Game ID: " .. tostring(game.PlaceId))
+            warn("   👤 Username: " .. CONFIG.ROBLOX_USERNAME)
+            warn("   🔧 Posibles soluciones:")
+            warn("      • Verificar que el bot de Discord esté ejecutándose")
+            warn("      • Comprobar que estés usando RbxServersBot")
+            warn("      • Intentar ejecutar el script nuevamente")
+            warn("      • Verificar conectividad de red")
         end
         
         return false
@@ -384,10 +415,21 @@ local function initialize()
     print("🔧 Script ID: " .. CONFIG.SCRIPT_ID)
     print("👤 Username: " .. CONFIG.ROBLOX_USERNAME)
     print("🌐 Bot URL: " .. CONFIG.DISCORD_BOT_URL)
+    print("🎮 Game ID: " .. tostring(game.PlaceId))
     
-    -- HTTP siempre está habilitado en ejecutores
-    httpEnabled = true
-    print("✅ HTTP habilitado (ejecutor de scripts)")
+    -- Validar configuración
+    if CONFIG.ROBLOX_USERNAME ~= "RbxServersBot" then
+        warn("⚠️ ADVERTENCIA: Username configurado no es RbxServersBot")
+        warn("🔧 Usuario actual: " .. CONFIG.ROBLOX_USERNAME)
+        warn("✅ Usuario requerido: RbxServersBot")
+    end
+    
+    -- Verificar HTTP
+    local httpSuccess = checkHttpEnabled()
+    if not httpSuccess then
+        warn("❌ Falló la verificación de HTTP")
+        return false
+    end
     
     print("🔄 Conectando con bot de Discord...")
     
