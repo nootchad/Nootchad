@@ -3689,12 +3689,545 @@ async def categories_command(interaction: discord.Interaction):
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
+# Debug Menu Select components
+class DebugMenuSelect(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(
+                label="📊 Métricas del Sistema",
+                description="Ver estadísticas generales del bot",
+                value="system_metrics",
+                emoji="📊"
+            ),
+            discord.SelectOption(
+                label="👥 Gestión de Usuarios",
+                description="Ver y gestionar usuarios del bot",
+                value="user_management",
+                emoji="👥"
+            ),
+            discord.SelectOption(
+                label="💾 Base de Datos",
+                description="Estado y operaciones de la base de datos",
+                value="database_ops",
+                emoji="💾"
+            ),
+            discord.SelectOption(
+                label="🔧 Operaciones de Sistema",
+                description="Limpiar, resetear y mantener el bot",
+                value="system_ops",
+                emoji="🔧"
+            ),
+            discord.SelectOption(
+                label="📝 Logs y Errores",
+                description="Ver logs recientes y errores del sistema",
+                value="logs_errors",
+                emoji="📝"
+            ),
+            discord.SelectOption(
+                label="⚡ Rendimiento",
+                description="Métricas de rendimiento y optimización",
+                value="performance",
+                emoji="⚡"
+            ),
+            discord.SelectOption(
+                label="🛠️ Configuración",
+                description="Ajustes y configuración del bot",
+                value="config",
+                emoji="🛠️"
+            )
+        ]
+        
+        super().__init__(placeholder="Selecciona una opción del menú de debug...", options=options)
+    
+    async def callback(self, interaction: discord.Interaction):
+        # Verificar owner
+        OWNER_DISCORD_ID = "916070251895091241"
+        if str(interaction.user.id) != OWNER_DISCORD_ID:
+            await interaction.response.send_message("🚫 Acceso denegado.", ephemeral=True)
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        selected_option = self.values[0]
+        
+        if selected_option == "system_metrics":
+            await self.show_system_metrics(interaction)
+        elif selected_option == "user_management":
+            await self.show_user_management(interaction)
+        elif selected_option == "database_ops":
+            await self.show_database_ops(interaction)
+        elif selected_option == "system_ops":
+            await self.show_system_ops(interaction)
+        elif selected_option == "logs_errors":
+            await self.show_logs_errors(interaction)
+        elif selected_option == "performance":
+            await self.show_performance(interaction)
+        elif selected_option == "config":
+            await self.show_config(interaction)
+    
+    async def show_system_metrics(self, interaction):
+        """Mostrar métricas del sistema"""
+        embed = discord.Embed(
+            title="📊 Métricas del Sistema",
+            description="Estadísticas generales del bot",
+            color=0x3366ff,
+            timestamp=datetime.now()
+        )
+        
+        # Usuarios totales
+        total_verified = len(roblox_verification.verified_users)
+        total_banned = len(roblox_verification.banned_users)
+        total_warnings = len(roblox_verification.warnings)
+        total_pending = len(roblox_verification.pending_verifications)
+        
+        embed.add_field(name="👥 Usuarios Verificados", value=f"**{total_verified}**", inline=True)
+        embed.add_field(name="🚫 Usuarios Baneados", value=f"**{total_banned}**", inline=True)
+        embed.add_field(name="⚠️ Con Advertencias", value=f"**{total_warnings}**", inline=True)
+        embed.add_field(name="⏳ Verificaciones Pendientes", value=f"**{total_pending}**", inline=True)
+        
+        # Estadísticas de servidores
+        total_users_with_data = len(scraper.links_by_user)
+        total_links = sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())
+        total_games = sum(len(user_games) for user_games in scraper.links_by_user.values())
+        
+        embed.add_field(name="🎮 Usuarios con Datos", value=f"**{total_users_with_data}**", inline=True)
+        embed.add_field(name="🔗 Enlaces Totales", value=f"**{total_links}**", inline=True)
+        embed.add_field(name="🎯 Juegos Totales", value=f"**{total_games}**", inline=True)
+        
+        # Estadísticas de scraping
+        scraped = scraper.scraping_stats.get('total_scraped', 0)
+        successful = scraper.scraping_stats.get('successful_extractions', 0)
+        failed = scraper.scraping_stats.get('failed_extractions', 0)
+        
+        embed.add_field(name="📈 Total Escaneado", value=f"**{scraped}**", inline=True)
+        embed.add_field(name="✅ Exitosos", value=f"**{successful}**", inline=True)
+        embed.add_field(name="❌ Fallidos", value=f"**{failed}**", inline=True)
+        
+        # Cooldowns activos
+        active_cooldowns = len(scraper.user_cooldowns)
+        embed.add_field(name="⏰ Cooldowns Activos", value=f"**{active_cooldowns}**", inline=True)
+        
+        # Favoritos y reservas
+        total_favorites = sum(len(favorites) for favorites in scraper.user_favorites.values())
+        total_reservations = sum(len(reservations) for reservations in scraper.user_reserved_servers.values())
+        
+        embed.add_field(name="⭐ Favoritos Totales", value=f"**{total_favorites}**", inline=True)
+        embed.add_field(name="📌 Reservas Totales", value=f"**{total_reservations}**", inline=True)
+        
+        # Bot info
+        embed.add_field(name="🤖 Servidores Bot", value=f"**{len(bot.guilds)}**", inline=True)
+        embed.add_field(name="👤 Usuarios Bot", value=f"**{len(bot.users)}**", inline=True)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    async def show_user_management(self, interaction):
+        """Mostrar gestión de usuarios"""
+        embed = discord.Embed(
+            title="👥 Gestión de Usuarios",
+            description="Usuarios del bot y sus estados",
+            color=0x3366ff,
+            timestamp=datetime.now()
+        )
+        
+        # Usuarios verificados recientes
+        recent_verified = []
+        for user_id, data in roblox_verification.verified_users.items():
+            try:
+                user = bot.get_user(int(user_id))
+                username = user.name if user else f"Usuario {user_id}"
+                verified_time = datetime.fromtimestamp(data['verified_at'])
+                time_ago = datetime.now() - verified_time
+                
+                if time_ago.days == 0:
+                    time_str = f"{time_ago.seconds//3600}h {(time_ago.seconds%3600)//60}m"
+                else:
+                    time_str = f"{time_ago.days}d"
+                
+                recent_verified.append(f"• {username}: {data['roblox_username']} ({time_str})")
+            except:
+                continue
+        
+        if recent_verified:
+            embed.add_field(
+                name="✅ Verificados Recientes (últimas 24h)",
+                value="\n".join(recent_verified[-5:]),
+                inline=False
+            )
+        
+        # Usuarios baneados
+        banned_users = []
+        for user_id, ban_time in roblox_verification.banned_users.items():
+            try:
+                user = bot.get_user(int(user_id))
+                username = user.name if user else f"Usuario {user_id}"
+                ban_date = datetime.fromtimestamp(ban_time)
+                remaining = BAN_DURATION - (time.time() - ban_time)
+                days_left = int(remaining / (24 * 60 * 60))
+                
+                banned_users.append(f"• {username}: {days_left}d restantes")
+            except:
+                continue
+        
+        if banned_users:
+            embed.add_field(
+                name="🚫 Usuarios Baneados",
+                value="\n".join(banned_users[-5:]),
+                inline=False
+            )
+        
+        # Usuarios con advertencias
+        warned_users = []
+        for user_id, warning_count in roblox_verification.warnings.items():
+            try:
+                user = bot.get_user(int(user_id))
+                username = user.name if user else f"Usuario {user_id}"
+                warned_users.append(f"• {username}: {warning_count}/2 advertencias")
+            except:
+                continue
+        
+        if warned_users:
+            embed.add_field(
+                name="⚠️ Usuarios con Advertencias",
+                value="\n".join(warned_users[-5:]),
+                inline=False
+            )
+        
+        # Top usuarios por servidores
+        top_users = []
+        for user_id, user_games in scraper.links_by_user.items():
+            total_servers = sum(len(game_data.get('links', [])) for game_data in user_games.values())
+            if total_servers > 0:
+                try:
+                    user = bot.get_user(int(user_id))
+                    username = user.name if user else f"Usuario {user_id}"
+                    top_users.append((username, total_servers))
+                except:
+                    continue
+        
+        top_users.sort(key=lambda x: x[1], reverse=True)
+        if top_users:
+            top_text = "\n".join([f"• {name}: {count} servidores" for name, count in top_users[:5]])
+            embed.add_field(
+                name="🏆 Top Usuarios por Servidores",
+                value=top_text,
+                inline=False
+            )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    async def show_database_ops(self, interaction):
+        """Mostrar operaciones de base de datos"""
+        embed = discord.Embed(
+            title="💾 Estado de Base de Datos",
+            description="Información de archivos y integridad",
+            color=0x3366ff,
+            timestamp=datetime.now()
+        )
+        
+        # Información de archivos
+        files_info = [
+            ("followers.json", FOLLOWERS_FILE),
+            ("bans.json", BANS_FILE),
+            ("warnings.json", WARNINGS_FILE),
+            ("vip_links.json", scraper.vip_links_file)
+        ]
+        
+        for file_name, file_path in files_info:
+            if Path(file_path).exists():
+                file_size = Path(file_path).stat().st_size
+                size_kb = file_size / 1024
+                
+                # Última modificación
+                mod_time = datetime.fromtimestamp(Path(file_path).stat().st_mtime)
+                time_ago = datetime.now() - mod_time
+                
+                if time_ago.days > 0:
+                    time_str = f"{time_ago.days}d"
+                elif time_ago.seconds > 3600:
+                    time_str = f"{time_ago.seconds//3600}h"
+                else:
+                    time_str = f"{time_ago.seconds//60}m"
+                
+                embed.add_field(
+                    name=f"📄 {file_name}",
+                    value=f"**Tamaño:** {size_kb:.1f} KB\n**Modificado:** hace {time_str}",
+                    inline=True
+                )
+            else:
+                embed.add_field(
+                    name=f"❌ {file_name}",
+                    value="Archivo no existe",
+                    inline=True
+                )
+        
+        # Integridad de datos
+        integrity_issues = []
+        
+        # Verificar duplicados en verificados
+        roblox_usernames = {}
+        for discord_id, data in roblox_verification.verified_users.items():
+            roblox_name = data['roblox_username'].lower()
+            if roblox_name in roblox_usernames:
+                integrity_issues.append(f"Duplicado: {roblox_name}")
+            else:
+                roblox_usernames[roblox_name] = discord_id
+        
+        # Verificar datos huérfanos
+        orphaned_data = 0
+        for user_id in scraper.links_by_user.keys():
+            if user_id not in roblox_verification.verified_users:
+                orphaned_data += 1
+        
+        if orphaned_data > 0:
+            integrity_issues.append(f"{orphaned_data} usuarios con datos sin verificación")
+        
+        if integrity_issues:
+            embed.add_field(
+                name="⚠️ Problemas de Integridad",
+                value="\n".join(integrity_issues[:5]),
+                inline=False
+            )
+        else:
+            embed.add_field(
+                name="✅ Integridad de Datos",
+                value="Todos los datos están íntegros",
+                inline=False
+            )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    async def show_system_ops(self, interaction):
+        """Mostrar operaciones de sistema"""
+        embed = discord.Embed(
+            title="🔧 Operaciones de Sistema",
+            description="Herramientas de mantenimiento y limpieza",
+            color=0x3366ff,
+            timestamp=datetime.now()
+        )
+        
+        embed.add_field(
+            name="🧹 Operaciones Disponibles",
+            value="• Limpiar cooldowns expirados\n• Limpiar datos expirados\n• Resetear estadísticas\n• Compactar base de datos\n• Validar integridad",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🔄 Comandos Útiles",
+            value="`/admin cleanup` - Limpiar datos expirados\n`/admin reset_cooldowns` - Resetear todos los cooldowns\n`/admin backup` - Crear respaldo\n`/admin validate` - Validar integridad",
+            inline=False
+        )
+        
+        # Estado actual del sistema
+        expired_verifications = 0
+        current_time = time.time()
+        for data in roblox_verification.verified_users.values():
+            if current_time - data['verified_at'] > VERIFICATION_DURATION:
+                expired_verifications += 1
+        
+        expired_bans = 0
+        for ban_time in roblox_verification.banned_users.values():
+            if current_time - ban_time > BAN_DURATION:
+                expired_bans += 1
+        
+        embed.add_field(
+            name="📊 Estado de Limpieza",
+            value=f"**Verificaciones expiradas:** {expired_verifications}\n**Bans expirados:** {expired_bans}\n**Cooldowns activos:** {len(scraper.user_cooldowns)}",
+            inline=True
+        )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    async def show_logs_errors(self, interaction):
+        """Mostrar logs y errores"""
+        embed = discord.Embed(
+            title="📝 Logs y Errores del Sistema",
+            description="Información de logs recientes",
+            color=0x3366ff,
+            timestamp=datetime.now()
+        )
+        
+        # Verificar si existe el archivo de log
+        log_file = "bot_debug.log"
+        if Path(log_file).exists():
+            try:
+                with open(log_file, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                
+                # Obtener últimas líneas de error
+                error_lines = [line for line in lines[-100:] if 'ERROR' in line]
+                warning_lines = [line for line in lines[-100:] if 'WARNING' in line]
+                
+                if error_lines:
+                    recent_errors = "\n".join([line.strip()[:100] + "..." if len(line.strip()) > 100 else line.strip() for line in error_lines[-3:]])
+                    embed.add_field(
+                        name="❌ Errores Recientes",
+                        value=f"```{recent_errors}```",
+                        inline=False
+                    )
+                
+                if warning_lines:
+                    recent_warnings = "\n".join([line.strip()[:100] + "..." if len(line.strip()) > 100 else line.strip() for line in warning_lines[-3:]])
+                    embed.add_field(
+                        name="⚠️ Advertencias Recientes",
+                        value=f"```{recent_warnings}```",
+                        inline=False
+                    )
+                
+                file_size = Path(log_file).stat().st_size / 1024
+                embed.add_field(
+                    name="📄 Archivo de Log",
+                    value=f"**Tamaño:** {file_size:.1f} KB\n**Líneas totales:** {len(lines)}\n**Errores:** {len(error_lines)}\n**Advertencias:** {len(warning_lines)}",
+                    inline=True
+                )
+                
+            except Exception as e:
+                embed.add_field(
+                    name="❌ Error al Leer Log",
+                    value=f"No se pudo leer el archivo: {str(e)}",
+                    inline=False
+                )
+        else:
+            embed.add_field(
+                name="📄 Archivo de Log",
+                value="No se encontró archivo de log",
+                inline=False
+            )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    async def show_performance(self, interaction):
+        """Mostrar métricas de rendimiento"""
+        embed = discord.Embed(
+            title="⚡ Métricas de Rendimiento",
+            description="Estadísticas de velocidad y eficiencia",
+            color=0x3366ff,
+            timestamp=datetime.now()
+        )
+        
+        # Estadísticas de scraping
+        stats = scraper.scraping_stats
+        embed.add_field(name="🚀 Servidores/min", value=f"**{stats.get('servers_per_minute', 0)}**", inline=True)
+        embed.add_field(name="⏱️ Última Duración", value=f"**{stats.get('scrape_duration', 0)}s**", inline=True)
+        
+        success_rate = 0
+        if stats.get('total_scraped', 0) > 0:
+            success_rate = (stats.get('successful_extractions', 0) / stats.get('total_scraped', 1)) * 100
+        embed.add_field(name="📊 Tasa de Éxito", value=f"**{success_rate:.1f}%**", inline=True)
+        
+        # Último scraping
+        if stats.get('last_scrape_time'):
+            try:
+                last_scrape = datetime.fromisoformat(stats['last_scrape_time'])
+                time_ago = datetime.now() - last_scrape
+                if time_ago.days > 0:
+                    time_str = f"{time_ago.days}d {time_ago.seconds//3600}h"
+                else:
+                    time_str = f"{time_ago.seconds//3600}h {(time_ago.seconds%3600)//60}m"
+                embed.add_field(name="🕐 Último Scraping", value=f"hace {time_str}", inline=True)
+            except:
+                embed.add_field(name="🕐 Último Scraping", value="Desconocido", inline=True)
+        
+        # Promedio de servidores por usuario
+        if len(scraper.links_by_user) > 0:
+            total_servers = sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())
+            avg_servers = total_servers / len(scraper.links_by_user)
+            embed.add_field(name="📈 Promedio Serv/Usuario", value=f"**{avg_servers:.1f}**", inline=True)
+        
+        # Uso de memoria aproximado (tamaños de archivos)
+        total_size = 0
+        files = [FOLLOWERS_FILE, BANS_FILE, WARNINGS_FILE, scraper.vip_links_file]
+        for file_path in files:
+            if Path(file_path).exists():
+                total_size += Path(file_path).stat().st_size
+        
+        embed.add_field(name="💾 Uso Almacenamiento", value=f"**{total_size/1024:.1f} KB**", inline=True)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    async def show_config(self, interaction):
+        """Mostrar configuración del bot"""
+        embed = discord.Embed(
+            title="🛠️ Configuración del Bot",
+            description="Ajustes y parámetros del sistema",
+            color=0x3366ff,
+            timestamp=datetime.now()
+        )
+        
+        embed.add_field(name="⏰ Duración Verificación", value=f"**{VERIFICATION_DURATION//3600}h**", inline=True)
+        embed.add_field(name="🚫 Duración Ban", value=f"**{BAN_DURATION//(24*3600)}d**", inline=True)
+        embed.add_field(name="🆔 Owner ID", value=f"**916070251895091241**", inline=True)
+        
+        embed.add_field(name="🎮 Categorías", value=f"**{len(GAME_CATEGORIES)}** categorías", inline=True)
+        embed.add_field(name="📁 Archivos Config", value="**4** archivos principales", inline=True)
+        embed.add_field(name="🤖 Prefijo", value="**/** (slash commands)", inline=True)
+        
+        # Configuraciones actuales
+        embed.add_field(
+            name="📋 Archivos de Datos",
+            value=f"• `{FOLLOWERS_FILE}`\n• `{BANS_FILE}`\n• `{WARNINGS_FILE}`\n• `{scraper.vip_links_file}`",
+            inline=False
+        )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+class DebugMenuView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=300)
+        self.add_item(DebugMenuSelect())
+
+@bot.tree.command(name="debug", description="[OWNER ONLY] Menú de debug y administración avanzada")
+async def debug_menu_command(interaction: discord.Interaction):
+    """Debug menu with dropdown for advanced admin functions"""
+    await interaction.response.defer(ephemeral=True)
+    
+    # Verificar que es el owner
+    OWNER_DISCORD_ID = "916070251895091241"
+    
+    if str(interaction.user.id) != OWNER_DISCORD_ID:
+        embed = discord.Embed(
+            title="🚫 Acceso Denegado",
+            description="Solo el owner del bot puede acceder al menú de debug.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        return
+    
+    embed = discord.Embed(
+        title="🔧 Menú de Debug - Administración Avanzada",
+        description="Panel de control completo para el owner del bot",
+        color=0x3366ff,
+        timestamp=datetime.now()
+    )
+    
+    embed.add_field(
+        name="📊 Información General",
+        value="Este menú te permite acceder a todas las herramientas de administración y monitoreo del bot.",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="🛠️ Funciones Disponibles",
+        value="• **Métricas del Sistema** - Estadísticas generales\n• **Gestión de Usuarios** - Usuarios verificados, baneados, etc.\n• **Base de Datos** - Estado de archivos e integridad\n• **Operaciones de Sistema** - Limpieza y mantenimiento\n• **Logs y Errores** - Monitoreo de problemas\n• **Rendimiento** - Métricas de velocidad\n• **Configuración** - Ajustes del bot",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="⚠️ Importante",
+        value="• Los bans son **SOLO del bot**, no del servidor Discord\n• Todas las operaciones son reversibles\n• Los datos se guardan automáticamente",
+        inline=False
+    )
+    
+    embed.set_footer(text="Selecciona una opción del menú desplegable abajo")
+    
+    view = DebugMenuView()
+    await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+
 @bot.tree.command(name="admin", description="[OWNER ONLY] Comandos de administración del bot")
 async def admin_command(interaction: discord.Interaction, 
                        accion: str, 
                        usuario_id: str = None, 
                        roblox_username: str = None):
-    """Admin commands for bot owner only"""
+    """Admin commands for bot owner only - Enhanced version"""
     await interaction.response.defer(ephemeral=True)
     
     # Verificar que es el owner (tu ID de Discord)
@@ -3995,6 +4528,255 @@ async def admin_command(interaction: discord.Interaction,
             
             await interaction.followup.send(embed=embed, ephemeral=True)
         
+        elif accion.lower() == "cleanup":
+            # Limpiar datos expirados
+            old_verified_count = len(roblox_verification.verified_users)
+            old_banned_count = len(roblox_verification.banned_users)
+            old_pending_count = len(roblox_verification.pending_verifications)
+            old_cooldowns_count = len(scraper.user_cooldowns)
+            
+            roblox_verification.cleanup_expired_data()
+            scraper.cleanup_expired_cooldowns()
+            
+            new_verified_count = len(roblox_verification.verified_users)
+            new_banned_count = len(roblox_verification.banned_users)
+            new_pending_count = len(roblox_verification.pending_verifications)
+            new_cooldowns_count = len(scraper.user_cooldowns)
+            
+            embed = discord.Embed(
+                title="🧹 Limpieza Completada",
+                description="Se han limpiado todos los datos expirados.",
+                color=0x00ff88
+            )
+            embed.add_field(
+                name="📊 Resultados",
+                value=f"• **Verificaciones:** {old_verified_count} → {new_verified_count} (-{old_verified_count - new_verified_count})\n• **Bans:** {old_banned_count} → {new_banned_count} (-{old_banned_count - new_banned_count})\n• **Pendientes:** {old_pending_count} → {new_pending_count} (-{old_pending_count - new_pending_count})\n• **Cooldowns:** {old_cooldowns_count} → {new_cooldowns_count} (-{old_cooldowns_count - new_cooldowns_count})",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            logger.info(f"ADMIN: Cleanup performed by owner {interaction.user.id}")
+        
+        elif accion.lower() == "reset_cooldowns":
+            # Resetear todos los cooldowns
+            cooldown_count = len(scraper.user_cooldowns)
+            scraper.user_cooldowns.clear()
+            
+            embed = discord.Embed(
+                title="⏰ Cooldowns Reseteados",
+                description=f"Se han eliminado **{cooldown_count}** cooldowns activos.",
+                color=0x00ff88
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            logger.info(f"ADMIN: All cooldowns reset by owner {interaction.user.id}")
+        
+        elif accion.lower() == "backup":
+            # Crear backup de datos importantes
+            try:
+                import shutil
+                backup_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+                
+                files_to_backup = [
+                    (FOLLOWERS_FILE, f"backup_followers_{backup_time}.json"),
+                    (BANS_FILE, f"backup_bans_{backup_time}.json"),
+                    (WARNINGS_FILE, f"backup_warnings_{backup_time}.json"),
+                    (scraper.vip_links_file, f"backup_vip_links_{backup_time}.json")
+                ]
+                
+                backed_up = 0
+                for source, backup_name in files_to_backup:
+                    if Path(source).exists():
+                        shutil.copy2(source, backup_name)
+                        backed_up += 1
+                
+                embed = discord.Embed(
+                    title="💾 Backup Creado",
+                    description=f"Se crearon **{backed_up}** archivos de backup con timestamp `{backup_time}`.",
+                    color=0x00ff88
+                )
+                embed.add_field(
+                    name="📁 Archivos Creados",
+                    value="\n".join([f"• `{backup_name}`" for _, backup_name in files_to_backup if Path(backup_name).exists()]),
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                logger.info(f"ADMIN: Backup created by owner {interaction.user.id}")
+                
+            except Exception as e:
+                embed = discord.Embed(
+                    title="❌ Error en Backup",
+                    description=f"Error al crear backup: {str(e)}",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        elif accion.lower() == "validate":
+            # Validar integridad de datos
+            issues = []
+            
+            # Verificar duplicados en Roblox usernames
+            roblox_usernames = {}
+            for discord_id, data in roblox_verification.verified_users.items():
+                roblox_name = data['roblox_username'].lower()
+                if roblox_name in roblox_usernames:
+                    issues.append(f"Roblox username duplicado: {roblox_name}")
+                else:
+                    roblox_usernames[roblox_name] = discord_id
+            
+            # Verificar usuarios con datos pero sin verificación
+            orphaned_users = []
+            for user_id in scraper.links_by_user.keys():
+                if user_id not in roblox_verification.verified_users:
+                    orphaned_users.append(user_id)
+            
+            if orphaned_users:
+                issues.append(f"{len(orphaned_users)} usuarios con datos sin verificación")
+            
+            # Verificar archivos
+            missing_files = []
+            for file_path in [FOLLOWERS_FILE, BANS_FILE, WARNINGS_FILE, scraper.vip_links_file]:
+                if not Path(file_path).exists():
+                    missing_files.append(file_path)
+            
+            if missing_files:
+                issues.append(f"Archivos faltantes: {', '.join(missing_files)}")
+            
+            if issues:
+                embed = discord.Embed(
+                    title="⚠️ Problemas de Integridad Encontrados",
+                    description="Se encontraron los siguientes problemas:",
+                    color=0xff9900
+                )
+                embed.add_field(
+                    name="🔍 Problemas",
+                    value="\n".join([f"• {issue}" for issue in issues]),
+                    inline=False
+                )
+            else:
+                embed = discord.Embed(
+                    title="✅ Validación Exitosa",
+                    description="No se encontraron problemas de integridad en los datos.",
+                    color=0x00ff88
+                )
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            logger.info(f"ADMIN: Data validation performed by owner {interaction.user.id}")
+        
+        elif accion.lower() == "broadcast":
+            if not roblox_username:  # Usar este parámetro como mensaje
+                embed = discord.Embed(
+                    title="❌ Mensaje Faltante",
+                    description="Uso: `/admin broadcast [mensaje]`\n\nEl mensaje se enviará a todos los usuarios verificados.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Enviar mensaje a todos los usuarios verificados
+            message_text = roblox_username  # Reutilizar parámetro
+            sent_count = 0
+            failed_count = 0
+            
+            broadcast_embed = discord.Embed(
+                title="📢 Mensaje del Owner del Bot",
+                description=message_text,
+                color=0x3366ff,
+                timestamp=datetime.now()
+            )
+            broadcast_embed.set_footer(text="Mensaje oficial del administrador")
+            
+            for user_id in roblox_verification.verified_users.keys():
+                try:
+                    user = bot.get_user(int(user_id))
+                    if user:
+                        await user.send(embed=broadcast_embed)
+                        sent_count += 1
+                        await asyncio.sleep(1)  # Evitar rate limiting
+                except Exception as e:
+                    failed_count += 1
+                    logger.warning(f"Failed to send broadcast to user {user_id}: {e}")
+            
+            embed = discord.Embed(
+                title="📢 Broadcast Completado",
+                description=f"Mensaje enviado a usuarios verificados.",
+                color=0x00ff88
+            )
+            embed.add_field(name="✅ Enviados", value=str(sent_count), inline=True)
+            embed.add_field(name="❌ Fallidos", value=str(failed_count), inline=True)
+            embed.add_field(name="📝 Mensaje", value=f"```{message_text[:100]}```", inline=False)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            logger.info(f"ADMIN: Broadcast sent by owner {interaction.user.id} to {sent_count} users")
+        
+        elif accion.lower() == "clearwarnings":
+            if not usuario_id:
+                embed = discord.Embed(
+                    title="❌ Parámetros Faltantes",
+                    description="Uso: `/admin clearwarnings [usuario_id]`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            if usuario_id in roblox_verification.warnings:
+                old_warnings = roblox_verification.warnings[usuario_id]
+                del roblox_verification.warnings[usuario_id]
+                roblox_verification.save_warnings()
+                
+                embed = discord.Embed(
+                    title="✅ Advertencias Limpiadas",
+                    description=f"Se eliminaron **{old_warnings}** advertencias del usuario <@{usuario_id}>.",
+                    color=0x00ff88
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                logger.info(f"ADMIN: Warnings cleared for user {usuario_id} by owner {interaction.user.id}")
+            else:
+                embed = discord.Embed(
+                    title="❌ Sin Advertencias",
+                    description=f"El usuario <@{usuario_id}> no tiene advertencias.",
+                    color=0xff3333
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        elif accion.lower() == "stats":
+            # Estadísticas globales avanzadas
+            embed = discord.Embed(
+                title="📊 Estadísticas Globales del Bot",
+                description="Vista completa del sistema",
+                color=0x3366ff,
+                timestamp=datetime.now()
+            )
+            
+            # Usuarios
+            total_verified = len(roblox_verification.verified_users)
+            total_banned = len(roblox_verification.banned_users)
+            total_warnings = len(roblox_verification.warnings)
+            total_pending = len(roblox_verification.pending_verifications)
+            
+            embed.add_field(name="👥 Verificados", value=str(total_verified), inline=True)
+            embed.add_field(name="🚫 Baneados", value=str(total_banned), inline=True)
+            embed.add_field(name="⚠️ Con Advertencias", value=str(total_warnings), inline=True)
+            embed.add_field(name="⏳ Pendientes", value=str(total_pending), inline=True)
+            
+            # Datos de servidores
+            total_users_with_data = len(scraper.links_by_user)
+            total_links = sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())
+            total_games = sum(len(user_games) for user_games in scraper.links_by_user.values())
+            total_favorites = sum(len(favorites) for favorites in scraper.user_favorites.values())
+            total_reservations = sum(len(reservations) for reservations in scraper.user_reserved_servers.values())
+            
+            embed.add_field(name="🎮 Usuarios con Datos", value=str(total_users_with_data), inline=True)
+            embed.add_field(name="🔗 Enlaces Totales", value=str(total_links), inline=True)
+            embed.add_field(name="🎯 Juegos Totales", value=str(total_games), inline=True)
+            embed.add_field(name="⭐ Favoritos", value=str(total_favorites), inline=True)
+            embed.add_field(name="📌 Reservas", value=str(total_reservations), inline=True)
+            
+            # Bot stats
+            embed.add_field(name="🤖 Servidores", value=str(len(bot.guilds)), inline=True)
+            embed.add_field(name="👤 Usuarios Bot", value=str(len(bot.users)), inline=True)
+            embed.add_field(name="⏰ Cooldowns", value=str(len(scraper.user_cooldowns)), inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        
         else:
             embed = discord.Embed(
                 title="❌ Acción No Válida",
@@ -4002,8 +4784,23 @@ async def admin_command(interaction: discord.Interaction,
                 color=0xff0000
             )
             embed.add_field(
-                name="📝 Comandos Disponibles:",
-                value="• `autoverify [user_id] [roblox_username]` - Verificar automáticamente\n• `unverify [user_id]` - Desverificar usuario\n• `ban [user_id]` - Banear usuario\n• `unban [user_id]` - Desbanear usuario\n• `info [user_id]` - Ver información de usuario",
+                name="👥 Gestión de Usuarios:",
+                value="• `autoverify [user_id] [roblox_username]` - Verificar automáticamente\n• `unverify [user_id]` - Desverificar usuario\n• `ban [user_id]` - Banear usuario del bot\n• `unban [user_id]` - Desbanear usuario\n• `info [user_id]` - Ver información detallada\n• `clearwarnings [user_id]` - Limpiar advertencias",
+                inline=False
+            )
+            embed.add_field(
+                name="🔧 Sistema y Mantenimiento:",
+                value="• `cleanup` - Limpiar datos expirados\n• `reset_cooldowns` - Resetear todos los cooldowns\n• `backup` - Crear backup de datos\n• `validate` - Validar integridad de datos\n• `stats` - Estadísticas globales avanzadas",
+                inline=False
+            )
+            embed.add_field(
+                name="📢 Comunicación:",
+                value="• `broadcast [mensaje]` - Enviar mensaje a todos los verificados",
+                inline=False
+            )
+            embed.add_field(
+                name="💡 Consejo:",
+                value="Usa `/debug` para acceso al menú visual completo",
                 inline=False
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
