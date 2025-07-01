@@ -67,7 +67,7 @@ end
 local function makeHttpRequest(method, url, data, headers)
     headers = headers or {}
     headers["Content-Type"] = "application/json"
-    headers["User-Agent"] = "RobloxStudio/1.0"
+    headers["User-Agent"] = "RobloxExecutor/1.0"
     
     local requestData = {
         Url = url,
@@ -412,14 +412,9 @@ local function initialize()
     print("👤 Username: " .. CONFIG.ROBLOX_USERNAME)
     print("🌐 Bot URL: " .. CONFIG.DISCORD_BOT_URL)
     
-    print("🔍 Verificando HTTP...")
-    local httpCheck = checkHttpEnabled()
-    
-    if not httpCheck then
-        warn("⚠️ Verificación HTTP inicial falló, pero intentando conectar de todos modos...")
-        warn("💡 Esto podría funcionar si HTTP está realmente habilitado")
-        httpEnabled = true
-    end
+    -- Verificación HTTP simplificada para ejecutores
+    print("🔍 Verificando HTTP para ejecutores de scripts...")
+    httpEnabled = true -- Asumir habilitado en ejecutores
     
     print("🔄 Intentando conectar con bot de Discord...")
     
@@ -427,11 +422,15 @@ local function initialize()
     for attempt = 1, 3 do
         print("🔄 Intento de conexión " .. attempt .. "/3")
         
-        if connectToBot() then
+        local success, result = pcall(function()
+            return connectToBot()
+        end)
+        
+        if success and result then
             connectionSuccess = true
             break
         else
-            warn("❌ Intento " .. attempt .. " falló")
+            warn("❌ Intento " .. attempt .. " falló: " .. tostring(result))
             if attempt < 3 then
                 wait(2)
             end
@@ -441,17 +440,24 @@ local function initialize()
     if connectionSuccess then
         print("🟢 Sistema de control remoto activado exitosamente")
         
+        -- Loop principal con manejo de errores
         spawn(function()
             while isConnected do
-                local currentTime = tick()
+                local success, err = pcall(function()
+                    local currentTime = tick()
+                    
+                    if currentTime - lastHeartbeat >= CONFIG.HEARTBEAT_INTERVAL then
+                        sendHeartbeat()
+                    end
+                    
+                    if currentTime - lastCommandCheck >= CONFIG.CHECK_COMMANDS_INTERVAL then
+                        checkForCommands()
+                        lastCommandCheck = currentTime
+                    end
+                end)
                 
-                if currentTime - lastHeartbeat >= CONFIG.HEARTBEAT_INTERVAL then
-                    sendHeartbeat()
-                end
-                
-                if currentTime - lastCommandCheck >= CONFIG.CHECK_COMMANDS_INTERVAL then
-                    checkForCommands()
-                    lastCommandCheck = currentTime
+                if not success then
+                    warn("⚠️ Error en loop principal: " .. tostring(err))
                 end
                 
                 wait(1)
@@ -459,23 +465,35 @@ local function initialize()
         end)
         
         wait(2)
-        sendChatMessage("🤖 Bot de RbxServers conectado y listo para recibir comandos")
+        
+        -- Intentar enviar mensaje de confirmación
+        local success, err = pcall(function()
+            sendChatMessage("🤖 Bot de RbxServers conectado y listo para recibir comandos")
+        end)
+        
+        if not success then
+            print("⚠️ No se pudo enviar mensaje de confirmación: " .. tostring(err))
+        end
         
     else
         warn("💥 No se pudo conectar con el bot de Discord después de 3 intentos")
         warn("🔧 Posibles problemas:")
-        warn("   1. HTTP requests realmente no están habilitados")
+        warn("   1. Bot de Discord no está ejecutándose")
         warn("   2. URL del bot incorrecta: " .. CONFIG.DISCORD_BOT_URL)
-        warn("   3. Bot de Discord no está ejecutándose")
-        warn("   4. Problemas de conectividad de red")
-        warn("   5. Firewall del juego bloqueando conexiones")
+        warn("   3. Problemas de conectividad de red")
+        warn("   4. Firewall del ejecutor bloqueando conexiones")
         
+        -- Reintentos en background
         spawn(function()
             while not isConnected do
                 wait(30)
                 print("🔄 Reintentando conexión...")
-                if connectToBot() then
+                local success, result = pcall(function()
+                    return connectToBot()
+                end)
+                if success and result then
                     print("🟢 Conexión exitosa en reintento")
+                    isConnected = true
                     break
                 end
             end
@@ -492,14 +510,24 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 -- Inicializar cuando el jugador esté listo
+local function safeInitialize()
+    local success, err = pcall(initialize)
+    if not success then
+        warn("❌ Error en inicialización: " .. tostring(err))
+        wait(5)
+        print("🔄 Reintentando inicialización...")
+        safeInitialize()
+    end
+end
+
 if Players.LocalPlayer then
-    initialize()
+    safeInitialize()
 else
     Players.PlayerAdded:Connect(function(player)
         if player == Players.LocalPlayer then
-            initialize()
+            safeInitialize()
         end
     end)
 end
 
-print("✅ Script de control remoto cargado")
+print("✅ Script de control remoto cargado para ejecutores")
