@@ -318,29 +318,81 @@ local function openPrivateServerLink(serverLink)
     return true, "Enlace mostrado en consola - copia y pega en tu navegador"
 end
 
--- Función para unirse a un servidor por Job ID
+-- Función CORREGIDA para unirse a un servidor por Job ID
 local function joinServerByJobId(placeId, jobId)
     print("🚀 Procesando unión por Job ID...")
     print("🆔 Place ID: " .. tostring(placeId))
     print("🎯 Job ID: " .. tostring(jobId))
 
-    -- Usar TeleportToPlaceInstance para unirse al servidor específico
+    -- Validar parámetros
+    if not placeId or not jobId then
+        print("❌ Parámetros inválidos: placeId o jobId faltante")
+        return false, "Parámetros inválidos"
+    end
+
+    -- Validar que placeId sea numérico
+    local numericPlaceId = tonumber(placeId)
+    if not numericPlaceId then
+        print("❌ Place ID debe ser numérico: " .. tostring(placeId))
+        return false, "Place ID inválido"
+    end
+
+    -- Validar que jobId sea string y no esté vacío
+    local stringJobId = tostring(jobId)
+    if stringJobId == "" or stringJobId == "nil" then
+        print("❌ Job ID inválido: " .. tostring(jobId))
+        return false, "Job ID inválido"
+    end
+
+    -- Verificar que el jugador local existe
+    local localPlayer = Players.LocalPlayer
+    if not localPlayer then
+        print("❌ No se pudo obtener el jugador local")
+        return false, "Jugador local no disponible"
+    end
+
+    print("✅ Parámetros validados correctamente")
+    print("✅ Place ID numérico: " .. tostring(numericPlaceId))
+    print("✅ Job ID string: " .. stringJobId)
+
+    -- Usar TeleportToPlaceInstance con parámetros correctos
     local success, errorMessage = pcall(function()
-        TeleportService:TeleportToPlaceInstance(placeId, jobId, {Players.LocalPlayer})
+        -- La función correcta requiere: placeId (number), jobId (string), players (table)
+        local playersTable = {localPlayer}
+        TeleportService:TeleportToPlaceInstance(numericPlaceId, stringJobId, playersTable)
     end)
 
     if success then
         print("✅ Teleport por Job ID iniciado exitosamente!")
+        print("⏳ Conectando al servidor...")
         return true, "Teleport iniciado - conectando al servidor"
     else
         print("❌ Error en teleport por Job ID: " .. tostring(errorMessage))
-        return false, "Error en teleport: " .. tostring(errorMessage)
+        
+        -- Intentar método alternativo si falla
+        print("🔄 Intentando método alternativo...")
+        local success2, errorMessage2 = pcall(function()
+            TeleportService:TeleportToPlaceInstance(numericPlaceId, stringJobId, {localPlayer}, nil, nil)
+        end)
+        
+        if success2 then
+            print("✅ Teleport alternativo exitoso!")
+            return true, "Teleport alternativo iniciado"
+        else
+            print("❌ Error en teleport alternativo: " .. tostring(errorMessage2))
+            return false, "Error en teleport: " .. tostring(errorMessage) .. " | Alt: " .. tostring(errorMessage2)
+        end
     end
 end
 
 -- Función para ejecutar script de Lua automáticamente
 local function executeScript(luaScript)
     print("📜 Ejecutando script automáticamente...")
+    
+    if not luaScript or luaScript == "" then
+        print("❌ Script vacío o inválido")
+        return false, "Script vacío"
+    end
     
     local success, errorMessage = pcall(function()
         loadstring(luaScript)()
@@ -365,14 +417,16 @@ local function processCommand(command)
     if command.action == "join_server" then
         if command.server_link then
             -- El server_link ahora contiene "PlaceId:XXXX|JobId:YYYY"
+            print("🔍 Parseando server_link: " .. command.server_link)
+            
             local placeId, jobId = command.server_link:match("PlaceId:(%d+)|JobId:([%w%-]+)")
             
             if placeId and jobId then
                 print("📥 Comando join_server recibido:")
-                print("🆔 Place ID: " .. placeId)
-                print("🎯 Job ID: " .. jobId)
+                print("🆔 Place ID extraído: " .. placeId)
+                print("🎯 Job ID extraído: " .. jobId)
                 
-                success, resultMessage = joinServerByJobId(tonumber(placeId), jobId)
+                success, resultMessage = joinServerByJobId(placeId, jobId)
                 
                 if success then
                     -- Enviar mensaje después del teleport
@@ -382,7 +436,8 @@ local function processCommand(command)
                     end)
                 end
             else
-                resultMessage = "Formato de server_link inválido - esperado PlaceId:XXXX|JobId:YYYY"
+                print("❌ No se pudo parsear server_link: " .. command.server_link)
+                resultMessage = "Formato de server_link inválido - esperado PlaceId:XXXX|JobId:YYYY, recibido: " .. command.server_link
             end
         else
             resultMessage = "Server link no proporcionado"
@@ -513,7 +568,7 @@ local function initialize()
         -- Mensaje de confirmación
         wait(3)
         spawn(function()
-            sendChatMessage("🤖 Bot de RbxServers conectado y listo")
+            sendChatMessage("🤖 Bot de RbxServers conectado y listo (FIXED)")
         end)
 
     else
@@ -553,6 +608,6 @@ else
     end)
 end
 
-print("✅ Script de control remoto ACTUALIZADO para ejecutores cargado")
-print("🔧 NUEVA FUNCIONALIDAD: TeleportToPlaceInstance con Job ID para unión directa")
-print("🌐 URL actualizada: https://48d641a6-49be-4fce-8559-1ba7297b4a80-00-39jmkm5qd4nug.riker.replit.dev")
+print("✅ Script de control remoto CORREGIDO para ejecutores cargado")
+print("🔧 ARREGLADO: Error de teleport 'Unable to cast value to Object'")
+print("🌐 URL: https://48d641a6-49be-4fce-8559-1ba7297b4a80-00-39jmkm5qd4nug.riker.replit.dev")
