@@ -1,7 +1,7 @@
 
 -- RbxServers Remote Control Script
 -- Conecta con el bot de Discord para recibir comandos remotos
--- Colocar en ServerScriptService o como LocalScript en StarterPlayerScripts
+-- Compatible con ejecutores de scripts (KRNL, Synapse, etc.)
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -12,11 +12,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Configuración
 local CONFIG = {
-    DISCORD_BOT_URL = "https://63aad61e-e3d3-4eda-9563-c784fd96ab81-00-26xq6e44gkeg1.picard.replit.dev", -- URL actual de tu Replit
+    DISCORD_BOT_URL = "https://63aad61e-e3d3-4eda-9563-c784fd96ab81-00-26xq6e44gkeg1.picard.replit.dev",
     SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999)),
-    ROBLOX_USERNAME = "hesiz", -- Tu username de Roblox
-    HEARTBEAT_INTERVAL = 10, -- segundos
-    CHECK_COMMANDS_INTERVAL = 5, -- segundos
+    ROBLOX_USERNAME = "hesiz",
+    HEARTBEAT_INTERVAL = 10,
+    CHECK_COMMANDS_INTERVAL = 5,
     MAX_RETRIES = 3
 }
 
@@ -29,7 +29,6 @@ local httpEnabled = false
 
 -- Función para verificar si HTTP está habilitado
 local function checkHttpEnabled()
-    -- Intentar múltiples métodos de verificación
     local testUrls = {
         "https://httpbin.org/ip",
         "https://jsonplaceholder.typicode.com/posts/1",
@@ -50,10 +49,9 @@ local function checkHttpEnabled()
             print("⚠️ Intento " .. i .. " falló con: " .. url .. " - Error: " .. tostring(result))
         end
         
-        wait(0.5) -- Pequeña pausa entre intentos
+        wait(0.5)
     end
     
-    -- Si todos fallan, mostrar información detallada
     httpEnabled = false
     warn("❌ HTTP requests NO habilitados después de múltiples intentos")
     warn("📋 Posibles soluciones:")
@@ -67,8 +65,6 @@ end
 
 -- Función para hacer requests HTTP con reintentos
 local function makeHttpRequest(method, url, data, headers)
-    -- Intentar hacer el request incluso si httpEnabled es false (por si acaso)
-    
     headers = headers or {}
     headers["Content-Type"] = "application/json"
     headers["User-Agent"] = "RobloxStudio/1.0"
@@ -118,7 +114,6 @@ local function makeHttpRequest(method, url, data, headers)
             local errorMsg = tostring(result)
             warn("❌ HTTP Request error (attempt " .. attempt .. "): " .. errorMsg)
             
-            -- Si el error contiene "HTTP requests are not enabled", actualizar httpEnabled
             if string.find(errorMsg:lower(), "http") and string.find(errorMsg:lower(), "not") and string.find(errorMsg:lower(), "enabled") then
                 httpEnabled = false
                 warn("🔧 HTTP detectado como deshabilitado - Verifica configuración del juego")
@@ -126,7 +121,7 @@ local function makeHttpRequest(method, url, data, headers)
             
             if attempt < CONFIG.MAX_RETRIES then
                 print("⏳ Esperando " .. attempt .. "s antes del siguiente intento...")
-                wait(attempt) -- Incrementar tiempo de espera
+                wait(attempt)
             end
         end
     end
@@ -155,7 +150,7 @@ local function connectToBot()
     
     if response and response.status == "success" then
         isConnected = true
-        httpEnabled = true -- Si llegamos aquí, HTTP definitivamente funciona
+        httpEnabled = true
         print("✅ Conectado exitosamente al bot de Discord")
         print("🆔 Script ID: " .. CONFIG.SCRIPT_ID)
         print("🕐 Server Time: " .. tostring(response.server_time or "Unknown"))
@@ -314,7 +309,6 @@ local function joinPrivateServer(serverLink)
     local gameId, privateCode = serverLink:match("roblox%.com/games/(%d+)/[^?]*%?privateServerLinkCode=([%w%-_]+)")
     
     if not gameId or not privateCode then
-        -- Intentar otro patrón
         gameId, privateCode = serverLink:match("roblox%.com/games/(%d+).-privateServerLinkCode=([%w%-_]+)")
     end
     
@@ -351,12 +345,10 @@ local function processCommand(command)
             success = joinPrivateServer(command.server_link)
             if success then
                 resultMessage = "Teleport a servidor privado iniciado"
-                -- Enviar mensaje después de unirse (con delay)
                 spawn(function()
-                    wait(5) -- Esperar a que cargue el nuevo servidor
+                    wait(5)
                     sendChatMessage(command.message or "bot by RbxServers **Testing** 🤖")
                     
-                    -- Si hay usuario objetivo, seguirlo
                     if command.target_user then
                         wait(2)
                         followUser(command.target_user)
@@ -420,17 +412,15 @@ local function initialize()
     print("👤 Username: " .. CONFIG.ROBLOX_USERNAME)
     print("🌐 Bot URL: " .. CONFIG.DISCORD_BOT_URL)
     
-    -- Verificar HTTP (pero no fallar si falla la verificación inicial)
     print("🔍 Verificando HTTP...")
     local httpCheck = checkHttpEnabled()
     
     if not httpCheck then
         warn("⚠️ Verificación HTTP inicial falló, pero intentando conectar de todos modos...")
         warn("💡 Esto podría funcionar si HTTP está realmente habilitado")
-        httpEnabled = true -- Forzar habilitado para intentar
+        httpEnabled = true
     end
     
-    -- Intentar conectar con el bot (independientemente de la verificación HTTP)
     print("🔄 Intentando conectar con bot de Discord...")
     
     local connectionSuccess = false
@@ -451,17 +441,14 @@ local function initialize()
     if connectionSuccess then
         print("🟢 Sistema de control remoto activado exitosamente")
         
-        -- Loop principal
         spawn(function()
             while isConnected do
                 local currentTime = tick()
                 
-                -- Enviar heartbeat
                 if currentTime - lastHeartbeat >= CONFIG.HEARTBEAT_INTERVAL then
                     sendHeartbeat()
                 end
                 
-                -- Verificar comandos
                 if currentTime - lastCommandCheck >= CONFIG.CHECK_COMMANDS_INTERVAL then
                     checkForCommands()
                     lastCommandCheck = currentTime
@@ -471,7 +458,6 @@ local function initialize()
             end
         end)
         
-        -- Mensaje inicial en chat
         wait(2)
         sendChatMessage("🤖 Bot de RbxServers conectado y listo para recibir comandos")
         
@@ -484,7 +470,6 @@ local function initialize()
         warn("   4. Problemas de conectividad de red")
         warn("   5. Firewall del juego bloqueando conexiones")
         
-        -- Intentar de nuevo cada 30 segundos
         spawn(function()
             while not isConnected do
                 wait(30)
