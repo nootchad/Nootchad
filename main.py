@@ -4814,6 +4814,185 @@ async def admin_command(interaction: discord.Interaction,
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+@bot.tree.command(name="export", description="Exportar todos tus enlaces VIP a un archivo de texto")
+async def export_command(interaction: discord.Interaction):
+    """Export all user's VIP links to a text file"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        user_games = scraper.links_by_user.get(user_id, {})
+        
+        if not user_games:
+            embed = discord.Embed(
+                title="❌ Sin Enlaces para Exportar",
+                description="No tienes enlaces VIP en tu base de datos para exportar.\n\nUsa `/scrape [game_id]` para generar enlaces primero.",
+                color=0xff3333
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Crear contenido del archivo
+        export_content = []
+        export_content.append("=" * 60)
+        export_content.append("🎮 EXPORTACIÓN DE ENLACES VIP - ROBLOX")
+        export_content.append("=" * 60)
+        export_content.append(f"📅 Exportado: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        export_content.append(f"👤 Usuario Discord: {interaction.user.name}#{interaction.user.discriminator}")
+        
+        # Obtener datos del usuario verificado
+        if user_id in roblox_verification.verified_users:
+            roblox_username = roblox_verification.verified_users[user_id]['roblox_username']
+            export_content.append(f"🎮 Usuario Roblox: {roblox_username}")
+        
+        export_content.append("=" * 60)
+        export_content.append("")
+        
+        # Estadísticas generales
+        total_games = len(user_games)
+        total_links = sum(len(game_data.get('links', [])) for game_data in user_games.values())
+        total_favorites = len(scraper.user_favorites.get(user_id, []))
+        total_reservations = len(scraper.get_reserved_servers(user_id))
+        
+        export_content.append("📊 ESTADÍSTICAS GENERALES")
+        export_content.append("-" * 30)
+        export_content.append(f"🎯 Total de Juegos: {total_games}")
+        export_content.append(f"🔗 Total de Enlaces: {total_links}")
+        export_content.append(f"⭐ Juegos Favoritos: {total_favorites}")
+        export_content.append(f"📌 Servidores Reservados: {total_reservations}")
+        export_content.append("")
+        
+        # Enlaces por categoría
+        categories_summary = {}
+        for game_data in user_games.values():
+            category = game_data.get('category', 'other')
+            if category not in categories_summary:
+                categories_summary[category] = {'games': 0, 'links': 0}
+            categories_summary[category]['games'] += 1
+            categories_summary[category]['links'] += len(game_data.get('links', []))
+        
+        export_content.append("📂 ENLACES POR CATEGORÍA")
+        export_content.append("-" * 30)
+        for category, stats in sorted(categories_summary.items()):
+            category_emoji = {
+                "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+                "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                "building": "🏗️", "anime": "🌸", "other": "🎮"
+            }
+            emoji = category_emoji.get(category, '🎮')
+            export_content.append(f"{emoji} {category.title()}: {stats['games']} juegos, {stats['links']} enlaces")
+        export_content.append("")
+        
+        # Enlaces detallados por juego
+        export_content.append("🎮 ENLACES DETALLADOS POR JUEGO")
+        export_content.append("=" * 60)
+        
+        for game_id, game_data in user_games.items():
+            game_name = game_data.get('game_name', f'Game {game_id}')
+            category = game_data.get('category', 'other')
+            links = game_data.get('links', [])
+            
+            # Verificar si es favorito
+            is_favorite = game_id in scraper.user_favorites.get(user_id, [])
+            favorite_mark = "⭐ FAVORITO" if is_favorite else ""
+            
+            export_content.append("")
+            export_content.append(f"🎯 JUEGO: {game_name} {favorite_mark}")
+            export_content.append(f"🆔 ID: {game_id}")
+            export_content.append(f"📂 Categoría: {category.title()}")
+            export_content.append(f"🔗 Enlaces Disponibles: {len(links)}")
+            export_content.append("-" * 50)
+            
+            if links:
+                for i, link in enumerate(links, 1):
+                    export_content.append(f"{i:2d}. {link}")
+                    
+                    # Agregar detalles del servidor si están disponibles
+                    server_details = game_data.get('server_details', {}).get(link, {})
+                    if server_details:
+                        discovered_date = server_details.get('discovered_at')
+                        if discovered_date:
+                            try:
+                                disc_time = datetime.fromisoformat(discovered_date)
+                                export_content.append(f"    📅 Descubierto: {disc_time.strftime('%d/%m/%Y %H:%M')}")
+                            except:
+                                pass
+                        
+                        server_info = server_details.get('server_info', {})
+                        server_id = server_info.get('server_id', 'Unknown')
+                        if server_id != 'Unknown':
+                            export_content.append(f"    🔧 ID Servidor: {server_id}")
+            else:
+                export_content.append("❌ Sin enlaces disponibles")
+            
+            export_content.append("")
+        
+        # Servidores reservados
+        reserved_servers = scraper.get_reserved_servers(user_id)
+        if reserved_servers:
+            export_content.append("📌 SERVIDORES RESERVADOS")
+            export_content.append("-" * 30)
+            for i, reservation in enumerate(reserved_servers, 1):
+                reserved_time = datetime.fromisoformat(reservation['reserved_at'])
+                export_content.append(f"{i}. {reservation['game_name']}")
+                export_content.append(f"   🔗 {reservation['server_link']}")
+                export_content.append(f"   📅 Reservado: {reserved_time.strftime('%d/%m/%Y %H:%M')}")
+                export_content.append(f"   📝 Nota: {reservation.get('note', 'Sin nota')}")
+                export_content.append("")
+        
+        # Footer
+        export_content.append("=" * 60)
+        export_content.append("🤖 Generado por RbxServers Bot")
+        export_content.append("👤 Bot creado por: hesiz (Roblox)")
+        export_content.append("🔗 https://www.roblox.com/users/11834624/profile")
+        export_content.append("=" * 60)
+        
+        # Crear archivo temporal
+        export_text = "\n".join(export_content)
+        
+        # Crear archivo con nombre único
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        username_clean = interaction.user.name.replace(" ", "_").replace("#", "")
+        filename = f"vip_links_export_{username_clean}_{timestamp}.txt"
+        
+        # Crear embed de confirmación
+        embed = discord.Embed(
+            title="✅ Exportación Completada",
+            description=f"Se han exportado exitosamente **{total_links}** enlaces VIP de **{total_games}** juegos.",
+            color=0x00ff88
+        )
+        
+        embed.add_field(name="📊 Contenido del Archivo", value=f"• Estadísticas generales\n• Enlaces organizados por juego\n• Detalles de servidores\n• Servidores reservados", inline=False)
+        embed.add_field(name="📁 Archivo", value=f"`{filename}`", inline=True)
+        embed.add_field(name="📅 Fecha", value=datetime.now().strftime('%d/%m/%Y %H:%M'), inline=True)
+        embed.add_field(name="📝 Líneas", value=str(len(export_content)), inline=True)
+        
+        embed.set_footer(text="El archivo se enviará como adjunto")
+        
+        # Enviar archivo como adjunto
+        import io
+        file_data = io.BytesIO(export_text.encode('utf-8'))
+        discord_file = discord.File(file_data, filename=filename)
+        
+        await interaction.followup.send(embed=embed, file=discord_file)
+        
+        # Log de la exportación
+        logger.info(f"User {user_id} exported {total_links} VIP links from {total_games} games")
+        
+        # Agregar a historial de uso
+        scraper.add_usage_history(user_id, "export", f"Exported {total_links} links", 'export_complete')
+        
+    except Exception as e:
+        logger.error(f"Error in export command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error de Exportación",
+            description="Ocurrió un error al exportar los enlaces.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="stats", description="Mostrar estadísticas completas de enlaces VIP")
 async def stats(interaction: discord.Interaction):
     """Show detailed statistics about collected VIP links"""
