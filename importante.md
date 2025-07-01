@@ -1,152 +1,153 @@
 
-# Documentación Técnica - VIP Server Scraper Bot
+# Guión Promocional - VIP Server Bot para Discord
 
-## Información General
+## Qué es este Bot
 
-Este bot de Discord está diseñado para extraer enlaces de servidores privados VIP de Roblox y proporcionarlos a usuarios verificados a través de comandos slash.
+Un bot revolucionario de Discord que te da acceso GRATUITO a servidores VIP privados de Roblox. Miles de enlaces exclusivos al alcance de tus manos.
 
-## Limitaciones de Hosting
+## Por qué es Único
 
-### Disponibilidad del Servicio
+### Acceso Ilimitado
+- Servidores VIP de los juegos más populares de Roblox
+- Enlaces frescos actualizados constantemente
+- Categorías organizadas automáticamente
+- Sistema de favoritos personalizado
 
-El bot funciona en una plataforma de desarrollo gratuita que tiene las siguientes limitaciones:
+### Completamente Gratis
+- Sin pagos mensuales
+- Sin límites de uso después de verificación
+- Acceso permanente a tu colección personal
+- Exporta todos tus enlaces cuando quieras
 
-- **No disponibilidad 24/7**: El bot no puede mantenerse ejecutándose continuamente debido a las restricciones de la plataforma gratuita
-- **Activación manual requerida**: Debe ser activado manualmente cada cierto tiempo
-- **Suspensión automática**: El servicio se suspende después de períodos de inactividad
-- **Recursos limitados**: Puede afectar el rendimiento durante picos de uso
+## Cómo Funciona
 
-### Recomendaciones para Usuarios
+### Verificación Simple
+1. Únete al servidor de Discord
+2. Usa el comando de verificación con tu usuario de Roblox
+3. Agrega el código generado a tu perfil de Roblox
+4. Listo, acceso completo desbloqueado
 
-- El bot puede no estar disponible en ciertos momentos
-- Se recomienda exportar los enlaces importantes usando el comando `/export`
-- Los datos se mantienen almacenados incluso cuando el bot está offline
+### Comandos Principales
 
-## Sistema de Verificación
+**Búsqueda Automática**
+- Busca por nombre del juego
+- Sistema inteligente que encuentra la mejor coincidencia
+- Resultados instantáneos
 
-### Proceso de Verificación
+**Navegación de Servidores**
+- Navega por todos tus enlaces guardados
+- Información detallada de cada servidor
+- Sistema de reservas para guardar favoritos
 
-El bot requiere verificación obligatoria antes del uso:
+**Gestión Personal**
+- Tus propios favoritos organizados
+- Estadísticas completas de tu uso
+- Exportación de datos personal
 
-1. El usuario debe ejecutar `/verify [nombre_usuario_roblox]`
-2. Se genera un código de verificación único
-3. El usuario debe agregar este código a su descripción de Roblox
-4. El sistema valida automáticamente la presencia del código
-5. La verificación tiene duración de 24 horas
+## Características Destacadas
 
-### Medidas Anti-Abuso
+### Sistema Anti-Spam
+- Cooldowns inteligentes para mantener el servicio estable
+- Protección contra abuso del sistema
+- Experiencia fluida para todos los usuarios
 
-- **Sistema de advertencias**: Dos advertencias por usar nombres de usuario falsos
-- **Baneos automáticos**: Ban de 7 días tras segunda advertencia
-- **Prevención de duplicados**: No se permite el mismo nombre de usuario de Roblox para múltiples cuentas de Discord
+### Organización Automática
+- Juegos categorizados por género
+- RPG, Simuladores, Acción, Terror y más
+- Fácil navegación por categorías
 
-## Sistema de Cooldowns
+### Datos Personalizados
+- Cada usuario tiene su propia base de datos
+- Enlaces únicos y personalizados
+- Historial completo de actividad
 
-### Funcionamiento
+## Ventajas Exclusivas
 
-- **Cooldown principal**: 5 minutos entre comandos de scraping
-- **Cooldown de búsqueda**: 2 minutos para comandos de búsqueda
-- **Limpieza automática**: Los cooldowns expirados se eliminan automáticamente cada 10 minutos
+### Para Usuarios Regulares
+- Acceso a servidores premium sin pagar
+- Miles de opciones disponibles
+- Actualizaciones constantes de contenido
+- Sistema de favoritos ilimitado
 
-### Propósito
+### Seguridad Garantizada
+- Verificación real contra Roblox
+- Sistema de advertencias justo
+- Protección contra usuarios falsos
+- Datos seguros y privados
 
-- Prevenir spam y sobrecarga del sistema
-- Proteger las fuentes de datos de requests excesivos
-- Mantener estabilidad del servicio para todos los usuarios
+## Limitaciones Importantes
 
-## Arquitectura de Datos
+### Disponibilidad
+- El bot requiere activación manual periódica
+- No está disponible 24/7 debido a hosting gratuito
+- Puede haber períodos de inactividad
+- Se recomienda exportar enlaces importantes
 
-### Almacenamiento
+### Uso Responsable
+- Sistema de cooldowns entre comandos
+- Verificación obligatoria para prevenir spam
+- Límites de procesamiento por sesión
+- Respeto a las fuentes de datos
 
-- **Datos por usuario**: Cada usuario tiene su propia base de datos de enlaces
-- **Categorización automática**: Los juegos se categorizan automáticamente
-- **Persistencia**: Los datos se mantienen aunque el bot se reinicie
+## Cómo Empezar
 
-### Archivos de Sistema
+### Paso 1: Únete
+- Encuentra el enlace de invitación del bot
+- Únete al servidor de Discord
 
-- `followers.json`: Usuarios verificados y verificaciones pendientes
-- `bans.json`: Usuarios baneados del sistema
-- `warnings.json`: Registro de advertencias por usuario
-- `vip_links.json`: Base de datos completa de enlaces VIP
+### Paso 2: Verifica
+- Usa el comando de verificación
+- Sigue las instrucciones exactas
+- Espera confirmación automática
 
-## Limitaciones Técnicas
+### Paso 3: Disfruta
+- Comienza a buscar tus juegos favoritos
+- Explora todas las categorías disponibles
+- Guarda tus servidores preferidos
 
-### Scraping
+## Consejos Pro
 
-- **Límite por sesión**: Máximo 5 servidores procesados por ejecución
-- **Dependencia externa**: Requiere acceso a fuentes externas de datos
-- **Tiempo de procesamiento**: 30-60 segundos promedio por sesión de scraping
+### Maximiza tu Experiencia
+- Verifica inmediatamente al unirte
+- Usa favoritos para juegos frecuentes
+- Exporta regularmente tus enlaces
+- Respeta los tiempos de cooldown
 
-### Capacidad
+### Evita Problemas
+- No uses nombres falsos de Roblox
+- No compartas tus enlaces privados
+- Respeta las reglas del servidor
+- Reporta cualquier problema
 
-- **Usuarios concurrentes**: Limitado por recursos del hosting
-- **Tamaño de base de datos**: Sin límite específico, pero afectado por almacenamiento disponible
-- **Rate limiting**: Implementado para prevenir sobrecarga
+## Por qué Elegir Este Bot
 
-## Comandos Principales
+### Ventajas Competitivas
+- Completamente gratuito vs servicios premium
+- Interfaz intuitiva y fácil de usar
+- Comunidad activa y soporte
+- Actualizaciones regulares de funciones
 
-### Usuario Regular
+### Resultados Garantizados
+- Miles de enlaces verificados
+- Juegos populares siempre disponibles
+- Sistema confiable y estable
+- Experiencia de usuario premium
 
-- `/verify`: Verificación obligatoria
-- `/scrape`: Extraer enlaces (acepta ID o nombre de juego)
-- `/servertest`: Navegar por enlaces disponibles
-- `/game`: Búsqueda automática por nombre
-- `/export`: Exportar todos los enlaces a archivo de texto
+## Llamada a la Acción
 
-### Administración
+### Únete Ahora
+No pierdas más tiempo pagando por servidores VIP. Únete a miles de usuarios que ya disfrutan acceso gratuito e ilimitado a los mejores servidores privados de Roblox.
 
-- `/admin`: Comandos de gestión (solo owner)
-- `/debug`: Panel de administración avanzado (solo owner)
+### Es Tu Momento
+- Acceso inmediato después de verificación
+- Sin costos ocultos ni suscripciones
+- Comunidad creciente de usuarios
+- Soporte activo y constante
 
-## Consideraciones de Seguridad
+## Disclaimer
 
-### Datos de Usuario
+Este bot no está afiliado oficialmente con Roblox Corporation. Todos los enlaces provienen de fuentes públicas disponibles. El uso está sujeto a los términos de servicio de Discord y Roblox.
 
-- No se almacenan contraseñas
-- Solo se guarda el nombre de usuario de Roblox verificado
-- Los enlaces son específicos por usuario
+---
 
-### Validación
-
-- Verificación real contra la API de Roblox
-- Prevención de bypass del sistema de verificación
-- Logs completos de actividad para auditoría
-
-## Recomendaciones de Uso
-
-### Para Usuarios
-
-1. Realizar verificación inmediatamente tras unirse
-2. Usar `/export` regularmente para respaldar enlaces
-3. Reportar problemas al administrador
-4. Respetar los cooldowns del sistema
-
-### Para Administradores
-
-1. Monitorear logs regularmente
-2. Realizar backups de datos importantes
-3. Verificar estado del sistema periódicamente
-4. Mantener el bot activo durante horas pico
-
-## Mantenimiento
-
-### Rutinas Recomendadas
-
-- Limpieza de datos expirados semanal
-- Backup de archivos críticos
-- Monitoreo de tamaño de archivos de log
-- Verificación de integridad de datos
-
-### Solución de Problemas
-
-- Restart del bot si hay problemas de conectividad
-- Limpieza manual de cooldowns si es necesario
-- Validación de integridad de datos tras interrupciones
-- Verificación de estado de archivos del sistema
-
-## Notas Importantes
-
-- El bot NO está afiliado oficialmente con Roblox Corporation
-- Los enlaces proporcionados provienen de fuentes públicas
-- El uso está sujeto a los términos de servicio de Discord y Roblox
-- La disponibilidad del servicio no está garantizada debido a las limitaciones de hosting
+**¿Listo para acceso VIP gratuito? ¡Únete ahora y comienza tu experiencia premium en Roblox!**
