@@ -161,6 +161,32 @@ class RobloxVerificationSystem:
         except Exception as e:
             logger.error(f"Error saving warnings data: {e}")
 
+    async def send_expiration_alert(self, discord_id: str, roblox_username: str):
+        """Enviar alerta por DM cuando expire la verificación"""
+        try:
+            user = bot.get_user(int(discord_id))
+            if user:
+                embed = discord.Embed(
+                    title="⏰ Verificación Expirada",
+                    description=f"Tu verificación como **{roblox_username}** ha expirado después de 24 horas.",
+                    color=0xff9900
+                )
+                embed.add_field(
+                    name="🔄 Para volver a usar el bot:",
+                    value="Usa `/verify [tu_nombre_roblox]` nuevamente",
+                    inline=False
+                )
+                embed.add_field(
+                    name="⚡ Verificación rápida:",
+                    value="Ya no necesitas cambiar tu descripción si usas el mismo nombre de usuario",
+                    inline=False
+                )
+                
+                await user.send(embed=embed)
+                logger.info(f"Expiration alert sent to user {discord_id}")
+        except Exception as e:
+            logger.error(f"Failed to send expiration alert to user {discord_id}: {e}")
+
     def cleanup_expired_data(self):
         """Limpiar datos expirados"""
         current_time = time.time()
@@ -169,11 +195,13 @@ class RobloxVerificationSystem:
         expired_verified = []
         for discord_id, data in self.verified_users.items():
             if current_time - data['verified_at'] > VERIFICATION_DURATION:
-                expired_verified.append(discord_id)
+                expired_verified.append((discord_id, data['roblox_username']))
         
-        for discord_id in expired_verified:
+        for discord_id, roblox_username in expired_verified:
             del self.verified_users[discord_id]
             logger.info(f"Verification expired for user {discord_id}")
+            # Enviar alerta por DM de forma asíncrona
+            asyncio.create_task(self.send_expiration_alert(discord_id, roblox_username))
         
         # Limpiar verificaciones pendientes expiradas (10 minutos)
         expired_pending = []
@@ -464,6 +492,7 @@ class VIPServerScraper:
         self.usage_history: Dict[str, List[Dict]] = {}  # Usage history per user
         self.user_favorites: Dict[str, List[str]] = {}  # Favorite games per user
         self.game_categories: Dict[str, str] = {}  # Game ID to category mapping
+        self.user_reserved_servers: Dict[str, List[Dict]] = {}  # Reserved servers per user
 
     def load_existing_links(self):
         """Load existing VIP links from JSON file with user-specific data"""
@@ -487,6 +516,7 @@ class VIPServerScraper:
                     self.usage_history = data.get('usage_history', {})
                     self.user_favorites = data.get('user_favorites', {})
                     self.game_categories = data.get('game_categories', {})
+                    self.user_reserved_servers = data.get('user_reserved_servers', {})
                     
                     # Initialize available_links properly
                     self.available_links = {}
@@ -530,6 +560,7 @@ class VIPServerScraper:
                 'usage_history': self.usage_history,
                 'user_favorites': self.user_favorites,
                 'game_categories': self.game_categories,
+                'user_reserved_servers': self.user_reserved_servers,
                 'last_updated': datetime.now().isoformat(),
                 'total_count': total_count
             }
@@ -634,6 +665,77 @@ class VIPServerScraper:
         else:
             self.user_favorites[user_id].append(game_id)
             return True
+
+    def remove_favorite(self, user_id: str, game_id: str) -> bool:
+        """Remove specific game from favorites. Returns True if removed, False if not found"""
+        user_id = str(user_id)
+        if user_id in self.user_favorites and game_id in self.user_favorites[user_id]:
+            self.user_favorites[user_id].remove(game_id)
+            return True
+        return False
+
+    def get_favorites_by_category(self, user_id: str) -> Dict[str, List[Dict]]:
+        """Get user's favorites organized by category"""
+        user_id = str(user_id)
+        user_favorites = self.user_favorites.get(user_id, [])
+        
+        categorized_favorites = {}
+        for game_id in user_favorites:
+            game_data = self.links_by_user.get(user_id, {}).get(game_id, {})
+            category = game_data.get('category', 'other')
+            
+            if category not in categorized_favorites:
+                categorized_favorites[category] = []
+            
+            categorized_favorites[category].append({
+                'game_id': game_id,
+                'game_name': game_data.get('game_name', f'Game {game_id}'),
+                'server_count': len(game_data.get('links', [])),
+                'game_image_url': game_data.get('game_image_url')
+            })
+        
+        return categorized_favorites
+
+    def reserve_server(self, user_id: str, game_id: str, server_link: str, note: str = "") -> bool:
+        """Reserve a server for later use"""
+        user_id = str(user_id)
+        if user_id not in self.user_reserved_servers:
+            self.user_reserved_servers[user_id] = []
+        
+        # Check if already reserved
+        for reservation in self.user_reserved_servers[user_id]:
+            if reservation['server_link'] == server_link:
+                return False
+        
+        game_data = self.links_by_user.get(user_id, {}).get(game_id, {})
+        reservation = {
+            'game_id': game_id,
+            'game_name': game_data.get('game_name', f'Game {game_id}'),
+            'server_link': server_link,
+            'note': note,
+            'reserved_at': datetime.now().isoformat(),
+            'category': game_data.get('category', 'other')
+        }
+        
+        self.user_reserved_servers[user_id].append(reservation)
+        return True
+
+    def get_reserved_servers(self, user_id: str) -> List[Dict]:
+        """Get user's reserved servers"""
+        user_id = str(user_id)
+        return self.user_reserved_servers.get(user_id, [])
+
+    def remove_reserved_server(self, user_id: str, server_link: str) -> bool:
+        """Remove a reserved server"""
+        user_id = str(user_id)
+        if user_id not in self.user_reserved_servers:
+            return False
+        
+        for i, reservation in enumerate(self.user_reserved_servers[user_id]):
+            if reservation['server_link'] == server_link:
+                del self.user_reserved_servers[user_id][i]
+                return True
+        return False
 
     async def search_game_by_name(self, game_name: str) -> List[Dict]:
         """Search for games by name using expanded database and fuzzy matching"""
@@ -1769,6 +1871,15 @@ class ServerBrowserView(discord.ui.View):
         fav_button.callback = self.toggle_favorite
         self.add_item(fav_button)
 
+        # Reserve button
+        reserve_button = discord.ui.Button(
+            label="📌 Reservar Servidor",
+            style=discord.ButtonStyle.secondary,
+            custom_id="reserve_server"
+        )
+        reserve_button.callback = self.reserve_server
+        self.add_item(reserve_button)
+
         # Follow hesiz button
         follow_button = discord.ui.Button(
             label="👤 Follow hesiz",
@@ -1841,6 +1952,30 @@ class ServerBrowserView(discord.ui.View):
                 f"✅ **{game_name}** ha sido {status} tus favoritos.", 
                 ephemeral=True
             )
+        else:
+            await interaction.response.defer()
+
+    async def reserve_server(self, interaction: discord.Interaction):
+        """Reserve current server for later use"""
+        game_id = self.game_info.get('game_id')
+        user_id = self.authorized_user_id
+        current_server = self.servers_list[self.current_index]
+        
+        if game_id and user_id:
+            success = scraper.reserve_server(user_id, game_id, current_server, "Reservado desde navegador")
+            scraper.save_links()
+            
+            if success:
+                game_name = self.game_info.get('game_name', f'Game {game_id}')
+                await interaction.response.send_message(
+                    f"📌 **Servidor reservado exitosamente!**\n\n**Juego:** {game_name}\n**Servidor:** {self.current_index + 1}/{len(self.servers_list)}\n\nUsa `/reservas` para ver todos tus servidores reservados.", 
+                    ephemeral=True
+                )
+            else:
+                await interaction.response.send_message(
+                    "⚠️ Este servidor ya está reservado.", 
+                    ephemeral=True
+                )
         else:
             await interaction.response.defer()
 
@@ -1918,8 +2053,15 @@ class ServerBrowserView(discord.ui.View):
 
         # Set game image as thumbnail if available
         game_image_url = self.game_info.get('game_image_url')
-        if game_image_url:
+        if game_image_url and game_image_url != "https://rbxservers.xyz/svgs/roblox.svg":
             embed.set_thumbnail(url=game_image_url)
+        else:
+            # Intentar obtener imagen del juego desde Roblox API
+            try:
+                game_icon_url = f"https://thumbnails.roblox.com/v1/games/icons?universeIds={game_id}&returnPolicy=PlaceHolder&size=512x512&format=Png&isCircular=false"
+                embed.set_thumbnail(url=game_icon_url)
+            except:
+                pass
 
         # Footer with server count
         embed.set_footer(text=f"Servidor {self.current_index + 1}/{self.total_servers} | Usuario: {self.authorized_user_id}")
@@ -2004,6 +2146,124 @@ class GameSearchView(discord.ui.View):
     def __init__(self, search_results, user_id):
         super().__init__(timeout=300)
         self.add_item(GameSearchSelect(search_results, user_id))
+
+# Category filter select menu
+class CategoryFilterSelect(discord.ui.Select):
+    def __init__(self, user_id):
+        self.user_id = user_id
+        
+        category_emoji = {
+            "all": "🎮", "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "building": "🏗️", "anime": "🌸", "other": "📦"
+        }
+        
+        options = [
+            discord.SelectOption(
+                label="🎮 Todos los Juegos",
+                description="Ver todos tus juegos sin filtrar",
+                value="all",
+                emoji="🎮"
+            )
+        ]
+        
+        # Add categories that user actually has
+        user_games = scraper.links_by_user.get(user_id, {})
+        user_categories = set()
+        for game_data in user_games.values():
+            category = game_data.get('category', 'other')
+            user_categories.add(category)
+        
+        for category in sorted(user_categories):
+            if category != 'all':
+                emoji = category_emoji.get(category, '📦')
+                options.append(discord.SelectOption(
+                    label=f"{emoji} {category.title()}",
+                    description=f"Ver juegos de categoría {category}",
+                    value=category,
+                    emoji=emoji
+                ))
+        
+        super().__init__(placeholder="Selecciona una categoría para filtrar...", options=options[:25])  # Discord limit
+    
+    async def callback(self, interaction: discord.Interaction):
+        if str(interaction.user.id) != self.user_id:
+            await interaction.response.send_message(
+                "❌ Solo quien ejecutó el comando puede seleccionar.", 
+                ephemeral=True
+            )
+            return
+        
+        await interaction.response.defer()
+        
+        selected_category = self.values[0]
+        user_games = scraper.links_by_user.get(self.user_id, {})
+        
+        if selected_category == "all":
+            filtered_games = user_games
+            category_name = "Todos los Juegos"
+        else:
+            filtered_games = {
+                game_id: game_data for game_id, game_data in user_games.items()
+                if game_data.get('category', 'other') == selected_category
+            }
+            category_name = selected_category.title()
+        
+        if not filtered_games:
+            embed = discord.Embed(
+                title="❌ Sin Juegos en esta Categoría",
+                description=f"No tienes juegos en la categoría **{category_name}**.",
+                color=0xff3333
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Find first game with servers
+        available_servers = []
+        current_game_info = None
+        
+        for game_id, game_data in filtered_games.items():
+            if game_data.get('links'):
+                available_servers = game_data['links']
+                current_game_info = {
+                    'game_id': game_id,
+                    'game_name': game_data.get('game_name', f'Game {game_id}'),
+                    'game_image_url': game_data.get('game_image_url'),
+                    'category': game_data.get('category', 'other'),
+                    'user_id': self.user_id
+                }
+                break
+        
+        if not available_servers:
+            embed = discord.Embed(
+                title="❌ Sin Servidores Disponibles",
+                description=f"No hay servidores VIP disponibles en la categoría **{category_name}**.",
+                color=0xff3333
+            )
+            embed.add_field(
+                name="💡 Para obtener servidores:",
+                value="Usa `/scrape [game_id]` para generar enlaces",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Create browser view for filtered category
+        view = ServerBrowserView(available_servers, 0, current_game_info, self.user_id)
+        embed, file = view.create_server_embed()
+        
+        # Add category info to embed
+        embed.set_author(name=f"🗂️ Categoría: {category_name}")
+        
+        if file:
+            await interaction.followup.send(embed=embed, file=file, view=view)
+        else:
+            await interaction.followup.send(embed=embed, view=view)
+
+class CategoryFilterView(discord.ui.View):
+    def __init__(self, user_id):
+        super().__init__(timeout=300)
+        self.add_item(CategoryFilterSelect(user_id))
 
 @bot.tree.command(name="searchgame", description="Buscar un juego por nombre para hacer scraping")
 async def search_game_command(interaction: discord.Interaction, nombre: str):
@@ -2232,18 +2492,18 @@ async def game_command(interaction: discord.Interaction, nombre: str):
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-@bot.tree.command(name="favorites", description="Ver y gestionar tus juegos favoritos")
+@bot.tree.command(name="favorites", description="Ver tus juegos favoritos organizados por categorías")
 async def favorites_command(interaction: discord.Interaction):
-    """Show user's favorite games"""
+    """Show user's favorite games organized by categories"""
     # Verificar autenticación
     if not await check_verification(interaction, defer_response=True):
         return
     
     try:
         user_id = str(interaction.user.id)
-        user_favorites = scraper.user_favorites.get(user_id, [])
+        categorized_favorites = scraper.get_favorites_by_category(user_id)
         
-        if not user_favorites:
+        if not categorized_favorites:
             embed = discord.Embed(
                 title="⭐ Juegos Favoritos",
                 description="No tienes juegos favoritos aún.\n\nUsa `/servertest` y haz clic en el botón ⭐ para agregar juegos a favoritos.",
@@ -2253,30 +2513,40 @@ async def favorites_command(interaction: discord.Interaction):
             return
         
         embed = discord.Embed(
-            title="⭐ Tus Juegos Favoritos",
-            description=f"Tienes **{len(user_favorites)}** juegos favoritos:",
+            title="⭐ Tus Juegos Favoritos por Categorías",
+            description=f"Total: **{sum(len(games) for games in categorized_favorites.values())}** juegos favoritos",
             color=0xffd700
         )
         
-        for game_id in user_favorites:
-            game_data = scraper.links_by_user.get(user_id, {}).get(game_id, {})
-            game_name = game_data.get('game_name', f'Game {game_id}')
-            category = game_data.get('category', 'other')
-            server_count = len(game_data.get('links', []))
+        category_emoji = {
+            "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
+        }
+        
+        for category, games in categorized_favorites.items():
+            emoji = category_emoji.get(category, '🎮')
+            category_text = f"{emoji} **{category.title()}** ({len(games)} juegos)\n"
             
-            category_emoji = {
-                "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-                "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-                "building": "🏗️", "anime": "🌸", "other": "🎮"
-            }
+            for game in games[:3]:  # Mostrar máximo 3 por categoría
+                category_text += f"• {game['game_name'][:30]}{'...' if len(game['game_name']) > 30 else ''} ({game['server_count']} srv)\n"
+            
+            if len(games) > 3:
+                category_text += f"• ... y {len(games) - 3} más\n"
             
             embed.add_field(
-                name=f"{category_emoji.get(category, '🎮')} {game_name}",
-                value=f"**{server_count}** servidores • ID: `{game_id}`",
-                inline=False
+                name=f"{emoji} {category.title()}",
+                value=category_text,
+                inline=True
             )
         
-        embed.set_footer(text="Usa /servertest para navegar por tus servidores favoritos")
+        embed.add_field(
+            name="🛠️ Gestionar Favoritos",
+            value="• `/removefavorite` - Remover juego específico\n• `/servertest` - Navegar servidores",
+            inline=False
+        )
+        
+        embed.set_footer(text="Usa /removefavorite para gestionar tus favoritos")
         await interaction.followup.send(embed=embed, ephemeral=True)
         
     except Exception as e:
@@ -2284,6 +2554,57 @@ async def favorites_command(interaction: discord.Interaction):
         error_embed = discord.Embed(
             title="❌ Error",
             description="Ocurrió un error al cargar tus favoritos.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="removefavorite", description="Remover un juego específico de tus favoritos")
+async def remove_favorite_command(interaction: discord.Interaction, game_id: str):
+    """Remove a specific game from favorites"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        
+        # Get game name before removing
+        game_data = scraper.links_by_user.get(user_id, {}).get(game_id, {})
+        game_name = game_data.get('game_name', f'Game {game_id}')
+        
+        success = scraper.remove_favorite(user_id, game_id)
+        
+        if success:
+            scraper.save_links()
+            embed = discord.Embed(
+                title="✅ Favorito Removido",
+                description=f"**{game_name}** ha sido removido de tus favoritos.",
+                color=0x00ff88
+            )
+            embed.add_field(
+                name="🔄 Para volver a agregarlo:",
+                value="Usa `/servertest` y navega hasta el juego, luego haz clic en ⭐",
+                inline=False
+            )
+        else:
+            embed = discord.Embed(
+                title="❌ Juego No Encontrado",
+                description=f"El juego ID `{game_id}` no está en tus favoritos o no existe en tu base de datos.",
+                color=0xff3333
+            )
+            embed.add_field(
+                name="💡 Verifica:",
+                value="• Usa `/favorites` para ver tus juegos favoritos\n• Copia el ID exacto del juego",
+                inline=False
+            )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in remove favorite command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al remover el favorito.",
             color=0xff0000
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
@@ -2353,6 +2674,123 @@ async def history_command(interaction: discord.Interaction):
         error_embed = discord.Embed(
             title="❌ Error",
             description="Ocurrió un error al cargar tu historial.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="reservas", description="Ver y gestionar tus servidores reservados")
+async def reservations_command(interaction: discord.Interaction):
+    """Show user's reserved servers"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        reserved_servers = scraper.get_reserved_servers(user_id)
+        
+        if not reserved_servers:
+            embed = discord.Embed(
+                title="📌 Servidores Reservados",
+                description="No tienes servidores reservados aún.\n\nUsa `/servertest` y haz clic en **📌 Reservar Servidor** para guardar servidores para más tarde.",
+                color=0x888888
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        embed = discord.Embed(
+            title="📌 Tus Servidores Reservados",
+            description=f"Tienes **{len(reserved_servers)}** servidores reservados:",
+            color=0x4169e1
+        )
+        
+        category_emoji = {
+            "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
+        }
+        
+        for i, reservation in enumerate(reserved_servers[-10:], 1):  # Mostrar últimas 10 reservas
+            try:
+                reserved_time = datetime.fromisoformat(reservation['reserved_at'])
+                time_ago = datetime.now() - reserved_time
+                
+                if time_ago.days > 0:
+                    time_str = f"hace {time_ago.days}d"
+                elif time_ago.seconds > 3600:
+                    time_str = f"hace {time_ago.seconds//3600}h"
+                else:
+                    time_str = f"hace {time_ago.seconds//60}m"
+                
+                category = reservation.get('category', 'other')
+                emoji = category_emoji.get(category, '🎮')
+                
+                embed.add_field(
+                    name=f"{emoji} {reservation['game_name'][:25]}{'...' if len(reservation['game_name']) > 25 else ''}",
+                    value=f"**Reservado:** {time_str}\n**ID:** `{reservation['game_id']}`\n**Nota:** {reservation.get('note', 'Sin nota')[:30]}",
+                    inline=True
+                )
+            except:
+                continue
+        
+        if len(reserved_servers) > 10:
+            embed.set_footer(text=f"Mostrando las últimas 10 de {len(reserved_servers)} reservas • Usa /clearreservas para limpiar")
+        else:
+            embed.set_footer(text="Usa /clearreservas para limpiar todas las reservas")
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in reservations command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al cargar tus reservas.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="clearreservas", description="Limpiar todas tus reservas de servidores")
+async def clear_reservations_command(interaction: discord.Interaction):
+    """Clear all user's reserved servers"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        reserved_count = len(scraper.get_reserved_servers(user_id))
+        
+        if reserved_count == 0:
+            embed = discord.Embed(
+                title="📌 Sin Reservas",
+                description="No tienes servidores reservados para limpiar.",
+                color=0x888888
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Clear reservations
+        scraper.user_reserved_servers[user_id] = []
+        scraper.save_links()
+        
+        embed = discord.Embed(
+            title="✅ Reservas Limpiadas",
+            description=f"Se eliminaron **{reserved_count}** reservas de servidores exitosamente.",
+            color=0x00ff88
+        )
+        embed.add_field(
+            name="🔄 Para reservar nuevamente:",
+            value="Usa `/servertest` y haz clic en **📌 Reservar Servidor**",
+            inline=False
+        )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in clear reservations command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al limpiar las reservas.",
             color=0xff0000
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
@@ -3176,6 +3614,81 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         except:
             pass
 
+@bot.tree.command(name="categories", description="Navegar por tus juegos organizados por categorías")
+async def categories_command(interaction: discord.Interaction):
+    """Browse games by category with dropdown menu"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        user_games = scraper.links_by_user.get(user_id, {})
+        
+        if not user_games:
+            embed = discord.Embed(
+                title="❌ Sin Juegos Disponibles",
+                description="No tienes juegos en tu base de datos.\n\nUsa `/scrape [game_id]` para generar enlaces primero.",
+                color=0xff3333
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Get categories summary
+        categories_summary = {}
+        total_servers = 0
+        
+        for game_data in user_games.values():
+            category = game_data.get('category', 'other')
+            server_count = len(game_data.get('links', []))
+            
+            if category not in categories_summary:
+                categories_summary[category] = {'games': 0, 'servers': 0}
+            
+            categories_summary[category]['games'] += 1
+            categories_summary[category]['servers'] += server_count
+            total_servers += server_count
+        
+        embed = discord.Embed(
+            title="🗂️ Navegación por Categorías",
+            description=f"Tienes **{len(user_games)}** juegos en **{len(categories_summary)}** categorías con **{total_servers}** servidores totales.",
+            color=0x4169e1
+        )
+        
+        category_emoji = {
+            "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "building": "🏗️", "anime": "🌸", "other": "📦"
+        }
+        
+        # Show categories summary
+        for category, stats in sorted(categories_summary.items(), key=lambda x: x[1]['servers'], reverse=True):
+            emoji = category_emoji.get(category, '📦')
+            embed.add_field(
+                name=f"{emoji} {category.title()}",
+                value=f"**{stats['games']}** juegos\n**{stats['servers']}** servidores",
+                inline=True
+            )
+        
+        embed.add_field(
+            name="📋 Instrucciones",
+            value="Usa el menú desplegable abajo para seleccionar una categoría y navegar por sus servidores.",
+            inline=False
+        )
+        
+        # Create view with category filter
+        view = CategoryFilterView(user_id)
+        await interaction.followup.send(embed=embed, view=view)
+        
+    except Exception as e:
+        logger.error(f"Error in categories command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al cargar las categorías.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="stats", description="Mostrar estadísticas completas de enlaces VIP")
 async def stats(interaction: discord.Interaction):
     """Show detailed statistics about collected VIP links"""
@@ -3286,7 +3799,7 @@ async def stats(interaction: discord.Interaction):
         # Commands info
         embed.add_field(
             name="🎮 Comandos Disponibles", 
-            value="• `/verify [usuario_roblox]` - 🔒 **REQUERIDO** Verificarse para usar el bot\n• `/scrape [id_o_nombre]` - 🚀 Buscar por ID o nombre automáticamente\n• `/servertest` - Ver servidores\n• `/favorites` - Ver favoritos\n• `/history` - Ver historial", 
+            value="• `/verify [usuario_roblox]` - 🔒 **REQUERIDO** Verificarse para usar el bot\n• `/scrape [id_o_nombre]` - 🚀 Buscar por ID o nombre automáticamente\n• `/servertest` - Ver servidores\n• `/categories` - 🗂️ Navegar por categorías\n• `/favorites` - Ver favoritos\n• `/reservas` - Ver reservas\n• `/history` - Ver historial", 
             inline=False
         )
 
