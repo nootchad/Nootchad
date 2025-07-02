@@ -31,7 +31,7 @@ local httpEnabled = false
 local function checkExecutorHTTP()
     local executors = {
         "KRNL", "Synapse", "Script-Ware", "Sentinel", "ProtoSmasher", 
-        "Sirhurt", "Fluxus", "Oxygen U", "JJSploit", "WeAreDevs"
+        "Sirhurt", "Fluxus", "Oxygen U", "JJSploit", "WeAreDevs", "Delta"
     }
 
     -- Verificar variables globales de ejecutores conocidos
@@ -46,6 +46,9 @@ local function checkExecutorHTTP()
     if syn and syn.request then
         print("✅ Synapse X detected - usando syn.request")
         return "synapse"
+    elseif delta and delta.request then
+        print("✅ Delta Executor detected - usando delta.request")
+        return "delta"
     elseif http_request then
         print("✅ HTTP request function available")
         return "generic"
@@ -85,6 +88,8 @@ local function makeExecutorRequest(method, url, data, headers)
 
     if syn and syn.request then
         httpFunction = syn.request
+    elseif delta and delta.request then
+        httpFunction = delta.request
     elseif http_request then
         httpFunction = http_request  
     elseif http and http.request then
@@ -514,7 +519,7 @@ local function initialize()
     local executorType = checkExecutorHTTP()
     if not executorType then
         warn("❌ Este ejecutor no soporta HTTP requests")
-        warn("💡 Ejecutores compatibles: KRNL, Synapse X, Script-Ware, Fluxus, etc.")
+        warn("💡 Ejecutores compatibles: KRNL, Synapse X, Script-Ware, Fluxus, Delta, etc.")
         return false
     end
 
