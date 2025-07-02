@@ -5840,6 +5840,129 @@ print("🎮 Script cargado - by RbxServers (hesiz)")'''
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
+@bot.tree.command(name="ping", description="Verificar que el bot esté funcionando")
+async def ping_command(interaction: discord.Interaction):
+    """Simple ping command to check bot responsiveness"""
+    await interaction.response.defer()
+    
+    try:
+        # Calculate bot latency
+        latency = round(bot.latency * 1000)  # Convert to milliseconds
+        
+        embed = discord.Embed(
+            title="🏓 Pong!",
+            description="El bot está funcionando correctamente.",
+            color=0x00ff88,
+            timestamp=datetime.now()
+        )
+        
+        embed.add_field(name="📡 Latencia", value=f"{latency}ms", inline=True)
+        embed.add_field(name="🤖 Estado", value="✅ Online", inline=True)
+        embed.add_field(name="🔗 Servidores", value=f"{len(bot.guilds)}", inline=True)
+        
+        embed.add_field(name="👥 Usuarios Totales", value=f"{len(bot.users)}", inline=True)
+        embed.add_field(name="📊 Enlaces VIP", value=f"{sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())}", inline=True)
+        embed.add_field(name="✅ Verificados", value=f"{len(roblox_verification.verified_users)}", inline=True)
+        
+        embed.set_footer(text="RbxServers Bot por hesiz")
+        
+        await interaction.followup.send(embed=embed)
+        
+    except Exception as e:
+        logger.error(f"Error in ping command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al procesar el comando ping.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="robloxbot", description="Ver información de las cuentas bot de Roblox del sistema")
+async def robloxbot_command(interaction: discord.Interaction):
+    """Show information about Roblox bot accounts"""
+    await interaction.response.defer()
+    
+    try:
+        # Lista de cuentas bot de Roblox
+        roblox_bots = [
+            {
+                "username": "RbxServersBot",
+                "status": "✅ Principal",
+                "role": "Bot principal para scraping y control remoto",
+                "profile_url": "https://www.roblox.com/users/search?keyword=RbxServersBot"
+            },
+            {
+                "username": "RBXSERVERSBOTTEST", 
+                "status": "🧪 Testing",
+                "role": "Bot de pruebas para desarrollo",
+                "profile_url": "https://www.roblox.com/users/search?keyword=RBXSERVERSBOTTEST"
+            },
+            {
+                "username": "baqerisbaqer",
+                "status": "🔧 Auxiliar",
+                "role": "Bot auxiliar para tareas especiales",
+                "profile_url": "https://www.roblox.com/users/search?keyword=baqerisbaqer"
+            }
+        ]
+        
+        embed = discord.Embed(
+            title="🤖 Cuentas Bot de Roblox del Sistema",
+            description="Estas son las cuentas de Roblox que utiliza el bot de Discord para sus operaciones.",
+            color=0x3366ff,
+            timestamp=datetime.now()
+        )
+        
+        for i, bot_account in enumerate(roblox_bots, 1):
+            embed.add_field(
+                name=f"{i}. {bot_account['username']}",
+                value=f"**Estado:** {bot_account['status']}\n**Función:** {bot_account['role']}\n**Perfil:** [Ver en Roblox]({bot_account['profile_url']})",
+                inline=False
+            )
+        
+        embed.add_field(
+            name="ℹ️ Información Importante",
+            value="• Estas cuentas son **exclusivamente para el bot**\n• No se pueden usar para jugar manualmente\n• Son necesarias para el funcionamiento del sistema\n• Solo **RbxServersBot** está actualmente en uso",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🔮 Próximamente",
+            value="Este comando mostrará más funcionalidades en futuras actualizaciones del bot.",
+            inline=False
+        )
+        
+        # Información del sistema de control remoto
+        connected_scripts = remote_control.get_connected_scripts()
+        if connected_scripts:
+            scripts_info = f"**{len(connected_scripts)}** scripts conectados"
+        else:
+            scripts_info = "Sin scripts conectados"
+            
+        embed.add_field(
+            name="📡 Control Remoto",
+            value=f"Estado: {scripts_info}\nPuerto: {REMOTE_CONTROL_PORT}",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="👨‍💻 Desarrollador",
+            value="**hesiz** - Creator del bot",
+            inline=True
+        )
+        
+        embed.set_footer(text="RbxServers Bot System - Comando en desarrollo")
+        
+        await interaction.followup.send(embed=embed)
+        
+    except Exception as e:
+        logger.error(f"Error in robloxbot command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al cargar la información de los bots de Roblox.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="export", description="Exportar todos tus enlaces VIP a un archivo de texto")
 async def export_command(interaction: discord.Interaction):
     """Export all user's VIP links to a text file"""
