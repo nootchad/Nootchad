@@ -78,6 +78,34 @@
         "action": "scrape_complete",
         "timestamp": "2025-07-02T23:52:42.058627",
         "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
+      },
+      {
+        "game_id": "109983668079237",
+        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=32657066938160878046996355994328",
+        "action": "navigate_next",
+        "timestamp": "2025-07-02T23:55:58.323652",
+        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
+      },
+      {
+        "game_id": "109983668079237",
+        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607",
+        "action": "navigate_next",
+        "timestamp": "2025-07-02T23:57:18.465849",
+        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
+      },
+      {
+        "game_id": "109983668079237",
+        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36961051040976493630866209379302",
+        "action": "navigate_next",
+        "timestamp": "2025-07-02T23:57:19.694418",
+        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
+      },
+      {
+        "game_id": "109983668079237",
+        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83748248986081192539759127465237",
+        "action": "navigate_next",
+        "timestamp": "2025-07-02T23:57:20.817007",
+        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
       }
     ]
   },
@@ -85,7 +113,18 @@
   "game_categories": {
     "109983668079237": "puzzle"
   },
-  "user_reserved_servers": {},
-  "last_updated": "2025-07-02T23:52:42.058990",
+  "user_reserved_servers": {
+    "1374215569393320006": [
+      {
+        "game_id": "109983668079237",
+        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers",
+        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83748248986081192539759127465237",
+        "note": "Reservado desde navegador",
+        "reserved_at": "2025-07-02T23:57:25.377073",
+        "category": "puzzle"
+      }
+    ]
+  },
+  "last_updated": "2025-07-02T23:57:25.377092",
   "total_count": 5
 }
