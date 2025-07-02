@@ -17,6 +17,11 @@ import json
 
 import discord
 from discord.ext import commands
+
+# Import new systems
+from marketplace import CommunityMarketplace
+from recommendations import RecommendationEngine
+from report_system import ServerReportSystem
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -887,6 +892,9 @@ class VIPServerScraper:
         self.user_favorites: Dict[str, List[str]] = {}  # Favorite games per user
         self.game_categories: Dict[str, str] = {}  # Game ID to category mapping
         self.user_reserved_servers: Dict[str, List[Dict]] = {}  # Reserved servers per user
+        
+        # Initialize report system reference (will be set after global initialization)
+        self.report_system = None
 
     def load_existing_links(self):
         """Load existing VIP links from JSON file with user-specific data"""
@@ -912,20 +920,26 @@ class VIPServerScraper:
                     self.game_categories = data.get('game_categories', {})
                     self.user_reserved_servers = data.get('user_reserved_servers', {})
                     
-                    # Initialize available_links properly
+                    # Initialize available_links properly and calculate totals
                     self.available_links = {}
                     total_users = len(self.links_by_user)
                     total_games = 0
+                    total_links = 0
+                    
                     for user_id, user_games in self.links_by_user.items():
                         total_games += len(user_games)
+                        for game_id, game_data in user_games.items():
+                            links_count = len(game_data.get('links', []))
+                            total_links += links_count
                     
-                    logger.info(f"Loaded links for {total_users} users with {total_games} total games.")
+                    logger.info(f"Loaded links for {total_users} users with {total_games} total games and {total_links} total links.")
             else:
                 self.available_links = {}
                 self.links_by_user = {}
                 self.usage_history = {}
                 self.user_favorites = {}
                 self.game_categories = {}
+                self.user_reserved_servers = {}
         except Exception as e:
             logger.error(f"Error loading existing links: {e}")
             self.available_links = {}
@@ -933,6 +947,7 @@ class VIPServerScraper:
             self.usage_history = {}
             self.user_favorites = {}
             self.game_categories = {}
+            self.user_reserved_servers = {}
 
     def save_links(self):
         """Save VIP links to JSON file, organizing by user ID and game ID"""
@@ -1664,7 +1679,19 @@ class VIPServerScraper:
             return None, None
 
         links = self.links_by_user[user_id][game_id]['links']
-        link = random.choice(links)
+        
+        # Filter out blacklisted servers
+        clean_links = report_system.filter_blacklisted_servers(links)
+        
+        if not clean_links:
+            return None, None
+        
+        # Update links if some were filtered
+        if len(clean_links) != len(links):
+            self.links_by_user[user_id][game_id]['links'] = clean_links
+            self.save_links()
+        
+        link = random.choice(clean_links)
         details = self.links_by_user[user_id][game_id]['server_details'].get(link, {})
         return link, details
 
@@ -1695,6 +1722,12 @@ bot = commands.Bot(command_prefix='/', intents=intents, case_insensitive=True)
 scraper = VIPServerScraper()
 roblox_verification = RobloxVerificationSystem()
 remote_control = RobloxRemoteControl()
+marketplace = CommunityMarketplace()
+recommendation_engine = RecommendationEngine(scraper)
+report_system = ServerReportSystem()
+
+# Set report system reference in scraper
+scraper.report_system = report_system
 
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
@@ -5701,6 +5734,275 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
             color=0xff0000
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="marketplace", description="Navegar el marketplace comunitario de servidores")
+async def marketplace_command(interaction: discord.Interaction, accion: str = "browse"):
+    """Marketplace comunitario para intercambio de servidores"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        
+        if accion.lower() == "browse":
+            # Navegar listings disponibles
+            listings = marketplace.browse_listings(exclude_user=user_id)
+            
+            if not listings:
+                embed = discord.Embed(
+                    title="🏪 Marketplace Comunitario",
+                    description="No hay listings disponibles en este momento.\n\nUsa `/marketplace create` para crear tu propio listing.",
+                    color=0xffaa00
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            embed = discord.Embed(
+                title="🏪 Marketplace Comunitario",
+                description=f"**{len(listings)}** intercambios disponibles:",
+                color=0x4169e1
+            )
+            
+            for i, listing in enumerate(listings[:5], 1):
+                try:
+                    # Obtener información del juego
+                    offer_game_name = "Juego Desconocido"
+                    want_game_name = "Juego Desconocido"
+                    
+                    # Buscar nombres de juegos en la base de datos
+                    for user_games in scraper.links_by_user.values():
+                        if listing['offer_game_id'] in user_games:
+                            offer_game_name = user_games[listing['offer_game_id']].get('game_name', f"Game {listing['offer_game_id']}")
+                        if listing['want_game_id'] in user_games:
+                            want_game_name = user_games[listing['want_game_id']].get('game_name', f"Game {listing['want_game_id']}")
+                    
+                    time_left = listing['expires_at'] - time.time()
+                    hours_left = int(time_left / 3600)
+                    
+                    embed.add_field(
+                        name=f"{i}. 🔄 Intercambio",
+                        value=f"**Ofrece:** {offer_game_name[:30]}\n**Quiere:** {want_game_name[:30]}\n**Interesados:** {len(listing['interested_users'])}\n**Expira:** {hours_left}h\n**ID:** `{listing['listing_id']}`",
+                        inline=True
+                    )
+                except:
+                    continue
+            
+            embed.add_field(
+                name="🛠️ Comandos",
+                value="• `/marketplace interest [listing_id]` - Mostrar interés\n• `/marketplace create` - Crear listing\n• `/marketplace my` - Mis listings",
+                inline=False
+            )
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        elif accion.lower() == "my":
+            # Ver listings propios
+            user_listings = marketplace.get_user_listings(user_id)
+            user_exchanges = marketplace.get_user_exchanges(user_id)
+            user_rating = marketplace.get_user_rating(user_id)
+            
+            embed = discord.Embed(
+                title="📊 Mi Perfil de Marketplace",
+                description=f"**Rating:** {'⭐' * int(user_rating)} ({user_rating:.1f}/5.0)",
+                color=0x00ff88
+            )
+            
+            if user_listings:
+                listings_text = ""
+                for listing in user_listings[:3]:
+                    status_emoji = {"active": "🟢", "completed": "✅", "expired": "⏰"}.get(listing['status'], "❓")
+                    listings_text += f"{status_emoji} {listing['listing_id'][:20]}... ({listing['status']})\n"
+                
+                embed.add_field(
+                    name=f"📋 Mis Listings ({len(user_listings)})",
+                    value=listings_text,
+                    inline=True
+                )
+            
+            if user_exchanges:
+                embed.add_field(
+                    name=f"🔄 Intercambios ({len(user_exchanges)})",
+                    value=f"Total completados: {len(user_exchanges)}",
+                    inline=True
+                )
+            
+            embed.add_field(
+                name="🛠️ Gestión",
+                value="• `/marketplace create` - Nuevo listing\n• `/report` - Reportar problema",
+                inline=False
+            )
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        else:
+            embed = discord.Embed(
+                title="❌ Acción No Válida",
+                description="Acciones disponibles:",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="📋 Comandos:",
+                value="• `browse` - Navegar marketplace\n• `my` - Mi perfil\n• `create` - Crear listing\n• `interest [id]` - Mostrar interés",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+    except Exception as e:
+        logger.error(f"Error in marketplace command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error en el marketplace.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="recommendations", description="Obtener recomendaciones personalizadas de juegos")
+async def recommendations_command(interaction: discord.Interaction):
+    """Obtener recomendaciones personalizadas"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        
+        # Obtener recomendaciones
+        recommendations = recommendation_engine.recommend_games_for_user(user_id, limit=5)
+        
+        if not recommendations:
+            embed = discord.Embed(
+                title="🎯 Recomendaciones Personalizadas",
+                description="No hay recomendaciones disponibles aún.\n\nUsa `/scrape` en algunos juegos para generar recomendaciones personalizadas.",
+                color=0xffaa00
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Mensaje personalizado
+        personal_message = recommendation_engine.get_personalized_message(user_id)
+        
+        embed = discord.Embed(
+            title="🎯 Recomendaciones Personalizadas",
+            description=personal_message,
+            color=0x7289da
+        )
+        
+        category_emoji = {
+            "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
+        }
+        
+        for i, rec in enumerate(recommendations, 1):
+            emoji = category_emoji.get(rec.get('category', 'other'), '🎮')
+            game_name = rec.get('game_name', f"Game {rec['game_id']}")
+            reason = rec.get('recommendation_reason', 'Recomendación del sistema')
+            
+            embed.add_field(
+                name=f"{i}. {emoji} {game_name[:35]}",
+                value=f"**Razón:** {reason[:50]}\n**ID:** `{rec['game_id']}`\n**Servidores:** {rec.get('server_count', 0)}",
+                inline=True
+            )
+        
+        embed.add_field(
+            name="🚀 Siguiente Paso",
+            value="Usa `/scrape [game_id]` para obtener servidores de juegos recomendados",
+            inline=False
+        )
+        
+        embed.set_footer(text="Las recomendaciones se actualizan basándose en tu actividad")
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in recommendations command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al generar recomendaciones.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="report", description="Reportar un servidor que no funciona")
+async def report_command(interaction: discord.Interaction, server_link: str, issue: str, description: str = ""):
+    """Reportar servidor problemático"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        
+        # Tipos de problemas válidos
+        valid_issues = [
+            "no_funciona", "enlace_roto", "servidor_lleno", "acceso_denegado", 
+            "lag_extremo", "contenido_inapropiado", "otro"
+        ]
+        
+        if issue.lower() not in valid_issues:
+            embed = discord.Embed(
+                title="❌ Tipo de Problema Inválido",
+                description="Tipos de problemas válidos:",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="🔧 Problemas Técnicos:",
+                value="• `no_funciona` - El servidor no responde\n• `enlace_roto` - El enlace no funciona\n• `servidor_lleno` - Siempre lleno\n• `acceso_denegado` - No permite acceso",
+                inline=False
+            )
+            embed.add_field(
+                name="⚠️ Problemas de Calidad:",
+                value="• `lag_extremo` - Lag insoportable\n• `contenido_inapropiado` - Contenido problemático\n• `otro` - Otro problema",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Enviar reporte
+        result = report_system.submit_report(
+            user_id=user_id,
+            server_link=server_link,
+            issue_type=issue.lower(),
+            description=description
+        )
+        
+        if result['success']:
+            embed = discord.Embed(
+                title="✅ Reporte Enviado",
+                description="Tu reporte ha sido enviado exitosamente.",
+                color=0x00ff88
+            )
+            embed.add_field(name="🆔 ID del Reporte", value=f"`{result['report_id']}`", inline=True)
+            embed.add_field(name="🔗 Servidor", value=f"```{server_link[:50]}...```", inline=False)
+            embed.add_field(name="⚠️ Problema", value=issue.upper(), inline=True)
+            
+            if description:
+                embed.add_field(name="📝 Descripción", value=description[:100], inline=False)
+            
+            embed.add_field(
+                name="🤝 Ayuda la Comunidad",
+                value="Otros usuarios pueden confirmar tu reporte para acelerar la resolución.",
+                inline=False
+            )
+            
+        else:
+            embed = discord.Embed(
+                title="❌ Error en Reporte",
+                description=result['error'],
+                color=0xff0000
+            )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in report command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al enviar el reporte.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 @bot.tree.command(name="joinscript", description="Generar script de Roblox para unirse directamente a un servidor privado")
 async def join_script_command(interaction: discord.Interaction, game_id: str):
