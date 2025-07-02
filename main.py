@@ -51,7 +51,7 @@ ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
 FOLLOWERS_FILE = "followers.json"
 BANS_FILE = "bans.json"
 WARNINGS_FILE = "warnings.json"
-VERIFICATION_DURATION = 24 * 60 * 60  # 24 horas en segundos
+VERIFICATION_DURATION = 30 * 24 * 60 * 60  # 30 días en segundos
 BAN_DURATION = 7 * 24 * 60 * 60  # 7 días en segundos
 
 # Remote control settings
