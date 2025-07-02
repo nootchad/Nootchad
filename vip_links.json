@@ -1,128 +1,61 @@
 {
   "links_by_user": {
-    "1318245738349854811": {
-      "537413528": {
+    "1374215569393320006": {
+      "109983668079237": {
         "links": [
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=_A_EdvICnPAbeoSEloV73_RERu1UEdGX",
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=07815882104729908102395724233360",
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=79116737868431950815775861247427",
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=91338263023915021852023163120948",
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=17191829172272136672967262028907"
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=43389307132588658334146771766073",
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=32657066938160878046996355994328",
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607",
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36961051040976493630866209379302",
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83748248986081192539759127465237"
         ],
-        "game_name": "Build A Boat For Treasure - RBXServers",
+        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers",
         "game_image_url": "https://rbxservers.xyz/svgs/roblox.svg",
-        "category": "other",
+        "category": "puzzle",
         "server_details": {
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=_A_EdvICnPAbeoSEloV73_RERu1UEdGX": {
-            "source_url": "https://rbxservers.xyz/servers/e3e86fdb-c3b7-46b2-bdfe-7060723012a2",
-            "discovered_at": "2025-07-02T02:25:52.546298",
-            "extraction_time": 15.61,
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=43389307132588658334146771766073": {
+            "source_url": "https://rbxservers.xyz/servers/72ba3042-cbfb-4597-8d6e-21db8a470393",
+            "discovered_at": "2025-07-02T23:51:34.731027",
+            "extraction_time": 13.28,
             "server_info": {
-              "page_title": "Build A Boat For Treasure - Unnamed Server 7407 - RBXServers",
-              "server_id": "e3e86fdb-c3b7-46b2-bdfe-7060723012a2"
-            }
-          }
-        }
-      }
-    },
-    "1176309699210133594": {
-      "6403373529": {
-        "links": [
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=13551896567482956639686389544378",
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=94783451098709610725377848352426",
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=38248205424023766775754083314277",
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=60408038464986078269715603781253",
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=62996674920970391677621691236063"
-        ],
-        "game_name": "[\ud83d\ude97UPDATE] Slap Battles\ud83d\udc4f - RBXServers",
-        "game_image_url": "https://rbxservers.xyz/svgs/roblox.svg",
-        "category": "action",
-        "server_details": {
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=13551896567482956639686389544378": {
-            "source_url": "https://rbxservers.xyz/servers/cd8cda3e-e698-4c02-8a1f-a37925c96fd6",
-            "discovered_at": "2025-07-02T02:32:19.041709",
-            "extraction_time": 16.12,
-            "server_info": {
-              "page_title": "[\ud83d\ude97UPDATE] Slap Battles\ud83d\udc4f - Unnamed Server 8119 - RBXServers",
-              "server_id": "cd8cda3e-e698-4c02-8a1f-a37925c96fd6"
+              "page_title": "[\ud83c\udf2e] Steal a Brainrot - 4x luck join - RBXServers",
+              "server_id": "72ba3042-cbfb-4597-8d6e-21db8a470393"
             }
           },
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=94783451098709610725377848352426": {
-            "source_url": "https://rbxservers.xyz/servers/0b7b682c-1460-4152-b40c-572a6e8543d4",
-            "discovered_at": "2025-07-02T02:32:36.713672",
-            "extraction_time": 17.67,
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=32657066938160878046996355994328": {
+            "source_url": "https://rbxservers.xyz/servers/7c2560b9-5e17-4291-a621-01757b6cace6",
+            "discovered_at": "2025-07-02T23:51:52.063422",
+            "extraction_time": 17.33,
             "server_info": {
-              "page_title": "[\ud83d\ude97UPDATE] Slap Battles\ud83d\udc4f - Unnamed Server 9827 - RBXServers",
-              "server_id": "0b7b682c-1460-4152-b40c-572a6e8543d4"
+              "page_title": "[\ud83c\udf2e] Steal a Brainrot - 4X LUCKY!!!! NO STEAL - RBXServers",
+              "server_id": "7c2560b9-5e17-4291-a621-01757b6cace6"
             }
           },
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=38248205424023766775754083314277": {
-            "source_url": "https://rbxservers.xyz/servers/3a249e1b-d585-4c4a-971b-7ec37250fcef",
-            "discovered_at": "2025-07-02T02:32:52.070082",
-            "extraction_time": 15.36,
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607": {
+            "source_url": "https://rbxservers.xyz/servers/c4a8a903-2098-4586-a8d9-11c0a7f40876",
+            "discovered_at": "2025-07-02T23:52:08.178491",
+            "extraction_time": 16.11,
             "server_info": {
-              "page_title": "[\ud83d\ude97UPDATE] Slap Battles\ud83d\udc4f - Unnamed Server 3102 - RBXServers",
-              "server_id": "3a249e1b-d585-4c4a-971b-7ec37250fcef"
+              "page_title": "[\ud83c\udf2e] Steal a Brainrot - Unnamed Server 1442 - RBXServers",
+              "server_id": "c4a8a903-2098-4586-a8d9-11c0a7f40876"
             }
           },
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=60408038464986078269715603781253": {
-            "source_url": "https://rbxservers.xyz/servers/3ba8905e-6f93-40bf-a39f-516351916b5d",
-            "discovered_at": "2025-07-02T02:33:07.413882",
-            "extraction_time": 15.34,
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36961051040976493630866209379302": {
+            "source_url": "https://rbxservers.xyz/servers/c8732b4e-5c29-4abd-bcf1-7fe131b8b6ca",
+            "discovered_at": "2025-07-02T23:52:26.201090",
+            "extraction_time": 18.02,
             "server_info": {
-              "page_title": "[\ud83d\ude97UPDATE] Slap Battles\ud83d\udc4f - Unnamed Server 3381 - RBXServers",
-              "server_id": "3ba8905e-6f93-40bf-a39f-516351916b5d"
+              "page_title": "[\ud83c\udf2e] Steal a Brainrot - luck event server NO STEAL - RBXServers",
+              "server_id": "c8732b4e-5c29-4abd-bcf1-7fe131b8b6ca"
             }
           },
-          "https://www.roblox.com/games/6403373529?privateServerLinkCode=62996674920970391677621691236063": {
-            "source_url": "https://rbxservers.xyz/servers/c6a7ae99-8e08-40e5-965e-9e29621eaf2b",
-            "discovered_at": "2025-07-02T02:33:23.228578",
-            "extraction_time": 15.81,
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83748248986081192539759127465237": {
+            "source_url": "https://rbxservers.xyz/servers/437ff8bb-6a9b-4bb8-9e6e-9a088f69df2a",
+            "discovered_at": "2025-07-02T23:52:40.851134",
+            "extraction_time": 14.65,
             "server_info": {
-              "page_title": "[\ud83d\ude97UPDATE] Slap Battles\ud83d\udc4f - Unnamed Server 1307 - RBXServers",
-              "server_id": "c6a7ae99-8e08-40e5-965e-9e29621eaf2b"
-            }
-          }
-        }
-      },
-      "537413528": {
-        "links": [],
-        "game_name": "Game 537413528",
-        "server_details": {
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=07815882104729908102395724233360": {
-            "source_url": "https://rbxservers.xyz/servers/1b7ac0f1-ae56-4a45-ab7e-9a61da75848b",
-            "discovered_at": "2025-07-02T02:26:13.298743",
-            "extraction_time": 20.75,
-            "server_info": {
-              "page_title": "Build A Boat For Treasure - Unnamed Server 7461 - RBXServers",
-              "server_id": "1b7ac0f1-ae56-4a45-ab7e-9a61da75848b"
-            }
-          },
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=79116737868431950815775861247427": {
-            "source_url": "https://rbxservers.xyz/servers/d09a4b79-24bc-4f37-891d-d7e047436f0a",
-            "discovered_at": "2025-07-02T02:26:27.985675",
-            "extraction_time": 14.69,
-            "server_info": {
-              "page_title": "Build A Boat For Treasure - Unnamed Server 7517 - RBXServers",
-              "server_id": "d09a4b79-24bc-4f37-891d-d7e047436f0a"
-            }
-          },
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=91338263023915021852023163120948": {
-            "source_url": "https://rbxservers.xyz/servers/f9188cd7-57f9-492a-99ad-0989242d3dae",
-            "discovered_at": "2025-07-02T02:26:42.802215",
-            "extraction_time": 14.82,
-            "server_info": {
-              "page_title": "Build A Boat For Treasure - Unnamed Server 6224 - RBXServers",
-              "server_id": "f9188cd7-57f9-492a-99ad-0989242d3dae"
-            }
-          },
-          "https://www.roblox.com/games/537413528?privateServerLinkCode=17191829172272136672967262028907": {
-            "source_url": "https://rbxservers.xyz/servers/08892663-1df9-4964-8053-dac08f7f0e02",
-            "discovered_at": "2025-07-02T02:26:57.520846",
-            "extraction_time": 14.72,
-            "server_info": {
-              "page_title": "Build A Boat For Treasure - Unnamed Server 4071 - RBXServers",
-              "server_id": "08892663-1df9-4964-8053-dac08f7f0e02"
+              "page_title": "[\ud83c\udf2e] Steal a Brainrot - \ud83e\udd11 4X luck, no stealing \ud83e\udd11 - RBXServers",
+              "server_id": "437ff8bb-6a9b-4bb8-9e6e-9a088f69df2a"
             }
           }
         }
@@ -130,71 +63,29 @@
     }
   },
   "scraping_stats": {
-    "total_scraped": 178,
-    "successful_extractions": 148,
+    "total_scraped": 184,
+    "successful_extractions": 154,
     "failed_extractions": 30,
-    "last_scrape_time": "2025-07-02T02:33:26.980550",
-    "scrape_duration": 90.51,
-    "servers_per_minute": 3.3
+    "last_scrape_time": "2025-07-02T23:52:42.058598",
+    "scrape_duration": 93.68,
+    "servers_per_minute": 3.2
   },
   "usage_history": {
-    "1318245738349854811": [
+    "1374215569393320006": [
       {
-        "game_id": "537413528",
+        "game_id": "109983668079237",
         "server_link": "Found 5 servers",
         "action": "scrape_complete",
-        "timestamp": "2025-07-02T02:27:01.364568",
-        "game_name": "Build A Boat For Treasure - RBXServers"
-      },
-      {
-        "game_id": "537413528",
-        "server_link": "https://www.roblox.com/games/537413528?privateServerLinkCode=_A_EdvICnPAbeoSEloV73_RERu1UEdGX",
-        "action": "server_access",
-        "timestamp": "2025-07-02T02:28:13.791392",
-        "game_name": "Build A Boat For Treasure - RBXServers"
-      },
-      {
-        "game_id": "537413528",
-        "server_link": "https://www.roblox.com/games/537413528?privateServerLinkCode=_A_EdvICnPAbeoSEloV73_RERu1UEdGX",
-        "action": "server_access",
-        "timestamp": "2025-07-02T02:32:43.035842",
-        "game_name": "Build A Boat For Treasure - RBXServers"
-      },
-      {
-        "game_id": "537413528",
-        "server_link": "https://www.roblox.com/games/537413528?privateServerLinkCode=07815882104729908102395724233360",
-        "action": "navigate_next",
-        "timestamp": "2025-07-02T02:32:46.256869",
-        "game_name": "Build A Boat For Treasure - RBXServers"
-      }
-    ],
-    "1176309699210133594": [
-      {
-        "game_id": "6403373529",
-        "server_link": "Found 5 servers",
-        "action": "scrape_complete",
-        "timestamp": "2025-07-02T02:27:32.227660",
-        "game_name": "[\ud83d\ude97UPDATE] Slap Battles\ud83d\udc4f - RBXServers"
-      },
-      {
-        "game_id": "6403373529",
-        "server_link": "Found 0 servers",
-        "action": "scrape_complete",
-        "timestamp": "2025-07-02T02:33:26.980583",
-        "game_name": "[\ud83d\ude97UPDATE] Slap Battles\ud83d\udc4f - RBXServers"
+        "timestamp": "2025-07-02T23:52:42.058627",
+        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
       }
     ]
   },
-  "user_favorites": {
-    "1318245738349854811": [
-      "537413528"
-    ]
-  },
+  "user_favorites": {},
   "game_categories": {
-    "537413528": "other",
-    "6403373529": "action"
+    "109983668079237": "puzzle"
   },
   "user_reserved_servers": {},
-  "last_updated": "2025-07-02T02:33:26.980948",
-  "total_count": 10
+  "last_updated": "2025-07-02T23:52:42.058990",
+  "total_count": 5
 }
