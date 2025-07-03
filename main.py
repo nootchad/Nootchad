@@ -923,11 +923,16 @@ class VIPServerScraper:
                         self.links_by_user[user_id_str] = {}
                         
                         user_games = user_info.get('games', {})
+                        logger.debug(f"🔍 Procesando usuario {user_id_str}: {len(user_games)} juegos")
                         
                         for game_id, game_data in user_games.items():
                             # Asegurar que game_id sea string
                             game_id_str = str(game_id)
                             server_links = game_data.get('server_links', [])
+                            
+                            if not isinstance(game_data, dict):
+                                logger.warning(f"⚠️ Datos de juego inválidos para {user_id_str}/{game_id_str}: {type(game_data)}")
+                                continue
                             
                             self.links_by_user[user_id_str][game_id_str] = {
                                 'links': server_links,
@@ -938,6 +943,7 @@ class VIPServerScraper:
                             }
                             total_links_loaded += len(server_links)
                             total_games_loaded += 1
+                            logger.debug(f"✅ Cargado juego {game_id_str} para usuario {user_id_str}: {len(server_links)} enlaces")
                         
                         # Cargar otros datos de usuario
                         self.usage_history[user_id_str] = user_info.get('usage_history', [])
@@ -946,7 +952,7 @@ class VIPServerScraper:
                     
                     total_users = len(users_data)
                     
-                    logger.info(f"Loaded user data for {total_users} users with {total_games_loaded} total games and {total_links_loaded} total links from {self.users_servers_file}.")
+                    logger.info(f"✅ Loaded user data for {total_users} users with {total_games_loaded} total games and {total_links_loaded} total links from {self.users_servers_file}.")
                     
                     # Log detallado para debug
                     for user_id, user_games in self.links_by_user.items():
@@ -955,6 +961,11 @@ class VIPServerScraper:
                             logger.info(f"📊 Usuario {user_id}: {len(user_games)} juegos, {user_total_links} enlaces")
                         else:
                             logger.warning(f"⚠️ Usuario {user_id} tiene estructura de datos inválida: {type(user_games)}")
+                    
+                    # Verificar que los datos se cargaron correctamente
+                    if total_links_loaded == 0 and total_users > 0:
+                        logger.error(f"❌ ERROR: Se cargaron {total_users} usuarios pero 0 enlaces - posible problema de estructura de datos")
+                        logger.error(f"❌ Estructura del primer usuario: {list(users_data.values())[0] if users_data else 'N/A'}")
                     
             else:
                 logger.info(f"⚠️ Users servers file {self.users_servers_file} not found, initializing empty structure")
@@ -968,6 +979,17 @@ class VIPServerScraper:
             logger.error(f"❌ Exception details: {type(e).__name__}: {str(e)}")
             import traceback
             logger.error(f"❌ Full traceback: {traceback.format_exc()}")
+            
+            # Intentar cargar datos parciales si es posible
+            try:
+                with open(self.users_servers_file, 'r', encoding='utf-8') as f:
+                    debug_data = json.load(f)
+                    logger.error(f"❌ Estructura del archivo: {list(debug_data.keys())}")
+                    if 'users' in debug_data:
+                        logger.error(f"❌ Usuarios en archivo: {list(debug_data['users'].keys())}")
+            except Exception as debug_e:
+                logger.error(f"❌ No se pudo leer archivo para debug: {debug_e}")
+            
             self.links_by_user = {}
             self.usage_history = {}
             self.user_favorites = {}
