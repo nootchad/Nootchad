@@ -907,10 +907,21 @@ class VIPServerScraper:
                     self.links_by_user = data.get('links_by_user', {})
                     
                     # Migrate old data structure if needed
-                    if not self.links_by_user and 'links_by_game' in data:
-                        default_user = "migrated_user"
-                        self.links_by_user[default_user] = data.get('links_by_game', {})
-                        logger.info(f"Migrated existing links to user: {default_user}")
+                    if not self.links_by_user:
+                        # Check for old structure patterns
+                        if 'links_by_game' in data:
+                            # Old structure with direct game mapping
+                            default_user = "migrated_user_916070251895091241"  # Use owner ID as default
+                            self.links_by_user[default_user] = data.get('links_by_game', {})
+                            logger.info(f"Migrated existing links to user: {default_user}")
+                        elif any(key.isdigit() and len(key) > 10 for key in data.keys()):
+                            # Direct game IDs at root level - migrate to owner
+                            default_user = "916070251895091241"  # Owner ID
+                            self.links_by_user[default_user] = {}
+                            for key, value in data.items():
+                                if key.isdigit() and isinstance(value, dict) and 'links' in value:
+                                    self.links_by_user[default_user][key] = value
+                                    logger.info(f"Migrated game {key} to user {default_user}")
                     
                     self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
                     
@@ -928,23 +939,33 @@ class VIPServerScraper:
                     
                     for user_id, user_games in self.links_by_user.items():
                         user_total = 0
-                        for game_id, game_data in user_games.items():
-                            if isinstance(game_data, dict) and 'links' in game_data:
-                                links_count = len(game_data['links'])
-                                user_total += links_count
-                                total_links += links_count
-                        total_games += len(user_games)
-                        logger.debug(f"💾 Usuario {user_id}: {user_total} enlaces en {len(user_games)} juegos")
+                        if isinstance(user_games, dict):
+                            for game_id, game_data in user_games.items():
+                                if isinstance(game_data, dict) and 'links' in game_data:
+                                    links_count = len(game_data['links'])
+                                    user_total += links_count
+                                    total_links += links_count
+                                    total_games += 1
+                            logger.debug(f"💾 Usuario {user_id}: {user_total} enlaces en {len(user_games)} juegos")
+                        else:
+                            logger.warning(f"⚠️ Usuario {user_id} tiene estructura inválida: {type(user_games)}")
                     
                     logger.info(f"Loaded links for {total_users} users with {total_games} total games and {total_links} total links.")
                     
-                    # Verify data structure
+                    # Verify data structure and fix if needed
                     if total_links == 0 and self.links_by_user:
                         logger.warning("⚠️ Users found but no links detected - checking data structure...")
                         for user_id, user_games in list(self.links_by_user.items())[:3]:  # Check first 3 users
                             logger.debug(f"🔍 User {user_id} structure: {list(user_games.keys()) if isinstance(user_games, dict) else 'Not dict'}")
-                            for game_id, game_data in list(user_games.items())[:2]:  # Check first 2 games
-                                logger.debug(f"🔍 Game {game_id} structure: {type(game_data)} - Keys: {list(game_data.keys()) if isinstance(game_data, dict) else 'Not dict'}")
+                            if isinstance(user_games, dict):
+                                for game_id, game_data in list(user_games.items())[:2]:  # Check first 2 games
+                                    logger.debug(f"🔍 Game {game_id} structure: {type(game_data)} - Keys: {list(game_data.keys()) if isinstance(game_data, dict) else 'Not dict'}")
+                    
+                    # Auto-save after migration to ensure proper structure
+                    if any(key not in ['links_by_user', 'scraping_stats', 'usage_history', 'user_favorites', 'game_categories', 'user_reserved_servers', 'last_updated', 'total_count'] for key in data.keys()):
+                        logger.info("🔄 Data structure migrated, saving updated format...")
+                        self.save_links()
+                        
             else:
                 logger.warning(f"⚠️ VIP links file {self.vip_links_file} not found")
                 self.available_links = {}
@@ -959,6 +980,17 @@ class VIPServerScraper:
             if Path(self.vip_links_file).exists():
                 file_size = Path(self.vip_links_file).stat().st_size
                 logger.error(f"File exists, size: {file_size} bytes")
+                # Try to read and show structure
+                try:
+                    with open(self.vip_links_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        logger.error(f"File structure keys: {list(data.keys())}")
+                        for key, value in list(data.items())[:3]:
+                            logger.error(f"Key '{key}': {type(value)} - {list(value.keys()) if isinstance(value, dict) else str(value)[:100]}")
+                except Exception as read_error:
+                    logger.error(f"Could not read file structure: {read_error}")
+            
+            # Initialize empty structures
             self.available_links = {}
             self.links_by_user = {}
             self.usage_history = {}
@@ -1611,8 +1643,13 @@ class VIPServerScraper:
         new_links_count = 0
         processed_count = 0
 
-        # Set current user ID for tracking
-        self.current_user_id = user_id or 'unknown_user'
+        # Set current user ID for tracking - ensure it's always a string
+        self.current_user_id = str(user_id) if user_id else 'unknown_user'
+        
+        # Validate user_id
+        if user_id is None:
+            logger.error("❌ No user_id provided to scrape_vip_links")
+            raise ValueError("user_id is required for scraping")
 
         try:
             logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id} (User: {self.current_user_id})...")
@@ -3897,6 +3934,13 @@ def run_scraping_sync(game_id, user_id):
         'game_info': None
     }
 
+    # Validate and convert user_id to string
+    if not user_id:
+        results['error'] = "user_id is required"
+        return results
+    
+    user_id = str(user_id)
+
     try:
         logger.info(f"🚀 Iniciando scraping VIP para game ID: {game_id} | Usuario: {user_id}")
         driver = scraper.create_driver()
@@ -3911,12 +3955,12 @@ def run_scraping_sync(game_id, user_id):
         server_links = server_links[:5]
         logger.info(f"🎯 Processing {len(server_links)} server links (limited to 5)...")
 
-        # Set current user ID for tracking
-        scraper.current_user_id = user_id
+        # Set current user ID for tracking - ensure it's a string
+        scraper.current_user_id = str(user_id)
 
         # Initialize user and game data if not exists
-        if user_id not in scraper.links_by_user:
-            scraper.links_by_user[user_id] = {}
+        if str(user_id) not in scraper.links_by_user:
+            scraper.links_by_user[str(user_id)] = {}
         
         if game_id not in scraper.links_by_user[user_id]:
             # Extract game information first
