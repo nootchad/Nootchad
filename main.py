@@ -909,16 +909,24 @@ class VIPServerScraper:
                     users_data = data.get('users', {})
                     self.links_by_user = {}
                     
+                    total_links_loaded = 0
+                    total_games_loaded = 0
+                    
                     for user_id, user_info in users_data.items():
                         self.links_by_user[user_id] = {}
-                        for game_id, game_data in user_info.get('games', {}).items():
+                        user_games = user_info.get('games', {})
+                        
+                        for game_id, game_data in user_games.items():
+                            server_links = game_data.get('server_links', [])
                             self.links_by_user[user_id][game_id] = {
-                                'links': game_data.get('server_links', []),
+                                'links': server_links,
                                 'game_name': game_data.get('game_name', f'Game {game_id}'),
                                 'game_image_url': game_data.get('game_image_url'),
                                 'category': game_data.get('category', 'other'),
                                 'server_details': game_data.get('server_details', {})
                             }
+                            total_links_loaded += len(server_links)
+                            total_games_loaded += 1
                     
                     # Cargar otros datos de usuario
                     self.usage_history = {}
@@ -931,10 +939,13 @@ class VIPServerScraper:
                         self.user_reserved_servers[user_id] = user_info.get('reserved_servers', [])
                     
                     total_users = len(users_data)
-                    total_links = sum(len(game_data.get('links', [])) for user_games in self.links_by_user.values() for game_data in user_games.values())
-                    total_games = sum(len(user_games) for user_games in self.links_by_user.values())
                     
-                    logger.info(f"Loaded user data for {total_users} users with {total_games} total games and {total_links} total links from {self.users_servers_file}.")
+                    logger.info(f"Loaded user data for {total_users} users with {total_games_loaded} total games and {total_links_loaded} total links from {self.users_servers_file}.")
+                    
+                    # Log detallado para debug
+                    for user_id, user_games in self.links_by_user.items():
+                        user_total_links = sum(len(game_data.get('links', [])) for game_data in user_games.values())
+                        logger.debug(f"Usuario {user_id}: {len(user_games)} juegos, {user_total_links} enlaces")
                     
             else:
                 logger.info(f"⚠️ Users servers file {self.users_servers_file} not found, initializing empty structure")
@@ -1884,6 +1895,24 @@ async def on_ready():
             logger.warning(f"⚠️ Usuario {user_id} tiene estructura de datos inválida: {type(user_games)}")
     
     logger.info(f'🎮 Bot listo con {total_links} enlaces VIP cargados para {total_users} usuarios en {total_games} juegos')
+    
+    # Log adicional para debug si no se cargan datos
+    if total_links == 0 and total_users == 0:
+        logger.warning("⚠️ No se cargaron datos de servidores. Verificando archivo users_servers.json...")
+        if Path(scraper.users_servers_file).exists():
+            logger.info(f"✅ Archivo {scraper.users_servers_file} existe")
+            try:
+                with open(scraper.users_servers_file, 'r', encoding='utf-8') as f:
+                    check_data = json.load(f)
+                    check_users = check_data.get('users', {})
+                    logger.info(f"📊 Archivo contiene {len(check_users)} usuarios")
+                    for uid, udata in list(check_users.items())[:3]:  # Mostrar primeros 3
+                        games_count = len(udata.get('games', {}))
+                        logger.info(f"  Usuario {uid}: {games_count} juegos")
+            except Exception as e:
+                logger.error(f"❌ Error leyendo archivo para debug: {e}")
+        else:
+            logger.error(f"❌ Archivo {scraper.users_servers_file} no existe")
     logger.info(f"📈 Usuarios verificados: {len(roblox_verification.verified_users)}")
     logger.info(f"🚫 Usuarios baneados: {len(roblox_verification.banned_users)}")
     logger.info(f"⚠️ Usuarios con advertencias: {len(roblox_verification.warnings)}")
