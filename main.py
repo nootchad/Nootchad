@@ -2798,36 +2798,60 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 # Crear WebDriverWait para mejor manejo de timeouts
                 wait = WebDriverWait(driver, 20)
                 
-                # Paso 2: Llenar fecha de nacimiento (Mes, Día, Año)
+                # Paso 2: Llenar fecha de nacimiento (Mes, Día, Año) - Selectores actualizados
                 logger.info("📅 Configurando fecha de nacimiento...")
-                birth_year = 2002  # Usar año del script base
+                birth_year = 2006  # Actualizado para cumplir requisitos de edad
                 
                 try:
-                    # Mes (Marzo = 3)
+                    # Mes (Marzo = 3) - Selector actualizado
                     month_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "MonthDropdown")))
-                    Select(month_dropdown).select_by_value("3")
+                    Select(month_dropdown).select_by_value("3")  # Marzo
                     logger.info("✅ Mes seleccionado: Marzo")
                     fields_completed += 1
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando mes: {e}")
+                    # Intentar selector alternativo
+                    try:
+                        month_select = driver.find_element(By.ID, "MonthDropdown")
+                        Select(month_select).select_by_value("3")
+                        logger.info("✅ Mes seleccionado con selector alternativo")
+                        fields_completed += 1
+                    except Exception as e2:
+                        logger.error(f"❌ Error con selector alternativo de mes: {e2}")
                 
                 try:
-                    # Día (15)
+                    # Día (15) - Selector actualizado
                     day_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "DayDropdown")))
-                    Select(day_dropdown).select_by_value("15")
+                    Select(day_dropdown).select_by_value("15")  # Día 15
                     logger.info("✅ Día seleccionado: 15")
                     fields_completed += 1
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando día: {e}")
+                    # Intentar selector alternativo
+                    try:
+                        day_select = driver.find_element(By.ID, "DayDropdown")
+                        Select(day_select).select_by_value("15")
+                        logger.info("✅ Día seleccionado con selector alternativo")
+                        fields_completed += 1
+                    except Exception as e2:
+                        logger.error(f"❌ Error con selector alternativo de día: {e2}")
                 
                 try:
-                    # Año (2002)
+                    # Año (2006) - Selector actualizado
                     year_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "YearDropdown")))
-                    Select(year_dropdown).select_by_value(str(birth_year))
+                    Select(year_dropdown).select_by_value("2006")  # Año actualizado
                     logger.info(f"✅ Año seleccionado: {birth_year}")
                     fields_completed += 1
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando año: {e}")
+                    # Intentar selector alternativo
+                    try:
+                        year_select = driver.find_element(By.ID, "YearDropdown")
+                        Select(year_select).select_by_value("2006")
+                        logger.info("✅ Año seleccionado con selector alternativo")
+                        fields_completed += 1
+                    except Exception as e2:
+                        logger.error(f"❌ Error con selector alternativo de año: {e2}")
                 
                 form_data['birth_date'] = f"15/03/{birth_year}"
                 
