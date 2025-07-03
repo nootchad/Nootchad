@@ -8,12 +8,12 @@
         "secure": true,
         "httpOnly": true,
         "sameSite": "Lax",
-        "extracted_at": "2025-07-03T18:49:43.267335",
+        "extracted_at": "2025-07-03T18:54:14.168333",
         "source": "alt.txt",
         "username": "GraysonNovaB3ast"
       }
     }
   },
-  "last_updated": "2025-07-03T18:49:43.267339",
+  "last_updated": "2025-07-03T18:54:14.168366",
   "total_domains": 1
 }

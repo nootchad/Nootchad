@@ -1,16 +1,15 @@
 {
   "scraping_stats": {
-    "total_scraped": 204,
-    "successful_extractions": 174,
+    "total_scraped": 205,
+    "successful_extractions": 175,
     "failed_extractions": 30,
-    "last_scrape_time": "2025-07-03T01:16:16.670293",
-    "scrape_duration": 82.74,
-    "servers_per_minute": 3.6
+    "last_scrape_time": "2025-07-03T18:50:11.040550",
+    "scrape_duration": 32.1,
+    "servers_per_minute": 1.9
   },
   "game_categories": {
-    "920587237": "other",
-    "301549746": "other"
+    "183364845": "racing"
   },
-  "last_updated": "2025-07-03T01:16:16.672156",
+  "last_updated": "2025-07-03T18:50:11.041837",
   "note": "This file now only contains general stats and categories. User data is in users_servers.json"
 }

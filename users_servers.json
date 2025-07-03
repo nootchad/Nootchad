@@ -1,148 +1,35 @@
 {
   "users": {
-    "916070251895091241": {
+    "1374194847786729472": {
       "games": {
-        "920587237": {
+        "183364845": {
           "server_links": [
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=32293567258267786105416251762022",
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=78485278647464588706631989327501",
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=51979231498527920056172713087652",
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=90732075289506337721684375582401",
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=83795277575237316102957351538480"
+            "https://www.roblox.com/games/183364845?privateServerLinkCode=mQUvpozN4q-Hn79K1k-VAstl2XhuKHTD"
           ],
-          "game_name": "Adopt Me! - RBXServers",
+          "game_name": "Speed Run 4 - RBXServers",
           "game_image_url": "https://rbxservers.xyz/svgs/roblox.svg",
-          "category": "other",
+          "category": "racing",
           "server_details": {
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=32293567258267786105416251762022": {
-              "source_url": "https://rbxservers.xyz/servers/bd27a4cf-e7dd-41cf-94d2-ee0c8ce7688a",
-              "discovered_at": "2025-07-03T00:51:13.340611",
-              "extraction_time": 15.71,
+            "https://www.roblox.com/games/183364845?privateServerLinkCode=mQUvpozN4q-Hn79K1k-VAstl2XhuKHTD": {
+              "source_url": "https://rbxservers.xyz/servers/f62cc792-fe44-4ea7-a00c-6f90530bee25",
+              "discovered_at": "2025-07-03T18:50:10.003840",
+              "extraction_time": 13.63,
               "server_info": {
-                "page_title": "Adopt Me! - Unnamed Server 3579 - RBXServers",
-                "server_id": "bd27a4cf-e7dd-41cf-94d2-ee0c8ce7688a"
-              }
-            },
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=78485278647464588706631989327501": {
-              "source_url": "https://rbxservers.xyz/servers/07fcca78-1e54-4be3-afa2-d4dda037b559",
-              "discovered_at": "2025-07-03T00:51:29.225276",
-              "extraction_time": 15.88,
-              "server_info": {
-                "page_title": "Adopt Me! - Unnamed Server 2238 - RBXServers",
-                "server_id": "07fcca78-1e54-4be3-afa2-d4dda037b559"
-              }
-            },
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=51979231498527920056172713087652": {
-              "source_url": "https://rbxservers.xyz/servers/47f84445-ea53-4095-9127-6e532cc3ae84",
-              "discovered_at": "2025-07-03T00:51:44.377233",
-              "extraction_time": 15.15,
-              "server_info": {
-                "page_title": "Adopt Me! - Unnamed Server 7073 - RBXServers",
-                "server_id": "47f84445-ea53-4095-9127-6e532cc3ae84"
-              }
-            },
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=90732075289506337721684375582401": {
-              "source_url": "https://rbxservers.xyz/servers/0a6b9726-52a7-48e8-9a0b-1e6a96259c33",
-              "discovered_at": "2025-07-03T00:52:01.401912",
-              "extraction_time": 17.02,
-              "server_info": {
-                "page_title": "Adopt Me! - Unnamed Server 5474 - RBXServers",
-                "server_id": "0a6b9726-52a7-48e8-9a0b-1e6a96259c33"
-              }
-            },
-            "https://www.roblox.com/games/920587237?privateServerLinkCode=83795277575237316102957351538480": {
-              "source_url": "https://rbxservers.xyz/servers/4df98639-68f3-4d3f-8939-dbe382407166",
-              "discovered_at": "2025-07-03T00:52:16.892140",
-              "extraction_time": 15.49,
-              "server_info": {
-                "page_title": "Adopt Me! - Unnamed Server 3023 - RBXServers",
-                "server_id": "4df98639-68f3-4d3f-8939-dbe382407166"
-              }
+                "page_title": "Speed Run 4 - Unnamed Server 8938 - RBXServers",
+                "server_id": "f62cc792-fe44-4ea7-a00c-6f90530bee25"
+              },
+              "cookies_used": true
             }
           }
         }
       },
       "usage_history": [
         {
-          "game_id": "920587237",
-          "server_link": "Found 5 servers",
+          "game_id": "183364845",
+          "server_link": "Found 1 servers",
           "action": "scrape_complete",
-          "timestamp": "2025-07-03T00:52:20.809343",
-          "game_name": "Adopt Me! - RBXServers"
-        }
-      ],
-      "favorites": [],
-      "reserved_servers": []
-    },
-    "930890527728095284": {
-      "games": {
-        "301549746": {
-          "server_links": [
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=60627955543511351496812493845997",
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=19932651106360925147510859130186",
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=38182940097753028961396063413068",
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=bH0OAqSDYUjbSwJSBuSRFHiqnisYbNoY",
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=52110875498195574403263705365003"
-          ],
-          "game_name": "Counter Blox - RBXServers",
-          "game_image_url": "https://rbxservers.xyz/svgs/roblox.svg",
-          "category": "other",
-          "server_details": {
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=60627955543511351496812493845997": {
-              "source_url": "https://rbxservers.xyz/servers/68c995b4-8700-47cb-8a64-2cc384403349",
-              "discovered_at": "2025-07-03T01:15:14.102778",
-              "extraction_time": 13.82,
-              "server_info": {
-                "page_title": "Counter Blox - Unnamed Server 7000 - RBXServers",
-                "server_id": "68c995b4-8700-47cb-8a64-2cc384403349"
-              }
-            },
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=19932651106360925147510859130186": {
-              "source_url": "https://rbxservers.xyz/servers/1cd0998d-51b9-47f3-92ba-a6644f6dfe23",
-              "discovered_at": "2025-07-03T01:15:30.292507",
-              "extraction_time": 16.19,
-              "server_info": {
-                "page_title": "Counter Blox - Unnamed Server 4089 - RBXServers",
-                "server_id": "1cd0998d-51b9-47f3-92ba-a6644f6dfe23"
-              }
-            },
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=38182940097753028961396063413068": {
-              "source_url": "https://rbxservers.xyz/servers/0451810b-cb77-417e-864c-d1cdb4eda7d8",
-              "discovered_at": "2025-07-03T01:15:44.438211",
-              "extraction_time": 14.15,
-              "server_info": {
-                "page_title": "Counter Blox - Unnamed Server 5126 - RBXServers",
-                "server_id": "0451810b-cb77-417e-864c-d1cdb4eda7d8"
-              }
-            },
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=bH0OAqSDYUjbSwJSBuSRFHiqnisYbNoY": {
-              "source_url": "https://rbxservers.xyz/servers/0463e07c-f4ef-45dc-bd8f-c57627cbdb81",
-              "discovered_at": "2025-07-03T01:15:57.865046",
-              "extraction_time": 13.43,
-              "server_info": {
-                "page_title": "Counter Blox - Unnamed Server 7560 - RBXServers",
-                "server_id": "0463e07c-f4ef-45dc-bd8f-c57627cbdb81"
-              }
-            },
-            "https://www.roblox.com/games/301549746?privateServerLinkCode=52110875498195574403263705365003": {
-              "source_url": "https://rbxservers.xyz/servers/8a5d1fba-b67c-4e61-97bd-53311f8f9dd6",
-              "discovered_at": "2025-07-03T01:16:12.982449",
-              "extraction_time": 15.12,
-              "server_info": {
-                "page_title": "Counter Blox - Unnamed Server 5861 - RBXServers",
-                "server_id": "8a5d1fba-b67c-4e61-97bd-53311f8f9dd6"
-              }
-            }
-          }
-        }
-      },
-      "usage_history": [
-        {
-          "game_id": "301549746",
-          "server_link": "Found 5 servers",
-          "action": "scrape_complete",
-          "timestamp": "2025-07-03T01:16:16.670328",
-          "game_name": "Counter Blox - RBXServers"
+          "timestamp": "2025-07-03T18:50:11.040589",
+          "game_name": "Speed Run 4 - RBXServers"
         }
       ],
       "favorites": [],
@@ -150,9 +37,9 @@
     }
   },
   "metadata": {
-    "created_at": "2025-07-03T01:16:16.670717",
-    "last_updated": "2025-07-03T01:16:16.670743",
-    "total_users": 2,
-    "total_servers": 10
+    "created_at": "2025-07-03T18:50:11.041147",
+    "last_updated": "2025-07-03T18:50:11.041151",
+    "total_users": 1,
+    "total_servers": 1
   }
 }
