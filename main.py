@@ -22,6 +22,7 @@ from discord.ext import commands
 from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
 from report_system import ServerReportSystem
+from captcha_solver import FreeCaptchaSolver, enhance_driver_with_captcha_solver
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -1804,7 +1805,12 @@ class VIPServerScraper:
                 logger.warning("⚠️ No se pudieron aplicar cookies de Roblox - verificar alt.txt")
 
             logger.info("✅ Chrome driver created successfully")
-            return driver
+            
+            # Mejorar driver con capacidades de CAPTCHA
+            enhanced_driver = enhance_driver_with_captcha_solver(driver)
+            logger.info("🔧 Driver mejorado con solucionador de CAPTCHA gratuito")
+            
+            return enhanced_driver
 
         except Exception as e:
             logger.error(f"Error creating Chrome driver: {e}")
@@ -1895,6 +1901,16 @@ class VIPServerScraper:
                         logger.info(f"🍪 {cookies_applied} cookies aplicadas antes del scraping")
                 
                 driver.get(url)
+                
+                # Intentar resolver CAPTCHAs automáticamente
+                try:
+                    captcha_solved = driver.solve_captchas(max_attempts=2)
+                    if captcha_solved:
+                        logger.info("✅ CAPTCHAs resueltos automáticamente en página de servidores")
+                    else:
+                        logger.warning("⚠️ No se pudieron resolver todos los CAPTCHAs, continuando...")
+                except Exception as e:
+                    logger.debug(f"Error resolviendo CAPTCHAs: {e}")
 
                 # Wait for server elements to load
                 wait = WebDriverWait(driver, 20)
@@ -1937,6 +1953,14 @@ class VIPServerScraper:
                         logger.debug(f"🍪 Cookies aplicadas para servidor: {server_url}")
                 
                 driver.get(server_url)
+                
+                # Intentar resolver CAPTCHAs automáticamente
+                try:
+                    captcha_solved = driver.solve_captchas(max_attempts=2)
+                    if captcha_solved:
+                        logger.info("✅ CAPTCHAs resueltos en página de servidor individual")
+                except Exception as e:
+                    logger.debug(f"Error resolviendo CAPTCHAs en servidor: {e}")
 
                 # Wait for VIP input to load
                 wait = WebDriverWait(driver, 15)
@@ -2189,6 +2213,11 @@ class VIPServerScraper:
             raise
         finally:
             if driver:
+                try:
+                    # Limpiar archivos temporales de CAPTCHA
+                    driver.cleanup_captcha_files()
+                except:
+                    pass
                 driver.quit()
 
     def get_random_link(self, game_id, user_id):
@@ -3162,6 +3191,136 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             color=0xff0000
         )
         error_embed.add_field(name="💡 Sugerencia", value="Verifica la conexión y configuración del navegador", inline=False)
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="testcaptcha", description="[OWNER ONLY] Probar el sistema de resolución de CAPTCHA")
+async def test_captcha_command(interaction: discord.Interaction, url: str = "https://rbxservers.xyz"):
+    """Comando para probar el sistema de resolución de CAPTCHA"""
+    user_id = str(interaction.user.id)
+    
+    # Verificar que solo el owner pueda usar este comando
+    if user_id != DISCORD_OWNER_ID:
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner del bot.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        embed = discord.Embed(
+            title="🔧 Probando Sistema de CAPTCHA",
+            description=f"Iniciando prueba del solucionador de CAPTCHA en: {url}",
+            color=0xffaa00
+        )
+        message = await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        # Crear driver con capacidades de CAPTCHA
+        driver = None
+        try:
+            logger.info("🚀 Iniciando driver para prueba de CAPTCHA...")
+            driver = scraper.create_driver()
+            
+            # Navegar a la URL
+            driver.get(url)
+            time.sleep(3)
+            
+            # Actualizar estado
+            progress_embed = discord.Embed(
+                title="🔍 Detectando CAPTCHAs",
+                description=f"Escaneando página en busca de CAPTCHAs: {url}",
+                color=0x3366ff
+            )
+            await message.edit(embed=progress_embed)
+            
+            # Crear solver y detectar CAPTCHAs
+            solver = FreeCaptchaSolver()
+            captchas = solver.detect_captcha_elements(driver)
+            
+            if not captchas:
+                success_embed = discord.Embed(
+                    title="✅ No se Detectaron CAPTCHAs",
+                    description="No se encontraron CAPTCHAs en la página especificada.",
+                    color=0x00ff88
+                )
+                success_embed.add_field(name="🌐 URL Probada", value=url, inline=False)
+                success_embed.add_field(name="🔍 Resultado", value="Página libre de CAPTCHAs", inline=False)
+                await message.edit(embed=success_embed)
+                return
+            
+            # Mostrar CAPTCHAs detectados
+            detection_embed = discord.Embed(
+                title="🎯 CAPTCHAs Detectados",
+                description=f"Se encontraron **{len(captchas)}** CAPTCHA(s) en la página:",
+                color=0xffaa00
+            )
+            
+            for i, captcha_info in enumerate(captchas, 1):
+                detection_embed.add_field(
+                    name=f"CAPTCHA #{i}",
+                    value=f"**Tipo:** {captcha_info['type']}\n**Selector:** `{captcha_info['selector'][:50]}...`",
+                    inline=True
+                )
+            
+            detection_embed.add_field(name="🔄 Siguiente", value="Intentando resolver automáticamente...", inline=False)
+            await message.edit(embed=detection_embed)
+            
+            # Intentar resolver CAPTCHAs
+            time.sleep(2)
+            success = solver.solve_page_captcha(driver, max_attempts=2)
+            
+            # Resultado final
+            if success:
+                final_embed = discord.Embed(
+                    title="✅ CAPTCHA Resuelto Exitosamente",
+                    description="El sistema de resolución de CAPTCHA funcionó correctamente.",
+                    color=0x00ff88
+                )
+                final_embed.add_field(name="🌐 URL", value=url, inline=True)
+                final_embed.add_field(name="🎯 CAPTCHAs Detectados", value=str(len(captchas)), inline=True)
+                final_embed.add_field(name="✅ Estado", value="Resuelto automáticamente", inline=True)
+                final_embed.add_field(
+                    name="🔧 Capacidades del Sistema",
+                    value="• OCR gratuito con OCR.space\n• Preprocesamiento de imágenes\n• Detección automática de tipos\n• Integración con Selenium",
+                    inline=False
+                )
+            else:
+                final_embed = discord.Embed(
+                    title="⚠️ CAPTCHA No Resuelto",
+                    description="No se pudo resolver automáticamente el CAPTCHA.",
+                    color=0xff9900
+                )
+                final_embed.add_field(name="🌐 URL", value=url, inline=True)
+                final_embed.add_field(name="🎯 CAPTCHAs Detectados", value=str(len(captchas)), inline=True)
+                final_embed.add_field(name="❌ Estado", value="Requiere intervención manual", inline=True)
+                final_embed.add_field(
+                    name="💡 Posibles Causas",
+                    value="• CAPTCHA muy complejo\n• reCAPTCHA v3 no soportado\n• Calidad de imagen baja\n• Tipo de CAPTCHA no reconocido",
+                    inline=False
+                )
+            
+            await message.edit(embed=final_embed)
+            
+        finally:
+            if driver:
+                try:
+                    driver.cleanup_captcha_files()
+                    driver.quit()
+                except:
+                    pass
+        
+        logger.info(f"Owner {interaction.user.name} probó sistema CAPTCHA en {url}")
+        
+    except Exception as e:
+        logger.error(f"Error en comando testcaptcha: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error en Prueba",
+            description=f"Ocurrió un error durante la prueba: {str(e)[:200]}",
+            color=0xff0000
+        )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 @bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies y obtener información de cuenta")
