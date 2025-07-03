@@ -2631,6 +2631,307 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
         user_logger.error(f"❌ Error en verificación para {username}: {e}")
         return False
 
+@bot.tree.command(name="createaccount", description="[OWNER ONLY] Crear nueva cuenta de Roblox con nombres RbxServers")
+async def createaccount_command(interaction: discord.Interaction, username_suffix: str = ""):
+    """Comando solo para el owner que crea cuentas de Roblox usando VNC"""
+    user_id = str(interaction.user.id)
+    
+    # Verificar que solo el owner pueda usar este comando
+    if user_id != DISCORD_OWNER_ID:
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner del bot.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        # Generar nombre de usuario con RbxServers
+        import random
+        if username_suffix:
+            # Usar el sufijo proporcionado
+            if username_suffix.isdigit():
+                new_username = f"RbxServers{username_suffix}"
+            else:
+                new_username = f"RbxServers{username_suffix}"
+        else:
+            # Generar automáticamente con números
+            random_num = random.randint(100, 9999)
+            new_username = f"RbxServers{random_num}"
+        
+        # Mensaje inicial
+        embed = discord.Embed(
+            title="🎮 Creando Cuenta de Roblox",
+            description=f"Iniciando creación de cuenta con username: **{new_username}**",
+            color=0xffaa00
+        )
+        embed.add_field(name="👤 Username Propuesto", value=f"`{new_username}`", inline=True)
+        embed.add_field(name="🖥️ Modo", value="VNC (Visible)", inline=True)
+        embed.add_field(name="🔄 Estado", value="Inicializando navegador...", inline=True)
+        
+        message = await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        # INICIALIZAR NAVEGADOR VNC (SIN HEADLESS)
+        driver = None
+        
+        try:
+            logger.info("🚀 Inicializando navegador VNC para creación de cuenta...")
+            
+            # Crear driver VNC (sin headless - modo visible)
+            chrome_options = Options()
+            # NO agregar --headless para VNC visible
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            chrome_options.add_argument("--remote-debugging-port=9224")
+            chrome_options.add_argument("--disable-background-timer-throttling")
+            chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+            chrome_options.add_argument("--disable-renderer-backgrounding")
+            
+            # Habilitar cookies y elementos necesarios para registro
+            prefs = {
+                "profile.managed_default_content_settings.cookies": 1,  # Permitir cookies
+                "profile.default_content_setting_values.notifications": 2,
+                "profile.managed_default_content_settings.popups": 2,
+                "profile.managed_default_content_settings.javascript": 1,  # JS necesario
+                "profile.managed_default_content_settings.images": 1,  # Imágenes necesarias para CAPTCHA
+            }
+            chrome_options.add_experimental_option("prefs", prefs)
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+
+            # Buscar Chrome binary
+            possible_chrome_paths = [
+                "/usr/bin/google-chrome-stable",
+                "/usr/bin/google-chrome",
+                "/usr/bin/chromium-browser", 
+                "/usr/bin/chromium",
+                "/snap/bin/chromium",
+                "/opt/google/chrome/chrome"
+            ]
+
+            chrome_binary = None
+            for path in possible_chrome_paths:
+                if Path(path).exists():
+                    chrome_binary = path
+                    break
+
+            if chrome_binary:
+                chrome_options.binary_location = chrome_binary
+                logger.info(f"Using Chrome binary at: {chrome_binary}")
+
+            # Crear driver con múltiples intentos
+            approaches = [
+                lambda: webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options),
+                lambda: webdriver.Chrome(service=Service(), options=chrome_options),
+                lambda: webdriver.Chrome(options=chrome_options)
+            ]
+            
+            for i, approach in enumerate(approaches, 1):
+                try:
+                    logger.info(f"Trying createaccount driver approach {i}...")
+                    if i == 1:
+                        from webdriver_manager.chrome import ChromeDriverManager
+                        driver = approach()
+                        logger.info("Using ChromeDriverManager for createaccount")
+                    else:
+                        driver = approach()
+                        logger.info(f"Using approach {i} for createaccount")
+                    break
+                except Exception as e:
+                    logger.warning(f"Createaccount approach {i} failed: {e}")
+                    continue
+            
+            if not driver:
+                raise Exception("All createaccount driver creation approaches failed")
+            
+            driver.set_page_load_timeout(60)
+            driver.implicitly_wait(15)
+            
+            # Actualizar estado
+            update_embed = discord.Embed(
+                title="🌐 Navegador VNC Iniciado",
+                description="Navegador VNC iniciado exitosamente. Navegando a Roblox para crear cuenta...",
+                color=0x3366ff
+            )
+            update_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+            update_embed.add_field(name="🖥️ Modo", value="VNC Visible", inline=True)
+            update_embed.add_field(name="🔄 Estado", value="Navegando a Roblox...", inline=True)
+            await message.edit(embed=update_embed)
+            
+            logger.info("✅ Navegador VNC iniciado exitosamente, navegando a Roblox...")
+            
+            # Navegar a la página de registro de Roblox
+            driver.get("https://www.roblox.com/")
+            time.sleep(5)
+            
+            # Actualizar progreso
+            progress_embed = discord.Embed(
+                title="📝 Preparando Registro",
+                description="Página de Roblox cargada. Localizando formulario de registro...",
+                color=0x3366ff
+            )
+            progress_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+            progress_embed.add_field(name="🖥️ VNC", value="Activo y Visible", inline=True)
+            progress_embed.add_field(name="🌐 Página", value="Roblox.com cargada", inline=True)
+            await message.edit(embed=progress_embed)
+            
+            # Intentar encontrar elementos de registro
+            try:
+                # Buscar diferentes selectores para el formulario de registro
+                signup_selectors = [
+                    "a[href*='signup']",
+                    "button[data-testid='signup-button']",
+                    ".signup-button",
+                    "#signup-button",
+                    "a.btn-secondary-lg",
+                    "[data-testid='sign-up-button']"
+                ]
+                
+                signup_found = False
+                for selector in signup_selectors:
+                    try:
+                        signup_element = driver.find_element(By.CSS_SELECTOR, selector)
+                        if signup_element.is_displayed():
+                            signup_element.click()
+                            signup_found = True
+                            logger.info(f"✅ Clicked signup with selector: {selector}")
+                            break
+                    except:
+                        continue
+                
+                if not signup_found:
+                    # Intentar navegación directa al signup
+                    driver.get("https://www.roblox.com/newlogin")
+                    time.sleep(3)
+                
+                time.sleep(5)
+                
+                # Buscar campo de username
+                username_selectors = [
+                    "input[name='username']",
+                    "input[id*='username']",
+                    "input[placeholder*='Username' i]",
+                    "#signup-username",
+                    "[data-testid='username-input']"
+                ]
+                
+                username_field = None
+                for selector in username_selectors:
+                    try:
+                        username_field = driver.find_element(By.CSS_SELECTOR, selector)
+                        if username_field.is_displayed():
+                            break
+                    except:
+                        continue
+                
+                if username_field:
+                    # Limpiar y llenar el campo de username
+                    username_field.clear()
+                    username_field.send_keys(new_username)
+                    logger.info(f"✅ Username {new_username} ingresado")
+                    
+                    # Actualizar estado
+                    form_embed = discord.Embed(
+                        title="✅ Formulario Localizado",
+                        description=f"Username **{new_username}** ingresado en el formulario de registro.",
+                        color=0x00ff88
+                    )
+                    form_embed.add_field(name="📝 Campo Username", value="✅ Completado", inline=True)
+                    form_embed.add_field(name="🖥️ VNC", value="Visible para completar", inline=True)
+                    form_embed.add_field(name="⚠️ Acción Requerida", value="Completa manualmente en VNC", inline=True)
+                    form_embed.add_field(
+                        name="📋 Instrucciones",
+                        value="• Ve a la pestaña VNC\n• Completa password y email\n• Resuelve CAPTCHA si aparece\n• Haz clic en 'Sign Up'\n• El navegador permanecerá abierto",
+                        inline=False
+                    )
+                    await message.edit(embed=form_embed)
+                    
+                    # Mantener el navegador abierto para interacción manual
+                    logger.info("🖥️ Navegador VNC mantenido abierto para completar registro manualmente")
+                    
+                    # Esperar un tiempo para que el usuario complete el registro
+                    wait_embed = discord.Embed(
+                        title="⏳ Esperando Completar Registro",
+                        description="El navegador VNC está abierto para que completes el registro manualmente.",
+                        color=0xffaa00
+                    )
+                    wait_embed.add_field(name="👤 Username Pre-llenado", value=f"`{new_username}`", inline=True)
+                    wait_embed.add_field(name="⏰ Tiempo", value="5 minutos disponibles", inline=True)
+                    wait_embed.add_field(name="🖥️ VNC", value="Abierto y visible", inline=True)
+                    wait_embed.add_field(
+                        name="📝 Pasos Restantes",
+                        value="1. Ingresa password\n2. Ingresa email\n3. Selecciona fecha de nacimiento\n4. Resuelve CAPTCHA\n5. Click 'Sign Up'",
+                        inline=False
+                    )
+                    await message.edit(embed=wait_embed)
+                    
+                    # Esperar 5 minutos para que el usuario complete
+                    await asyncio.sleep(300)  # 5 minutos
+                    
+                else:
+                    error_embed = discord.Embed(
+                        title="❌ Campo Username No Encontrado",
+                        description="No se pudo localizar el campo de username en el formulario.",
+                        color=0xff3333
+                    )
+                    error_embed.add_field(name="🖥️ VNC", value="Disponible para navegación manual", inline=True)
+                    error_embed.add_field(name="🌐 URL", value="Roblox signup page", inline=True)
+                    await message.edit(embed=error_embed)
+                
+            except Exception as form_error:
+                logger.error(f"Error con formulario de registro: {form_error}")
+                form_error_embed = discord.Embed(
+                    title="⚠️ Error en Formulario",
+                    description=f"Error localizando formulario: {str(form_error)[:100]}",
+                    color=0xff9900
+                )
+                form_error_embed.add_field(name="🖥️ VNC", value="Disponible para navegación manual", inline=True)
+                await message.edit(embed=form_error_embed)
+            
+            # Mantener navegador abierto por más tiempo
+            logger.info("🕐 Manteniendo navegador VNC abierto para interacción...")
+            await asyncio.sleep(180)  # 3 minutos adicionales
+            
+        finally:
+            # Mensaje final antes de cerrar
+            final_embed = discord.Embed(
+                title="🏁 Sesión de Creación Finalizada",
+                description=f"La sesión de creación para **{new_username}** ha terminado.",
+                color=0x888888
+            )
+            final_embed.add_field(name="👤 Username Usado", value=f"`{new_username}`", inline=True)
+            final_embed.add_field(name="🖥️ VNC", value="Se cerrará pronto", inline=True)
+            final_embed.add_field(name="📝 Nota", value="Verifica si la cuenta se creó exitosamente", inline=True)
+            await message.edit(embed=final_embed)
+            
+            # Cerrar navegador
+            if driver:
+                try:
+                    logger.info("🔒 Cerrando navegador VNC...")
+                    driver.quit()
+                    logger.info("✅ Navegador VNC cerrado")
+                except Exception as close_error:
+                    logger.warning(f"Error cerrando navegador: {close_error}")
+        
+        logger.info(f"Owner {interaction.user.name} usó createaccount para username: {new_username}")
+        
+    except Exception as e:
+        logger.error(f"Error en comando createaccount: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description=f"Ocurrió un error durante la creación de cuenta: {str(e)[:200]}",
+            color=0xff0000
+        )
+        error_embed.add_field(name="💡 Sugerencia", value="Verifica VNC y conexión", inline=False)
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies y obtener información de cuenta")
 async def cookielog_command(interaction: discord.Interaction, vnc_mode: bool = False):
     """Comando solo para el owner que prueba cookies empezando por el secreto COOKIE y luego alt.txt"""
