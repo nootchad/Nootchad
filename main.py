@@ -2300,31 +2300,9 @@ class ServerBrowserView(discord.ui.View):
         )
         self.add_item(join_button)
 
-        # Favorite button
-        game_id = self.game_info.get('game_id')
-        user_id = self.authorized_user_id
-        is_favorite = (user_id and game_id and 
-                      user_id in scraper.user_favorites and 
-                      game_id in scraper.user_favorites[user_id])
-        
-        fav_button = discord.ui.Button(
-            label="⭐ Quitar de Favoritos" if is_favorite else "⭐ Agregar a Favoritos",
-            style=discord.ButtonStyle.success if not is_favorite else discord.ButtonStyle.danger,
-            custom_id="toggle_favorite"
-        )
-        fav_button.callback = self.toggle_favorite
-        self.add_item(fav_button)
-
-        # Reserve button
-        reserve_button = discord.ui.Button(
-            label="📌 Reservar Servidor",
-            style=discord.ButtonStyle.secondary,
-            custom_id="reserve_server"
-        )
-        reserve_button.callback = self.reserve_server
-        self.add_item(reserve_button)
-
-        
+        # Add dropdown menu for additional options
+        server_options_select = ServerOptionsSelect(self)
+        self.add_item(server_options_select)
 
         # Follow hesiz button
         follow_button = discord.ui.Button(
@@ -2516,6 +2494,136 @@ class ServerBrowserView(discord.ui.View):
 
         # Always return None for file since we're using URL-based images
         return embed, None
+
+# Server options dropdown menu
+class ServerOptionsSelect(discord.ui.Select):
+    def __init__(self, server_browser_view):
+        self.server_browser_view = server_browser_view
+        
+        # Get current state for dynamic options
+        game_id = server_browser_view.game_info.get('game_id')
+        user_id = server_browser_view.authorized_user_id
+        is_favorite = (user_id and game_id and 
+                      user_id in scraper.user_favorites and 
+                      game_id in scraper.user_favorites[user_id])
+        
+        options = [
+            discord.SelectOption(
+                label="⭐ Quitar de Favoritos" if is_favorite else "⭐ Agregar a Favoritos",
+                description="Gestionar estado de favorito del juego",
+                value="toggle_favorite",
+                emoji="⭐"
+            ),
+            discord.SelectOption(
+                label="📌 Reservar Servidor",
+                description="Guardar este servidor para más tarde",
+                value="reserve_server",
+                emoji="📌"
+            ),
+            discord.SelectOption(
+                label="📊 Info del Servidor",
+                description="Ver información detallada del servidor",
+                value="server_info",
+                emoji="📊"
+            ),
+            discord.SelectOption(
+                label="🔄 Actualizar Vista",
+                description="Recargar la información del servidor",
+                value="refresh_view",
+                emoji="🔄"
+            )
+        ]
+        
+        super().__init__(
+            placeholder="⚙️ Opciones del servidor...", 
+            options=options,
+            custom_id="server_options"
+        )
+    
+    async def callback(self, interaction: discord.Interaction):
+        # Check authorization
+        caller_id = str(interaction.user.id)
+        if self.server_browser_view.authorized_user_id and caller_id != self.server_browser_view.authorized_user_id:
+            await interaction.response.send_message(
+                "❌ Solo quien ejecutó el comando puede usar este menú.", 
+                ephemeral=True
+            )
+            return
+        
+        selected_option = self.values[0]
+        
+        if selected_option == "toggle_favorite":
+            await self.server_browser_view.toggle_favorite(interaction)
+            
+        elif selected_option == "reserve_server":
+            await self.server_browser_view.reserve_server(interaction)
+            
+        elif selected_option == "server_info":
+            await self.show_server_info(interaction)
+            
+        elif selected_option == "refresh_view":
+            await self.refresh_view(interaction)
+    
+    async def show_server_info(self, interaction: discord.Interaction):
+        """Show detailed server information"""
+        await interaction.response.defer(ephemeral=True)
+        
+        current_server = self.server_browser_view.servers_list[self.server_browser_view.current_index]
+        game_info = self.server_browser_view.game_info
+        
+        # Get server details
+        server_details = {}
+        user_id = game_info.get('user_id')
+        game_id = game_info.get('game_id')
+        
+        if user_id and user_id in scraper.links_by_user and game_id in scraper.links_by_user[user_id]:
+            server_details = scraper.links_by_user[user_id][game_id].get('server_details', {}).get(current_server, {})
+        
+        embed = discord.Embed(
+            title="📊 Información Detallada del Servidor",
+            description=f"Servidor {self.server_browser_view.current_index + 1} de {self.server_browser_view.total_servers}",
+            color=0x3366ff
+        )
+        
+        embed.add_field(name="🎮 Juego", value=game_info.get('game_name', 'Desconocido'), inline=True)
+        embed.add_field(name="🆔 Game ID", value=game_info.get('game_id', 'Desconocido'), inline=True)
+        embed.add_field(name="📂 Categoría", value=game_info.get('category', 'other').title(), inline=True)
+        
+        # Server specific info
+        server_info = server_details.get('server_info', {})
+        embed.add_field(name="🔗 Server ID", value=server_info.get('server_id', 'Desconocido'), inline=True)
+        
+        # Discovery time
+        discovered_at = server_details.get('discovered_at')
+        if discovered_at:
+            try:
+                from datetime import datetime
+                disc_time = datetime.fromisoformat(discovered_at)
+                embed.add_field(name="🕐 Descubierto", value=disc_time.strftime('%d/%m/%Y %H:%M'), inline=True)
+            except:
+                pass
+        
+        # Extraction time
+        extraction_time = server_details.get('extraction_time')
+        if extraction_time:
+            embed.add_field(name="⚡ Tiempo de Extracción", value=f"{extraction_time}s", inline=True)
+        
+        embed.add_field(name="🔗 Enlace", value=f"```{current_server[:50]}...```", inline=False)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    async def refresh_view(self, interaction: discord.Interaction):
+        """Refresh the server view"""
+        await interaction.response.defer()
+        
+        # Update the dropdown options with current state
+        self.server_browser_view.update_buttons()
+        embed, file = self.server_browser_view.create_server_embed()
+        
+        if file:
+            await interaction.edit_original_response(embed=embed, attachments=[file], view=self.server_browser_view)
+        else:
+            await interaction.edit_original_response(embed=embed, attachments=[], view=self.server_browser_view)
 
 # Game search select menu
 class GameSearchSelect(discord.ui.Select):
