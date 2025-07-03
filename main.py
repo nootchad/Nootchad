@@ -1715,6 +1715,10 @@ class VIPServerScraper:
             chrome_options.add_argument("--window-size=1920,1080")
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            chrome_options.add_argument("--remote-debugging-port=9222")
+            chrome_options.add_argument("--disable-background-timer-throttling")
+            chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+            chrome_options.add_argument("--disable-renderer-backgrounding")
 
             # Disable images for faster loading but enable cookies for Roblox
             prefs = {
@@ -1732,12 +1736,14 @@ class VIPServerScraper:
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
 
-            # Try to find Chrome/Chromium binary
+            # Try to find Chrome/Chromium binary with more paths for Replit
             possible_chrome_paths = [
+                "/usr/bin/google-chrome-stable",
                 "/usr/bin/google-chrome",
                 "/usr/bin/chromium-browser", 
                 "/usr/bin/chromium",
-                "/snap/bin/chromium"
+                "/snap/bin/chromium",
+                "/opt/google/chrome/chrome"
             ]
 
             chrome_binary = None
@@ -1749,23 +1755,45 @@ class VIPServerScraper:
             if chrome_binary:
                 chrome_options.binary_location = chrome_binary
                 logger.info(f"Using Chrome binary at: {chrome_binary}")
+            else:
+                logger.warning("Chrome binary not found, using system default")
 
-            # Create driver with Service
-            try:
-                from webdriver_manager.chrome import ChromeDriverManager
-                service = Service(ChromeDriverManager().install())
-                logger.info("Using ChromeDriverManager")
-            except Exception:
-                service = Service()
-                logger.info("Using system chromedriver")
+            # Create driver with improved service configuration
+            service = None
+            driver = None
+            
+            # Try multiple approaches
+            approaches = [
+                # Approach 1: Use WebDriverManager
+                lambda: self._create_driver_with_manager(chrome_options),
+                # Approach 2: Use system chromedriver
+                lambda: self._create_driver_system(chrome_options),
+                # Approach 3: Minimal configuration
+                lambda: self._create_driver_minimal()
+            ]
+            
+            for i, approach in enumerate(approaches, 1):
+                try:
+                    logger.info(f"Trying approach {i}...")
+                    driver = approach()
+                    if driver:
+                        logger.info(f"✅ Driver created successfully with approach {i}")
+                        break
+                except Exception as e:
+                    logger.warning(f"Approach {i} failed: {e}")
+                    continue
+            
+            if not driver:
+                raise Exception("All driver creation approaches failed")
 
-            # Create driver
-            driver = webdriver.Chrome(service=service, options=chrome_options)
             driver.set_page_load_timeout(30)
             driver.implicitly_wait(10)
 
             # Execute script to hide webdriver property
-            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            try:
+                driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            except Exception as e:
+                logger.warning(f"Could not hide webdriver property: {e}")
 
             # Cargar cookies de Roblox desde alt.txt automáticamente
             logger.info("🍪 Aplicando cookies de Roblox desde alt.txt...")
@@ -1780,22 +1808,77 @@ class VIPServerScraper:
 
         except Exception as e:
             logger.error(f"Error creating Chrome driver: {e}")
-            # Try minimal fallback configuration
-            try:
-                logger.info("🔄 Trying minimal fallback configuration...")
-                chrome_options = Options()
-                chrome_options.add_argument("--headless")
-                chrome_options.add_argument("--no-sandbox")
-                chrome_options.add_argument("--disable-dev-shm-usage")
+            raise Exception(f"Chrome driver creation failed: {e}")
+    
+    def _create_driver_with_manager(self, chrome_options):
+        """Create driver using WebDriverManager"""
+        try:
+            from webdriver_manager.chrome import ChromeDriverManager
+            service = Service(ChromeDriverManager().install())
+            logger.info("Using ChromeDriverManager")
+            return webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e:
+            logger.error(f"WebDriverManager approach failed: {e}")
+            raise
+    
+    def _create_driver_system(self, chrome_options):
+        """Create driver using system chromedriver"""
+        try:
+            # Try to find system chromedriver
+            chromedriver_paths = [
+                "/usr/bin/chromedriver",
+                "/usr/local/bin/chromedriver",
+                "chromedriver"
+            ]
+            
+            chromedriver_path = None
+            for path in chromedriver_paths:
+                if Path(path).exists() or path == "chromedriver":
+                    chromedriver_path = path
+                    break
+            
+            if chromedriver_path:
+                service = Service(chromedriver_path)
+                logger.info(f"Using system chromedriver at: {chromedriver_path}")
+                return webdriver.Chrome(service=service, options=chrome_options)
+            else:
+                service = Service()
+                logger.info("Using default chromedriver service")
+                return webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e:
+            logger.error(f"System chromedriver approach failed: {e}")
+            raise
+    
+    def _create_driver_minimal(self):
+        """Create driver with minimal configuration as last resort"""
+        try:
+            logger.info("🔄 Trying minimal fallback configuration...")
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            
+            # Try to find Chrome binary
+            possible_chrome_paths = [
+                "/usr/bin/google-chrome-stable",
+                "/usr/bin/google-chrome",
+                "/usr/bin/chromium-browser", 
+                "/usr/bin/chromium"
+            ]
+            
+            for path in possible_chrome_paths:
+                if Path(path).exists():
+                    chrome_options.binary_location = path
+                    logger.info(f"Using minimal Chrome binary at: {path}")
+                    break
 
-                driver = webdriver.Chrome(options=chrome_options)
-                driver.set_page_load_timeout(30)
-                driver.implicitly_wait(10)
-                logger.info("✅ Chrome driver created with minimal configuration")
-                return driver
-            except Exception as e2:
-                logger.error(f"Minimal fallback also failed: {e2}")
-                raise Exception(f"Chrome driver creation failed: {e}")
+            driver = webdriver.Chrome(options=chrome_options)
+            logger.info("✅ Chrome driver created with minimal configuration")
+            return driver
+        except Exception as e:
+            logger.error(f"Minimal fallback also failed: {e}")
+            raise
 
     def get_server_links(self, driver, game_id, max_retries=3):
         """Get server links with retry mechanism and cookie application"""
@@ -2644,6 +2727,7 @@ async def cookielog_command(interaction: discord.Interaction):
             chrome_options.add_argument("--disable-extensions")
             chrome_options.add_argument("--window-size=1920,1080")
             chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            chrome_options.add_argument("--remote-debugging-port=9223")
             
             # Habilitar cookies y deshabilitar notificaciones
             prefs = {
@@ -2655,12 +2739,14 @@ async def cookielog_command(interaction: discord.Interaction):
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
 
-            # Buscar Chrome binary
+            # Buscar Chrome binary con más rutas
             possible_chrome_paths = [
+                "/usr/bin/google-chrome-stable",
                 "/usr/bin/google-chrome",
                 "/usr/bin/chromium-browser", 
                 "/usr/bin/chromium",
-                "/snap/bin/chromium"
+                "/snap/bin/chromium",
+                "/opt/google/chrome/chrome"
             ]
 
             chrome_binary = None
@@ -2672,17 +2758,37 @@ async def cookielog_command(interaction: discord.Interaction):
             if chrome_binary:
                 chrome_options.binary_location = chrome_binary
                 logger.info(f"Using Chrome binary at: {chrome_binary}")
+            else:
+                logger.warning("Chrome binary not found, using system default")
 
-            # Crear driver
-            try:
-                from webdriver_manager.chrome import ChromeDriverManager
-                service = Service(ChromeDriverManager().install())
-                logger.info("Using ChromeDriverManager")
-            except Exception:
-                service = Service()
-                logger.info("Using system chromedriver")
-
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            # Crear driver con múltiples intentos
+            driver = None
+            approaches = [
+                # Approach 1: Use WebDriverManager
+                lambda: webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options),
+                # Approach 2: Use system chromedriver
+                lambda: webdriver.Chrome(service=Service(), options=chrome_options),
+                # Approach 3: No service specified
+                lambda: webdriver.Chrome(options=chrome_options)
+            ]
+            
+            for i, approach in enumerate(approaches, 1):
+                try:
+                    logger.info(f"Trying cookielog driver approach {i}...")
+                    if i == 1:
+                        from webdriver_manager.chrome import ChromeDriverManager
+                        driver = approach()
+                        logger.info("Using ChromeDriverManager for cookielog")
+                    else:
+                        driver = approach()
+                        logger.info(f"Using approach {i} for cookielog")
+                    break
+                except Exception as e:
+                    logger.warning(f"Cookielog approach {i} failed: {e}")
+                    continue
+            
+            if not driver:
+                raise Exception("All cookielog driver creation approaches failed")
             driver.set_page_load_timeout(30)
             driver.implicitly_wait(10)
             
