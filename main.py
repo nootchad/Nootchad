@@ -900,7 +900,7 @@ class VIPServerScraper:
         """Load existing VIP links from JSON file with user-specific data"""
         try:
             if Path(self.vip_links_file).exists():
-                with open(self.vip_links_file, 'r') as f:
+                with open(self.vip_links_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     
                     # Load user-specific links if available
@@ -927,13 +927,26 @@ class VIPServerScraper:
                     total_links = 0
                     
                     for user_id, user_games in self.links_by_user.items():
-                        total_games += len(user_games)
+                        user_total = 0
                         for game_id, game_data in user_games.items():
-                            links_count = len(game_data.get('links', []))
-                            total_links += links_count
+                            if isinstance(game_data, dict) and 'links' in game_data:
+                                links_count = len(game_data['links'])
+                                user_total += links_count
+                                total_links += links_count
+                        total_games += len(user_games)
+                        logger.debug(f"💾 Usuario {user_id}: {user_total} enlaces en {len(user_games)} juegos")
                     
                     logger.info(f"Loaded links for {total_users} users with {total_games} total games and {total_links} total links.")
+                    
+                    # Verify data structure
+                    if total_links == 0 and self.links_by_user:
+                        logger.warning("⚠️ Users found but no links detected - checking data structure...")
+                        for user_id, user_games in list(self.links_by_user.items())[:3]:  # Check first 3 users
+                            logger.debug(f"🔍 User {user_id} structure: {list(user_games.keys()) if isinstance(user_games, dict) else 'Not dict'}")
+                            for game_id, game_data in list(user_games.items())[:2]:  # Check first 2 games
+                                logger.debug(f"🔍 Game {game_id} structure: {type(game_data)} - Keys: {list(game_data.keys()) if isinstance(game_data, dict) else 'Not dict'}")
             else:
+                logger.warning(f"⚠️ VIP links file {self.vip_links_file} not found")
                 self.available_links = {}
                 self.links_by_user = {}
                 self.usage_history = {}
@@ -941,7 +954,11 @@ class VIPServerScraper:
                 self.game_categories = {}
                 self.user_reserved_servers = {}
         except Exception as e:
-            logger.error(f"Error loading existing links: {e}")
+            logger.error(f"❌ Error loading existing links: {e}")
+            # Try to log more details about the error
+            if Path(self.vip_links_file).exists():
+                file_size = Path(self.vip_links_file).stat().st_size
+                logger.error(f"File exists, size: {file_size} bytes")
             self.available_links = {}
             self.links_by_user = {}
             self.usage_history = {}
@@ -1790,12 +1807,16 @@ async def on_ready():
     
     for user_id, user_games in scraper.links_by_user.items():
         user_links = 0
-        for game_data in user_games.values():
-            game_links = len(game_data.get('links', []))
-            user_links += game_links
-            total_links += game_links
-        total_games += len(user_games)
-        logger.debug(f"📊 Usuario {user_id}: {user_links} enlaces en {len(user_games)} juegos")
+        if isinstance(user_games, dict):
+            for game_id, game_data in user_games.items():
+                if isinstance(game_data, dict) and 'links' in game_data:
+                    game_links = len(game_data['links'])
+                    user_links += game_links
+                    total_links += game_links
+            total_games += len(user_games)
+            logger.debug(f"📊 Usuario {user_id}: {user_links} enlaces en {len(user_games)} juegos")
+        else:
+            logger.warning(f"⚠️ Usuario {user_id} tiene estructura de datos inválida: {type(user_games)}")
     
     logger.info(f'🎮 Bot listo con {total_links} enlaces VIP cargados para {total_users} usuarios en {total_games} juegos')
     logger.info(f"📈 Usuarios verificados: {len(roblox_verification.verified_users)}")
@@ -3448,6 +3469,22 @@ async def servertest(interaction: discord.Interaction):
     try:
         user_id = str(interaction.user.id)
         
+        # Diagnostic logging
+        user_logger.info(f"🔍 Diagnóstico para usuario {user_id}:")
+        user_logger.info(f"📊 Total usuarios en base de datos: {len(scraper.links_by_user)}")
+        user_logger.info(f"👤 Usuario existe en DB: {user_id in scraper.links_by_user}")
+        
+        if user_id in scraper.links_by_user:
+            user_games = scraper.links_by_user[user_id]
+            user_logger.info(f"🎮 Juegos del usuario: {len(user_games)}")
+            for game_id, game_data in user_games.items():
+                if isinstance(game_data, dict):
+                    links_count = len(game_data.get('links', []))
+                    game_name = game_data.get('game_name', f'Game {game_id}')
+                    user_logger.info(f"  • {game_name} ({game_id}): {links_count} enlaces")
+                else:
+                    user_logger.warning(f"  • {game_id}: estructura inválida - {type(game_data)}")
+        
         # Get all servers from user's games
         all_servers = []
         current_game_info = None
@@ -3455,7 +3492,7 @@ async def servertest(interaction: discord.Interaction):
         # Find the first game with servers for this user
         user_games = scraper.links_by_user.get(user_id, {})
         for game_id, game_data in user_games.items():
-            if game_data.get('links'):
+            if isinstance(game_data, dict) and game_data.get('links'):
                 all_servers = game_data['links']
                 current_game_info = {
                     'game_id': game_id,
@@ -3464,14 +3501,46 @@ async def servertest(interaction: discord.Interaction):
                     'category': game_data.get('category', 'other'),
                     'user_id': user_id
                 }
+                user_logger.info(f"✅ Encontrado juego con servidores: {current_game_info['game_name']} ({len(all_servers)} servidores)")
                 break
 
         if not all_servers:
+            # Enhanced error message with diagnostics
+            user_games_count = len(user_games)
+            total_users_with_data = len(scraper.links_by_user)
+            
             embed = discord.Embed(
                 title="❌ No hay Enlaces VIP Disponibles",
-                description="No tienes servidores VIP en tu base de datos.\n\n**Opciones:**\n• Usa `/scrape [game_id]` para generar enlaces\n• Usa `/searchgame [nombre]` para buscar juegos",
+                description="No tienes servidores VIP en tu base de datos.",
                 color=0xff3333
             )
+            embed.add_field(
+                name="📊 Diagnóstico:",
+                value=f"• Tu ID: `{user_id}`\n• Tus juegos: {user_games_count}\n• Total usuarios con datos: {total_users_with_data}",
+                inline=False
+            )
+            embed.add_field(
+                name="🔧 Soluciones:",
+                value="• Usa `/scrape [game_id]` para generar enlaces\n• Usa `/searchgame [nombre]` para buscar juegos\n• Usa `/debug` si eres admin para más detalles",
+                inline=False
+            )
+            
+            if user_games_count > 0:
+                games_list = []
+                for game_id, game_data in list(user_games.items())[:3]:
+                    if isinstance(game_data, dict):
+                        game_name = game_data.get('game_name', f'Game {game_id}')
+                        links_count = len(game_data.get('links', []))
+                        games_list.append(f"• {game_name}: {links_count} enlaces")
+                    else:
+                        games_list.append(f"• {game_id}: datos corruptos")
+                
+                embed.add_field(
+                    name="🎮 Tus juegos:",
+                    value="\n".join(games_list),
+                    inline=False
+                )
+            
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
