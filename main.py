@@ -2631,8 +2631,8 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
         user_logger.error(f"❌ Error en verificación para {username}: {e}")
         return False
 
-@bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies (primero secreto COOKIE, luego alt.txt), cambiarlas en navegador y obtener información de cuenta")
-async def cookielog_command(interaction: discord.Interaction):
+@bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies y obtener información de cuenta")
+async def cookielog_command(interaction: discord.Interaction, vnc_mode: bool = False):
     """Comando solo para el owner que prueba cookies empezando por el secreto COOKIE y luego alt.txt"""
     user_id = str(interaction.user.id)
     
@@ -2716,9 +2716,10 @@ async def cookielog_command(interaction: discord.Interaction):
         secret_count = len([c for c in roblox_cookies if c.get('source') == 'REPLIT_SECRET'])
         alt_count = len([c for c in roblox_cookies if c.get('source') == 'ALT_TXT'])
         
+        mode_text = "VNC (visible)" if vnc_mode else "headless (optimizado)"
         embed = discord.Embed(
             title="🔍 Iniciando Navegador y Probando Cookies",
-            description=f"Se encontraron **{len(roblox_cookies)} cookies** ({secret_count} del secreto, {alt_count} de alt.txt). Iniciando navegador (VNC) y probando...",
+            description=f"Se encontraron **{len(roblox_cookies)} cookies** ({secret_count} del secreto, {alt_count} de alt.txt). Iniciando navegador en modo {mode_text}...",
             color=0xffaa00
         )
         embed.add_field(
@@ -2736,9 +2737,10 @@ async def cookielog_command(interaction: discord.Interaction):
         try:
             logger.info("🚀 Inicializando navegador para cambio de cookies...")
             
-            # Crear driver con modo VNC (no headless)
+            # Crear driver con modo optimizado
             chrome_options = Options()
-            # NO agregar --headless para que se pueda ver el VNC
+            if not vnc_mode:
+                chrome_options.add_argument("--headless")  # Modo eficiente por defecto
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
@@ -2811,9 +2813,10 @@ async def cookielog_command(interaction: discord.Interaction):
             driver.implicitly_wait(10)
             
             # Actualizar estado
+            mode_status = "VNC iniciado" if vnc_mode else "headless iniciado"
             update_embed = discord.Embed(
                 title="🌐 Navegador Iniciado",
-                description="Navegador VNC iniciado exitosamente. Navegando a Roblox y probando cookies...",
+                description=f"Navegador {mode_status} exitosamente. Navegando a Roblox y probando cookies...",
                 color=0x3366ff
             )
             await message.edit(embed=update_embed)
