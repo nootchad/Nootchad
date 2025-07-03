@@ -1,5 +1,20 @@
 {
-  "listings": {},
-  "last_updated": "2025-07-03T00:02:58.715555",
-  "total_listings": 0
+  "listings": {
+    "listing_1751501612_091241": {
+      "listing_id": "listing_1751501612_091241",
+      "user_id": "916070251895091241",
+      "offer_game_id": "2753915549",
+      "offer_server_link": "https://www.roblox.com/games/2753915549?privateServerLinkCode=14070664262804136873843014275194",
+      "want_game_id": "126884695634066",
+      "description": "nada",
+      "created_at": 1751501612.7517972,
+      "expires_at": 1751588012.7517974,
+      "status": "active",
+      "interested_users": [],
+      "views": 0,
+      "last_interest": null
+    }
+  },
+  "last_updated": "2025-07-03T00:13:43.284883",
+  "total_listings": 1
 }

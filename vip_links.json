@@ -1,61 +1,61 @@
 {
   "links_by_user": {
-    "1374215569393320006": {
-      "109983668079237": {
+    "916070251895091241": {
+      "2753915549": {
         "links": [
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=43389307132588658334146771766073",
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=32657066938160878046996355994328",
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607",
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36961051040976493630866209379302",
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83748248986081192539759127465237"
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=14070664262804136873843014275194",
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=18357916311796988927507441849006",
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=hBHQhZTrlGCCVBBl8zARehPnb2QlPzxK",
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=41248894984300146852698046921024",
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=00514806597743329091791518848178"
         ],
-        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers",
+        "game_name": "Blox Fruits - RBXServers",
         "game_image_url": "https://rbxservers.xyz/svgs/roblox.svg",
-        "category": "puzzle",
+        "category": "other",
         "server_details": {
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=43389307132588658334146771766073": {
-            "source_url": "https://rbxservers.xyz/servers/72ba3042-cbfb-4597-8d6e-21db8a470393",
-            "discovered_at": "2025-07-02T23:51:34.731027",
-            "extraction_time": 13.28,
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=14070664262804136873843014275194": {
+            "source_url": "https://rbxservers.xyz/servers/24164455-38d6-4b5a-ab35-728e2fa93cd7",
+            "discovered_at": "2025-07-03T00:10:17.397727",
+            "extraction_time": 18.75,
             "server_info": {
-              "page_title": "[\ud83c\udf2e] Steal a Brainrot - 4x luck join - RBXServers",
-              "server_id": "72ba3042-cbfb-4597-8d6e-21db8a470393"
+              "page_title": "Blox Fruits - Unnamed Server 1498 - RBXServers",
+              "server_id": "24164455-38d6-4b5a-ab35-728e2fa93cd7"
             }
           },
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=32657066938160878046996355994328": {
-            "source_url": "https://rbxservers.xyz/servers/7c2560b9-5e17-4291-a621-01757b6cace6",
-            "discovered_at": "2025-07-02T23:51:52.063422",
-            "extraction_time": 17.33,
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=18357916311796988927507441849006": {
+            "source_url": "https://rbxservers.xyz/servers/13df4ab2-79cb-4815-8048-3218045c9bcb",
+            "discovered_at": "2025-07-03T00:10:30.506252",
+            "extraction_time": 13.11,
             "server_info": {
-              "page_title": "[\ud83c\udf2e] Steal a Brainrot - 4X LUCKY!!!! NO STEAL - RBXServers",
-              "server_id": "7c2560b9-5e17-4291-a621-01757b6cace6"
+              "page_title": "Blox Fruits - Unnamed Server 4349 - RBXServers",
+              "server_id": "13df4ab2-79cb-4815-8048-3218045c9bcb"
             }
           },
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607": {
-            "source_url": "https://rbxservers.xyz/servers/c4a8a903-2098-4586-a8d9-11c0a7f40876",
-            "discovered_at": "2025-07-02T23:52:08.178491",
-            "extraction_time": 16.11,
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=hBHQhZTrlGCCVBBl8zARehPnb2QlPzxK": {
+            "source_url": "https://rbxservers.xyz/servers/962a82cf-edf9-4618-aeb7-40e791fa922a",
+            "discovered_at": "2025-07-03T00:10:46.385404",
+            "extraction_time": 15.88,
             "server_info": {
-              "page_title": "[\ud83c\udf2e] Steal a Brainrot - Unnamed Server 1442 - RBXServers",
-              "server_id": "c4a8a903-2098-4586-a8d9-11c0a7f40876"
+              "page_title": "Blox Fruits - Unnamed Server 4381 - RBXServers",
+              "server_id": "962a82cf-edf9-4618-aeb7-40e791fa922a"
             }
           },
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36961051040976493630866209379302": {
-            "source_url": "https://rbxservers.xyz/servers/c8732b4e-5c29-4abd-bcf1-7fe131b8b6ca",
-            "discovered_at": "2025-07-02T23:52:26.201090",
-            "extraction_time": 18.02,
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=41248894984300146852698046921024": {
+            "source_url": "https://rbxservers.xyz/servers/bad1832b-821b-4396-aa15-50d21f33f21f",
+            "discovered_at": "2025-07-03T00:11:03.164391",
+            "extraction_time": 16.78,
             "server_info": {
-              "page_title": "[\ud83c\udf2e] Steal a Brainrot - luck event server NO STEAL - RBXServers",
-              "server_id": "c8732b4e-5c29-4abd-bcf1-7fe131b8b6ca"
+              "page_title": "Blox Fruits - Unnamed Server 4307 - RBXServers",
+              "server_id": "bad1832b-821b-4396-aa15-50d21f33f21f"
             }
           },
-          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83748248986081192539759127465237": {
-            "source_url": "https://rbxservers.xyz/servers/437ff8bb-6a9b-4bb8-9e6e-9a088f69df2a",
-            "discovered_at": "2025-07-02T23:52:40.851134",
-            "extraction_time": 14.65,
+          "https://www.roblox.com/games/2753915549?privateServerLinkCode=00514806597743329091791518848178": {
+            "source_url": "https://rbxservers.xyz/servers/15e2543e-0336-43dd-a6e5-1175a256816b",
+            "discovered_at": "2025-07-03T00:11:18.188581",
+            "extraction_time": 15.02,
             "server_info": {
-              "page_title": "[\ud83c\udf2e] Steal a Brainrot - \ud83e\udd11 4X luck, no stealing \ud83e\udd11 - RBXServers",
-              "server_id": "437ff8bb-6a9b-4bb8-9e6e-9a088f69df2a"
+              "page_title": "Blox Fruits - Unnamed Server 2825 - RBXServers",
+              "server_id": "15e2543e-0336-43dd-a6e5-1175a256816b"
             }
           }
         }
@@ -63,68 +63,29 @@
     }
   },
   "scraping_stats": {
-    "total_scraped": 184,
-    "successful_extractions": 154,
+    "total_scraped": 189,
+    "successful_extractions": 159,
     "failed_extractions": 30,
-    "last_scrape_time": "2025-07-02T23:52:42.058598",
-    "scrape_duration": 93.68,
-    "servers_per_minute": 3.2
+    "last_scrape_time": "2025-07-03T00:11:21.185317",
+    "scrape_duration": 90.3,
+    "servers_per_minute": 3.3
   },
   "usage_history": {
-    "1374215569393320006": [
+    "916070251895091241": [
       {
-        "game_id": "109983668079237",
+        "game_id": "2753915549",
         "server_link": "Found 5 servers",
         "action": "scrape_complete",
-        "timestamp": "2025-07-02T23:52:42.058627",
-        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
-      },
-      {
-        "game_id": "109983668079237",
-        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=32657066938160878046996355994328",
-        "action": "navigate_next",
-        "timestamp": "2025-07-02T23:55:58.323652",
-        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
-      },
-      {
-        "game_id": "109983668079237",
-        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607",
-        "action": "navigate_next",
-        "timestamp": "2025-07-02T23:57:18.465849",
-        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
-      },
-      {
-        "game_id": "109983668079237",
-        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36961051040976493630866209379302",
-        "action": "navigate_next",
-        "timestamp": "2025-07-02T23:57:19.694418",
-        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
-      },
-      {
-        "game_id": "109983668079237",
-        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83748248986081192539759127465237",
-        "action": "navigate_next",
-        "timestamp": "2025-07-02T23:57:20.817007",
-        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
+        "timestamp": "2025-07-03T00:11:21.185345",
+        "game_name": "Blox Fruits - RBXServers"
       }
     ]
   },
   "user_favorites": {},
   "game_categories": {
-    "109983668079237": "puzzle"
+    "2753915549": "other"
   },
-  "user_reserved_servers": {
-    "1374215569393320006": [
-      {
-        "game_id": "109983668079237",
-        "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers",
-        "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83748248986081192539759127465237",
-        "note": "Reservado desde navegador",
-        "reserved_at": "2025-07-02T23:57:25.377073",
-        "category": "puzzle"
-      }
-    ]
-  },
-  "last_updated": "2025-07-02T23:57:25.377092",
+  "user_reserved_servers": {},
+  "last_updated": "2025-07-03T00:11:21.185675",
   "total_count": 5
 }
