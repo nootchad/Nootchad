@@ -307,3 +307,10 @@ class CommunityMarketplace:
             'total_views': total_views,
             'total_listings': len(self.marketplace_data)
         }
+    
+    def get_game_name_from_scraper(self, user_id: str, game_id: str, scraper_instance) -> str:
+        """Obtener nombre del juego desde los datos del scraper"""
+        if hasattr(scraper_instance, 'links_by_user'):
+            user_games = scraper_instance.links_by_user.get(user_id, {})
+            return user_games.get(game_id, {}).get('game_name', f'Game {game_id}')
+        return f'Game {game_id}'

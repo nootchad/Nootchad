@@ -2324,14 +2324,7 @@ class ServerBrowserView(discord.ui.View):
         reserve_button.callback = self.reserve_server
         self.add_item(reserve_button)
 
-        # Generate join script button
-        generate_script_button = discord.ui.Button(
-            label="🚀 Generar Script",
-            style=discord.ButtonStyle.success,
-            custom_id="generate_join_script"
-        )
-        generate_script_button.callback = self.generate_join_script
-        self.add_item(generate_script_button)
+        
 
         # Follow hesiz button
         follow_button = discord.ui.Button(
@@ -2432,117 +2425,7 @@ class ServerBrowserView(discord.ui.View):
         else:
             await interaction.response.defer()
 
-    async def generate_join_script(self, interaction: discord.Interaction):
-        """Generate join script for current server"""
-        current_server = self.servers_list[self.current_index]
-        game_id = self.game_info.get('game_id')
-        game_name = self.game_info.get('game_name', f'Game {game_id}')
-        
-        try:
-            # Extraer game ID y private code del enlace
-            import re
-            match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', current_server)
-            if not match:
-                await interaction.response.send_message(
-                    "❌ No se pudo procesar el enlace del servidor.", 
-                    ephemeral=True
-                )
-                return
-            
-            roblox_game_id, private_code = match.groups()
-            
-            # Generar script
-            roblox_script = f'''-- 🎮 RbxServers Auto-Join Script
--- Servidor específico para {game_name}
-
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-
-print("🤖 RbxServers Auto-Join Script iniciando...")
-print("🎯 Juego: {game_name}")
-print("🆔 Game ID: {roblox_game_id}")
-print("🔑 Private Code: {private_code}")
-
--- Función para unirse al servidor privado
-local function joinPrivateServer()
-    local gameId = {roblox_game_id}
-    local privateCode = "{private_code}"
     
-    print("🚀 Iniciando teleport al servidor privado...")
-    
-    local success, errorMessage = pcall(function()
-        TeleportService:TeleportToPrivateServer(gameId, privateCode, {{Players.LocalPlayer}})
-    end)
-    
-    if success then
-        print("✅ Teleport iniciado exitosamente!")
-        print("⏳ Esperando conexión al servidor...")
-    else
-        print("❌ Error en teleport: " .. tostring(errorMessage))
-        print("🔄 Reintentando en 3 segundos...")
-        wait(3)
-        joinPrivateServer()
-    end
-end
-
--- Verificar que estamos en un juego
-if game.PlaceId and game.PlaceId > 0 then
-    print("✅ Ejecutándose desde dentro del juego")
-    joinPrivateServer()
-else
-    print("❌ Este script debe ejecutarse desde dentro de un juego de Roblox")
-    print("💡 Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
-end
-
-print("🎮 Script cargado - by RbxServers (hesiz)")'''
-
-            # Crear embed
-            embed = discord.Embed(
-                title="🚀 Script de Unión Directa",
-                description=f"Script para servidor específico de **{game_name}**",
-                color=0x00ff88
-            )
-            
-            embed.add_field(name="🎯 Juego", value=f"```{game_name}```", inline=True)
-            embed.add_field(name="🔢 Servidor", value=f"{self.current_index + 1}/{len(self.servers_list)}", inline=True)
-            embed.add_field(name="🆔 Game ID", value=f"```{roblox_game_id}```", inline=True)
-            
-            embed.add_field(
-                name="📋 Cómo usar:",
-                value="1. **Descarga** el archivo .lua\n2. **Ve a cualquier juego** de Roblox\n3. **Presiona F9** para abrir consola\n4. **Copia y pega** el contenido del archivo\n5. **Presiona Enter** para ejecutar",
-                inline=False
-            )
-            
-            embed.add_field(
-                name="⚡ Ventaja del Script:",
-                value="• **Unión instantánea** sin usar navegador\n• **Funciona desde cualquier juego** de Roblox\n• **No necesita ejecutores** externos",
-                inline=False
-            )
-            
-            # Crear archivo
-            import io
-            script_file = io.BytesIO(roblox_script.encode('utf-8'))
-            timestamp = datetime.now().strftime('%H%M%S')
-            filename = f"join_script_{game_id}_{self.current_index + 1}_{timestamp}.lua"
-            discord_file = discord.File(script_file, filename=filename)
-            
-            await interaction.response.send_message(embed=embed, file=discord_file, ephemeral=True)
-            
-            # Agregar a historial
-            if self.authorized_user_id:
-                scraper.add_usage_history(
-                    self.authorized_user_id, 
-                    game_id, 
-                    current_server, 
-                    'join_script_generated'
-                )
-            
-        except Exception as e:
-            logger.error(f"Error generating join script: {e}")
-            await interaction.response.send_message(
-                "❌ Error al generar el script de unión.", 
-                ephemeral=True
-            )
 
     def create_server_embed(self):
         """Create embed for current server"""
@@ -3360,6 +3243,85 @@ async def clear_reservations_command(interaction: discord.Interaction):
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
+@bot.tree.command(name="mylistings", description="Ver tus propios listings del marketplace")
+async def my_listings_command(interaction: discord.Interaction):
+    """Show user's own marketplace listings"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        user_listings = marketplace.get_user_listings(user_id)
+        
+        if not user_listings:
+            embed = discord.Embed(
+                title="🛒 Mis Listings del Marketplace",
+                description="No tienes listings activos en el marketplace.\n\nUsa `/marketplace create` para crear un listing.",
+                color=0x888888
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        embed = discord.Embed(
+            title="🛒 Mis Listings del Marketplace",
+            description=f"Tienes **{len(user_listings)}** listings:",
+            color=0x4169e1
+        )
+        
+        for i, listing in enumerate(user_listings[:5], 1):  # Mostrar máximo 5
+            # Obtener nombre del juego de los datos del usuario
+            user_games = scraper.links_by_user.get(user_id, {})
+            offer_game_name = user_games.get(listing['offer_game_id'], {}).get('game_name', f"Game {listing['offer_game_id']}")
+            want_game_name = user_games.get(listing['want_game_id'], {}).get('game_name', f"Game {listing['want_game_id']}")
+            
+            # Estado del listing
+            current_time = time.time()
+            if listing['expires_at'] < current_time:
+                status = "⏰ Expirado"
+                status_color = "🔴"
+            elif listing['status'] == 'completed':
+                status = "✅ Completado"
+                status_color = "🟢"
+            else:
+                status = "🟢 Activo"
+                status_color = "🟢"
+            
+            # Tiempo restante o transcurrido
+            time_diff = listing['expires_at'] - current_time
+            if time_diff > 0:
+                hours_left = int(time_diff / 3600)
+                mins_left = int((time_diff % 3600) / 60)
+                time_info = f"⏰ {hours_left}h {mins_left}m restantes"
+            else:
+                time_info = "⏰ Expirado"
+            
+            embed.add_field(
+                name=f"{status_color} Listing #{i}",
+                value=f"**Ofrezco:** {offer_game_name[:25]}{'...' if len(offer_game_name) > 25 else ''}\n**Busco:** {want_game_name[:25]}{'...' if len(want_game_name) > 25 else ''}\n**Estado:** {status}\n**Interesados:** {len(listing.get('interested_users', []))}\n**Vistas:** {listing.get('views', 0)}\n{time_info}",
+                inline=True
+            )
+        
+        if len(user_listings) > 5:
+            embed.set_footer(text=f"Mostrando 5 de {len(user_listings)} listings")
+        
+        embed.add_field(
+            name="🔧 Gestionar Listings",
+            value="• `/marketplace browse` - Ver otros listings\n• `/marketplace create` - Crear nuevo listing\n• Usa `/marketplace` para más opciones",
+            inline=False
+        )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in my listings command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al cargar tus listings.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="servertest", description="Navegar por todos los servidores VIP disponibles")
 async def servertest(interaction: discord.Interaction):
     """Browser through all available VIP servers with navigation (user-specific)"""
@@ -4045,153 +4007,12 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                     )
                     await interaction.followup.send(embed=error_embed, ephemeral=True)
         
-        # Join script button (user-exclusive)  
-        class ExclusiveJoinScriptButton(discord.ui.Button):
-            def __init__(self, target_user_id, game_id, disabled=False):
-                super().__init__(
-                    label="🚀 Generar Script de Unión",
-                    style=discord.ButtonStyle.secondary,
-                    disabled=disabled
-                )
-                self.target_user_id = target_user_id
-                self.game_id = game_id
-
-            async def callback(self, interaction: discord.Interaction):
-                if str(interaction.user.id) != self.target_user_id:
-                    await interaction.response.send_message(
-                        "❌ Solo quien ejecutó el comando puede usar este botón.", 
-                        ephemeral=True
-                    )
-                    return
-
-                await interaction.response.defer()
-                try:
-                    # Obtener enlace aleatorio
-                    servers = scraper.links_by_user[self.target_user_id][self.game_id]['links']
-                    if not servers:
-                        error_embed = discord.Embed(
-                            title="❌ No hay Enlaces Disponibles",
-                            description="No hay enlaces VIP para generar el script.",
-                            color=0xff3333
-                        )
-                        await interaction.followup.send(embed=error_embed, ephemeral=True)
-                        return
-                    
-                    import random
-                    vip_link = random.choice(servers)
-                    game_name = scraper.links_by_user[self.target_user_id][self.game_id].get('game_name', f'Game {self.game_id}')
-                    
-                    # Extraer game ID y private code del enlace
-                    import re
-                    match = re.search(r'roblox\.com/games/(\d+)(?:/[^?]*)?[?&]privateServerLinkCode=([%\w\-_]+)', vip_link)
-                    if not match:
-                        error_embed = discord.Embed(
-                            title="❌ Enlace VIP Inválido",
-                            description="El enlace VIP no tiene el formato correcto.",
-                            color=0xff0000
-                        )
-                        await interaction.followup.send(embed=error_embed, ephemeral=True)
-                        return
-                    
-                    roblox_game_id, private_code = match.groups()
-                    
-                    # Generar script de Roblox
-                    roblox_script = f'''-- 🎮 RbxServers Auto-Join Script
--- Generado automáticamente para unirse a servidor privado
--- Juego: {game_name}
-
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-
-print("🤖 RbxServers Auto-Join Script iniciando...")
-print("🎯 Juego: {game_name}")
-print("🆔 Game ID: {roblox_game_id}")
-print("🔑 Private Code: {private_code}")
-
--- Función para unirse al servidor privado
-local function joinPrivateServer()
-    local gameId = {roblox_game_id}
-    local privateCode = "{private_code}"
-    
-    print("🚀 Iniciando teleport al servidor privado...")
-    
-    local success, errorMessage = pcall(function()
-        TeleportService:TeleportToPrivateServer(gameId, privateCode, {{Players.LocalPlayer}})
-    end)
-    
-    if success then
-        print("✅ Teleport iniciado exitosamente!")
-        print("⏳ Esperando conexión al servidor...")
-    else
-        print("❌ Error en teleport: " .. tostring(errorMessage))
-        print("🔄 Reintentando en 3 segundos...")
-        wait(3)
-        joinPrivateServer()
-    end
-end
-
--- Verificar que estamos en un juego (no en el lobby)
-if game.PlaceId and game.PlaceId > 0 then
-    print("✅ Ejecutándose desde dentro del juego")
-    joinPrivateServer()
-else
-    print("❌ Este script debe ejecutarse desde dentro de un juego de Roblox")
-    print("💡 Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
-end
-
-print("🎮 Script cargado - by RbxServers (hesiz)")'''
-
-                    # Crear embed
-                    embed = discord.Embed(
-                        title="🚀 Script de Unión Directa Generado",
-                        description=f"Script generado para **{game_name}**",
-                        color=0x00ff88
-                    )
-                    
-                    embed.add_field(name="🎯 Juego", value=f"```{game_name}```", inline=True)
-                    embed.add_field(name="🆔 Game ID", value=f"```{roblox_game_id}```", inline=True)
-                    embed.add_field(name="🔑 Private Code", value=f"```{private_code}```", inline=True)
-                    
-                    embed.add_field(
-                        name="📋 Instrucciones",
-                        value="1. **Copia** el script del archivo\n2. **Ve a cualquier juego** de Roblox\n3. **Presiona F9** (consola)\n4. **Pega y ejecuta** el script",
-                        inline=False
-                    )
-                    
-                    # Crear archivo
-                    import io
-                    script_file = io.BytesIO(roblox_script.encode('utf-8'))
-                    timestamp = datetime.now().strftime('%H%M%S')
-                    filename = f"join_script_{self.game_id}_{timestamp}.lua"
-                    discord_file = discord.File(script_file, filename=filename)
-                    
-                    await interaction.followup.send(embed=embed, file=discord_file)
-                    
-                    # Log
-                    scraper.add_usage_history(self.target_user_id, self.game_id, vip_link, 'join_script_generated')
-
-                except Exception as e:
-                    logger.error(f"Error generating join script: {e}")
-                    error_embed = discord.Embed(
-                        title="❌ Error al Generar Script",
-                        description="Ocurrió un error al generar el script.",
-                        color=0xff0000
-                    )
-                    await interaction.followup.send(embed=error_embed, ephemeral=True)
-        
         vip_button = ExclusiveVIPButton(
             user_id, 
             game_id, 
             disabled=game_info['total_links'] == 0
         )
         complete_view.add_item(vip_button)
-        
-        join_script_button = ExclusiveJoinScriptButton(
-            user_id,
-            game_id,
-            disabled=game_info['total_links'] == 0
-        )
-        complete_view.add_item(join_script_button)
 
         follow_button_final = discord.ui.Button(
             label="👤 Seguir a hesiz",
