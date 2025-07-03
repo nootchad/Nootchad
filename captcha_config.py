@@ -1,11 +1,13 @@
 
 # Configuración del Sistema de Resolución de CAPTCHA Gratuito
 
+import os
+
 class CaptchaConfig:
     """Configuración para el solucionador de CAPTCHA"""
     
-    # API de OCR gratuita (OCR.space)
-    OCR_API_KEY = "helloworld"  # API key gratuita
+    # API de OCR (OCR.space) - usa el secreto de Replit o fallback gratuito
+    OCR_API_KEY = os.getenv('CAPTCHA', 'helloworld')
     OCR_API_URL = "https://api.ocr.space/parse/image"
     
     # Configuraciones de procesamiento de imagen

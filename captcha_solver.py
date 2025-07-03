@@ -6,6 +6,7 @@ import base64
 import json
 import time
 import logging
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,7 +20,8 @@ logger = logging.getLogger(__name__)
 class FreeCaptchaSolver:
     def __init__(self):
         self.ocr_api_url = "https://api.ocr.space/parse/image"
-        self.ocr_api_key = "helloworld"  # API gratuita de OCR.space
+        # Usar API key desde el secreto de Replit, con fallback a la gratuita
+        self.ocr_api_key = os.getenv('CAPTCHA', 'helloworld')
         self.temp_captcha_path = "temp_captcha.png"
         
     def detect_captcha_elements(self, driver):
