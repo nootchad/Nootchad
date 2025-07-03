@@ -26,7 +26,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -2682,8 +2682,8 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             
             # Configurar Chrome options para Replit
             chrome_options = Options()
-            # Modo headless por defecto para Replit, comentar la siguiente línea para modo VNC visible
-            chrome_options.add_argument("--headless")
+            # Modo headless desactivado para ver la pantalla durante creación de cuenta
+            # chrome_options.add_argument("--headless")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
