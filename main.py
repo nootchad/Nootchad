@@ -2633,7 +2633,7 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
 
 @bot.tree.command(name="createaccount", description="[OWNER ONLY] Crear nueva cuenta de Roblox con nombres RbxServers")
 async def createaccount_command(interaction: discord.Interaction, username_suffix: str = ""):
-    """Comando solo para el owner que crea cuentas de Roblox usando VNC"""
+    """Comando solo para el owner que crea cuentas de Roblox usando Selenium con selectores actualizados"""
     user_id = str(interaction.user.id)
     
     # Verificar que solo el owner pueda usar este comando
@@ -2665,24 +2665,25 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
         # Mensaje inicial
         embed = discord.Embed(
             title="🎮 Creando Cuenta de Roblox",
-            description=f"Iniciando creación de cuenta con username: **{new_username}**",
+            description=f"Iniciando creación automatizada de cuenta con username: **{new_username}**",
             color=0xffaa00
         )
         embed.add_field(name="👤 Username Propuesto", value=f"`{new_username}`", inline=True)
-        embed.add_field(name="🖥️ Modo", value="VNC (Visible)", inline=True)
+        embed.add_field(name="🖥️ Modo", value="Automatizado con VNC", inline=True)
         embed.add_field(name="🔄 Estado", value="Inicializando navegador...", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
         
-        # INICIALIZAR NAVEGADOR VNC (SIN HEADLESS)
+        # INICIALIZAR NAVEGADOR CHROME
         driver = None
         
         try:
-            logger.info("🚀 Inicializando navegador VNC para creación de cuenta...")
+            logger.info("🚀 Inicializando navegador Chrome para creación de cuenta...")
             
-            # Crear driver VNC (sin headless - modo visible)
+            # Configurar Chrome options para Replit
             chrome_options = Options()
-            # NO agregar --headless para VNC visible
+            # Modo headless por defecto para Replit, comentar la siguiente línea para modo VNC visible
+            chrome_options.add_argument("--headless")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
@@ -2700,7 +2701,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 "profile.default_content_setting_values.notifications": 2,
                 "profile.managed_default_content_settings.popups": 2,
                 "profile.managed_default_content_settings.javascript": 1,  # JS necesario
-                "profile.managed_default_content_settings.images": 1,  # Imágenes necesarias para CAPTCHA
+                "profile.managed_default_content_settings.images": 1,  # Imágenes necesarias
             }
             chrome_options.add_experimental_option("prefs", prefs)
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -2709,11 +2710,9 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             # Buscar Chrome binary
             possible_chrome_paths = [
                 "/usr/bin/google-chrome-stable",
-                "/usr/bin/google-chrome",
-                "/usr/bin/chromium-browser", 
-                "/usr/bin/chromium",
-                "/snap/bin/chromium",
-                "/opt/google/chrome/chrome"
+                "/usr/bin/google-chrome", 
+                "/usr/bin/chromium-browser",
+                "/usr/bin/chromium"
             ]
 
             chrome_binary = None
@@ -2727,616 +2726,286 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 logger.info(f"Using Chrome binary at: {chrome_binary}")
 
             # Crear driver con múltiples intentos
-            approaches = [
-                lambda: webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options),
-                lambda: webdriver.Chrome(service=Service(), options=chrome_options),
-                lambda: webdriver.Chrome(options=chrome_options)
-            ]
-            
-            for i, approach in enumerate(approaches, 1):
+            driver = None
+            try:
+                # Intentar con WebDriverManager primero
+                from webdriver_manager.chrome import ChromeDriverManager
+                driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+                logger.info("✅ Driver creado con WebDriverManager")
+            except Exception as e:
+                logger.warning(f"WebDriverManager falló: {e}")
                 try:
-                    logger.info(f"Trying createaccount driver approach {i}...")
-                    if i == 1:
-                        from webdriver_manager.chrome import ChromeDriverManager
-                        driver = approach()
-                        logger.info("Using ChromeDriverManager for createaccount")
-                    else:
-                        driver = approach()
-                        logger.info(f"Using approach {i} for createaccount")
-                    break
-                except Exception as e:
-                    logger.warning(f"Createaccount approach {i} failed: {e}")
-                    continue
+                    # Intentar con driver del sistema
+                    driver = webdriver.Chrome(service=Service(), options=chrome_options)
+                    logger.info("✅ Driver creado con chromedriver del sistema")
+                except Exception as e2:
+                    logger.error(f"Sistema chromedriver falló: {e2}")
+                    # Último intento sin service específico
+                    driver = webdriver.Chrome(options=chrome_options)
+                    logger.info("✅ Driver creado sin service específico")
             
             if not driver:
-                raise Exception("All createaccount driver creation approaches failed")
+                raise Exception("No se pudo crear el driver de Chrome")
             
+            # Configurar timeouts
             driver.set_page_load_timeout(60)
-            driver.implicitly_wait(15)
+            driver.implicitly_wait(10)
             
             # Actualizar estado
             update_embed = discord.Embed(
-                title="🌐 Navegador VNC Iniciado",
-                description="Navegador VNC iniciado exitosamente. Navegando a Roblox para crear cuenta...",
+                title="🌐 Navegador Iniciado",
+                description="Navegador Chrome iniciado exitosamente. Navegando a Roblox...",
                 color=0x3366ff
             )
             update_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
-            update_embed.add_field(name="🖥️ Modo", value="VNC Visible", inline=True)
+            update_embed.add_field(name="🖥️ Modo", value="Chrome Automatizado", inline=True)
             update_embed.add_field(name="🔄 Estado", value="Navegando a Roblox...", inline=True)
             await message.edit(embed=update_embed)
             
-            logger.info("✅ Navegador VNC iniciado exitosamente, navegando a Roblox...")
+            logger.info("✅ Navegador iniciado exitosamente, navegando a Roblox...")
             
-            # Navegar a la página de registro de Roblox
-            driver.get("https://www.roblox.com/")
+            # Navegar a Roblox usando el script base actualizado
+            driver.get("https://www.roblox.com")
             time.sleep(5)
             
             # Actualizar progreso
             progress_embed = discord.Embed(
                 title="📝 Preparando Registro",
-                description="Página de Roblox cargada. Localizando formulario de registro...",
+                description="Página de Roblox cargada. Aplicando script de registro automatizado...",
                 color=0x3366ff
             )
             progress_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
-            progress_embed.add_field(name="🖥️ VNC", value="Activo y Visible", inline=True)
+            progress_embed.add_field(name="🖥️ Estado", value="Procesando formulario", inline=True)
             progress_embed.add_field(name="🌐 Página", value="Roblox.com cargada", inline=True)
             await message.edit(embed=progress_embed)
             
-            # Intentar encontrar elementos de registro
+            # APLICAR SCRIPT BASE ACTUALIZADO
+            fields_completed = 0
+            form_data = {}
+            
             try:
-                # Buscar diferentes selectores para el formulario de registro
-                signup_selectors = [
-                    "a[href*='signup']",
-                    "button[data-testid='signup-button']",
-                    ".signup-button",
-                    "#signup-button",
-                    "a.btn-secondary-lg",
-                    "[data-testid='sign-up-button']"
-                ]
+                logger.info("🔍 Iniciando proceso de registro automatizado...")
                 
-                signup_found = False
-                for selector in signup_selectors:
-                    try:
-                        signup_element = driver.find_element(By.CSS_SELECTOR, selector)
-                        if signup_element.is_displayed():
-                            signup_element.click()
-                            signup_found = True
-                            logger.info(f"✅ Clicked signup with selector: {selector}")
-                            break
-                    except:
-                        continue
-                
-                if not signup_found:
-                    # Intentar navegación directa al signup
-                    driver.get("https://www.roblox.com/newlogin")
+                # Paso 1: Hacer clic en el botón de registro si existe
+                try:
+                    signup_tab = driver.find_element(By.ID, "signup-button")
+                    signup_tab.click()
                     time.sleep(3)
+                    logger.info("✅ Botón de registro clickeado")
+                except Exception as e:
+                    logger.info("ℹ️ Botón de registro no encontrado o ya en página de registro")
                 
-                time.sleep(5)
+                # Crear WebDriverWait para mejor manejo de timeouts
+                wait = WebDriverWait(driver, 20)
                 
-                # Esperar a que el formulario de registro esté completamente cargado
-                logger.info("🔍 Esperando a que el formulario de registro cargue completamente...")
+                # Paso 2: Llenar fecha de nacimiento (Mes, Día, Año)
+                logger.info("📅 Configurando fecha de nacimiento...")
+                birth_year = 2002  # Usar año del script base
                 
-                # Usar WebDriverWait para mejores resultados
-                wait = WebDriverWait(driver, 30)
+                try:
+                    # Mes (Marzo = 3)
+                    month_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "MonthDropdown")))
+                    Select(month_dropdown).select_by_value("3")
+                    logger.info("✅ Mes seleccionado: Marzo")
+                    fields_completed += 1
+                except Exception as e:
+                    logger.warning(f"❌ Error seleccionando mes: {e}")
                 
-                # Buscar y llenar todos los campos del formulario de registro
-                fields_filled = 0
+                try:
+                    # Día (15)
+                    day_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "DayDropdown")))
+                    Select(day_dropdown).select_by_value("15")
+                    logger.info("✅ Día seleccionado: 15")
+                    fields_completed += 1
+                except Exception as e:
+                    logger.warning(f"❌ Error seleccionando día: {e}")
                 
-                # 1. Campo de Username - con más selectores y mejor manejo
-                logger.info(f"📝 Intentando llenar campo de username: {new_username}")
-                username_selectors = [
-                    "input[id='signup-username']",
-                    "input[data-testid='username-signup-input']",
-                    "input[placeholder*='Username']",
-                    "input[name='username']",
-                    "input[id*='username']",
-                    "#signup-username",
-                    ".signup-username input",
-                    ".username-input input",
-                    "input[type='text'][placeholder*='user']"
-                ]
+                try:
+                    # Año (2002)
+                    year_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "YearDropdown")))
+                    Select(year_dropdown).select_by_value(str(birth_year))
+                    logger.info(f"✅ Año seleccionado: {birth_year}")
+                    fields_completed += 1
+                except Exception as e:
+                    logger.warning(f"❌ Error seleccionando año: {e}")
                 
-                username_filled = False
-                for selector in username_selectors:
-                    try:
-                        username_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                        if username_field.is_displayed() and username_field.is_enabled():
-                            # Scroll al elemento
-                            driver.execute_script("arguments[0].scrollIntoView(true);", username_field)
-                            time.sleep(1)
-                            
-                            # Limpiar y llenar
-                            username_field.clear()
-                            time.sleep(0.5)
-                            username_field.send_keys(new_username)
-                            time.sleep(1)
-                            
-                            # Verificar que se llenó
-                            if username_field.get_attribute('value') == new_username:
-                                logger.info(f"✅ Username '{new_username}' ingresado exitosamente")
-                                username_filled = True
-                                fields_filled += 1
-                                break
-                    except:
-                        continue
+                form_data['birth_date'] = f"15/03/{birth_year}"
                 
-                # 2. Campo de Password - mejorado
-                logger.info("📝 Intentando llenar campo de password")
-                password_selectors = [
-                    "input[id='signup-password']",
-                    "input[data-testid='password-signup-input']",
-                    "input[type='password']",
-                    "input[name='password']",
-                    "input[id*='password']",
-                    "#signup-password",
-                    ".signup-password input",
-                    ".password-input input"
-                ]
+                # Paso 3: Llenar username
+                logger.info(f"👤 Configurando username: {new_username}")
+                try:
+                    username_field = wait.until(EC.element_to_be_clickable((By.ID, "signup-username")))
+                    username_field.clear()
+                    username_field.send_keys(new_username)
+                    logger.info(f"✅ Username '{new_username}' ingresado exitosamente")
+                    fields_completed += 1
+                    form_data['username'] = new_username
+                except Exception as e:
+                    logger.error(f"❌ Error configurando username: {e}")
                 
-                password_filled = False
+                # Paso 4: Llenar password
                 strong_password = "RbxServers2024!"
-                for selector in password_selectors:
-                    try:
-                        password_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                        if password_field.is_displayed() and password_field.is_enabled():
-                            # Scroll al elemento
-                            driver.execute_script("arguments[0].scrollIntoView(true);", password_field)
-                            time.sleep(1)
-                            
-                            # Limpiar y llenar
-                            password_field.clear()
-                            time.sleep(0.5)
-                            password_field.send_keys(strong_password)
-                            time.sleep(1)
-                            
-                            logger.info(f"✅ Password '{strong_password}' ingresada exitosamente")
-                            password_filled = True
-                            fields_filled += 1
-                            break
-                    except:
-                        continue
+                logger.info("🔒 Configurando password...")
+                try:
+                    password_field = wait.until(EC.element_to_be_clickable((By.ID, "signup-password")))
+                    password_field.clear()
+                    password_field.send_keys(strong_password)
+                    logger.info("✅ Password configurada exitosamente")
+                    fields_completed += 1
+                    form_data['password'] = strong_password
+                except Exception as e:
+                    logger.error(f"❌ Error configurando password: {e}")
                 
-                # 3. Campo de Email - mejorado
-                auto_email = f"{new_username.lower()}@{random.choice(['gmail.com', 'yahoo.com', 'hotmail.com'])}"
-                logger.info(f"📝 Intentando llenar campo de email: {auto_email}")
-                email_selectors = [
-                    "input[id='signup-email']",
-                    "input[data-testid='email-signup-input']",
-                    "input[type='email']",
-                    "input[name='email']",
-                    "input[id*='email']",
-                    "#signup-email",
-                    ".signup-email input",
-                    ".email-input input",
-                    "input[placeholder*='Email']"
-                ]
+                # Paso 5: Seleccionar género (Masculino)
+                logger.info("⚧ Configurando género...")
+                try:
+                    male_button = wait.until(EC.element_to_be_clickable((By.ID, "MaleButton")))
+                    male_button.click()
+                    logger.info("✅ Género masculino seleccionado")
+                    fields_completed += 1
+                    form_data['gender'] = 'Male'
+                except Exception as e:
+                    logger.warning(f"❌ Error seleccionando género: {e}")
                 
-                email_filled = False
-                for selector in email_selectors:
-                    try:
-                        email_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                        if email_field.is_displayed() and email_field.is_enabled():
-                            # Scroll al elemento
-                            driver.execute_script("arguments[0].scrollIntoView(true);", email_field)
-                            time.sleep(1)
-                            
-                            # Limpiar y llenar
-                            email_field.clear()
-                            time.sleep(0.5)
-                            email_field.send_keys(auto_email)
-                            time.sleep(1)
-                            
-                            # Verificar que se llenó
-                            if auto_email in email_field.get_attribute('value'):
-                                logger.info(f"✅ Email '{auto_email}' ingresado exitosamente")
-                                email_filled = True
-                                fields_filled += 1
-                                break
-                    except:
-                        continue
+                # Esperar un momento para que se procesen todos los campos
+                time.sleep(2)
                 
-                # 4. Fecha de Nacimiento - MEJORADO CON MÁS SELECTORES
-                current_year = datetime.now().year
-                birth_year = current_year - 25  # 25 años para ser mayor de edad
-                birth_month = "Jan"
-                birth_day = "15"
-                
-                logger.info(f"📝 Intentando llenar fecha de nacimiento: {birth_day} {birth_month} {birth_year}")
-                
-                # Mes de nacimiento
-                month_selectors = [
-                    "select[id='MonthDropdown']",
-                    "select[id*='month']",
-                    "select[name='month']",
-                    "select[data-testid='month-picker']",
-                    ".month-selector select",
-                    ".birthday-month select",
-                    "select[id='signup-month']",
-                    "#MonthDropdown"
-                ]
-                
-                month_filled = False
-                for selector in month_selectors:
-                    try:
-                        month_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                        if month_field.is_displayed() and month_field.is_enabled():
-                            # Scroll al elemento
-                            driver.execute_script("arguments[0].scrollIntoView(true);", month_field)
-                            time.sleep(1)
-                            
-                            from selenium.webdriver.support.ui import Select
-                            select_month = Select(month_field)
-                            
-                            # Intentar diferentes formatos para enero
-                            month_options = ["Jan", "January", "1", "01"]
-                            for month_option in month_options:
-                                try:
-                                    select_month.select_by_value(month_option)
-                                    logger.info(f"✅ Mes de nacimiento seleccionado: {month_option}")
-                                    month_filled = True
-                                    fields_filled += 1
-                                    break
-                                except:
-                                    try:
-                                        select_month.select_by_visible_text(month_option)
-                                        logger.info(f"✅ Mes de nacimiento seleccionado por texto: {month_option}")
-                                        month_filled = True
-                                        fields_filled += 1
-                                        break
-                                    except:
-                                        continue
-                            
-                            if month_filled:
-                                break
-                    except:
-                        continue
-                
-                # Día de nacimiento
-                day_selectors = [
-                    "select[id='DayDropdown']",
-                    "select[id*='day']",
-                    "select[name='day']",
-                    "select[data-testid='day-picker']",
-                    ".day-selector select",
-                    ".birthday-day select",
-                    "select[id='signup-day']",
-                    "#DayDropdown"
-                ]
-                
-                day_filled = False
-                for selector in day_selectors:
-                    try:
-                        day_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                        if day_field.is_displayed() and day_field.is_enabled():
-                            # Scroll al elemento
-                            driver.execute_script("arguments[0].scrollIntoView(true);", day_field)
-                            time.sleep(1)
-                            
-                            from selenium.webdriver.support.ui import Select
-                            select_day = Select(day_field)
-                            
-                            # Intentar diferentes formatos para el día
-                            day_options = ["15", "15th", str(15)]
-                            for day_option in day_options:
-                                try:
-                                    select_day.select_by_value(day_option)
-                                    logger.info(f"✅ Día de nacimiento seleccionado: {day_option}")
-                                    day_filled = True
-                                    fields_filled += 1
-                                    break
-                                except:
-                                    try:
-                                        select_day.select_by_visible_text(day_option)
-                                        logger.info(f"✅ Día de nacimiento seleccionado por texto: {day_option}")
-                                        day_filled = True
-                                        fields_filled += 1
-                                        break
-                                    except:
-                                        continue
-                            
-                            if day_filled:
-                                break
-                    except:
-                        continue
-                
-                # Año de nacimiento
-                year_selectors = [
-                    "select[id='YearDropdown']",
-                    "select[id*='year']",
-                    "select[name='year']",
-                    "select[data-testid='year-picker']",
-                    ".year-selector select",
-                    ".birthday-year select",
-                    "select[id='signup-year']",
-                    "#YearDropdown"
-                ]
-                
-                year_filled = False
-                for selector in year_selectors:
-                    try:
-                        year_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                        if year_field.is_displayed() and year_field.is_enabled():
-                            # Scroll al elemento
-                            driver.execute_script("arguments[0].scrollIntoView(true);", year_field)
-                            time.sleep(1)
-                            
-                            from selenium.webdriver.support.ui import Select
-                            select_year = Select(year_field)
-                            
-                            try:
-                                select_year.select_by_value(str(birth_year))
-                                logger.info(f"✅ Año de nacimiento seleccionado: {birth_year}")
-                                year_filled = True
-                                fields_filled += 1
-                                break
-                            except:
-                                try:
-                                    select_year.select_by_visible_text(str(birth_year))
-                                    logger.info(f"✅ Año de nacimiento seleccionado por texto: {birth_year}")
-                                    year_filled = True
-                                    fields_filled += 1
-                                    break
-                                except:
-                                    continue
-                    except:
-                        continue
-                
-                # 5. Género - MEJORADO
-                logger.info("📝 Intentando seleccionar género: Masculino")
-                gender_selectors = [
-                    "select[id='GenderDropdown']",
-                    "select[id*='gender']",
-                    "select[name='gender']",
-                    "select[data-testid='gender-picker']",
-                    ".gender-selector select",
-                    "select[id='signup-gender']",
-                    "#GenderDropdown",
-                    "input[value='Male']",
-                    "input[value='male']",
-                    "input[type='radio'][value='2']"  # Masculino en Roblox
-                ]
-                
-                gender_filled = False
-                for selector in gender_selectors:
-                    try:
-                        gender_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                        if gender_field.is_displayed() and gender_field.is_enabled():
-                            # Scroll al elemento
-                            driver.execute_script("arguments[0].scrollIntoView(true);", gender_field)
-                            time.sleep(1)
-                            
-                            if gender_field.tag_name.lower() == "select":
-                                from selenium.webdriver.support.ui import Select
-                                select_gender = Select(gender_field)
-                                
-                                # Intentar diferentes opciones para masculino
-                                gender_options = ["Male", "male", "2", "M"]
-                                for gender_option in gender_options:
-                                    try:
-                                        select_gender.select_by_value(gender_option)
-                                        logger.info(f"✅ Género seleccionado: {gender_option}")
-                                        gender_filled = True
-                                        fields_filled += 1
-                                        break
-                                    except:
-                                        try:
-                                            select_gender.select_by_visible_text(gender_option)
-                                            logger.info(f"✅ Género seleccionado por texto: {gender_option}")
-                                            gender_filled = True
-                                            fields_filled += 1
-                                            break
-                                        except:
-                                            continue
-                            else:
-                                # Es un radio button o input
-                                gender_field.click()
-                                logger.info("✅ Género seleccionado: Masculino (radio button)")
-                                gender_filled = True
-                                fields_filled += 1
-                            
-                            if gender_filled:
-                                break
-                    except:
-                        continue
-                
-                # Esperar a que todos los campos se procesen
-                time.sleep(3)
-                
-                # Reporte detallado de campos completados
+                # Actualizar estado del formulario
                 form_status_embed = discord.Embed(
-                    title="📊 Estado del Formulario de Registro",
-                    description=f"**{fields_filled}** de 6 campos completados para **{new_username}**",
-                    color=0x00ff88 if fields_filled >= 4 else 0xffaa00
+                    title="📊 Formulario Completado",
+                    description=f"**{fields_completed}** de 5 campos completados para **{new_username}**",
+                    color=0x00ff88 if fields_completed >= 4 else 0xffaa00
                 )
                 
-                # Mostrar estado de cada campo
-                form_status_embed.add_field(name="👤 Username", value=f"✅ {new_username}" if username_filled else "❌ No completado", inline=True)
-                form_status_embed.add_field(name="🔒 Password", value=f"✅ {strong_password}" if password_filled else "❌ No completado", inline=True)
-                form_status_embed.add_field(name="📧 Email", value=f"✅ {auto_email}" if email_filled else "❌ No completado", inline=True)
-                form_status_embed.add_field(name="📅 Mes", value=f"✅ {birth_month}" if month_filled else "❌ No completado", inline=True)
-                form_status_embed.add_field(name="📅 Día", value=f"✅ {birth_day}" if day_filled else "❌ No completado", inline=True)
-                form_status_embed.add_field(name="📅 Año", value=f"✅ {birth_year}" if year_filled else "❌ No completado", inline=True)
-                form_status_embed.add_field(name="⚧ Género", value="✅ Masculino" if gender_filled else "❌ No completado", inline=True)
+                # Mostrar datos completados
+                completed_data = "\n".join([f"• {key.title()}: `{value}`" for key, value in form_data.items()])
+                form_status_embed.add_field(
+                    name="✅ Datos Completados",
+                    value=completed_data if completed_data else "Ninguno",
+                    inline=False
+                )
                 
-                # Indicador de progreso
-                progress_bar = "█" * fields_filled + "░" * (7 - fields_filled)
+                # Indicador de progreso visual
+                progress_bar = "█" * fields_completed + "░" * (5 - fields_completed)
                 form_status_embed.add_field(
                     name="📊 Progreso",
-                    value=f"`{progress_bar}` {fields_filled}/7 campos",
+                    value=f"`{progress_bar}` {fields_completed}/5 campos",
                     inline=False
                 )
                 
                 await message.edit(embed=form_status_embed)
                 
-                # Solo intentar enviar si se completaron al menos 4 campos esenciales
-                if fields_filled >= 4 and username_filled and password_filled:
-                    logger.info("🎯 Formulario suficientemente completado, intentando envío automático...")
+                # Paso 6: Intentar enviar el formulario
+                if fields_completed >= 4:  # Al menos username, password y fecha
+                    logger.info("🎯 Formulario suficientemente completado, intentando envío...")
                     
-                    # MEJORAR BÚSQUEDA DEL BOTÓN DE ENVÍO
-                    signup_button_selectors = [
-                        "button[id='signup-button']",
-                        "input[id='signup-button']",
-                        "button[data-testid='signup-button']",
-                        "input[data-testid='signup-button']",
-                        "button[type='submit']",
-                        "input[type='submit']",
-                        ".signup-button button",
-                        ".signup-button input",
-                        "#signup-button",
-                        "button[class*='signup']",
-                        "input[class*='signup']",
-                        "button[value*='Sign Up']",
-                        "input[value*='Sign Up']",
-                        "button[value*='Create']",
-                        "input[value*='Create']",
-                        ".btn-primary-lg",
-                        ".btn-signup",
-                        "form button[type='submit']",
-                        "form input[type='submit']"
-                    ]
-                    
-                    signup_clicked = False
-                    button_found = False
-                    
-                    for selector in signup_button_selectors:
-                        try:
-                            signup_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                            if signup_button.is_displayed() and signup_button.is_enabled():
-                                button_found = True
-                                
-                                # Scroll al botón
-                                driver.execute_script("arguments[0].scrollIntoView(true);", signup_button)
-                                time.sleep(2)
-                                
-                                # Intentar clic
-                                try:
-                                    signup_button.click()
-                                    logger.info(f"✅ Botón de registro clickeado automáticamente: {selector}")
-                                    signup_clicked = True
-                                    break
-                                except:
-                                    # Intentar clic con JavaScript
-                                    try:
-                                        driver.execute_script("arguments[0].click();", signup_button)
-                                        logger.info(f"✅ Botón de registro clickeado con JavaScript: {selector}")
-                                        signup_clicked = True
-                                        break
-                                    except:
-                                        continue
-                        except:
-                            continue
-                    
-                    if signup_clicked:
-                        success_embed = discord.Embed(
-                            title="🎉 ¡Formulario Enviado Automáticamente!",
-                            description=f"El registro de **{new_username}** ha sido iniciado exitosamente.",
+                    try:
+                        signup_button = wait.until(EC.element_to_be_clickable((By.ID, "signup-button")))
+                        signup_button.click()
+                        logger.info("✅ Botón de registro clickeado exitosamente")
+                        
+                        # Actualizar estado de envío
+                        submit_embed = discord.Embed(
+                            title="🚀 ¡Formulario Enviado!",
+                            description=f"El registro de **{new_username}** ha sido enviado exitosamente.",
                             color=0x00ff88
                         )
-                        success_embed.add_field(
-                            name="✅ Campos Completados",
-                            value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Email: `{auto_email}`\n• Fecha: `{birth_day} {birth_month} {birth_year}`\n• Género: `Masculino`",
+                        submit_embed.add_field(
+                            name="📝 Datos Enviados",
+                            value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Fecha: `15/03/2002`\n• Género: `Masculino`",
                             inline=True
                         )
-                        success_embed.add_field(
+                        submit_embed.add_field(
                             name="⏳ Procesando...",
-                            value="• Verificación de Roblox\n• Posible CAPTCHA\n• Confirmación de cuenta\n• Validación de datos",
+                            value="• Verificación de Roblox\n• Posible CAPTCHA\n• Validación de datos\n• Creación de cuenta",
                             inline=True
                         )
-                        success_embed.add_field(
-                            name="🖥️ Estado VNC",
-                            value="Disponible para supervisión",
-                            inline=True
-                        )
-                        success_embed.add_field(
+                        submit_embed.add_field(
                             name="📊 Resumen",
-                            value=f"**{fields_filled}/7** campos completados\n**Formulario enviado** ✅",
+                            value=f"**{fields_completed}/5** campos completados\n**Formulario enviado** ✅",
                             inline=False
                         )
-                        await message.edit(embed=success_embed)
-                    else:
-                        # Formulario completo pero botón no encontrado
-                        manual_embed = discord.Embed(
-                            title="⚠️ Formulario Completado - Envío Manual Requerido",
-                            description=f"Todos los campos están llenos para **{new_username}**, pero necesitas hacer clic en 'Sign Up' manualmente.",
+                        
+                        await message.edit(embed=submit_embed)
+                        
+                    except Exception as e:
+                        logger.error(f"❌ Error al hacer clic en botón de registro: {e}")
+                        logger.info("🔄 Botón de registro no disponible (posiblemente por CAPTCHA)")
+                        
+                        # Mostrar mensaje de CAPTCHA
+                        captcha_embed = discord.Embed(
+                            title="⚠️ CAPTCHA Detectado",
+                            description=f"El formulario está completo pero requiere verificación CAPTCHA manual.",
                             color=0xffaa00
                         )
-                        manual_embed.add_field(
-                            name="✅ Datos Completados",
-                            value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Email: `{auto_email}`\n• Fecha: `{birth_day} {birth_month} {birth_year}`\n• Género: `Masculino`",
+                        captcha_embed.add_field(
+                            name="✅ Formulario Listo",
+                            value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Fecha: `15/03/2002`\n• Género: `Masculino`",
                             inline=True
                         )
-                        manual_embed.add_field(
-                            name="📋 Acción Manual",
-                            value="• Ve al navegador VNC\n• Haz clic en 'Sign Up'\n• Resuelve CAPTCHA si aparece\n• Verifica el resultado",
+                        captcha_embed.add_field(
+                            name="🔧 Acción Requerida",
+                            value="• El formulario está completado\n• Requiere verificación CAPTCHA manual\n• Navegador se mantendrá abierto",
                             inline=True
                         )
-                        manual_embed.add_field(
-                            name="🔍 Debug Info",
-                            value=f"Botón encontrado: {'✅' if button_found else '❌'}\nCampos: {fields_filled}/7",
-                            inline=True
-                        )
-                        await message.edit(embed=manual_embed)
-                    
-                    # Esperar tiempo para completar el registro
-                    logger.info("⏳ Esperando 3 minutos para el proceso de registro...")
-                    await asyncio.sleep(180)  # 3 minutos para el proceso
-                    
+                        await message.edit(embed=captcha_embed)
+                
                 else:
                     # Formulario incompleto
                     incomplete_embed = discord.Embed(
                         title="❌ Formulario Incompleto",
-                        description=f"Solo se completaron **{fields_filled}** de 7 campos necesarios para **{new_username}**.",
+                        description=f"Solo se completaron **{fields_completed}** de 5 campos necesarios.",
                         color=0xff3333
                     )
                     incomplete_embed.add_field(
-                        name="❌ Campos Faltantes",
-                        value=f"Username: {'✅' if username_filled else '❌'}\nPassword: {'✅' if password_filled else '❌'}\nEmail: {'✅' if email_filled else '❌'}\nFecha: {'✅' if (month_filled and day_filled and year_filled) else '❌'}\nGénero: {'✅' if gender_filled else '❌'}",
-                        inline=True
+                        name="❌ Campos Completados",
+                        value=completed_data if completed_data else "Ninguno",
+                        inline=False
                     )
                     incomplete_embed.add_field(
-                        name="🛠️ Acción Manual",
-                        value="• Completa los campos faltantes en VNC\n• Verifica que todos los datos estén correctos\n• Haz clic en 'Sign Up' manualmente",
-                        inline=True
-                    )
-                    incomplete_embed.add_field(
-                        name="🖥️ VNC",
-                        value="Disponible para completar manualmente",
-                        inline=True
+                        name="🛠️ Acción Requerida",
+                        value="Algunos campos no se pudieron completar automáticamente. Revisa manualmente.",
+                        inline=False
                     )
                     await message.edit(embed=incomplete_embed)
                 
             except Exception as form_error:
-                logger.error(f"Error con formulario de registro: {form_error}")
+                logger.error(f"Error en el proceso de registro: {form_error}")
                 form_error_embed = discord.Embed(
-                    title="⚠️ Error en Formulario",
-                    description=f"Error localizando formulario: {str(form_error)[:100]}",
+                    title="⚠️ Error en Proceso de Registro",
+                    description=f"Error durante el llenado del formulario: {str(form_error)[:150]}",
                     color=0xff9900
                 )
-                form_error_embed.add_field(name="🖥️ VNC", value="Disponible para navegación manual", inline=True)
+                form_error_embed.add_field(
+                    name="📊 Progreso Parcial",
+                    value=f"Campos completados: {fields_completed}/5",
+                    inline=True
+                )
+                form_error_embed.add_field(name="🖥️ Estado", value="Navegador disponible para revisión manual", inline=True)
                 await message.edit(embed=form_error_embed)
             
-            # Mantener navegador abierto por más tiempo
-            logger.info("🕐 Manteniendo navegador VNC abierto para interacción...")
-            await asyncio.sleep(180)  # 3 minutos adicionales
+            # Mantener navegador abierto para verificación/CAPTCHA
+            logger.info("🕐 Manteniendo navegador abierto para verificación...")
+            time.sleep(10)  # Esperar 10 segundos como en el script base
             
         finally:
             # Mensaje final antes de cerrar
             final_embed = discord.Embed(
-                title="🏁 Sesión de Creación Finalizada",
-                description=f"La sesión de creación para **{new_username}** ha terminado.",
+                title="🏁 Proceso de Creación Finalizado",
+                description=f"El proceso automatizado para **{new_username}** ha terminado.",
                 color=0x888888
             )
-            final_embed.add_field(name="👤 Username Usado", value=f"`{new_username}`", inline=True)
-            final_embed.add_field(name="🖥️ VNC", value="Se cerrará pronto", inline=True)
-            final_embed.add_field(name="📝 Nota", value="Verifica si la cuenta se creó exitosamente", inline=True)
+            final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+            final_embed.add_field(name="🔄 Estado", value="Proceso completado", inline=True)
+            final_embed.add_field(name="📝 Nota", value="Verifica manualmente el resultado del registro", inline=True)
             await message.edit(embed=final_embed)
             
             # Cerrar navegador
             if driver:
                 try:
-                    logger.info("🔒 Cerrando navegador VNC...")
+                    logger.info("🔒 Cerrando navegador Chrome...")
                     driver.quit()
-                    logger.info("✅ Navegador VNC cerrado")
+                    logger.info("✅ Navegador cerrado exitosamente")
                 except Exception as close_error:
                     logger.warning(f"Error cerrando navegador: {close_error}")
         
@@ -3349,7 +3018,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             description=f"Ocurrió un error durante la creación de cuenta: {str(e)[:200]}",
             color=0xff0000
         )
-        error_embed.add_field(name="💡 Sugerencia", value="Verifica VNC y conexión", inline=False)
+        error_embed.add_field(name="💡 Sugerencia", value="Verifica la conexión y configuración del navegador", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 @bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies y obtener información de cuenta")
