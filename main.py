@@ -1070,10 +1070,14 @@ class VIPServerScraper:
         
         if game_id in self.user_favorites[user_id]:
             self.user_favorites[user_id].remove(game_id)
-            return False
+            result = False
         else:
             self.user_favorites[user_id].append(game_id)
-            return True
+            result = True
+        
+        # GUARDADO INSTANTÁNEO después de toggle favorito
+        self.save_links()
+        return result
 
     def remove_favorite(self, user_id: str, game_id: str) -> bool:
         """Remove specific game from favorites. Returns True if removed, False if not found"""
@@ -1127,6 +1131,9 @@ class VIPServerScraper:
         }
         
         self.user_reserved_servers[user_id].append(reservation)
+        
+        # GUARDADO INSTANTÁNEO después de reservar servidor
+        self.save_links()
         return True
 
     def get_reserved_servers(self, user_id: str) -> List[Dict]:
@@ -1143,6 +1150,8 @@ class VIPServerScraper:
         for i, reservation in enumerate(self.user_reserved_servers[user_id]):
             if reservation['server_link'] == server_link:
                 del self.user_reserved_servers[user_id][i]
+                # GUARDADO INSTANTÁNEO después de remover reserva
+                self.save_links()
                 return True
         return False
 

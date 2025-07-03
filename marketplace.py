@@ -143,6 +143,7 @@ class CommunityMarketplace:
             listing['interested_users'].append(interested_user_id)
             listing['last_interest'] = time.time()
             
+            # GUARDADO INSTANTÁNEO después de mostrar interés
             self.save_data()
             logger.info(f"User {interested_user_id} showed interest in listing {listing_id}")
             return True
@@ -205,6 +206,7 @@ class CommunityMarketplace:
         else:
             return False
         
+        # GUARDADO INSTANTÁNEO después de rating
         self.save_data()
         return True
     

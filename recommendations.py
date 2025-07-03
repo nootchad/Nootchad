@@ -3,7 +3,7 @@ import json
 import time
 from datetime import datetime
 from collections import defaultdict, Counter
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import logging
 
 logger = logging.getLogger(__name__)

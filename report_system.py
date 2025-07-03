@@ -143,9 +143,13 @@ class ServerReportSystem:
         
         self.reports[report_id] = report
         
+        # GUARDADO INSTANTÁNEO después de agregar el reporte
+        self.save_data()
+        
         # Verificar si hay suficientes reportes para blacklist automático
         self.check_auto_blacklist(server_link)
         
+        # GUARDADO INSTANTÁNEO después de auto-blacklist si aplica
         self.save_data()
         
         logger.info(f"Report {report_id} submitted by user {user_id} for server {server_link}")
@@ -186,9 +190,13 @@ class ServerReportSystem:
         latest_report['confirming_users'].append(user_id)
         latest_report['last_confirmation'] = time.time()
         
+        # GUARDADO INSTANTÁNEO después de agregar confirmación
+        self.save_data()
+        
         # Verificar auto-blacklist
         self.check_auto_blacklist(server_link)
         
+        # GUARDADO INSTANTÁNEO después de auto-blacklist si aplica
         self.save_data()
         
         logger.info(f"Report {latest_report['report_id']} confirmed by user {user_id}")
@@ -240,6 +248,8 @@ class ServerReportSystem:
         }
         
         self.blacklisted_servers[server_link] = blacklist_entry
+        
+        # GUARDADO INSTANTÁNEO después de blacklist
         self.save_data()
         
         logger.info(f"Server blacklisted: {server_link} - Reason: {reason}")
