@@ -2855,41 +2855,77 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 
                 form_data['birth_date'] = f"15/03/{birth_year}"
                 
-                # Paso 3: Llenar username
+                # Paso 3: Llenar username usando selector específico
                 logger.info(f"👤 Configurando username: {new_username}")
                 try:
-                    username_field = wait.until(EC.element_to_be_clickable((By.ID, "signup-username")))
-                    username_field.clear()
-                    username_field.send_keys(new_username)
-                    logger.info(f"✅ Username '{new_username}' ingresado exitosamente")
+                    username_input = wait.until(EC.element_to_be_clickable((By.ID, "signup-username")))
+                    username_input.clear()
+                    username_input.send_keys(new_username)
+                    logger.info(f"✅ Username '{new_username}' ingresado exitosamente con selector específico")
                     fields_completed += 1
                     form_data['username'] = new_username
                 except Exception as e:
                     logger.error(f"❌ Error configurando username: {e}")
+                    # Intentar selector alternativo
+                    try:
+                        username_field = driver.find_element(By.ID, "signup-username")
+                        username_field.clear()
+                        username_field.send_keys(new_username)
+                        logger.info("✅ Username configurado con selector directo")
+                        fields_completed += 1
+                        form_data['username'] = new_username
+                    except Exception as e2:
+                        logger.error(f"❌ Error con selector alternativo de username: {e2}")
                 
-                # Paso 4: Llenar password
+                # Paso 4: Llenar password usando selector específico
                 strong_password = "RbxServers2024!"
                 logger.info("🔒 Configurando password...")
                 try:
-                    password_field = wait.until(EC.element_to_be_clickable((By.ID, "signup-password")))
-                    password_field.clear()
-                    password_field.send_keys(strong_password)
-                    logger.info("✅ Password configurada exitosamente")
+                    password_input = wait.until(EC.element_to_be_clickable((By.ID, "signup-password")))
+                    password_input.clear()
+                    password_input.send_keys(strong_password)
+                    logger.info("✅ Password configurada exitosamente con selector específico")
                     fields_completed += 1
                     form_data['password'] = strong_password
                 except Exception as e:
                     logger.error(f"❌ Error configurando password: {e}")
+                    # Intentar selector alternativo
+                    try:
+                        password_field = driver.find_element(By.ID, "signup-password")
+                        password_field.clear()
+                        password_field.send_keys(strong_password)
+                        logger.info("✅ Password configurada con selector directo")
+                        fields_completed += 1
+                        form_data['password'] = strong_password
+                    except Exception as e2:
+                        logger.error(f"❌ Error con selector alternativo de password: {e2}")
                 
-                # Paso 5: Seleccionar género (Masculino)
-                logger.info("⚧ Configurando género...")
+                # Paso 5: Seleccionar género (Masculino) usando selector específico
+                logger.info("⚧ Configurando género masculino...")
                 try:
                     male_button = wait.until(EC.element_to_be_clickable((By.ID, "MaleButton")))
                     male_button.click()
-                    logger.info("✅ Género masculino seleccionado")
+                    logger.info("✅ Género masculino seleccionado con selector específico")
                     fields_completed += 1
                     form_data['gender'] = 'Male'
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando género: {e}")
+                    # Intentar selector directo
+                    try:
+                        driver.find_element(By.ID, "MaleButton").click()
+                        logger.info("✅ Género masculino seleccionado con selector directo")
+                        fields_completed += 1
+                        form_data['gender'] = 'Male'
+                    except Exception as e2:
+                        logger.error(f"❌ Error con selector alternativo de género: {e2}")
+                        # Intentar género femenino como respaldo
+                        try:
+                            driver.find_element(By.ID, "FemaleButton").click()
+                            logger.info("✅ Género femenino seleccionado como respaldo")
+                            fields_completed += 1
+                            form_data['gender'] = 'Female'
+                        except Exception as e3:
+                            logger.error(f"❌ Error con todos los selectores de género: {e3}")
                 
                 # Esperar un momento para que se procesen todos los campos
                 time.sleep(2)
@@ -2919,19 +2955,19 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 
                 await message.edit(embed=form_status_embed)
                 
-                # Paso 6: Intentar enviar el formulario
+                # Paso 6: Intentar enviar el formulario usando selector específico
                 if fields_completed >= 4:  # Al menos username, password y fecha
                     logger.info("🎯 Formulario suficientemente completado, intentando envío...")
                     
                     try:
                         signup_button = wait.until(EC.element_to_be_clickable((By.ID, "signup-button")))
                         signup_button.click()
-                        logger.info("✅ Botón de registro clickeado exitosamente")
+                        logger.info("✅ Botón de registro clickeado exitosamente con selector específico")
                         
                         # Actualizar estado de envío
                         submit_embed = discord.Embed(
                             title="🚀 ¡Formulario Enviado!",
-                            description=f"El registro de **{new_username}** ha sido enviado exitosamente.",
+                            description=f"El registro de **{new_username}** ha sido enviado exitosamente usando los selectores específicos.",
                             color=0x00ff88
                         )
                         submit_embed.add_field(
@@ -2954,14 +2990,33 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                         
                     except Exception as e:
                         logger.error(f"❌ Error al hacer clic en botón de registro: {e}")
-                        logger.info("🔄 Botón de registro no disponible (posiblemente por CAPTCHA)")
-                        
-                        # Mostrar mensaje de CAPTCHA
-                        captcha_embed = discord.Embed(
-                            title="⚠️ CAPTCHA Detectado",
-                            description=f"El formulario está completo pero requiere verificación CAPTCHA manual.",
-                            color=0xffaa00
-                        )
+                        # Intentar selector directo como respaldo
+                        try:
+                            driver.find_element(By.ID, "signup-button").click()
+                            logger.info("✅ Botón de registro clickeado con selector directo")
+                            
+                            submit_embed = discord.Embed(
+                                title="🚀 ¡Formulario Enviado con Selector Directo!",
+                                description=f"El registro de **{new_username}** ha sido enviado usando selector de respaldo.",
+                                color=0x00ff88
+                            )
+                            submit_embed.add_field(
+                                name="📝 Datos Enviados",
+                                value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Fecha: `15/03/2006`\n• Género: `{form_data.get('gender', 'Masculino')}`",
+                                inline=True
+                            )
+                            await message.edit(embed=submit_embed)
+                            
+                        except Exception as e2:
+                            logger.error(f"❌ Error con selector directo del botón: {e2}")
+                            logger.info("🔄 Botón de registro no disponible (posiblemente por CAPTCHA)")
+                            
+                            # Mostrar mensaje de CAPTCHA
+                            captcha_embed = discord.Embed(
+                                title="⚠️ CAPTCHA Detectado o Formulario Incompleto",
+                                description=f"El formulario está completado pero requiere verificación manual.",
+                                color=0xffaa00
+                            )
                         captcha_embed.add_field(
                             name="✅ Formulario Listo",
                             value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Fecha: `15/03/2002`\n• Género: `Masculino`",
