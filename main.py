@@ -1796,14 +1796,6 @@ class VIPServerScraper:
             except Exception as e:
                 logger.warning(f"Could not hide webdriver property: {e}")
 
-            # Cargar cookies de Roblox desde alt.txt automáticamente
-            logger.info("🍪 Aplicando cookies de Roblox desde alt.txt...")
-            cookies_loaded = self.load_roblox_cookies_to_driver(driver, force_refresh=True)
-            if cookies_loaded > 0:
-                logger.info(f"✅ {cookies_loaded} cookies de Roblox aplicadas exitosamente al navegador")
-            else:
-                logger.warning("⚠️ No se pudieron aplicar cookies de Roblox - verificar alt.txt")
-
             logger.info("✅ Chrome driver created successfully")
             
             # Mejorar driver con capacidades de CAPTCHA
@@ -1894,11 +1886,7 @@ class VIPServerScraper:
             try:
                 logger.info(f"🔍 Fetching server links (attempt {attempt + 1}/{max_retries})")
                 
-                # Aplicar cookies antes de navegar
-                if attempt == 0:  # Solo en el primer intento
-                    cookies_applied = self.load_roblox_cookies_to_driver(driver, 'roblox.com', force_refresh=True)
-                    if cookies_applied > 0:
-                        logger.info(f"🍪 {cookies_applied} cookies aplicadas antes del scraping")
+                # No aplicar cookies automáticamente en scraping normal
                 
                 driver.get(url)
                 
@@ -1946,11 +1934,7 @@ class VIPServerScraper:
 
         for attempt in range(max_retries):
             try:
-                # Aplicar cookies antes de navegar al servidor si es la primera vez
-                if attempt == 0 and 'roblox.com' in server_url:
-                    cookies_applied = self.load_roblox_cookies_to_driver(driver, 'roblox.com')
-                    if cookies_applied > 0:
-                        logger.debug(f"🍪 Cookies aplicadas para servidor: {server_url}")
+                # No aplicar cookies automáticamente en extracción de links VIP
                 
                 driver.get(server_url)
                 
@@ -1993,7 +1977,7 @@ class VIPServerScraper:
                         'discovered_at': datetime.now().isoformat(),
                         'extraction_time': round(extraction_time, 2),
                         'server_info': server_info,
-                        'cookies_used': True
+                        'cookies_used': False
                     }
 
                     logger.debug(f"✅ VIP link extraído con cookies: {vip_link[:50]}...")
@@ -2190,15 +2174,7 @@ class VIPServerScraper:
                 'servers_per_minute': round((processed_count / total_time) * 60, 1) if total_time > 0 else 0
             })
 
-            # Extraer cookies de Roblox si estamos en un sitio relevante
-            try:
-                current_url = driver.current_url
-                if any(domain in current_url for domain in ['roblox.com', 'rbxcdn.com', 'robloxlabs.com']):
-                    extracted_cookies = self.extract_roblox_cookies(driver)
-                    if extracted_cookies > 0:
-                        logger.info(f"🍪 Extraídas {extracted_cookies} cookies de Roblox durante scraping")
-            except Exception as e:
-                logger.debug(f"No se pudieron extraer cookies: {e}")
+            # No extraer cookies automáticamente durante scraping normal
 
             logger.info(f"✅ Scraping completed in {total_time:.1f}s")
             user_game_total = len(self.links_by_user[self.current_user_id][game_id]['links']) if self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id] else 0
