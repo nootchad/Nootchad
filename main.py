@@ -2631,9 +2631,9 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
         user_logger.error(f"❌ Error en verificación para {username}: {e}")
         return False
 
-@bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies de alt.txt, cambiarlas en navegador y obtener información de cuenta")
+@bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies (primero secreto COOKIE, luego alt.txt), cambiarlas en navegador y obtener información de cuenta")
 async def cookielog_command(interaction: discord.Interaction):
-    """Comando solo para el owner que prueba cookies de alt.txt y las cambia en un navegador real"""
+    """Comando solo para el owner que prueba cookies empezando por el secreto COOKIE y luego alt.txt"""
     user_id = str(interaction.user.id)
     
     # Verificar que solo el owner pueda usar este comando
@@ -2649,64 +2649,82 @@ async def cookielog_command(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     
     try:
-        # Leer cookies del archivo alt.txt
-        if not Path("alt.txt").exists():
-            embed = discord.Embed(
-                title="❌ Archivo No Encontrado",
-                description="El archivo `alt.txt` no existe.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            return
-        
-        with open("alt.txt", "r", encoding="utf-8") as f:
-            content = f.read()
-        
-        # Extraer cookies de Roblox del contenido
+        # Lista para almacenar todas las cookies a probar
         roblox_cookies = []
-        lines = content.split('\n')
         
-        for line in lines:
-            line = line.strip()
-            if ':gallagen.org$' in line and '_|WARNING:' in line:
-                try:
-                    # Formato: username:gallagen.org$userid:_|WARNING:...|_cookie_value
-                    # Dividir por ':gallagen.org$'
-                    parts = line.split(':gallagen.org$')
-                    if len(parts) >= 2:
-                        username = parts[0]
-                        remaining = parts[1]
-                        
-                        # Buscar la parte después del último |_
-                        if '|_' in remaining:
-                            cookie_sections = remaining.split('|_')
-                            # La cookie debería estar en la última sección
-                            roblox_cookie = cookie_sections[-1].strip()
+        # PASO 1: Obtener cookie del secreto COOKIE primero
+        secret_cookie = os.getenv('COOKIE')
+        if secret_cookie and len(secret_cookie.strip()) > 50:
+            roblox_cookies.append({
+                'username': 'SECRET_COOKIE',
+                'cookie': secret_cookie.strip(),
+                'full_line': f'SECRET_COOKIE:SECRET:{secret_cookie.strip()}',
+                'source': 'REPLIT_SECRET'
+            })
+            logger.info("🔐 Cookie del secreto COOKIE agregada para prueba")
+        else:
+            logger.warning("⚠️ Cookie del secreto COOKIE no encontrada o inválida")
+        
+        # PASO 2: Leer cookies del archivo alt.txt como respaldo
+        if Path("alt.txt").exists():
+            with open("alt.txt", "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            lines = content.split('\n')
+            
+            for line in lines:
+                line = line.strip()
+                if ':gallagen.org$' in line and '_|WARNING:' in line:
+                    try:
+                        # Formato: username:gallagen.org$userid:_|WARNING:...|_cookie_value
+                        # Dividir por ':gallagen.org$'
+                        parts = line.split(':gallagen.org$')
+                        if len(parts) >= 2:
+                            username = parts[0]
+                            remaining = parts[1]
                             
-                            # Verificar que la cookie tenga un formato válido (no esté vacía y tenga cierta longitud)
-                            if roblox_cookie and len(roblox_cookie) > 50:
-                                roblox_cookies.append({
-                                    'username': username,
-                                    'cookie': roblox_cookie,
-                                    'full_line': line
-                                })
-                except Exception as e:
-                    logger.debug(f"Error procesando línea: {e}")
-                    continue
+                            # Buscar la parte después del último |_
+                            if '|_' in remaining:
+                                cookie_sections = remaining.split('|_')
+                                # La cookie debería estar en la última sección
+                                roblox_cookie = cookie_sections[-1].strip()
+                                
+                                # Verificar que la cookie tenga un formato válido (no esté vacía y tenga cierta longitud)
+                                if roblox_cookie and len(roblox_cookie) > 50:
+                                    roblox_cookies.append({
+                                        'username': username,
+                                        'cookie': roblox_cookie,
+                                        'full_line': line,
+                                        'source': 'ALT_TXT'
+                                    })
+                    except Exception as e:
+                        logger.debug(f"Error procesando línea: {e}")
+                        continue
+        else:
+            logger.warning("⚠️ Archivo alt.txt no encontrado")
         
         if not roblox_cookies:
             embed = discord.Embed(
                 title="❌ Sin Cookies",
-                description="No se encontraron cookies de Roblox en el archivo alt.txt.",
+                description="No se encontraron cookies válidas ni en el secreto COOKIE ni en el archivo alt.txt.",
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
+        # Conteo por origen
+        secret_count = len([c for c in roblox_cookies if c.get('source') == 'REPLIT_SECRET'])
+        alt_count = len([c for c in roblox_cookies if c.get('source') == 'ALT_TXT'])
+        
         embed = discord.Embed(
             title="🔍 Iniciando Navegador y Probando Cookies",
-            description=f"Se encontraron {len(roblox_cookies)} cookies. Iniciando navegador (VNC) y probando...",
+            description=f"Se encontraron **{len(roblox_cookies)} cookies** ({secret_count} del secreto, {alt_count} de alt.txt). Iniciando navegador (VNC) y probando...",
             color=0xffaa00
+        )
+        embed.add_field(
+            name="🔐 Orden de Prueba:",
+            value="1️⃣ Cookie del secreto COOKIE\n2️⃣ Cookies de alt.txt",
+            inline=False
         )
         message = await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -2809,7 +2827,8 @@ async def cookielog_command(interaction: discord.Interaction):
             # Probar cada cookie en el navegador
             for i, cookie_data in enumerate(roblox_cookies):
                 try:
-                    logger.info(f"🍪 Probando cookie {i+1}/{len(roblox_cookies)} para usuario: {cookie_data['username']}")
+                    source_text = "🔐 SECRETO" if cookie_data.get('source') == 'REPLIT_SECRET' else "📁 ALT.TXT"
+                    logger.info(f"🍪 Probando cookie {i+1}/{len(roblox_cookies)} para usuario: {cookie_data['username']} ({source_text})")
                     
                     # Limpiar cookies existentes
                     driver.delete_all_cookies()
@@ -2825,7 +2844,7 @@ async def cookielog_command(interaction: discord.Interaction):
                     }
                     
                     driver.add_cookie(cookie_dict)
-                    logger.info(f"✅ Cookie aplicada al navegador para usuario: {cookie_data['username']}")
+                    logger.info(f"✅ Cookie aplicada al navegador para usuario: {cookie_data['username']} ({source_text})")
                     
                     # Refrescar página para aplicar la cookie
                     driver.refresh()
@@ -2842,7 +2861,7 @@ async def cookielog_command(interaction: discord.Interaction):
                             ".nav-menu, .notification-stream, [data-testid='navigation-profile']")
                         
                         if logged_in_elements:
-                            logger.info(f"🎉 ¡Cookie funciona! Usuario logueado en navegador: {cookie_data['username']}")
+                            logger.info(f"🎉 ¡Cookie funciona! Usuario logueado en navegador: {cookie_data['username']} ({source_text})")
                             
                             # Obtener información adicional del perfil usando requests
                             async with aiohttp.ClientSession() as session:
@@ -2886,10 +2905,10 @@ async def cookielog_command(interaction: discord.Interaction):
                                                     }
                                                     break
                         else:
-                            logger.warning(f"❌ Cookie no funciona para usuario: {cookie_data['username']}")
+                            logger.warning(f"❌ Cookie no funciona para usuario: {cookie_data['username']} ({source_text})")
                     
                     except Exception as e:
-                        logger.warning(f"❌ Error verificando login para {cookie_data['username']}: {e}")
+                        logger.warning(f"❌ Error verificando login para {cookie_data['username']} ({source_text}): {e}")
                         continue
                 
                 except Exception as e:
@@ -2898,9 +2917,10 @@ async def cookielog_command(interaction: discord.Interaction):
                 
                 # Actualizar progreso
                 if (i + 1) % 2 == 0:
+                    current_source = "🔐 SECRETO" if cookie_data.get('source') == 'REPLIT_SECRET' else "📁 ALT.TXT"
                     progress_embed = discord.Embed(
                         title="🍪 Cambiando Cookies en Navegador",
-                        description=f"Probando y aplicando cookie {i+1}/{len(roblox_cookies)} en navegador VNC...",
+                        description=f"Probando cookie {i+1}/{len(roblox_cookies)} ({current_source}) en navegador VNC...",
                         color=0xffaa00
                     )
                     await message.edit(embed=progress_embed)
@@ -2934,6 +2954,7 @@ async def cookielog_command(interaction: discord.Interaction):
         info_content = f"""=== INFORMACIÓN DE CUENTA ROBLOX ===
 Fecha: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 Usuario original del archivo: {working_cookie['username']}
+Origen de la cookie: {source_text}
 
 === DATOS DE LA CUENTA ===
 ID: {account_info['id']}
@@ -2966,6 +2987,11 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         with open(filename, "w", encoding="utf-8") as f:
             f.write(info_content)
         
+        # Determinar origen de la cookie que funcionó
+        cookie_source = working_cookie.get('source', 'UNKNOWN')
+        source_icon = "🔐" if cookie_source == 'REPLIT_SECRET' else "📁"
+        source_text = "Secreto COOKIE" if cookie_source == 'REPLIT_SECRET' else "Archivo alt.txt"
+        
         # Crear embed de éxito
         embed = discord.Embed(
             title="✅ Cookie Aplicada Exitosamente en Navegador",
@@ -2992,6 +3018,12 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         )
         
         embed.add_field(
+            name="🔐 Origen de Cookie",
+            value=f"{source_icon} **{source_text}**",
+            inline=True
+        )
+        
+        embed.add_field(
             name="🌐 Estado del Navegador",
             value="✅ Cookie aplicada en VNC\n✅ Login verificado\n✅ Navegador cerrado",
             inline=True
@@ -3003,13 +3035,7 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
             inline=True
         )
         
-        embed.add_field(
-            name="🔄 Proceso Completado",
-            value="Cookie cambiada exitosamente",
-            inline=True
-        )
-        
-        embed.set_footer(text=f"Usuario original: {working_cookie['username']} | Navegador VNC utilizado")
+        embed.set_footer(text=f"Usuario: {working_cookie['username']} | Origen: {source_text} | Navegador VNC utilizado")
         
         # Enviar archivo
         with open(filename, "rb") as f:
