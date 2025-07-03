@@ -872,6 +872,7 @@ class VIPServerScraper:
     def __init__(self):
         self.vip_links_file = "vip_links.json"
         self.users_servers_file = "users_servers.json"  # Nuevo archivo para usuarios
+        self.cookies_file = "roblox_cookies.json"  # Archivo para cookies de Roblox
         self.unique_vip_links: Set[str] = set()
         self.server_details: Dict[str, Dict] = {}
         self.scraping_stats = {
@@ -893,6 +894,10 @@ class VIPServerScraper:
         self.user_favorites: Dict[str, List[str]] = {}  # Favorite games per user
         self.game_categories: Dict[str, str] = {}  # Game ID to category mapping
         self.user_reserved_servers: Dict[str, List[Dict]] = {}  # Reserved servers per user
+        
+        # Roblox cookies management
+        self.roblox_cookies: Dict[str, Dict] = {}  # Almacenar cookies de Roblox
+        self.load_roblox_cookies()
         
         # Initialize report system reference (will be set after global initialization)
         self.report_system = None
@@ -1034,6 +1039,159 @@ class VIPServerScraper:
         # Initialize available_links and cooldowns
         self.available_links = {}
         self.user_cooldowns = {}
+
+    def load_roblox_cookies(self):
+        """Cargar cookies de Roblox desde archivo"""
+        try:
+            if Path(self.cookies_file).exists():
+                with open(self.cookies_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.roblox_cookies = data.get('cookies', {})
+                    logger.info(f"✅ Cargadas cookies de Roblox para {len(self.roblox_cookies)} dominios")
+            else:
+                logger.info(f"⚠️ Archivo de cookies {self.cookies_file} no encontrado, inicializando vacío")
+                self.roblox_cookies = {}
+        except Exception as e:
+            logger.error(f"❌ Error cargando cookies de Roblox: {e}")
+            self.roblox_cookies = {}
+
+    def save_roblox_cookies(self):
+        """Guardar cookies de Roblox a archivo"""
+        try:
+            cookies_data = {
+                'cookies': self.roblox_cookies,
+                'last_updated': datetime.now().isoformat(),
+                'total_domains': len(self.roblox_cookies)
+            }
+            
+            with open(self.cookies_file, 'w', encoding='utf-8') as f:
+                json.dump(cookies_data, f, indent=2)
+            logger.info(f"✅ Cookies de Roblox guardadas exitosamente en {self.cookies_file}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error guardando cookies de Roblox: {e}")
+
+    def extract_roblox_cookies(self, driver):
+        """Extraer cookies de Roblox del navegador actual"""
+        try:
+            current_url = driver.current_url
+            domain = None
+            
+            # Identificar dominio de Roblox
+            if 'roblox.com' in current_url:
+                domain = 'roblox.com'
+            elif 'rbxcdn.com' in current_url:
+                domain = 'rbxcdn.com'
+            elif 'robloxlabs.com' in current_url:
+                domain = 'robloxlabs.com'
+            
+            if domain:
+                cookies = driver.get_cookies()
+                
+                if domain not in self.roblox_cookies:
+                    self.roblox_cookies[domain] = {}
+                
+                for cookie in cookies:
+                    cookie_name = cookie['name']
+                    self.roblox_cookies[domain][cookie_name] = {
+                        'value': cookie['value'],
+                        'domain': cookie.get('domain', domain),
+                        'path': cookie.get('path', '/'),
+                        'secure': cookie.get('secure', False),
+                        'httpOnly': cookie.get('httpOnly', False),
+                        'sameSite': cookie.get('sameSite', 'Lax'),
+                        'extracted_at': datetime.now().isoformat()
+                    }
+                
+                logger.info(f"🍪 Extraídas {len(cookies)} cookies de {domain}")
+                self.save_roblox_cookies()
+                return len(cookies)
+            
+            return 0
+            
+        except Exception as e:
+            logger.error(f"❌ Error extrayendo cookies de Roblox: {e}")
+            return 0
+
+    def load_roblox_cookies_to_driver(self, driver, domain='roblox.com'):
+        """Cargar cookies de Roblox al navegador"""
+        try:
+            if domain in self.roblox_cookies:
+                # Navegar al dominio primero
+                driver.get(f"https://{domain}")
+                
+                cookies_loaded = 0
+                for cookie_name, cookie_data in self.roblox_cookies[domain].items():
+                    try:
+                        cookie_dict = {
+                            'name': cookie_name,
+                            'value': cookie_data['value'],
+                            'domain': cookie_data.get('domain', domain),
+                            'path': cookie_data.get('path', '/'),
+                            'secure': cookie_data.get('secure', False),
+                            'httpOnly': cookie_data.get('httpOnly', False)
+                        }
+                        
+                        # Agregar sameSite si está disponible
+                        if 'sameSite' in cookie_data:
+                            cookie_dict['sameSite'] = cookie_data['sameSite']
+                        
+                        driver.add_cookie(cookie_dict)
+                        cookies_loaded += 1
+                        
+                    except Exception as cookie_error:
+                        logger.warning(f"⚠️ No se pudo cargar cookie {cookie_name}: {cookie_error}")
+                        continue
+                
+                logger.info(f"🍪 Cargadas {cookies_loaded} cookies de {domain} al navegador")
+                return cookies_loaded
+            else:
+                logger.info(f"⚠️ No hay cookies guardadas para {domain}")
+                return 0
+                
+        except Exception as e:
+            logger.error(f"❌ Error cargando cookies de Roblox al navegador: {e}")
+            return 0
+
+    def clear_roblox_cookies(self, domain=None):
+        """Limpiar cookies de Roblox (específico de dominio o todas)"""
+        try:
+            if domain:
+                if domain in self.roblox_cookies:
+                    del self.roblox_cookies[domain]
+                    logger.info(f"🧹 Cookies de {domain} eliminadas")
+                else:
+                    logger.info(f"⚠️ No hay cookies para {domain}")
+            else:
+                self.roblox_cookies.clear()
+                logger.info(f"🧹 Todas las cookies de Roblox eliminadas")
+            
+            self.save_roblox_cookies()
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error limpiando cookies de Roblox: {e}")
+            return False
+
+    def get_roblox_cookies_info(self):
+        """Obtener información sobre las cookies almacenadas"""
+        info = {
+            'domains': list(self.roblox_cookies.keys()),
+            'total_domains': len(self.roblox_cookies),
+            'cookies_per_domain': {}
+        }
+        
+        for domain, cookies in self.roblox_cookies.items():
+            info['cookies_per_domain'][domain] = {
+                'count': len(cookies),
+                'cookie_names': list(cookies.keys()),
+                'last_updated': max([
+                    cookie_data.get('extracted_at', '1970-01-01T00:00:00')
+                    for cookie_data in cookies.values()
+                ]) if cookies else None
+            }
+        
+        return info
 
     def save_links(self):
         """Save user server data to users_servers.json and general data to vip_links.json"""
@@ -1457,12 +1615,12 @@ class VIPServerScraper:
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-            # Disable images and JavaScript for faster loading
+            # Disable images for faster loading but enable cookies for Roblox
             prefs = {
                 "profile.managed_default_content_settings.images": 2,
                 "profile.default_content_setting_values.notifications": 2,
                 "profile.managed_default_content_settings.stylesheets": 2,
-                "profile.managed_default_content_settings.cookies": 2,
+                "profile.managed_default_content_settings.cookies": 1,  # HABILITADO: Permitir cookies
                 "profile.managed_default_content_settings.javascript": 1,
                 "profile.managed_default_content_settings.plugins": 2,
                 "profile.managed_default_content_settings.popups": 2,
@@ -1507,6 +1665,11 @@ class VIPServerScraper:
 
             # Execute script to hide webdriver property
             driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+            # Cargar cookies de Roblox si están disponibles
+            cookies_loaded = self.load_roblox_cookies_to_driver(driver)
+            if cookies_loaded > 0:
+                logger.info(f"🍪 {cookies_loaded} cookies de Roblox cargadas al navegador")
 
             logger.info("✅ Chrome driver created successfully")
             return driver
@@ -1791,6 +1954,16 @@ class VIPServerScraper:
                 'scrape_duration': round(total_time, 2),
                 'servers_per_minute': round((processed_count / total_time) * 60, 1) if total_time > 0 else 0
             })
+
+            # Extraer cookies de Roblox si estamos en un sitio relevante
+            try:
+                current_url = driver.current_url
+                if any(domain in current_url for domain in ['roblox.com', 'rbxcdn.com', 'robloxlabs.com']):
+                    extracted_cookies = self.extract_roblox_cookies(driver)
+                    if extracted_cookies > 0:
+                        logger.info(f"🍪 Extraídas {extracted_cookies} cookies de Roblox durante scraping")
+            except Exception as e:
+                logger.debug(f"No se pudieron extraer cookies: {e}")
 
             logger.info(f"✅ Scraping completed in {total_time:.1f}s")
             user_game_total = len(self.links_by_user[self.current_user_id][game_id]['links']) if self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id] else 0
