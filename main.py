@@ -22,7 +22,6 @@ from discord.ext import commands
 from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
 from report_system import ServerReportSystem
-from captcha_solver import FreeCaptchaSolver, enhance_driver_with_captcha_solver
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -63,7 +62,7 @@ BAN_DURATION = 7 * 24 * 60 * 60  # 7 días en segundos
 # Remote control settings
 DISCORD_OWNER_ID = "916070251895091241"  # Tu Discord ID
 WEBHOOK_SECRET = "rbxservers_webhook_secret_2024"
-REMOTE_CONTROL_PORT = 8081
+REMOTE_CONTROL_PORT = 8080
 
 # Game categories mapping
 GAME_CATEGORIES = {
@@ -1796,13 +1795,16 @@ class VIPServerScraper:
             except Exception as e:
                 logger.warning(f"Could not hide webdriver property: {e}")
 
+            # Cargar cookies de Roblox desde alt.txt automáticamente
+            logger.info("🍪 Aplicando cookies de Roblox desde alt.txt...")
+            cookies_loaded = self.load_roblox_cookies_to_driver(driver, force_refresh=True)
+            if cookies_loaded > 0:
+                logger.info(f"✅ {cookies_loaded} cookies de Roblox aplicadas exitosamente al navegador")
+            else:
+                logger.warning("⚠️ No se pudieron aplicar cookies de Roblox - verificar alt.txt")
+
             logger.info("✅ Chrome driver created successfully")
-            
-            # Mejorar driver con capacidades de CAPTCHA
-            enhanced_driver = enhance_driver_with_captcha_solver(driver)
-            logger.info("🔧 Driver mejorado con solucionador de CAPTCHA gratuito")
-            
-            return enhanced_driver
+            return driver
 
         except Exception as e:
             logger.error(f"Error creating Chrome driver: {e}")
@@ -1886,19 +1888,13 @@ class VIPServerScraper:
             try:
                 logger.info(f"🔍 Fetching server links (attempt {attempt + 1}/{max_retries})")
                 
-                # No aplicar cookies automáticamente en scraping normal
+                # Aplicar cookies antes de navegar
+                if attempt == 0:  # Solo en el primer intento
+                    cookies_applied = self.load_roblox_cookies_to_driver(driver, 'roblox.com', force_refresh=True)
+                    if cookies_applied > 0:
+                        logger.info(f"🍪 {cookies_applied} cookies aplicadas antes del scraping")
                 
                 driver.get(url)
-                
-                # Intentar resolver CAPTCHAs automáticamente
-                try:
-                    captcha_solved = driver.solve_captchas(max_attempts=2)
-                    if captcha_solved:
-                        logger.info("✅ CAPTCHAs resueltos automáticamente en página de servidores")
-                    else:
-                        logger.warning("⚠️ No se pudieron resolver todos los CAPTCHAs, continuando...")
-                except Exception as e:
-                    logger.debug(f"Error resolviendo CAPTCHAs: {e}")
 
                 # Wait for server elements to load
                 wait = WebDriverWait(driver, 20)
@@ -1934,17 +1930,13 @@ class VIPServerScraper:
 
         for attempt in range(max_retries):
             try:
-                # No aplicar cookies automáticamente en extracción de links VIP
+                # Aplicar cookies antes de navegar al servidor si es la primera vez
+                if attempt == 0 and 'roblox.com' in server_url:
+                    cookies_applied = self.load_roblox_cookies_to_driver(driver, 'roblox.com')
+                    if cookies_applied > 0:
+                        logger.debug(f"🍪 Cookies aplicadas para servidor: {server_url}")
                 
                 driver.get(server_url)
-                
-                # Intentar resolver CAPTCHAs automáticamente
-                try:
-                    captcha_solved = driver.solve_captchas(max_attempts=2)
-                    if captcha_solved:
-                        logger.info("✅ CAPTCHAs resueltos en página de servidor individual")
-                except Exception as e:
-                    logger.debug(f"Error resolviendo CAPTCHAs en servidor: {e}")
 
                 # Wait for VIP input to load
                 wait = WebDriverWait(driver, 15)
@@ -1977,7 +1969,7 @@ class VIPServerScraper:
                         'discovered_at': datetime.now().isoformat(),
                         'extraction_time': round(extraction_time, 2),
                         'server_info': server_info,
-                        'cookies_used': False
+                        'cookies_used': True
                     }
 
                     logger.debug(f"✅ VIP link extraído con cookies: {vip_link[:50]}...")
@@ -2174,7 +2166,15 @@ class VIPServerScraper:
                 'servers_per_minute': round((processed_count / total_time) * 60, 1) if total_time > 0 else 0
             })
 
-            # No extraer cookies automáticamente durante scraping normal
+            # Extraer cookies de Roblox si estamos en un sitio relevante
+            try:
+                current_url = driver.current_url
+                if any(domain in current_url for domain in ['roblox.com', 'rbxcdn.com', 'robloxlabs.com']):
+                    extracted_cookies = self.extract_roblox_cookies(driver)
+                    if extracted_cookies > 0:
+                        logger.info(f"🍪 Extraídas {extracted_cookies} cookies de Roblox durante scraping")
+            except Exception as e:
+                logger.debug(f"No se pudieron extraer cookies: {e}")
 
             logger.info(f"✅ Scraping completed in {total_time:.1f}s")
             user_game_total = len(self.links_by_user[self.current_user_id][game_id]['links']) if self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id] else 0
@@ -2189,11 +2189,6 @@ class VIPServerScraper:
             raise
         finally:
             if driver:
-                try:
-                    # Limpiar archivos temporales de CAPTCHA
-                    driver.cleanup_captcha_files()
-                except:
-                    pass
                 driver.quit()
 
     def get_random_link(self, game_id, user_id):
@@ -2254,28 +2249,6 @@ report_system = ServerReportSystem()
 # Set report system reference in scraper
 scraper.report_system = report_system
 
-async def safe_send_interaction_response(interaction: discord.Interaction, embed: discord.Embed, ephemeral: bool = True, view: discord.ui.View = None):
-    """Enviar respuesta de interacción de forma segura con manejo de errores"""
-    try:
-        if not interaction.response.is_done():
-            await interaction.response.send_message(embed=embed, ephemeral=ephemeral, view=view)
-        else:
-            await interaction.followup.send(embed=embed, ephemeral=ephemeral, view=view)
-        return True
-    except discord.errors.NotFound:
-        logger.warning(f"Interacción expirada para usuario {interaction.user.id}")
-        return False
-    except discord.errors.InteractionResponded:
-        try:
-            await interaction.followup.send(embed=embed, ephemeral=ephemeral, view=view)
-            return True
-        except discord.errors.NotFound:
-            logger.warning(f"Followup falló - interacción expirada para usuario {interaction.user.id}")
-            return False
-    except Exception as e:
-        logger.error(f"Error enviando respuesta de interacción: {e}")
-        return False
-
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -2284,7 +2257,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
     
     if isinstance(error, discord.app_commands.CommandInvokeError):
         if isinstance(error.original, discord.errors.NotFound):
-            user_logger.error(f"❌ Interacción expirada para {username} (ID: {user_id}): {error.original}")
+            user_logger.error(f"❌ Interacción no encontrada para {username} (ID: {user_id}): {error.original}")
             # No intentar responder a una interacción ya expirada
             return
         elif isinstance(error.original, discord.errors.InteractionResponded):
@@ -2295,13 +2268,20 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
     logger.error(f"❌ Error en comando para {username} (ID: {user_id}): {error}")
     
     # Intentar enviar un mensaje de error si es posible
-    error_embed = discord.Embed(
-        title="❌ Error Temporal",
-        description="Ocurrió un error temporal. Por favor, intenta nuevamente en unos segundos.",
-        color=0xff0000
-    )
-    
-    await safe_send_interaction_response(interaction, error_embed, ephemeral=True)
+    try:
+        error_embed = discord.Embed(
+            title="❌ Error Temporal",
+            description="Ocurrió un error temporal. Por favor, intenta nuevamente en unos segundos.",
+            color=0xff0000
+        )
+        
+        if not interaction.response.is_done():
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+        else:
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+    except:
+        # Si no se puede enviar el mensaje, simplemente ignorar
+        pass
 
 @bot.event
 async def on_ready():
@@ -2578,12 +2558,7 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
                 user_logger.warning(f"⚠️ Interacción ya fue respondida para {username}")
                 return False
             except discord.errors.NotFound as e:
-                user_logger.error(f"❌ Interacción expirada para {username}: {e}")
-                # Si la interacción expiró, no podemos responder pero podemos continuar con la verificación
-                # para comandos que no requieren respuesta inmediata
-                return False
-            except Exception as e:
-                user_logger.error(f"❌ Error inesperado en defer para {username}: {e}")
+                user_logger.error(f"❌ Interacción no encontrada para {username}: {e}")
                 return False
         
         # Verificar si está baneado
@@ -2613,8 +2588,6 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
                     await interaction.response.send_message(embed=embed, ephemeral=True)
             except (discord.errors.NotFound, discord.errors.InteractionResponded) as e:
                 user_logger.error(f"❌ No se pudo enviar mensaje de ban para {username}: {e}")
-            except Exception as e:
-                user_logger.error(f"❌ Error inesperado enviando mensaje de ban: {e}")
             
             return False
         
@@ -2645,8 +2618,6 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
                     await interaction.response.send_message(embed=embed, ephemeral=True)
             except (discord.errors.NotFound, discord.errors.InteractionResponded) as e:
                 user_logger.error(f"❌ No se pudo enviar mensaje de verificación para {username}: {e}")
-            except Exception as e:
-                user_logger.error(f"❌ Error inesperado enviando mensaje de verificación: {e}")
             
             return False
         
@@ -3191,136 +3162,6 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             color=0xff0000
         )
         error_embed.add_field(name="💡 Sugerencia", value="Verifica la conexión y configuración del navegador", inline=False)
-        await interaction.followup.send(embed=error_embed, ephemeral=True)
-
-@bot.tree.command(name="testcaptcha", description="[OWNER ONLY] Probar el sistema de resolución de CAPTCHA")
-async def test_captcha_command(interaction: discord.Interaction, url: str = "https://rbxservers.xyz"):
-    """Comando para probar el sistema de resolución de CAPTCHA"""
-    user_id = str(interaction.user.id)
-    
-    # Verificar que solo el owner pueda usar este comando
-    if user_id != DISCORD_OWNER_ID:
-        embed = discord.Embed(
-            title="❌ Acceso Denegado",
-            description="Este comando solo puede ser usado por el owner del bot.",
-            color=0xff0000
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return
-    
-    await interaction.response.defer(ephemeral=True)
-    
-    try:
-        embed = discord.Embed(
-            title="🔧 Probando Sistema de CAPTCHA",
-            description=f"Iniciando prueba del solucionador de CAPTCHA en: {url}",
-            color=0xffaa00
-        )
-        message = await interaction.followup.send(embed=embed, ephemeral=True)
-        
-        # Crear driver con capacidades de CAPTCHA
-        driver = None
-        try:
-            logger.info("🚀 Iniciando driver para prueba de CAPTCHA...")
-            driver = scraper.create_driver()
-            
-            # Navegar a la URL
-            driver.get(url)
-            time.sleep(3)
-            
-            # Actualizar estado
-            progress_embed = discord.Embed(
-                title="🔍 Detectando CAPTCHAs",
-                description=f"Escaneando página en busca de CAPTCHAs: {url}",
-                color=0x3366ff
-            )
-            await message.edit(embed=progress_embed)
-            
-            # Crear solver y detectar CAPTCHAs
-            solver = FreeCaptchaSolver()
-            captchas = solver.detect_captcha_elements(driver)
-            
-            if not captchas:
-                success_embed = discord.Embed(
-                    title="✅ No se Detectaron CAPTCHAs",
-                    description="No se encontraron CAPTCHAs en la página especificada.",
-                    color=0x00ff88
-                )
-                success_embed.add_field(name="🌐 URL Probada", value=url, inline=False)
-                success_embed.add_field(name="🔍 Resultado", value="Página libre de CAPTCHAs", inline=False)
-                await message.edit(embed=success_embed)
-                return
-            
-            # Mostrar CAPTCHAs detectados
-            detection_embed = discord.Embed(
-                title="🎯 CAPTCHAs Detectados",
-                description=f"Se encontraron **{len(captchas)}** CAPTCHA(s) en la página:",
-                color=0xffaa00
-            )
-            
-            for i, captcha_info in enumerate(captchas, 1):
-                detection_embed.add_field(
-                    name=f"CAPTCHA #{i}",
-                    value=f"**Tipo:** {captcha_info['type']}\n**Selector:** `{captcha_info['selector'][:50]}...`",
-                    inline=True
-                )
-            
-            detection_embed.add_field(name="🔄 Siguiente", value="Intentando resolver automáticamente...", inline=False)
-            await message.edit(embed=detection_embed)
-            
-            # Intentar resolver CAPTCHAs
-            time.sleep(2)
-            success = solver.solve_page_captcha(driver, max_attempts=2)
-            
-            # Resultado final
-            if success:
-                final_embed = discord.Embed(
-                    title="✅ CAPTCHA Resuelto Exitosamente",
-                    description="El sistema de resolución de CAPTCHA funcionó correctamente.",
-                    color=0x00ff88
-                )
-                final_embed.add_field(name="🌐 URL", value=url, inline=True)
-                final_embed.add_field(name="🎯 CAPTCHAs Detectados", value=str(len(captchas)), inline=True)
-                final_embed.add_field(name="✅ Estado", value="Resuelto automáticamente", inline=True)
-                final_embed.add_field(
-                    name="🔧 Capacidades del Sistema",
-                    value="• OCR gratuito con OCR.space\n• Preprocesamiento de imágenes\n• Detección automática de tipos\n• Integración con Selenium",
-                    inline=False
-                )
-            else:
-                final_embed = discord.Embed(
-                    title="⚠️ CAPTCHA No Resuelto",
-                    description="No se pudo resolver automáticamente el CAPTCHA.",
-                    color=0xff9900
-                )
-                final_embed.add_field(name="🌐 URL", value=url, inline=True)
-                final_embed.add_field(name="🎯 CAPTCHAs Detectados", value=str(len(captchas)), inline=True)
-                final_embed.add_field(name="❌ Estado", value="Requiere intervención manual", inline=True)
-                final_embed.add_field(
-                    name="💡 Posibles Causas",
-                    value="• CAPTCHA muy complejo\n• reCAPTCHA v3 no soportado\n• Calidad de imagen baja\n• Tipo de CAPTCHA no reconocido",
-                    inline=False
-                )
-            
-            await message.edit(embed=final_embed)
-            
-        finally:
-            if driver:
-                try:
-                    driver.cleanup_captcha_files()
-                    driver.quit()
-                except:
-                    pass
-        
-        logger.info(f"Owner {interaction.user.name} probó sistema CAPTCHA en {url}")
-        
-    except Exception as e:
-        logger.error(f"Error en comando testcaptcha: {e}")
-        error_embed = discord.Embed(
-            title="❌ Error en Prueba",
-            description=f"Ocurrió un error durante la prueba: {str(e)[:200]}",
-            color=0xff0000
-        )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 @bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies y obtener información de cuenta")
