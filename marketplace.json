@@ -11,10 +11,24 @@
       "expires_at": 1751588012.7517974,
       "status": "active",
       "interested_users": [],
-      "views": 0,
+      "views": 2,
+      "last_interest": null
+    },
+    "listing_1751504063_091241": {
+      "listing_id": "listing_1751504063_091241",
+      "user_id": "916070251895091241",
+      "offer_game_id": "920587237",
+      "offer_server_link": "https://www.roblox.com/games/920587237?privateServerLinkCode=32293567258267786105416251762022",
+      "want_game_id": "920587237",
+      "description": "test",
+      "created_at": 1751504063.8868024,
+      "expires_at": 1751590463.8868027,
+      "status": "active",
+      "interested_users": [],
+      "views": 2,
       "last_interest": null
     }
   },
-  "last_updated": "2025-07-03T00:13:43.284883",
-  "total_listings": 1
+  "last_updated": "2025-07-03T01:13:18.431553",
+  "total_listings": 2
 }
