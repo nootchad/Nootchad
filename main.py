@@ -871,6 +871,7 @@ class RobloxVerificationSystem:
 class VIPServerScraper:
     def __init__(self):
         self.vip_links_file = "vip_links.json"
+        self.users_servers_file = "users_servers.json"  # Nuevo archivo para usuarios
         self.unique_vip_links: Set[str] = set()
         self.server_details: Dict[str, Dict] = {}
         self.scraping_stats = {
@@ -897,138 +898,165 @@ class VIPServerScraper:
         self.report_system = None
 
     def load_existing_links(self):
-        """Load existing VIP links from JSON file with user-specific data"""
+        """Load existing user server data from users_servers.json and load general links from vip_links.json"""
+        # Cargar datos de usuarios desde users_servers.json
+        try:
+            if Path(self.users_servers_file).exists():
+                with open(self.users_servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    
+                    # Cargar datos de usuarios
+                    users_data = data.get('users', {})
+                    self.links_by_user = {}
+                    
+                    for user_id, user_info in users_data.items():
+                        self.links_by_user[user_id] = {}
+                        for game_id, game_data in user_info.get('games', {}).items():
+                            self.links_by_user[user_id][game_id] = {
+                                'links': game_data.get('server_links', []),
+                                'game_name': game_data.get('game_name', f'Game {game_id}'),
+                                'game_image_url': game_data.get('game_image_url'),
+                                'category': game_data.get('category', 'other'),
+                                'server_details': game_data.get('server_details', {})
+                            }
+                    
+                    # Cargar otros datos de usuario
+                    self.usage_history = {}
+                    self.user_favorites = {}
+                    self.user_reserved_servers = {}
+                    
+                    for user_id, user_info in users_data.items():
+                        self.usage_history[user_id] = user_info.get('usage_history', [])
+                        self.user_favorites[user_id] = user_info.get('favorites', [])
+                        self.user_reserved_servers[user_id] = user_info.get('reserved_servers', [])
+                    
+                    total_users = len(users_data)
+                    total_links = sum(len(game_data.get('links', [])) for user_games in self.links_by_user.values() for game_data in user_games.values())
+                    total_games = sum(len(user_games) for user_games in self.links_by_user.values())
+                    
+                    logger.info(f"Loaded user data for {total_users} users with {total_games} total games and {total_links} total links from {self.users_servers_file}.")
+                    
+            else:
+                logger.info(f"⚠️ Users servers file {self.users_servers_file} not found, initializing empty structure")
+                self.links_by_user = {}
+                self.usage_history = {}
+                self.user_favorites = {}
+                self.user_reserved_servers = {}
+                
+        except Exception as e:
+            logger.error(f"❌ Error loading user server data: {e}")
+            self.links_by_user = {}
+            self.usage_history = {}
+            self.user_favorites = {}
+            self.user_reserved_servers = {}
+        
+        # Cargar datos generales desde vip_links.json (solo stats y categorías)
         try:
             if Path(self.vip_links_file).exists():
                 with open(self.vip_links_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     
-                    # Load user-specific links if available
-                    self.links_by_user = data.get('links_by_user', {})
-                    
-                    # Migrate old data structure if needed
-                    if not self.links_by_user:
-                        # Check for old structure patterns
-                        if 'links_by_game' in data:
-                            # Old structure with direct game mapping
-                            default_user = "migrated_user_916070251895091241"  # Use owner ID as default
-                            self.links_by_user[default_user] = data.get('links_by_game', {})
-                            logger.info(f"Migrated existing links to user: {default_user}")
-                        elif any(key.isdigit() and len(key) > 10 for key in data.keys()):
-                            # Direct game IDs at root level - migrate to owner
-                            default_user = "916070251895091241"  # Owner ID
-                            self.links_by_user[default_user] = {}
-                            for key, value in data.items():
-                                if key.isdigit() and isinstance(value, dict) and 'links' in value:
-                                    self.links_by_user[default_user][key] = value
-                                    logger.info(f"Migrated game {key} to user {default_user}")
-                    
+                    # Solo cargar estadísticas y categorías generales
                     self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
-                    
-                    # Load new features
-                    self.usage_history = data.get('usage_history', {})
-                    self.user_favorites = data.get('user_favorites', {})
                     self.game_categories = data.get('game_categories', {})
-                    self.user_reserved_servers = data.get('user_reserved_servers', {})
                     
-                    # Initialize available_links properly and calculate totals
-                    self.available_links = {}
-                    total_users = len(self.links_by_user)
-                    total_games = 0
-                    total_links = 0
+                    logger.info(f"Loaded general data from {self.vip_links_file}")
                     
-                    for user_id, user_games in self.links_by_user.items():
-                        user_total = 0
-                        if isinstance(user_games, dict):
-                            for game_id, game_data in user_games.items():
-                                if isinstance(game_data, dict) and 'links' in game_data:
-                                    links_count = len(game_data['links'])
-                                    user_total += links_count
-                                    total_links += links_count
-                                    total_games += 1
-                            logger.debug(f"💾 Usuario {user_id}: {user_total} enlaces en {len(user_games)} juegos")
-                        else:
-                            logger.warning(f"⚠️ Usuario {user_id} tiene estructura inválida: {type(user_games)}")
-                    
-                    logger.info(f"Loaded links for {total_users} users with {total_games} total games and {total_links} total links.")
-                    
-                    # Verify data structure and fix if needed
-                    if total_links == 0 and self.links_by_user:
-                        logger.warning("⚠️ Users found but no links detected - checking data structure...")
-                        for user_id, user_games in list(self.links_by_user.items())[:3]:  # Check first 3 users
-                            logger.debug(f"🔍 User {user_id} structure: {list(user_games.keys()) if isinstance(user_games, dict) else 'Not dict'}")
-                            if isinstance(user_games, dict):
-                                for game_id, game_data in list(user_games.items())[:2]:  # Check first 2 games
-                                    logger.debug(f"🔍 Game {game_id} structure: {type(game_data)} - Keys: {list(game_data.keys()) if isinstance(game_data, dict) else 'Not dict'}")
-                    
-                    # Auto-save after migration to ensure proper structure
-                    if any(key not in ['links_by_user', 'scraping_stats', 'usage_history', 'user_favorites', 'game_categories', 'user_reserved_servers', 'last_updated', 'total_count'] for key in data.keys()):
-                        logger.info("🔄 Data structure migrated, saving updated format...")
-                        self.save_links()
-                        
             else:
-                logger.warning(f"⚠️ VIP links file {self.vip_links_file} not found")
-                self.available_links = {}
-                self.links_by_user = {}
-                self.usage_history = {}
-                self.user_favorites = {}
+                logger.info(f"⚠️ VIP links file {self.vip_links_file} not found")
+                self.scraping_stats = {
+                    'total_scraped': 0,
+                    'successful_extractions': 0,
+                    'failed_extractions': 0,
+                    'last_scrape_time': None,
+                    'scrape_duration': 0,
+                    'servers_per_minute': 0
+                }
                 self.game_categories = {}
-                self.user_reserved_servers = {}
+                
         except Exception as e:
-            logger.error(f"❌ Error loading existing links: {e}")
-            # Try to log more details about the error
-            if Path(self.vip_links_file).exists():
-                file_size = Path(self.vip_links_file).stat().st_size
-                logger.error(f"File exists, size: {file_size} bytes")
-                # Try to read and show structure
-                try:
-                    with open(self.vip_links_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        logger.error(f"File structure keys: {list(data.keys())}")
-                        for key, value in list(data.items())[:3]:
-                            logger.error(f"Key '{key}': {type(value)} - {list(value.keys()) if isinstance(value, dict) else str(value)[:100]}")
-                except Exception as read_error:
-                    logger.error(f"Could not read file structure: {read_error}")
-            
-            # Initialize empty structures
-            self.available_links = {}
-            self.links_by_user = {}
-            self.usage_history = {}
-            self.user_favorites = {}
+            logger.error(f"❌ Error loading general data: {e}")
+            self.scraping_stats = {
+                'total_scraped': 0,
+                'successful_extractions': 0,
+                'failed_extractions': 0,
+                'last_scrape_time': None,
+                'scrape_duration': 0,
+                'servers_per_minute': 0
+            }
             self.game_categories = {}
-            self.user_reserved_servers = {}
+        
+        # Initialize available_links and cooldowns
+        self.available_links = {}
+        self.user_cooldowns = {}
 
     def save_links(self):
-        """Save VIP links to JSON file, organizing by user ID and game ID"""
+        """Save user server data to users_servers.json and general data to vip_links.json"""
+        # Guardar datos de usuarios en users_servers.json
         try:
             total_count = 0
             user_count = len(self.links_by_user)
             
+            users_data = {}
             for user_id, user_games in self.links_by_user.items():
                 user_total = 0
+                games_data = {}
+                
                 for game_id, game_data in user_games.items():
                     game_links = len(game_data.get('links', []))
                     user_total += game_links
                     total_count += game_links
+                    
+                    games_data[game_id] = {
+                        'server_links': game_data.get('links', []),
+                        'game_name': game_data.get('game_name', f'Game {game_id}'),
+                        'game_image_url': game_data.get('game_image_url'),
+                        'category': game_data.get('category', 'other'),
+                        'server_details': game_data.get('server_details', {})
+                    }
+                
+                users_data[user_id] = {
+                    'games': games_data,
+                    'usage_history': self.usage_history.get(user_id, []),
+                    'favorites': self.user_favorites.get(user_id, []),
+                    'reserved_servers': self.user_reserved_servers.get(user_id, [])
+                }
+                
                 logger.debug(f"💾 Usuario {user_id}: {user_total} enlaces en {len(user_games)} juegos")
             
-            data = {
-                'links_by_user': self.links_by_user,
-                'scraping_stats': self.scraping_stats,
-                'usage_history': self.usage_history,
-                'user_favorites': self.user_favorites,
-                'game_categories': self.game_categories,
-                'user_reserved_servers': self.user_reserved_servers,
-                'last_updated': datetime.now().isoformat(),
-                'total_count': total_count
+            users_file_data = {
+                'users': users_data,
+                'metadata': {
+                    'created_at': datetime.now().isoformat(),
+                    'last_updated': datetime.now().isoformat(),
+                    'total_users': user_count,
+                    'total_servers': total_count
+                }
             }
             
-            logger.info(f"💾 Guardando datos: {user_count} usuarios, {total_count} enlaces totales")
-            with open(self.vip_links_file, 'w') as f:
-                json.dump(data, f, indent=2)
-            logger.info(f"✅ Enlaces VIP guardados exitosamente en {self.vip_links_file}")
+            logger.info(f"💾 Guardando datos de usuarios: {user_count} usuarios, {total_count} enlaces totales")
+            with open(self.users_servers_file, 'w') as f:
+                json.dump(users_file_data, f, indent=2)
+            logger.info(f"✅ Datos de usuarios guardados exitosamente en {self.users_servers_file}")
+            
         except Exception as e:
-            logger.error(f"❌ Error guardando enlaces: {e}")
+            logger.error(f"❌ Error guardando datos de usuarios: {e}")
+        
+        # Guardar datos generales en vip_links.json (solo stats y categorías)
+        try:
+            general_data = {
+                'scraping_stats': self.scraping_stats,
+                'game_categories': self.game_categories,
+                'last_updated': datetime.now().isoformat(),
+                'note': 'This file now only contains general stats and categories. User data is in users_servers.json'
+            }
+            
+            with open(self.vip_links_file, 'w') as f:
+                json.dump(general_data, f, indent=2)
+            logger.info(f"✅ Datos generales guardados exitosamente en {self.vip_links_file}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error guardando datos generales: {e}")
 
     def check_cooldown(self, user_id: str, cooldown_minutes: int = 5) -> Optional[int]:
         """Check if user is on cooldown. Returns remaining seconds if on cooldown, None otherwise"""
