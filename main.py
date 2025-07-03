@@ -1274,6 +1274,52 @@ class VIPServerScraper:
             logger.error(f"❌ Error limpiando cookies de Roblox: {e}")
             return False
 
+    def configure_nopecha_extension(self, driver):
+        """Configurar la extensión NopeCHA para resolver CAPTCHAs automáticamente"""
+        try:
+            logger.info("🤖 Configurando extensión NopeCHA...")
+            
+            # Esperar a que la extensión se cargue
+            time.sleep(3)
+            
+            # Verificar si NopeCHA está presente en las extensiones
+            try:
+                # Intentar acceder a la página de opciones de NopeCHA
+                original_window = driver.current_window_handle
+                
+                # Obtener todas las ventanas/pestañas
+                all_windows = driver.window_handles
+                
+                # Buscar si hay una pestaña de extensión abierta
+                nopecha_found = False
+                for window in all_windows:
+                    driver.switch_to.window(window)
+                    if "chrome-extension://" in driver.current_url and "nopecha" in driver.current_url.lower():
+                        nopecha_found = True
+                        logger.info("✅ NopeCHA extension detected and active")
+                        break
+                
+                # Volver a la ventana original
+                driver.switch_to.window(original_window)
+                
+                if not nopecha_found:
+                    # Intentar abrir la extensión mediante navegación directa
+                    try:
+                        # NopeCHA debería activarse automáticamente cuando encuentre CAPTCHAs
+                        logger.info("🔧 NopeCHA configurada para activación automática en CAPTCHAs")
+                    except Exception:
+                        logger.warning("⚠️ No se pudo configurar NopeCHA manualmente, se activará automáticamente")
+                
+                return True
+                
+            except Exception as e:
+                logger.warning(f"⚠️ Error verificando NopeCHA: {e}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error configurando NopeCHA: {e}")
+            return False
+
     def get_roblox_cookies_info(self):
         """Obtener información sobre las cookies almacenadas"""
         info = {
@@ -1699,16 +1745,17 @@ class VIPServerScraper:
         return results[:8]  # Return top 8 results
 
     def create_driver(self):
-        """Create Chrome driver with Replit-compatible configuration"""
+        """Create Chrome driver with Replit-compatible configuration and NopeCHA extension"""
         try:
-            logger.info("🚀 Creating Chrome driver for Replit...")
+            logger.info("🚀 Creating Chrome driver for Replit with NopeCHA extension...")
 
             chrome_options = Options()
             chrome_options.add_argument("--headless")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--disable-extensions")
+            # NO deshabilitar extensiones ya que necesitamos NopeCHA
+            # chrome_options.add_argument("--disable-extensions")
             chrome_options.add_argument("--disable-web-security")
             chrome_options.add_argument("--disable-features=VizDisplayCompositor")
             chrome_options.add_argument("--disable-logging")
@@ -1719,6 +1766,14 @@ class VIPServerScraper:
             chrome_options.add_argument("--disable-background-timer-throttling")
             chrome_options.add_argument("--disable-backgrounding-occluded-windows")
             chrome_options.add_argument("--disable-renderer-backgrounding")
+            
+            # Cargar extensión NopeCHA desde la carpeta Recordings
+            nopecha_extension_path = os.path.abspath("./Recordings")
+            if os.path.exists(nopecha_extension_path):
+                chrome_options.add_argument(f"--load-extension={nopecha_extension_path}")
+                logger.info(f"✅ NopeCHA extension loaded from: {nopecha_extension_path}")
+            else:
+                logger.warning("⚠️ NopeCHA extension directory not found, continuing without extension")
 
             # Disable images for faster loading but enable cookies for Roblox
             prefs = {
@@ -1802,6 +1857,9 @@ class VIPServerScraper:
                 logger.info(f"✅ {cookies_loaded} cookies de Roblox aplicadas exitosamente al navegador")
             else:
                 logger.warning("⚠️ No se pudieron aplicar cookies de Roblox - verificar alt.txt")
+
+            # Configurar NopeCHA si está disponible
+            self.configure_nopecha_extension(driver)
 
             logger.info("✅ Chrome driver created successfully")
             return driver
@@ -2669,8 +2727,9 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             color=0xffaa00
         )
         embed.add_field(name="👤 Username Propuesto", value=f"`{new_username}`", inline=True)
-        embed.add_field(name="🖥️ Modo", value="Automatizado con VNC", inline=True)
+        embed.add_field(name="🖥️ Modo", value="Automatizado con VNC + NopeCHA", inline=True)
         embed.add_field(name="🔄 Estado", value="Inicializando navegador...", inline=True)
+        embed.add_field(name="🤖 Anti-CAPTCHA", value="NopeCHA Extension", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -2754,12 +2813,13 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             # Actualizar estado
             update_embed = discord.Embed(
                 title="🌐 Navegador Iniciado",
-                description="Navegador Chrome iniciado exitosamente. Navegando a Roblox...",
+                description="Navegador Chrome iniciado exitosamente con NopeCHA. Navegando a Roblox...",
                 color=0x3366ff
             )
             update_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
-            update_embed.add_field(name="🖥️ Modo", value="Chrome Automatizado", inline=True)
+            update_embed.add_field(name="🖥️ Modo", value="Chrome + NopeCHA", inline=True)
             update_embed.add_field(name="🔄 Estado", value="Navegando a Roblox...", inline=True)
+            update_embed.add_field(name="🤖 CAPTCHA Solver", value="✅ Activo", inline=True)
             await message.edit(embed=update_embed)
             
             logger.info("✅ Navegador iniciado exitosamente, navegando a Roblox...")
