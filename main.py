@@ -5745,7 +5745,13 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
         await interaction.followup.send(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="marketplace", description="Navegar el marketplace comunitario de servidores")
-async def marketplace_command(interaction: discord.Interaction, accion: str = "browse"):
+async def marketplace_command(interaction: discord.Interaction, 
+                             accion: str = "browse", 
+                             listing_id: str = None, 
+                             game_id_offer: str = None, 
+                             server_link: str = None, 
+                             game_id_want: str = None,
+                             descripcion: str = ""):
     """Marketplace comunitario para intercambio de servidores"""
     # Verificar autenticación
     if not await check_verification(interaction, defer_response=True):
@@ -5791,7 +5797,7 @@ async def marketplace_command(interaction: discord.Interaction, accion: str = "b
                     
                     embed.add_field(
                         name=f"{i}. 🔄 Intercambio",
-                        value=f"**Ofrece:** {offer_game_name[:30]}\n**Quiere:** {want_game_name[:30]}\n**Interesados:** {len(listing['interested_users'])}\n**Expira:** {hours_left}h\n**ID:** `{listing['listing_id']}`",
+                        value=f"**Ofrece:** {offer_game_name[:30]}\n**Quiere:** {want_game_name[:30]}\n**Interesados:** {len(listing['interested_users'])}\n**Expira:** {hours_left}h\n**ID:** `{listing['listing_id'][-12:]}`",
                         inline=True
                     )
                 except:
@@ -5799,11 +5805,233 @@ async def marketplace_command(interaction: discord.Interaction, accion: str = "b
             
             embed.add_field(
                 name="🛠️ Comandos",
-                value="• `/marketplace interest [listing_id]` - Mostrar interés\n• `/marketplace create` - Crear listing\n• `/marketplace my` - Mis listings",
+                value="• `/marketplace interest [listing_id]` - Mostrar interés\n• `/marketplace create [game_id_offer] [server_link] [game_id_want]` - Crear listing\n• `/marketplace my` - Mis listings",
                 inline=False
             )
             
             await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        elif accion.lower() == "create":
+            if not game_id_offer or not server_link or not game_id_want:
+                embed = discord.Embed(
+                    title="❌ Parámetros Faltantes",
+                    description="Para crear un listing necesitas proporcionar todos los parámetros:",
+                    color=0xff0000
+                )
+                embed.add_field(
+                    name="📝 Uso:",
+                    value="`/marketplace create [game_id_offer] [server_link] [game_id_want] [descripcion]`",
+                    inline=False
+                )
+                embed.add_field(
+                    name="📋 Parámetros:",
+                    value="• **game_id_offer**: ID del juego que ofreces\n• **server_link**: Link del servidor VIP que ofreces\n• **game_id_want**: ID del juego que quieres\n• **descripcion**: Descripción opcional del intercambio",
+                    inline=False
+                )
+                embed.add_field(
+                    name="💡 Ejemplo:",
+                    value="`/marketplace create 2753915549 https://... 920587237 Blox Fruits por Adopt Me`",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Validar que los game IDs sean numéricos
+            if not game_id_offer.isdigit() or not game_id_want.isdigit():
+                embed = discord.Embed(
+                    title="❌ IDs de Juego Inválidos",
+                    description="Los IDs de juego deben ser numéricos.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Validar que el server_link sea válido
+            if not server_link.startswith("https://"):
+                embed = discord.Embed(
+                    title="❌ Link de Servidor Inválido",
+                    description="El link del servidor debe comenzar con `https://`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Verificar que el usuario tenga el juego ofrecido en su base de datos
+            user_games = scraper.links_by_user.get(user_id, {})
+            if game_id_offer not in user_games:
+                embed = discord.Embed(
+                    title="❌ Juego No Disponible",
+                    description=f"No tienes el juego ID `{game_id_offer}` en tu base de datos.\n\nUsa `/scrape {game_id_offer}` primero para obtener servidores de ese juego.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Verificar que el server_link esté en la base de datos del usuario
+            user_game_links = user_games[game_id_offer].get('links', [])
+            if server_link not in user_game_links:
+                embed = discord.Embed(
+                    title="❌ Servidor No Válido",
+                    description="El link del servidor no está en tu base de datos para ese juego.\n\nSolo puedes intercambiar servidores que hayas obtenido a través del bot.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Crear el listing
+            listing_id = marketplace.create_listing(
+                user_id=user_id,
+                game_id=game_id_offer,
+                server_link=server_link,
+                want_game_id=game_id_want,
+                description=descripcion
+            )
+            
+            # Obtener nombres de juegos
+            offer_game_name = user_games[game_id_offer].get('game_name', f'Game {game_id_offer}')
+            want_game_name = "Juego Desconocido"
+            
+            # Buscar nombre del juego que quiere
+            for user_games_search in scraper.links_by_user.values():
+                if game_id_want in user_games_search:
+                    want_game_name = user_games_search[game_id_want].get('game_name', f'Game {game_id_want}')
+                    break
+            
+            embed = discord.Embed(
+                title="✅ Listing Creado Exitosamente",
+                description="Tu intercambio ha sido publicado en el marketplace.",
+                color=0x00ff88
+            )
+            embed.add_field(name="🎮 Ofreces", value=f"`{offer_game_name}`", inline=True)
+            embed.add_field(name="🎯 Quieres", value=f"`{want_game_name}`", inline=True)
+            embed.add_field(name="🆔 ID del Listing", value=f"`{listing_id[-12:]}`", inline=True)
+            embed.add_field(name="⏰ Duración", value="24 horas", inline=True)
+            embed.add_field(name="🔗 Servidor", value=f"`{server_link[:50]}...`", inline=False)
+            
+            if descripcion:
+                embed.add_field(name="📝 Descripción", value=descripcion, inline=False)
+            
+            embed.add_field(
+                name="📢 Visibilidad",
+                value="Tu listing es visible para todos los usuarios del bot. Recibirás notificación cuando alguien muestre interés.",
+                inline=False
+            )
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        elif accion.lower() == "interest":
+            if not listing_id:
+                embed = discord.Embed(
+                    title="❌ ID de Listing Requerido",
+                    description="Uso: `/marketplace interest [listing_id]`",
+                    color=0xff0000
+                )
+                embed.add_field(
+                    name="💡 Cómo obtener el ID:",
+                    value="Usa `/marketplace browse` para ver listings disponibles y sus IDs.",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Buscar listing por ID (permitir IDs parciales)
+            found_listing = None
+            full_listing_id = None
+            
+            for lid, listing in marketplace.marketplace_data.items():
+                if lid.endswith(listing_id) or listing_id in lid:
+                    found_listing = listing
+                    full_listing_id = lid
+                    break
+            
+            if not found_listing:
+                embed = discord.Embed(
+                    title="❌ Listing No Encontrado",
+                    description=f"No se encontró ningún listing con ID `{listing_id}`.",
+                    color=0xff0000
+                )
+                embed.add_field(
+                    name="🔍 Verifica:",
+                    value="• Usa `/marketplace browse` para ver IDs correctos\n• Asegúrate de que el listing no haya expirado",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Mostrar interés
+            success = marketplace.show_interest(full_listing_id, user_id)
+            
+            if success:
+                # Obtener información del juego
+                offer_game_name = "Juego Desconocido"
+                want_game_name = "Juego Desconocido"
+                
+                for user_games in scraper.links_by_user.values():
+                    if found_listing['offer_game_id'] in user_games:
+                        offer_game_name = user_games[found_listing['offer_game_id']].get('game_name', f"Game {found_listing['offer_game_id']}")
+                    if found_listing['want_game_id'] in user_games:
+                        want_game_name = user_games[found_listing['want_game_id']].get('game_name', f"Game {found_listing['want_game_id']}")
+                
+                embed = discord.Embed(
+                    title="✅ Interés Registrado",
+                    description="Has mostrado interés en este intercambio exitosamente.",
+                    color=0x00ff88
+                )
+                embed.add_field(name="🎮 Ofrece", value=offer_game_name, inline=True)
+                embed.add_field(name="🎯 Quiere", value=want_game_name, inline=True)
+                embed.add_field(name="👥 Interesados", value=f"{len(found_listing['interested_users'])}", inline=True)
+                
+                if found_listing.get('description'):
+                    embed.add_field(name="📝 Descripción", value=found_listing['description'], inline=False)
+                
+                embed.add_field(
+                    name="📞 Próximos Pasos",
+                    value="El propietario del listing será notificado. Si te selecciona para el intercambio, recibirás una notificación.",
+                    inline=False
+                )
+                
+                # Intentar notificar al propietario del listing
+                try:
+                    owner = bot.get_user(int(found_listing['user_id']))
+                    if owner:
+                        notification_embed = discord.Embed(
+                            title="🔔 Nuevo Interés en tu Listing",
+                            description=f"<@{user_id}> ha mostrado interés en tu intercambio.",
+                            color=0x3366ff
+                        )
+                        notification_embed.add_field(name="🎮 Tu Oferta", value=offer_game_name, inline=True)
+                        notification_embed.add_field(name="🎯 Quieres", value=want_game_name, inline=True)
+                        notification_embed.add_field(name="👥 Total Interesados", value=f"{len(found_listing['interested_users'])}", inline=True)
+                        notification_embed.add_field(
+                            name="🤝 Para Completar el Intercambio",
+                            value="Contacta directamente con el usuario interesado para coordinar el intercambio.",
+                            inline=False
+                        )
+                        
+                        await owner.send(embed=notification_embed)
+                        logger.info(f"Interest notification sent to listing owner {found_listing['user_id']}")
+                except Exception as e:
+                    logger.warning(f"Could not send interest notification: {e}")
+                
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                
+            else:
+                # Determinar la razón del fallo
+                if found_listing['user_id'] == user_id:
+                    reason = "No puedes mostrar interés en tus propios listings."
+                elif found_listing['expires_at'] < time.time():
+                    reason = "Este listing ha expirado."
+                elif user_id in found_listing['interested_users']:
+                    reason = "Ya has mostrado interés en este listing."
+                else:
+                    reason = "No se pudo registrar el interés."
+                
+                embed = discord.Embed(
+                    title="❌ No se Pudo Registrar Interés",
+                    description=reason,
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
             
         elif accion.lower() == "my":
             # Ver listings propios
@@ -5821,7 +6049,14 @@ async def marketplace_command(interaction: discord.Interaction, accion: str = "b
                 listings_text = ""
                 for listing in user_listings[:3]:
                     status_emoji = {"active": "🟢", "completed": "✅", "expired": "⏰"}.get(listing['status'], "❓")
-                    listings_text += f"{status_emoji} {listing['listing_id'][:20]}... ({listing['status']})\n"
+                    
+                    # Obtener nombre del juego
+                    game_name = "Juego Desconocido"
+                    user_games = scraper.links_by_user.get(user_id, {})
+                    if listing['offer_game_id'] in user_games:
+                        game_name = user_games[listing['offer_game_id']].get('game_name', f"Game {listing['offer_game_id']}")
+                    
+                    listings_text += f"{status_emoji} {game_name[:20]} ({len(listing['interested_users'])} interesados)\n"
                 
                 embed.add_field(
                     name=f"📋 Mis Listings ({len(user_listings)})",
@@ -5838,7 +6073,7 @@ async def marketplace_command(interaction: discord.Interaction, accion: str = "b
             
             embed.add_field(
                 name="🛠️ Gestión",
-                value="• `/marketplace create` - Nuevo listing\n• `/report` - Reportar problema",
+                value="• `/marketplace create` - Nuevo listing\n• `/marketplace browse` - Ver marketplace\n• `/report` - Reportar problema",
                 inline=False
             )
             
@@ -5852,7 +6087,12 @@ async def marketplace_command(interaction: discord.Interaction, accion: str = "b
             )
             embed.add_field(
                 name="📋 Comandos:",
-                value="• `browse` - Navegar marketplace\n• `my` - Mi perfil\n• `create` - Crear listing\n• `interest [id]` - Mostrar interés",
+                value="• `browse` - Navegar marketplace\n• `create [game_id_offer] [server_link] [game_id_want] [descripcion]` - Crear listing\n• `interest [listing_id]` - Mostrar interés\n• `my` - Mi perfil",
+                inline=False
+            )
+            embed.add_field(
+                name="💡 Ejemplos:",
+                value="• `/marketplace browse`\n• `/marketplace create 2753915549 https://... 920587237 Intercambio`\n• `/marketplace interest abc123`\n• `/marketplace my`",
                 inline=False
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -5862,6 +6102,165 @@ async def marketplace_command(interaction: discord.Interaction, accion: str = "b
         error_embed = discord.Embed(
             title="❌ Error",
             description="Ocurrió un error en el marketplace.",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="marketplace_manage", description="Gestionar tus listings del marketplace")
+async def marketplace_manage_command(interaction: discord.Interaction, 
+                                   accion: str, 
+                                   listing_id: str = None):
+    """Gestión avanzada del marketplace"""
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_id = str(interaction.user.id)
+        
+        if accion.lower() == "list":
+            # Listar todos los listings del usuario
+            user_listings = marketplace.get_user_listings(user_id)
+            
+            if not user_listings:
+                embed = discord.Embed(
+                    title="📋 Mis Listings",
+                    description="No tienes listings activos en el marketplace.",
+                    color=0xffaa00
+                )
+                embed.add_field(
+                    name="🚀 Crear Listing",
+                    value="Usa `/marketplace create` para crear tu primer listing",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            embed = discord.Embed(
+                title="📋 Mis Listings",
+                description=f"Tienes **{len(user_listings)}** listings:",
+                color=0x4169e1
+            )
+            
+            for i, listing in enumerate(user_listings[:5], 1):
+                status_emoji = {"active": "🟢", "completed": "✅", "expired": "⏰"}.get(listing['status'], "❓")
+                
+                # Obtener nombre del juego
+                offer_game_name = "Juego Desconocido"
+                want_game_name = "Juego Desconocido"
+                
+                user_games = scraper.links_by_user.get(user_id, {})
+                if listing['offer_game_id'] in user_games:
+                    offer_game_name = user_games[listing['offer_game_id']].get('game_name', f"Game {listing['offer_game_id']}")
+                
+                for user_games_search in scraper.links_by_user.values():
+                    if listing['want_game_id'] in user_games_search:
+                        want_game_name = user_games_search[listing['want_game_id']].get('game_name', f"Game {listing['want_game_id']}")
+                        break
+                
+                time_left = listing['expires_at'] - time.time()
+                hours_left = max(0, int(time_left / 3600))
+                
+                embed.add_field(
+                    name=f"{i}. {status_emoji} {offer_game_name[:25]}",
+                    value=f"**Quiere:** {want_game_name[:25]}\n**Interesados:** {len(listing['interested_users'])}\n**Vistas:** {listing.get('views', 0)}\n**Expira:** {hours_left}h\n**ID:** `{listing['listing_id'][-12:]}`",
+                    inline=True
+                )
+            
+            if len(user_listings) > 5:
+                embed.set_footer(text=f"Mostrando 5 de {len(user_listings)} listings")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        elif accion.lower() == "cancel":
+            if not listing_id:
+                embed = discord.Embed(
+                    title="❌ ID de Listing Requerido",
+                    description="Uso: `/marketplace_manage cancel [listing_id]`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Buscar listing
+            found_listing_id, found_listing = marketplace.get_listing_by_partial_id(listing_id)
+            
+            if not found_listing or found_listing['user_id'] != user_id:
+                embed = discord.Embed(
+                    title="❌ Listing No Encontrado",
+                    description="No se encontró el listing o no tienes permisos para cancelarlo.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Cancelar listing
+            found_listing['status'] = 'cancelled'
+            found_listing['cancelled_at'] = time.time()
+            marketplace.save_data()
+            
+            embed = discord.Embed(
+                title="✅ Listing Cancelado",
+                description="Tu listing ha sido cancelado exitosamente.",
+                color=0x00ff88
+            )
+            embed.add_field(name="🆔 ID", value=f"`{found_listing_id[-12:]}`", inline=True)
+            embed.add_field(name="👥 Interesados", value=str(len(found_listing['interested_users'])), inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        elif accion.lower() == "stats":
+            # Estadísticas del marketplace
+            stats = marketplace.get_listing_stats()
+            user_listings = marketplace.get_user_listings(user_id)
+            user_exchanges = marketplace.get_user_exchanges(user_id)
+            user_rating = marketplace.get_user_rating(user_id)
+            
+            embed = discord.Embed(
+                title="📊 Estadísticas del Marketplace",
+                description="Estado actual del marketplace comunitario",
+                color=0x3366ff
+            )
+            
+            # Estadísticas globales
+            embed.add_field(name="🟢 Listings Activos", value=str(stats['active']), inline=True)
+            embed.add_field(name="✅ Completados", value=str(stats['completed']), inline=True)
+            embed.add_field(name="⏰ Expirados", value=str(stats['expired']), inline=True)
+            embed.add_field(name="👀 Vistas Totales", value=str(stats['total_views']), inline=True)
+            
+            # Estadísticas del usuario
+            embed.add_field(name="📋 Mis Listings", value=str(len(user_listings)), inline=True)
+            embed.add_field(name="🔄 Mis Intercambios", value=str(len(user_exchanges)), inline=True)
+            embed.add_field(name="⭐ Mi Rating", value=f"{user_rating:.1f}/5.0", inline=True)
+            
+            # Actividad reciente
+            recent_interest = 0
+            for listing in user_listings:
+                if listing.get('last_interest') and time.time() - listing['last_interest'] < 86400:  # 24 horas
+                    recent_interest += 1
+            
+            embed.add_field(name="🔥 Interés Reciente", value=f"{recent_interest} en 24h", inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        else:
+            embed = discord.Embed(
+                title="❌ Acción No Válida",
+                description="Acciones disponibles:",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="📋 Comandos:",
+                value="• `list` - Ver todos mis listings\n• `cancel [listing_id]` - Cancelar listing\n• `stats` - Ver estadísticas",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+    except Exception as e:
+        logger.error(f"Error in marketplace manage command: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error en la gestión del marketplace.",
             color=0xff0000
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)

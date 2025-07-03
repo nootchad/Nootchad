@@ -72,7 +72,19 @@ class CommunityMarketplace:
     def create_listing(self, user_id: str, game_id: str, server_link: str, 
                       want_game_id: str, description: str = "", duration_hours: int = 24) -> str:
         """Crear un listing en el marketplace"""
-        listing_id = f"listing_{int(time.time())}_{user_id}"
+        # Limpiar listings expirados antes de crear uno nuevo
+        self.cleanup_expired_listings()
+        
+        # Verificar si el usuario ya tiene un listing activo para el mismo juego
+        for listing in self.marketplace_data.values():
+            if (listing['user_id'] == user_id and 
+                listing['offer_game_id'] == game_id and 
+                listing['status'] == 'active' and
+                listing['expires_at'] > time.time()):
+                # Usuario ya tiene un listing activo para este juego
+                return None
+        
+        listing_id = f"listing_{int(time.time())}_{user_id[-6:]}"
         
         listing = {
             'listing_id': listing_id,
@@ -85,7 +97,8 @@ class CommunityMarketplace:
             'expires_at': time.time() + (duration_hours * 3600),
             'status': 'active',
             'interested_users': [],
-            'views': 0
+            'views': 0,
+            'last_interest': None
         }
         
         self.marketplace_data[listing_id] = listing
@@ -246,6 +259,13 @@ class CommunityMarketplace:
         
         return sum(ratings) / len(ratings)
     
+    def get_listing_by_partial_id(self, partial_id: str) -> tuple:
+        """Obtener listing por ID parcial"""
+        for listing_id, listing in self.marketplace_data.items():
+            if partial_id in listing_id or listing_id.endswith(partial_id):
+                return listing_id, listing
+        return None, None
+    
     def cleanup_expired_listings(self):
         """Limpiar listings expirados"""
         current_time = time.time()
@@ -261,3 +281,29 @@ class CommunityMarketplace:
             logger.info(f"Marked {len(expired_listings)} listings as expired")
         
         return len(expired_listings)
+    
+    def get_listing_stats(self) -> dict:
+        """Obtener estadísticas del marketplace"""
+        current_time = time.time()
+        active_count = 0
+        expired_count = 0
+        completed_count = 0
+        total_views = 0
+        
+        for listing in self.marketplace_data.values():
+            if listing['expires_at'] > current_time and listing['status'] == 'active':
+                active_count += 1
+            elif listing['status'] == 'expired':
+                expired_count += 1
+            elif listing['status'] == 'completed':
+                completed_count += 1
+            
+            total_views += listing.get('views', 0)
+        
+        return {
+            'active': active_count,
+            'expired': expired_count,
+            'completed': completed_count,
+            'total_views': total_views,
+            'total_listings': len(self.marketplace_data)
+        }
