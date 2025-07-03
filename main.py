@@ -2803,21 +2803,85 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 birth_year = 2006  # Actualizado para cumplir requisitos de edad
                 
                 try:
-                    # Mes (Marzo = 3) - Selector actualizado
+                    # Mes (Marzo = 3) - Selector actualizado con múltiples intentos
                     month_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "MonthDropdown")))
-                    Select(month_dropdown).select_by_value("3")  # Marzo
-                    logger.info("✅ Mes seleccionado: Marzo")
-                    fields_completed += 1
+                    
+                    # Intentar diferentes valores para marzo
+                    month_values = ["Mar", "March", "3", "03", "2"]  # Diferentes formatos posibles
+                    month_selected = False
+                    
+                    for month_val in month_values:
+                        try:
+                            Select(month_dropdown).select_by_value(month_val)
+                            logger.info(f"✅ Mes seleccionado: Marzo (valor: {month_val})")
+                            fields_completed += 1
+                            month_selected = True
+                            break
+                        except Exception:
+                            continue
+                    
+                    if not month_selected:
+                        # Intentar seleccionar por índice (marzo es típicamente índice 3)
+                        try:
+                            Select(month_dropdown).select_by_index(3)
+                            logger.info("✅ Mes seleccionado por índice: Marzo")
+                            fields_completed += 1
+                            month_selected = True
+                        except Exception:
+                            pass
+                    
+                    if not month_selected:
+                        logger.warning("⚠️ No se pudo seleccionar mes automáticamente")
+                        
                 except Exception as e:
-                    logger.warning(f"❌ Error seleccionando mes: {e}")
-                    # Intentar selector alternativo
+                    logger.warning(f"❌ Error encontrando dropdown de mes: {e}")
+                    # Intentar selectores alternativos
                     try:
-                        month_select = driver.find_element(By.ID, "MonthDropdown")
-                        Select(month_select).select_by_value("3")
-                        logger.info("✅ Mes seleccionado con selector alternativo")
-                        fields_completed += 1
+                        month_selectors = [
+                            "select[name='month']",
+                            "select[id*='month']", 
+                            "select[name*='month']",
+                            "#signup-birthmonth",
+                            ".month-selector"
+                        ]
+                        
+                        month_selected = False
+                        for selector in month_selectors:
+                            try:
+                                month_element = driver.find_element(By.CSS_SELECTOR, selector)
+                                month_values = ["Mar", "March", "3", "03", "2"]
+                                
+                                for month_val in month_values:
+                                    try:
+                                        Select(month_element).select_by_value(month_val)
+                                        logger.info(f"✅ Mes seleccionado con selector alternativo: {selector} (valor: {month_val})")
+                                        fields_completed += 1
+                                        month_selected = True
+                                        break
+                                    except Exception:
+                                        continue
+                                
+                                if month_selected:
+                                    break
+                                    
+                                # Intentar por índice si no funcionó por valor
+                                try:
+                                    Select(month_element).select_by_index(3)
+                                    logger.info(f"✅ Mes seleccionado por índice con selector: {selector}")
+                                    fields_completed += 1
+                                    month_selected = True
+                                    break
+                                except Exception:
+                                    continue
+                                    
+                            except Exception:
+                                continue
+                        
+                        if not month_selected:
+                            logger.error("❌ No se pudo seleccionar mes con ningún método")
+                            
                     except Exception as e2:
-                        logger.error(f"❌ Error con selector alternativo de mes: {e2}")
+                        logger.error(f"❌ Error con selectores alternativos de mes: {e2}")
                 
                 try:
                     # Día (15) - Selector actualizado
