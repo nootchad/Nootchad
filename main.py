@@ -2813,192 +2813,339 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 
                 time.sleep(5)
                 
-                # Buscar y llenar todos los campos del formulario de registro
+                # Esperar a que se cargue completamente el formulario
+                wait = WebDriverWait(driver, 15)
                 
-                # 1. Campo de Username
+                # Buscar y llenar todos los campos del formulario de registro paso a paso
+                fields_filled = {
+                    'username': False,
+                    'password': False,
+                    'birthdate': False,
+                    'gender': False
+                }
+                
+                # Actualizar progreso
+                filling_embed = discord.Embed(
+                    title="📝 Llenando Formulario Automáticamente",
+                    description="Completando todos los campos del formulario de registro...",
+                    color=0xffaa00
+                )
+                filling_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+                filling_embed.add_field(name="🔒 Password", value="`Grecia20`", inline=True)
+                filling_embed.add_field(name="🎂 Fecha", value="Configurando...", inline=True)
+                await message.edit(embed=filling_embed)
+                
+                # 1. Campo de Username - Usar múltiples estrategias
                 username_selectors = [
+                    "input#signup-username",
+                    "input[data-testid='username-signup-input']",
+                    "input[placeholder*='Username']",
                     "input[name='username']",
                     "input[id*='username']",
-                    "input[placeholder*='Username' i]",
-                    "#signup-username",
-                    "[data-testid='username-input']",
-                    "input[data-testid='username-signup-input']"
+                    "#username-field input",
+                    ".signup-form input[type='text']:first-of-type"
                 ]
                 
                 username_field = None
                 for selector in username_selectors:
                     try:
-                        username_field = driver.find_element(By.CSS_SELECTOR, selector)
-                        if username_field.is_displayed():
-                            username_field.clear()
-                            username_field.send_keys(new_username)
-                            logger.info(f"✅ Username {new_username} ingresado")
-                            break
+                        username_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
+                        username_field.clear()
+                        username_field.send_keys(new_username)
+                        fields_filled['username'] = True
+                        logger.info(f"✅ Username {new_username} ingresado con selector: {selector}")
+                        break
                     except:
                         continue
+                
+                # Si no encontró el campo, intentar por JavaScript
+                if not fields_filled['username']:
+                    try:
+                        driver.execute_script(f"""
+                            var usernameInput = document.querySelector('input[type="text"]') || 
+                                               document.querySelector('input[placeholder*="sername"]') ||
+                                               document.querySelector('#signup-username');
+                            if (usernameInput) {{
+                                usernameInput.value = '{new_username}';
+                                usernameInput.dispatchEvent(new Event('input', {{bubbles: true}}));
+                                usernameInput.dispatchEvent(new Event('change', {{bubbles: true}}));
+                            }}
+                        """)
+                        fields_filled['username'] = True
+                        logger.info(f"✅ Username {new_username} ingresado por JavaScript")
+                    except Exception as js_error:
+                        logger.error(f"❌ Error ingresando username por JS: {js_error}")
+                
+                time.sleep(2)
                 
                 # 2. Campo de Password
                 password_selectors = [
-                    "input[name='password']",
+                    "input#signup-password",
+                    "input[data-testid='password-signup-input']",
                     "input[type='password']",
-                    "input[id*='password']",
-                    "input[placeholder*='Password' i]",
-                    "#signup-password",
-                    "[data-testid='password-signup-input']"
+                    "input[name='password']",
+                    "input[placeholder*='Password']",
+                    "#password-field input"
                 ]
                 
-                password_field = None
                 for selector in password_selectors:
                     try:
-                        password_field = driver.find_element(By.CSS_SELECTOR, selector)
-                        if password_field.is_displayed():
-                            password_field.clear()
-                            password_field.send_keys("Grecia20")
-                            logger.info("✅ Password 'Grecia20' ingresada")
-                            break
+                        password_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
+                        password_field.clear()
+                        password_field.send_keys("Grecia20")
+                        fields_filled['password'] = True
+                        logger.info(f"✅ Password 'Grecia20' ingresada con selector: {selector}")
+                        break
                     except:
                         continue
                 
-                # 3. Campo de Email (generar email automático)
-                auto_email = f"{new_username.lower()}@gmail.com"
-                email_selectors = [
-                    "input[name='email']",
-                    "input[type='email']",
-                    "input[id*='email']",
-                    "input[placeholder*='Email' i]",
-                    "#signup-email",
-                    "[data-testid='email-signup-input']"
-                ]
-                
-                email_field = None
-                for selector in email_selectors:
+                # Si no encontró el campo de password, intentar por JavaScript
+                if not fields_filled['password']:
                     try:
-                        email_field = driver.find_element(By.CSS_SELECTOR, selector)
-                        if email_field.is_displayed():
-                            email_field.clear()
-                            email_field.send_keys(auto_email)
-                            logger.info(f"✅ Email {auto_email} ingresado")
-                            break
-                    except:
-                        continue
+                        driver.execute_script("""
+                            var passwordInput = document.querySelector('input[type="password"]');
+                            if (passwordInput) {
+                                passwordInput.value = 'Grecia20';
+                                passwordInput.dispatchEvent(new Event('input', {bubbles: true}));
+                                passwordInput.dispatchEvent(new Event('change', {bubbles: true}));
+                            }
+                        """)
+                        fields_filled['password'] = True
+                        logger.info("✅ Password 'Grecia20' ingresada por JavaScript")
+                    except Exception as js_error:
+                        logger.error(f"❌ Error ingresando password por JS: {js_error}")
                 
-                # 4. Fecha de Nacimiento (usar fecha que hace que la cuenta sea mayor de edad)
-                # Mes
+                time.sleep(2)
+                
+                # 3. Fecha de Nacimiento - Estrategia mejorada
+                current_year = datetime.now().year
+                birth_year = current_year - 25  # 25 años para ser mayor de edad
+                
+                # Mes (Enero = 1)
                 month_selectors = [
+                    "select#MonthDropdown",
+                    "select[data-testid='month-picker']",
                     "select[name='month']",
                     "select[id*='month']",
-                    "select[data-testid='month-picker']",
-                    ".month-selector select"
+                    ".signup-form select:first-of-type"
                 ]
                 
+                month_filled = False
                 for selector in month_selectors:
                     try:
-                        month_field = driver.find_element(By.CSS_SELECTOR, selector)
-                        if month_field.is_displayed():
-                            from selenium.webdriver.support.ui import Select
-                            select_month = Select(month_field)
-                            select_month.select_by_value("Jan")  # Enero
-                            logger.info("✅ Mes de nacimiento seleccionado: Enero")
+                        month_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
+                        from selenium.webdriver.support.ui import Select
+                        select_month = Select(month_field)
+                        
+                        # Intentar diferentes valores para enero
+                        for month_value in ["1", "01", "Jan", "January"]:
+                            try:
+                                select_month.select_by_value(month_value)
+                                month_filled = True
+                                logger.info(f"✅ Mes de nacimiento seleccionado: {month_value}")
+                                break
+                            except:
+                                continue
+                        
+                        if month_filled:
                             break
                     except:
                         continue
                 
-                # Día
+                # Día (1)
                 day_selectors = [
+                    "select#DayDropdown",
+                    "select[data-testid='day-picker']",
                     "select[name='day']",
                     "select[id*='day']",
-                    "select[data-testid='day-picker']",
-                    ".day-selector select"
+                    ".signup-form select:nth-of-type(2)"
                 ]
                 
+                day_filled = False
                 for selector in day_selectors:
                     try:
-                        day_field = driver.find_element(By.CSS_SELECTOR, selector)
-                        if day_field.is_displayed():
-                            from selenium.webdriver.support.ui import Select
-                            select_day = Select(day_field)
-                            select_day.select_by_value("1")  # Día 1
-                            logger.info("✅ Día de nacimiento seleccionado: 1")
+                        day_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
+                        from selenium.webdriver.support.ui import Select
+                        select_day = Select(day_field)
+                        
+                        # Intentar diferentes valores para día 1
+                        for day_value in ["1", "01"]:
+                            try:
+                                select_day.select_by_value(day_value)
+                                day_filled = True
+                                logger.info(f"✅ Día de nacimiento seleccionado: {day_value}")
+                                break
+                            except:
+                                continue
+                        
+                        if day_filled:
                             break
                     except:
                         continue
                 
-                # Año (hace 25 años para asegurar que sea mayor de edad)
-                current_year = datetime.now().year
-                birth_year = current_year - 25
-                
+                # Año
                 year_selectors = [
+                    "select#YearDropdown",
+                    "select[data-testid='year-picker']",
                     "select[name='year']",
                     "select[id*='year']",
-                    "select[data-testid='year-picker']",
-                    ".year-selector select"
+                    ".signup-form select:last-of-type"
                 ]
                 
+                year_filled = False
                 for selector in year_selectors:
                     try:
-                        year_field = driver.find_element(By.CSS_SELECTOR, selector)
-                        if year_field.is_displayed():
-                            from selenium.webdriver.support.ui import Select
-                            select_year = Select(year_field)
-                            select_year.select_by_value(str(birth_year))
-                            logger.info(f"✅ Año de nacimiento seleccionado: {birth_year}")
-                            break
+                        year_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
+                        from selenium.webdriver.support.ui import Select
+                        select_year = Select(year_field)
+                        select_year.select_by_value(str(birth_year))
+                        year_filled = True
+                        logger.info(f"✅ Año de nacimiento seleccionado: {birth_year}")
+                        break
                     except:
                         continue
                 
-                # 5. Género (seleccionar masculino)
+                if month_filled and day_filled and year_filled:
+                    fields_filled['birthdate'] = True
+                
+                time.sleep(2)
+                
+                # 4. Género (Masculino) - Estrategia mejorada
                 gender_selectors = [
+                    "select#GenderDropdown",
+                    "select[data-testid='gender-picker']",
                     "select[name='gender']",
                     "select[id*='gender']",
                     "input[value='Male']",
                     "input[value='male']",
-                    "[data-testid='gender-picker']"
+                    "input[value='2']",  # A veces masculino es valor 2
+                    "label:contains('Male') input",
+                    "label:contains('Masculino') input"
                 ]
                 
                 for selector in gender_selectors:
                     try:
-                        gender_field = driver.find_element(By.CSS_SELECTOR, selector)
-                        if gender_field.is_displayed():
-                            if gender_field.tag_name == "select":
-                                from selenium.webdriver.support.ui import Select
-                                select_gender = Select(gender_field)
+                        gender_field = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
+                        
+                        if gender_field.tag_name.lower() == "select":
+                            from selenium.webdriver.support.ui import Select
+                            select_gender = Select(gender_field)
+                            
+                            # Intentar diferentes valores para masculino
+                            for gender_value in ["Male", "male", "2", "M", "1"]:
                                 try:
-                                    select_gender.select_by_value("Male")
+                                    select_gender.select_by_value(gender_value)
+                                    fields_filled['gender'] = True
+                                    logger.info(f"✅ Género seleccionado: {gender_value}")
+                                    break
                                 except:
-                                    try:
-                                        select_gender.select_by_value("male")
-                                    except:
-                                        select_gender.select_by_index(1)  # Segundo elemento (usualmente masculino)
-                            else:
-                                gender_field.click()
-                            logger.info("✅ Género seleccionado: Masculino")
+                                    continue
+                        else:
+                            # Es un radio button o checkbox
+                            gender_field.click()
+                            fields_filled['gender'] = True
+                            logger.info("✅ Género seleccionado: Radio button clickeado")
+                        
+                        if fields_filled['gender']:
                             break
                     except:
                         continue
                 
-                # Esperar un poco para que se procesen los campos
-                time.sleep(2)
+                # Si no se pudo seleccionar género con selectors, intentar JavaScript
+                if not fields_filled['gender']:
+                    try:
+                        driver.execute_script("""
+                            var genderSelect = document.querySelector('select[name="gender"]') || 
+                                              document.querySelector('select#GenderDropdown') ||
+                                              document.querySelector('select[id*="gender"]');
+                            if (genderSelect) {
+                                genderSelect.value = 'Male';
+                                genderSelect.dispatchEvent(new Event('change', {bubbles: true}));
+                            } else {
+                                var maleRadio = document.querySelector('input[value="Male"]') ||
+                                               document.querySelector('input[value="male"]') ||
+                                               document.querySelector('input[value="2"]');
+                                if (maleRadio) {
+                                    maleRadio.checked = true;
+                                    maleRadio.dispatchEvent(new Event('change', {bubbles: true}));
+                                }
+                            }
+                        """)
+                        fields_filled['gender'] = True
+                        logger.info("✅ Género seleccionado por JavaScript")
+                    except Exception as js_error:
+                        logger.error(f"❌ Error seleccionando género por JS: {js_error}")
                 
-                if username_field:
-                    # Actualizar estado con todos los campos completados
+                time.sleep(3)
+                
+                # Verificar qué campos se completaron exitosamente
+                completed_fields = []
+                missing_fields = []
+                
+                if fields_filled['username']:
+                    completed_fields.append("✅ Username")
+                else:
+                    missing_fields.append("❌ Username")
+                
+                if fields_filled['password']:
+                    completed_fields.append("✅ Password")
+                else:
+                    missing_fields.append("❌ Password")
+                
+                if fields_filled['birthdate']:
+                    completed_fields.append("✅ Fecha de Nacimiento")
+                else:
+                    missing_fields.append("❌ Fecha de Nacimiento")
+                
+                if fields_filled['gender']:
+                    completed_fields.append("✅ Género")
+                else:
+                    missing_fields.append("❌ Género")
+                
+                # Actualizar estado con los campos completados
+                if len(completed_fields) >= 2:  # Al menos username y password
                     form_embed = discord.Embed(
-                        title="✅ Formulario Completado Automáticamente",
-                        description=f"Todos los campos han sido llenados automáticamente para **{new_username}**.",
-                        color=0x00ff88
+                        title="📝 Formulario Procesado",
+                        description=f"Resultado del llenado automático para **{new_username}**:",
+                        color=0x00ff88 if len(missing_fields) == 0 else 0xffaa00
                     )
+                    
                     form_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
                     form_embed.add_field(name="🔒 Password", value="`Grecia20`", inline=True)
-                    form_embed.add_field(name="📧 Email", value=f"`{auto_email}`", inline=True)
-                    form_embed.add_field(name="📅 Fecha Nacimiento", value=f"`1 Enero {birth_year}`", inline=True)
+                    form_embed.add_field(name="📅 Fecha", value=f"`1 Enero {birth_year}`", inline=True)
                     form_embed.add_field(name="⚧ Género", value="`Masculino`", inline=True)
-                    form_embed.add_field(name="🎯 Estado", value="✅ Listo para enviar", inline=True)
+                    
+                    if completed_fields:
+                        form_embed.add_field(
+                            name="✅ Campos Completados",
+                            value="\n".join(completed_fields),
+                            inline=True
+                        )
+                    
+                    if missing_fields:
+                        form_embed.add_field(
+                            name="⚠️ Requiere Atención Manual",
+                            value="\n".join(missing_fields),
+                            inline=True
+                        )
                     
                     form_embed.add_field(
                         name="📋 Próximos Pasos",
-                        value="• El formulario está completado\n• Solo falta resolver CAPTCHA (si aparece)\n• Haz clic en 'Sign Up' en VNC\n• El navegador permanecerá abierto",
+                        value="• Revisar campos en VNC\n• Completar campos faltantes manualmente\n• Resolver CAPTCHA si aparece\n• Hacer clic en 'Sign Up'",
                         inline=False
                     )
+                    
                     await message.edit(embed=form_embed)
+                else:
+                    # Error crítico
+                    error_embed = discord.Embed(
+                        title="❌ Error Llenando Formulario",
+                        description="No se pudieron completar los campos básicos del formulario.",
+                        color=0xff3333
+                    )
+                    error_embed.add_field(name="🖥️ VNC", value="Disponible para completar manualmente", inline=True)
+                    error_embed.add_field(name="🎯 Username", value=f"`{new_username}`", inline=True)
+                    await message.edit(embed=error_embed)
                     
                     # Intentar hacer clic en el botón de registro automáticamente
                     signup_button_selectors = [
