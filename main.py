@@ -1071,6 +1071,76 @@ class VIPServerScraper:
         except Exception as e:
             logger.error(f"❌ Error guardando cookies de Roblox: {e}")
 
+    def extract_cookies_from_alt_file(self):
+        """Extraer cookies de Roblox del archivo alt.txt y aplicarlas"""
+        try:
+            if not Path("alt.txt").exists():
+                logger.warning("⚠️ Archivo alt.txt no encontrado")
+                return 0
+            
+            with open("alt.txt", "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            roblox_cookies_extracted = []
+            lines = content.split('\n')
+            
+            for line in lines:
+                line = line.strip()
+                if ':gallagen.org$' in line and '_|WARNING:' in line:
+                    try:
+                        # Formato: username:gallagen.org$userid:_|WARNING:...|_cookie_value
+                        parts = line.split(':gallagen.org$')
+                        if len(parts) >= 2:
+                            username = parts[0]
+                            remaining = parts[1]
+                            
+                            # Buscar la cookie después del último |_
+                            if '|_' in remaining:
+                                cookie_sections = remaining.split('|_')
+                                roblox_cookie = cookie_sections[-1].strip()
+                                
+                                # Verificar que la cookie sea válida
+                                if roblox_cookie and len(roblox_cookie) > 50:
+                                    roblox_cookies_extracted.append({
+                                        'username': username,
+                                        'cookie': roblox_cookie,
+                                        'domain': 'roblox.com'
+                                    })
+                                    logger.info(f"🍪 Cookie extraída para usuario: {username}")
+                    except Exception as e:
+                        logger.debug(f"Error procesando línea: {e}")
+                        continue
+            
+            if roblox_cookies_extracted:
+                # Guardar cookies en el sistema
+                if 'roblox.com' not in self.roblox_cookies:
+                    self.roblox_cookies['roblox.com'] = {}
+                
+                for cookie_data in roblox_cookies_extracted:
+                    cookie_name = '.ROBLOSECURITY'
+                    self.roblox_cookies['roblox.com'][cookie_name] = {
+                        'value': cookie_data['cookie'],
+                        'domain': '.roblox.com',
+                        'path': '/',
+                        'secure': True,
+                        'httpOnly': True,
+                        'sameSite': 'Lax',
+                        'extracted_at': datetime.now().isoformat(),
+                        'source': 'alt.txt',
+                        'username': cookie_data['username']
+                    }
+                
+                self.save_roblox_cookies()
+                logger.info(f"✅ {len(roblox_cookies_extracted)} cookies de Roblox extraídas y guardadas desde alt.txt")
+                return len(roblox_cookies_extracted)
+            else:
+                logger.warning("⚠️ No se encontraron cookies válidas en alt.txt")
+                return 0
+                
+        except Exception as e:
+            logger.error(f"❌ Error extrayendo cookies de alt.txt: {e}")
+            return 0
+
     def extract_roblox_cookies(self, driver):
         """Extraer cookies de Roblox del navegador actual"""
         try:
@@ -1100,10 +1170,11 @@ class VIPServerScraper:
                         'secure': cookie.get('secure', False),
                         'httpOnly': cookie.get('httpOnly', False),
                         'sameSite': cookie.get('sameSite', 'Lax'),
-                        'extracted_at': datetime.now().isoformat()
+                        'extracted_at': datetime.now().isoformat(),
+                        'source': 'browser'
                     }
                 
-                logger.info(f"🍪 Extraídas {len(cookies)} cookies de {domain}")
+                logger.info(f"🍪 Extraídas {len(cookies)} cookies de {domain} desde navegador")
                 self.save_roblox_cookies()
                 return len(cookies)
             
@@ -1113,23 +1184,41 @@ class VIPServerScraper:
             logger.error(f"❌ Error extrayendo cookies de Roblox: {e}")
             return 0
 
-    def load_roblox_cookies_to_driver(self, driver, domain='roblox.com'):
-        """Cargar cookies de Roblox al navegador"""
+    def load_roblox_cookies_to_driver(self, driver, domain='roblox.com', force_refresh=False):
+        """Cargar cookies de Roblox al navegador con manejo mejorado"""
         try:
-            if domain in self.roblox_cookies:
+            # Primero extraer cookies del archivo alt.txt si no las tenemos
+            if domain not in self.roblox_cookies or force_refresh:
+                logger.info("🔄 Extrayendo cookies frescas desde alt.txt...")
+                self.extract_cookies_from_alt_file()
+            
+            if domain in self.roblox_cookies and self.roblox_cookies[domain]:
                 # Navegar al dominio primero
-                driver.get(f"https://{domain}")
+                try:
+                    logger.info(f"🌐 Navegando a https://{domain} para aplicar cookies...")
+                    driver.get(f"https://{domain}")
+                    time.sleep(2)  # Esperar a que cargue la página
+                except Exception as nav_error:
+                    logger.warning(f"⚠️ Error navegando a {domain}: {nav_error}")
                 
                 cookies_loaded = 0
+                cookies_failed = 0
+                
                 for cookie_name, cookie_data in self.roblox_cookies[domain].items():
                     try:
+                        # Limpiar cookies existentes del mismo nombre
+                        try:
+                            driver.delete_cookie(cookie_name)
+                        except:
+                            pass
+                        
                         cookie_dict = {
                             'name': cookie_name,
                             'value': cookie_data['value'],
-                            'domain': cookie_data.get('domain', domain),
+                            'domain': cookie_data.get('domain', f'.{domain}'),
                             'path': cookie_data.get('path', '/'),
-                            'secure': cookie_data.get('secure', False),
-                            'httpOnly': cookie_data.get('httpOnly', False)
+                            'secure': cookie_data.get('secure', True),
+                            'httpOnly': cookie_data.get('httpOnly', True)
                         }
                         
                         # Agregar sameSite si está disponible
@@ -1139,14 +1228,26 @@ class VIPServerScraper:
                         driver.add_cookie(cookie_dict)
                         cookies_loaded += 1
                         
+                        logger.info(f"✅ Cookie aplicada: {cookie_name} (usuario: {cookie_data.get('username', 'unknown')})")
+                        
                     except Exception as cookie_error:
+                        cookies_failed += 1
                         logger.warning(f"⚠️ No se pudo cargar cookie {cookie_name}: {cookie_error}")
                         continue
                 
-                logger.info(f"🍪 Cargadas {cookies_loaded} cookies de {domain} al navegador")
+                # Refrescar la página para aplicar las cookies
+                if cookies_loaded > 0:
+                    try:
+                        logger.info("🔄 Refrescando página para aplicar cookies...")
+                        driver.refresh()
+                        time.sleep(3)
+                    except Exception as refresh_error:
+                        logger.warning(f"⚠️ Error refrescando página: {refresh_error}")
+                
+                logger.info(f"🍪 Cookies aplicadas: {cookies_loaded} exitosas, {cookies_failed} fallidas")
                 return cookies_loaded
             else:
-                logger.info(f"⚠️ No hay cookies guardadas para {domain}")
+                logger.warning(f"⚠️ No hay cookies disponibles para {domain}")
                 return 0
                 
         except Exception as e:
@@ -1666,10 +1767,13 @@ class VIPServerScraper:
             # Execute script to hide webdriver property
             driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-            # Cargar cookies de Roblox si están disponibles
-            cookies_loaded = self.load_roblox_cookies_to_driver(driver)
+            # Cargar cookies de Roblox desde alt.txt automáticamente
+            logger.info("🍪 Aplicando cookies de Roblox desde alt.txt...")
+            cookies_loaded = self.load_roblox_cookies_to_driver(driver, force_refresh=True)
             if cookies_loaded > 0:
-                logger.info(f"🍪 {cookies_loaded} cookies de Roblox cargadas al navegador")
+                logger.info(f"✅ {cookies_loaded} cookies de Roblox aplicadas exitosamente al navegador")
+            else:
+                logger.warning("⚠️ No se pudieron aplicar cookies de Roblox - verificar alt.txt")
 
             logger.info("✅ Chrome driver created successfully")
             return driver
@@ -1694,12 +1798,19 @@ class VIPServerScraper:
                 raise Exception(f"Chrome driver creation failed: {e}")
 
     def get_server_links(self, driver, game_id, max_retries=3):
-        """Get server links with retry mechanism"""
+        """Get server links with retry mechanism and cookie application"""
         url = f"https://rbxservers.xyz/games/{game_id}"
 
         for attempt in range(max_retries):
             try:
                 logger.info(f"🔍 Fetching server links (attempt {attempt + 1}/{max_retries})")
+                
+                # Aplicar cookies antes de navegar
+                if attempt == 0:  # Solo en el primer intento
+                    cookies_applied = self.load_roblox_cookies_to_driver(driver, 'roblox.com', force_refresh=True)
+                    if cookies_applied > 0:
+                        logger.info(f"🍪 {cookies_applied} cookies aplicadas antes del scraping")
+                
                 driver.get(url)
 
                 # Wait for server elements to load
@@ -1731,11 +1842,17 @@ class VIPServerScraper:
         return []
 
     def extract_vip_link(self, driver, server_url, game_id, max_retries=2):
-        """Extract VIP link from server page with detailed information"""
+        """Extract VIP link from server page with detailed information and cookie application"""
         start_time = time.time()
 
         for attempt in range(max_retries):
             try:
+                # Aplicar cookies antes de navegar al servidor si es la primera vez
+                if attempt == 0 and 'roblox.com' in server_url:
+                    cookies_applied = self.load_roblox_cookies_to_driver(driver, 'roblox.com')
+                    if cookies_applied > 0:
+                        logger.debug(f"🍪 Cookies aplicadas para servidor: {server_url}")
+                
                 driver.get(server_url)
 
                 # Wait for VIP input to load
@@ -1768,9 +1885,11 @@ class VIPServerScraper:
                         'source_url': server_url,
                         'discovered_at': datetime.now().isoformat(),
                         'extraction_time': round(extraction_time, 2),
-                        'server_info': server_info
+                        'server_info': server_info,
+                        'cookies_used': True
                     }
 
+                    logger.debug(f"✅ VIP link extraído con cookies: {vip_link[:50]}...")
                     return vip_link
 
             except TimeoutException:
@@ -1890,6 +2009,15 @@ class VIPServerScraper:
         try:
             logger.info(f"🚀 Starting VIP server scraping for game ID: {game_id} (User: {self.current_user_id})...")
             driver = self.create_driver()
+            
+            # Aplicar cookies inmediatamente después de crear el driver
+            logger.info("🍪 Aplicando cookies de alt.txt al driver...")
+            cookies_applied = self.extract_cookies_from_alt_file()
+            if cookies_applied > 0:
+                logger.info(f"✅ {cookies_applied} cookies extraídas y listas para usar")
+            else:
+                logger.warning("⚠️ No se encontraron cookies en alt.txt")
+            
             server_links = self.get_server_links(driver, game_id)
 
             if not server_links:
