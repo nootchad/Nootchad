@@ -63,7 +63,7 @@ BAN_DURATION = 7 * 24 * 60 * 60  # 7 días en segundos
 # Remote control settings
 DISCORD_OWNER_ID = "916070251895091241"  # Tu Discord ID
 WEBHOOK_SECRET = "rbxservers_webhook_secret_2024"
-REMOTE_CONTROL_PORT = 8080
+REMOTE_CONTROL_PORT = 8081
 
 # Game categories mapping
 GAME_CATEGORIES = {
@@ -2254,6 +2254,28 @@ report_system = ServerReportSystem()
 # Set report system reference in scraper
 scraper.report_system = report_system
 
+async def safe_send_interaction_response(interaction: discord.Interaction, embed: discord.Embed, ephemeral: bool = True, view: discord.ui.View = None):
+    """Enviar respuesta de interacción de forma segura con manejo de errores"""
+    try:
+        if not interaction.response.is_done():
+            await interaction.response.send_message(embed=embed, ephemeral=ephemeral, view=view)
+        else:
+            await interaction.followup.send(embed=embed, ephemeral=ephemeral, view=view)
+        return True
+    except discord.errors.NotFound:
+        logger.warning(f"Interacción expirada para usuario {interaction.user.id}")
+        return False
+    except discord.errors.InteractionResponded:
+        try:
+            await interaction.followup.send(embed=embed, ephemeral=ephemeral, view=view)
+            return True
+        except discord.errors.NotFound:
+            logger.warning(f"Followup falló - interacción expirada para usuario {interaction.user.id}")
+            return False
+    except Exception as e:
+        logger.error(f"Error enviando respuesta de interacción: {e}")
+        return False
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -2262,7 +2284,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
     
     if isinstance(error, discord.app_commands.CommandInvokeError):
         if isinstance(error.original, discord.errors.NotFound):
-            user_logger.error(f"❌ Interacción no encontrada para {username} (ID: {user_id}): {error.original}")
+            user_logger.error(f"❌ Interacción expirada para {username} (ID: {user_id}): {error.original}")
             # No intentar responder a una interacción ya expirada
             return
         elif isinstance(error.original, discord.errors.InteractionResponded):
@@ -2273,20 +2295,13 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
     logger.error(f"❌ Error en comando para {username} (ID: {user_id}): {error}")
     
     # Intentar enviar un mensaje de error si es posible
-    try:
-        error_embed = discord.Embed(
-            title="❌ Error Temporal",
-            description="Ocurrió un error temporal. Por favor, intenta nuevamente en unos segundos.",
-            color=0xff0000
-        )
-        
-        if not interaction.response.is_done():
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)
-        else:
-            await interaction.followup.send(embed=error_embed, ephemeral=True)
-    except:
-        # Si no se puede enviar el mensaje, simplemente ignorar
-        pass
+    error_embed = discord.Embed(
+        title="❌ Error Temporal",
+        description="Ocurrió un error temporal. Por favor, intenta nuevamente en unos segundos.",
+        color=0xff0000
+    )
+    
+    await safe_send_interaction_response(interaction, error_embed, ephemeral=True)
 
 @bot.event
 async def on_ready():
@@ -2563,7 +2578,12 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
                 user_logger.warning(f"⚠️ Interacción ya fue respondida para {username}")
                 return False
             except discord.errors.NotFound as e:
-                user_logger.error(f"❌ Interacción no encontrada para {username}: {e}")
+                user_logger.error(f"❌ Interacción expirada para {username}: {e}")
+                # Si la interacción expiró, no podemos responder pero podemos continuar con la verificación
+                # para comandos que no requieren respuesta inmediata
+                return False
+            except Exception as e:
+                user_logger.error(f"❌ Error inesperado en defer para {username}: {e}")
                 return False
         
         # Verificar si está baneado
@@ -2593,6 +2613,8 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
                     await interaction.response.send_message(embed=embed, ephemeral=True)
             except (discord.errors.NotFound, discord.errors.InteractionResponded) as e:
                 user_logger.error(f"❌ No se pudo enviar mensaje de ban para {username}: {e}")
+            except Exception as e:
+                user_logger.error(f"❌ Error inesperado enviando mensaje de ban: {e}")
             
             return False
         
@@ -2623,6 +2645,8 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
                     await interaction.response.send_message(embed=embed, ephemeral=True)
             except (discord.errors.NotFound, discord.errors.InteractionResponded) as e:
                 user_logger.error(f"❌ No se pudo enviar mensaje de verificación para {username}: {e}")
+            except Exception as e:
+                user_logger.error(f"❌ Error inesperado enviando mensaje de verificación: {e}")
             
             return False
         
