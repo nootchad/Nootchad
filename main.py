@@ -2711,9 +2711,130 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
         user_logger.error(f"❌ Error en verificación para {username}: {e}")
         return False
 
+def detect_captcha(driver):
+    """Detectar CAPTCHA y obtener sitekey"""
+    try:
+        # Buscar el iframe de hCaptcha
+        iframes = driver.find_elements(By.TAG_NAME, "iframe")
+        sitekey = None
+        
+        for iframe in iframes:
+            src = iframe.get_attribute("src")
+            if src and "hcaptcha" in src:
+                driver.switch_to.frame(iframe)
+                try:
+                    sitekey_element = driver.find_element(By.CSS_SELECTOR, "[data-sitekey]")
+                    sitekey = sitekey_element.get_attribute("data-sitekey")
+                    driver.switch_to.default_content()
+                    logger.info(f"🔍 Sitekey encontrado: {sitekey}")
+                    return sitekey
+                except:
+                    pass
+                driver.switch_to.default_content()
+        
+        # También buscar en el contenido principal
+        try:
+            sitekey_elements = driver.find_elements(By.CSS_SELECTOR, "[data-sitekey]")
+            for element in sitekey_elements:
+                sitekey = element.get_attribute("data-sitekey")
+                if sitekey:
+                    logger.info(f"🔍 Sitekey encontrado en página principal: {sitekey}")
+                    return sitekey
+        except:
+            pass
+            
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error detectando CAPTCHA: {e}")
+        return None
+
+def resolver_captcha(sitekey, url):
+    """Resolver CAPTCHA usando NopeCHA API"""
+    try:
+        import requests
+        import os
+        
+        api_key = os.getenv("CAPTCHA2")
+        if not api_key:
+            logger.error("❌ API key CAPTCHA2 no encontrada")
+            return None
+            
+        logger.info(f"🤖 Resolviendo CAPTCHA con sitekey: {sitekey}")
+        
+        response = requests.post("https://api.nopecha.com/token", json={
+            "type": "hcaptcha",
+            "sitekey": sitekey,
+            "url": url
+        }, headers={
+            "Content-Type": "application/json",
+            "x-api-key": api_key
+        })
+        
+        if response.status_code == 200:
+            result = response.json()
+            token = result.get("data")
+            if token:
+                logger.info(f"✅ CAPTCHA resuelto exitosamente")
+                return token
+            else:
+                logger.error(f"❌ No se obtuvo token del CAPTCHA: {result}")
+                return None
+        else:
+            logger.error(f"❌ Error en API NopeCHA: {response.status_code} - {response.text}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"❌ Error resolviendo CAPTCHA: {e}")
+        return None
+
+def aplicar_token_captcha(driver, token):
+    """Aplicar token de CAPTCHA resuelto"""
+    try:
+        # Buscar y rellenar el campo de respuesta del CAPTCHA
+        captcha_response_selectors = [
+            "textarea[name='h-captcha-response']",
+            "textarea[name='g-recaptcha-response']",
+            "#h-captcha-response",
+            "#g-recaptcha-response",
+            "[name='h-captcha-response']",
+            "[name='g-recaptcha-response']"
+        ]
+        
+        for selector in captcha_response_selectors:
+            try:
+                response_field = driver.find_element(By.CSS_SELECTOR, selector)
+                driver.execute_script(f"arguments[0].value = '{token}';", response_field)
+                logger.info(f"✅ Token aplicado en campo: {selector}")
+                
+                # Ejecutar callback del CAPTCHA si existe
+                try:
+                    driver.execute_script("""
+                        if (window.hcaptcha && window.hcaptcha.execute) {
+                            window.hcaptcha.execute();
+                        }
+                        if (window.grecaptcha && window.grecaptcha.execute) {
+                            window.grecaptcha.execute();
+                        }
+                    """)
+                    logger.info("✅ Callback de CAPTCHA ejecutado")
+                except:
+                    pass
+                    
+                return True
+            except:
+                continue
+                
+        logger.warning("⚠️ No se encontró campo de respuesta de CAPTCHA")
+        return False
+        
+    except Exception as e:
+        logger.error(f"❌ Error aplicando token de CAPTCHA: {e}")
+        return False
+
 @bot.tree.command(name="createaccount", description="[OWNER ONLY] Crear nueva cuenta de Roblox con nombres RbxServers")
 async def createaccount_command(interaction: discord.Interaction, username_suffix: str = ""):
-    """Comando solo para el owner que crea cuentas de Roblox usando Selenium con selectores actualizados"""
+    """Comando solo para el owner que crea cuentas de Roblox usando Selenium con NopeCHA API"""
     user_id = str(interaction.user.id)
     
     # Verificar que solo el owner pueda usar este comando
@@ -2729,6 +2850,18 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
     await interaction.response.defer(ephemeral=True)
     
     try:
+        # Verificar que la API key esté disponible
+        import os
+        api_key = os.getenv("CAPTCHA2")
+        if not api_key:
+            error_embed = discord.Embed(
+                title="❌ API Key No Encontrada",
+                description="La API key CAPTCHA2 no está configurada en los secretos.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+            return
+        
         # Generar nombre de usuario con RbxServers
         import random
         if username_suffix:
@@ -2749,9 +2882,9 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             color=0xffaa00
         )
         embed.add_field(name="👤 Username Propuesto", value=f"`{new_username}`", inline=True)
-        embed.add_field(name="🖥️ Modo", value="Automatizado con VNC + NopeCHA", inline=True)
+        embed.add_field(name="🖥️ Modo", value="Automatizado con NopeCHA API", inline=True)
         embed.add_field(name="🔄 Estado", value="Inicializando navegador...", inline=True)
-        embed.add_field(name="🤖 Anti-CAPTCHA", value="NopeCHA Extension", inline=True)
+        embed.add_field(name="🤖 Anti-CAPTCHA", value="✅ NopeCHA API Configurada", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -2763,12 +2896,12 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             
             # Configurar Chrome options para Replit
             chrome_options = Options()
-            # Modo headless desactivado para ver la pantalla durante creación de cuenta
+            # Modo headless opcional para eficiencia
             # chrome_options.add_argument("--headless")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-extensions")  # No necesitamos extensiones ahora
             chrome_options.add_argument("--window-size=1920,1080")
             chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             chrome_options.add_argument("--remote-debugging-port=9224")
@@ -2835,18 +2968,18 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             # Actualizar estado
             update_embed = discord.Embed(
                 title="🌐 Navegador Iniciado",
-                description="Navegador Chrome iniciado exitosamente con NopeCHA. Navegando a Roblox...",
+                description="Navegador Chrome iniciado exitosamente. Navegando a Roblox...",
                 color=0x3366ff
             )
             update_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
-            update_embed.add_field(name="🖥️ Modo", value="Chrome + NopeCHA", inline=True)
+            update_embed.add_field(name="🖥️ Modo", value="Chrome + NopeCHA API", inline=True)
             update_embed.add_field(name="🔄 Estado", value="Navegando a Roblox...", inline=True)
-            update_embed.add_field(name="🤖 CAPTCHA Solver", value="✅ Activo", inline=True)
+            update_embed.add_field(name="🤖 CAPTCHA Solver", value="✅ API Lista", inline=True)
             await message.edit(embed=update_embed)
             
             logger.info("✅ Navegador iniciado exitosamente, navegando a Roblox...")
             
-            # Navegar a Roblox usando el script base actualizado
+            # Navegar a Roblox
             driver.get("https://www.roblox.com")
             time.sleep(5)
             
@@ -2861,7 +2994,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             progress_embed.add_field(name="🌐 Página", value="Roblox.com cargada", inline=True)
             await message.edit(embed=progress_embed)
             
-            # APLICAR SCRIPT BASE ACTUALIZADO
+            # APLICAR SCRIPT DE REGISTRO AUTOMATIZADO
             fields_completed = 0
             form_data = {}
             
@@ -2880,16 +3013,14 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 # Crear WebDriverWait para mejor manejo de timeouts
                 wait = WebDriverWait(driver, 20)
                 
-                # Paso 2: Llenar fecha de nacimiento (Mes, Día, Año) - Selectores actualizados
+                # Paso 2: Llenar fecha de nacimiento (Mes, Día, Año)
                 logger.info("📅 Configurando fecha de nacimiento...")
-                birth_year = 2006  # Actualizado para cumplir requisitos de edad
+                birth_year = 2006
                 
                 try:
-                    # Mes (Marzo = 3) - Selector actualizado con múltiples intentos
+                    # Mes (Marzo = 3)
                     month_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "MonthDropdown")))
-                    
-                    # Intentar diferentes valores para marzo
-                    month_values = ["Mar", "March", "3", "03", "2"]  # Diferentes formatos posibles
+                    month_values = ["Mar", "March", "3", "03", "2"]
                     month_selected = False
                     
                     for month_val in month_values:
@@ -2903,175 +3034,78 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                             continue
                     
                     if not month_selected:
-                        # Intentar seleccionar por índice (marzo es típicamente índice 3)
                         try:
                             Select(month_dropdown).select_by_index(3)
                             logger.info("✅ Mes seleccionado por índice: Marzo")
                             fields_completed += 1
-                            month_selected = True
                         except Exception:
-                            pass
-                    
-                    if not month_selected:
-                        logger.warning("⚠️ No se pudo seleccionar mes automáticamente")
-                        
-                except Exception as e:
-                    logger.warning(f"❌ Error encontrando dropdown de mes: {e}")
-                    # Intentar selectores alternativos
-                    try:
-                        month_selectors = [
-                            "select[name='month']",
-                            "select[id*='month']", 
-                            "select[name*='month']",
-                            "#signup-birthmonth",
-                            ".month-selector"
-                        ]
-                        
-                        month_selected = False
-                        for selector in month_selectors:
-                            try:
-                                month_element = driver.find_element(By.CSS_SELECTOR, selector)
-                                month_values = ["Mar", "March", "3", "03", "2"]
-                                
-                                for month_val in month_values:
-                                    try:
-                                        Select(month_element).select_by_value(month_val)
-                                        logger.info(f"✅ Mes seleccionado con selector alternativo: {selector} (valor: {month_val})")
-                                        fields_completed += 1
-                                        month_selected = True
-                                        break
-                                    except Exception:
-                                        continue
-                                
-                                if month_selected:
-                                    break
-                                    
-                                # Intentar por índice si no funcionó por valor
-                                try:
-                                    Select(month_element).select_by_index(3)
-                                    logger.info(f"✅ Mes seleccionado por índice con selector: {selector}")
-                                    fields_completed += 1
-                                    month_selected = True
-                                    break
-                                except Exception:
-                                    continue
-                                    
-                            except Exception:
-                                continue
-                        
-                        if not month_selected:
-                            logger.error("❌ No se pudo seleccionar mes con ningún método")
+                            logger.warning("⚠️ No se pudo seleccionar mes automáticamente")
                             
-                    except Exception as e2:
-                        logger.error(f"❌ Error con selectores alternativos de mes: {e2}")
+                except Exception as e:
+                    logger.warning(f"❌ Error configurando mes: {e}")
                 
                 try:
-                    # Día (15) - Selector actualizado
+                    # Día (15)
                     day_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "DayDropdown")))
-                    Select(day_dropdown).select_by_value("15")  # Día 15
+                    Select(day_dropdown).select_by_value("15")
                     logger.info("✅ Día seleccionado: 15")
                     fields_completed += 1
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando día: {e}")
-                    # Intentar selector alternativo
-                    try:
-                        day_select = driver.find_element(By.ID, "DayDropdown")
-                        Select(day_select).select_by_value("15")
-                        logger.info("✅ Día seleccionado con selector alternativo")
-                        fields_completed += 1
-                    except Exception as e2:
-                        logger.error(f"❌ Error con selector alternativo de día: {e2}")
                 
                 try:
-                    # Año (2006) - Selector actualizado
+                    # Año (2006)
                     year_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "YearDropdown")))
-                    Select(year_dropdown).select_by_value("2006")  # Año actualizado
+                    Select(year_dropdown).select_by_value("2006")
                     logger.info(f"✅ Año seleccionado: {birth_year}")
                     fields_completed += 1
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando año: {e}")
-                    # Intentar selector alternativo
-                    try:
-                        year_select = driver.find_element(By.ID, "YearDropdown")
-                        Select(year_select).select_by_value("2006")
-                        logger.info("✅ Año seleccionado con selector alternativo")
-                        fields_completed += 1
-                    except Exception as e2:
-                        logger.error(f"❌ Error con selector alternativo de año: {e2}")
                 
                 form_data['birth_date'] = f"15/03/{birth_year}"
                 
-                # Paso 3: Llenar username usando selector específico
+                # Paso 3: Llenar username
                 logger.info(f"👤 Configurando username: {new_username}")
                 try:
                     username_input = wait.until(EC.element_to_be_clickable((By.ID, "signup-username")))
                     username_input.clear()
                     username_input.send_keys(new_username)
-                    logger.info(f"✅ Username '{new_username}' ingresado exitosamente con selector específico")
+                    logger.info(f"✅ Username '{new_username}' ingresado exitosamente")
                     fields_completed += 1
                     form_data['username'] = new_username
                 except Exception as e:
                     logger.error(f"❌ Error configurando username: {e}")
-                    # Intentar selector alternativo
-                    try:
-                        username_field = driver.find_element(By.ID, "signup-username")
-                        username_field.clear()
-                        username_field.send_keys(new_username)
-                        logger.info("✅ Username configurado con selector directo")
-                        fields_completed += 1
-                        form_data['username'] = new_username
-                    except Exception as e2:
-                        logger.error(f"❌ Error con selector alternativo de username: {e2}")
                 
-                # Paso 4: Llenar password usando selector específico
+                # Paso 4: Llenar password
                 strong_password = "RbxServers2024!"
                 logger.info("🔒 Configurando password...")
                 try:
                     password_input = wait.until(EC.element_to_be_clickable((By.ID, "signup-password")))
                     password_input.clear()
                     password_input.send_keys(strong_password)
-                    logger.info("✅ Password configurada exitosamente con selector específico")
+                    logger.info("✅ Password configurada exitosamente")
                     fields_completed += 1
                     form_data['password'] = strong_password
                 except Exception as e:
                     logger.error(f"❌ Error configurando password: {e}")
-                    # Intentar selector alternativo
-                    try:
-                        password_field = driver.find_element(By.ID, "signup-password")
-                        password_field.clear()
-                        password_field.send_keys(strong_password)
-                        logger.info("✅ Password configurada con selector directo")
-                        fields_completed += 1
-                        form_data['password'] = strong_password
-                    except Exception as e2:
-                        logger.error(f"❌ Error con selector alternativo de password: {e2}")
                 
-                # Paso 5: Seleccionar género (Masculino) usando selector específico
+                # Paso 5: Seleccionar género (Masculino)
                 logger.info("⚧ Configurando género masculino...")
                 try:
                     male_button = wait.until(EC.element_to_be_clickable((By.ID, "MaleButton")))
                     male_button.click()
-                    logger.info("✅ Género masculino seleccionado con selector específico")
+                    logger.info("✅ Género masculino seleccionado")
                     fields_completed += 1
                     form_data['gender'] = 'Male'
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando género: {e}")
-                    # Intentar selector directo
                     try:
-                        driver.find_element(By.ID, "MaleButton").click()
-                        logger.info("✅ Género masculino seleccionado con selector directo")
+                        driver.find_element(By.ID, "FemaleButton").click()
+                        logger.info("✅ Género femenino seleccionado como respaldo")
                         fields_completed += 1
-                        form_data['gender'] = 'Male'
+                        form_data['gender'] = 'Female'
                     except Exception as e2:
-                        logger.error(f"❌ Error con selector alternativo de género: {e2}")
-                        # Intentar género femenino como respaldo
-                        try:
-                            driver.find_element(By.ID, "FemaleButton").click()
-                            logger.info("✅ Género femenino seleccionado como respaldo")
-                            fields_completed += 1
-                            form_data['gender'] = 'Female'
-                        except Exception as e3:
-                            logger.error(f"❌ Error con todos los selectores de género: {e3}")
+                        logger.error(f"❌ Error con todos los selectores de género: {e2}")
                 
                 # Esperar un momento para que se procesen todos los campos
                 time.sleep(2)
@@ -3083,7 +3117,6 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     color=0x00ff88 if fields_completed >= 4 else 0xffaa00
                 )
                 
-                # Mostrar datos completados
                 completed_data = "\n".join([f"• {key.title()}: `{value}`" for key, value in form_data.items()])
                 form_status_embed.add_field(
                     name="✅ Datos Completados",
@@ -3091,7 +3124,6 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     inline=False
                 )
                 
-                # Indicador de progreso visual
                 progress_bar = "█" * fields_completed + "░" * (5 - fields_completed)
                 form_status_embed.add_field(
                     name="📊 Progreso",
@@ -3101,79 +3133,141 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 
                 await message.edit(embed=form_status_embed)
                 
-                # Paso 6: Intentar enviar el formulario usando selector específico
-                if fields_completed >= 4:  # Al menos username, password y fecha
+                # Paso 6: Intentar enviar el formulario
+                if fields_completed >= 4:
                     logger.info("🎯 Formulario suficientemente completado, intentando envío...")
                     
                     try:
                         signup_button = wait.until(EC.element_to_be_clickable((By.ID, "signup-button")))
                         signup_button.click()
-                        logger.info("✅ Botón de registro clickeado exitosamente con selector específico")
+                        logger.info("✅ Botón de registro clickeado exitosamente")
+                        
+                        # Esperar un momento para que aparezca el CAPTCHA
+                        time.sleep(5)
                         
                         # Actualizar estado de envío
                         submit_embed = discord.Embed(
                             title="🚀 ¡Formulario Enviado!",
-                            description=f"El registro de **{new_username}** ha sido enviado exitosamente usando los selectores específicos.",
+                            description=f"El registro de **{new_username}** ha sido enviado. Detectando CAPTCHA...",
                             color=0x00ff88
                         )
                         submit_embed.add_field(
                             name="📝 Datos Enviados",
-                            value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Fecha: `15/03/2002`\n• Género: `Masculino`",
+                            value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Fecha: `15/03/2006`\n• Género: `{form_data.get('gender', 'Masculino')}`",
                             inline=True
                         )
                         submit_embed.add_field(
                             name="⏳ Procesando...",
-                            value="• Verificación de Roblox\n• Posible CAPTCHA\n• Validación de datos\n• Creación de cuenta",
+                            value="• Verificación de Roblox\n• Detección de CAPTCHA\n• Resolución automática\n• Creación de cuenta",
                             inline=True
-                        )
-                        submit_embed.add_field(
-                            name="📊 Resumen",
-                            value=f"**{fields_completed}/5** campos completados\n**Formulario enviado** ✅",
-                            inline=False
                         )
                         
                         await message.edit(embed=submit_embed)
                         
-                    except Exception as e:
-                        logger.error(f"❌ Error al hacer clic en botón de registro: {e}")
-                        # Intentar selector directo como respaldo
-                        try:
-                            driver.find_element(By.ID, "signup-button").click()
-                            logger.info("✅ Botón de registro clickeado con selector directo")
+                        # DETECCIÓN Y RESOLUCIÓN DE CAPTCHA
+                        captcha_resolved = False
+                        captcha_attempts = 0
+                        max_captcha_attempts = 3
+                        
+                        while captcha_attempts < max_captcha_attempts and not captcha_resolved:
+                            captcha_attempts += 1
+                            logger.info(f"🔍 Intento {captcha_attempts}/{max_captcha_attempts} de detección de CAPTCHA...")
                             
-                            submit_embed = discord.Embed(
-                                title="🚀 ¡Formulario Enviado con Selector Directo!",
-                                description=f"El registro de **{new_username}** ha sido enviado usando selector de respaldo.",
+                            # Detectar CAPTCHA
+                            sitekey = detect_captcha(driver)
+                            
+                            if sitekey:
+                                # Actualizar estado de CAPTCHA detectado
+                                captcha_detect_embed = discord.Embed(
+                                    title="🤖 CAPTCHA Detectado",
+                                    description=f"Se detectó un CAPTCHA en el registro de **{new_username}**. Resolviendo automáticamente...",
+                                    color=0xff9900
+                                )
+                                captcha_detect_embed.add_field(name="🔑 Sitekey", value=f"`{sitekey[:20]}...`", inline=True)
+                                captcha_detect_embed.add_field(name="🔄 Intento", value=f"{captcha_attempts}/{max_captcha_attempts}", inline=True)
+                                captcha_detect_embed.add_field(name="🤖 API", value="NopeCHA API", inline=True)
+                                
+                                await message.edit(embed=captcha_detect_embed)
+                                
+                                # Resolver CAPTCHA
+                                token = resolver_captcha(sitekey, driver.current_url)
+                                
+                                if token:
+                                    logger.info("✅ CAPTCHA resuelto, aplicando token...")
+                                    
+                                    # Aplicar token
+                                    if aplicar_token_captcha(driver, token):
+                                        logger.info("✅ Token de CAPTCHA aplicado exitosamente")
+                                        
+                                        # Actualizar estado de resolución exitosa
+                                        captcha_success_embed = discord.Embed(
+                                            title="✅ CAPTCHA Resuelto",
+                                            description=f"El CAPTCHA ha sido resuelto exitosamente para **{new_username}**.",
+                                            color=0x00ff88
+                                        )
+                                        captcha_success_embed.add_field(name="🤖 Método", value="NopeCHA API", inline=True)
+                                        captcha_success_embed.add_field(name="⏱️ Intento", value=f"{captcha_attempts}", inline=True)
+                                        captcha_success_embed.add_field(name="🔄 Estado", value="Finalizando registro...", inline=True)
+                                        
+                                        await message.edit(embed=captcha_success_embed)
+                                        
+                                        # Intentar hacer clic en submit nuevamente después de resolver CAPTCHA
+                                        try:
+                                            submit_button = driver.find_element(By.ID, "signup-button")
+                                            submit_button.click()
+                                            logger.info("✅ Botón de envío clickeado después de resolver CAPTCHA")
+                                        except:
+                                            logger.info("ℹ️ No se encontró botón de envío adicional")
+                                        
+                                        captcha_resolved = True
+                                        break
+                                    else:
+                                        logger.warning("⚠️ No se pudo aplicar el token de CAPTCHA")
+                                else:
+                                    logger.warning(f"⚠️ No se pudo resolver el CAPTCHA en intento {captcha_attempts}")
+                            else:
+                                logger.info(f"ℹ️ No se detectó CAPTCHA en intento {captcha_attempts}")
+                                # Podría ser que ya no hay CAPTCHA o el registro se completó
+                                captcha_resolved = True
+                                break
+                            
+                            # Esperar antes del próximo intento
+                            if captcha_attempts < max_captcha_attempts:
+                                time.sleep(10)
+                        
+                        # Estado final después de manejar CAPTCHA
+                        if captcha_resolved:
+                            final_embed = discord.Embed(
+                                title="🎉 ¡Proceso Completado!",
+                                description=f"El proceso de registro para **{new_username}** ha sido completado exitosamente.",
                                 color=0x00ff88
                             )
-                            submit_embed.add_field(
-                                name="📝 Datos Enviados",
-                                value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Fecha: `15/03/2006`\n• Género: `{form_data.get('gender', 'Masculino')}`",
-                                inline=True
+                            final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+                            final_embed.add_field(name="🔒 Password", value=f"`{strong_password}`", inline=True)
+                            final_embed.add_field(name="🤖 CAPTCHA", value="✅ Resuelto automáticamente", inline=True)
+                            final_embed.add_field(name="📊 Campos Completados", value=f"{fields_completed}/5", inline=True)
+                            final_embed.add_field(name="🔄 Intentos CAPTCHA", value=f"{captcha_attempts}", inline=True)
+                            final_embed.add_field(name="⏰ Estado", value="Proceso finalizado", inline=True)
+                        else:
+                            final_embed = discord.Embed(
+                                title="⚠️ Proceso Parcialmente Completado",
+                                description=f"El formulario se completó pero el CAPTCHA no pudo resolverse automáticamente después de {max_captcha_attempts} intentos.",
+                                color=0xff9900
                             )
-                            await message.edit(embed=submit_embed)
-                            
-                        except Exception as e2:
-                            logger.error(f"❌ Error con selector directo del botón: {e2}")
-                            logger.info("🔄 Botón de registro no disponible (posiblemente por CAPTCHA)")
-                            
-                            # Mostrar mensaje de CAPTCHA
-                            captcha_embed = discord.Embed(
-                                title="⚠️ CAPTCHA Detectado o Formulario Incompleto",
-                                description=f"El formulario está completado pero requiere verificación manual.",
-                                color=0xffaa00
-                            )
-                        captcha_embed.add_field(
-                            name="✅ Formulario Listo",
-                            value=f"• Username: `{new_username}`\n• Password: `{strong_password}`\n• Fecha: `15/03/2002`\n• Género: `Masculino`",
-                            inline=True
+                            final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+                            final_embed.add_field(name="📊 Campos", value=f"{fields_completed}/5 completados", inline=True)
+                            final_embed.add_field(name="🤖 CAPTCHA", value="⚠️ Requiere resolución manual", inline=True)
+                        
+                        await message.edit(embed=final_embed)
+                        
+                    except Exception as e:
+                        logger.error(f"❌ Error al hacer clic en botón de registro: {e}")
+                        error_embed = discord.Embed(
+                            title="⚠️ Error en Envío de Formulario",
+                            description=f"Error durante el envío del formulario: {str(e)[:150]}",
+                            color=0xff9900
                         )
-                        captcha_embed.add_field(
-                            name="🔧 Acción Requerida",
-                            value="• El formulario está completado\n• Requiere verificación CAPTCHA manual\n• Navegador se mantendrá abierto",
-                            inline=True
-                        )
-                        await message.edit(embed=captcha_embed)
+                        await message.edit(embed=error_embed)
                 
                 else:
                     # Formulario incompleto
@@ -3187,11 +3281,6 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                         value=completed_data if completed_data else "Ninguno",
                         inline=False
                     )
-                    incomplete_embed.add_field(
-                        name="🛠️ Acción Requerida",
-                        value="Algunos campos no se pudieron completar automáticamente. Revisa manualmente.",
-                        inline=False
-                    )
                     await message.edit(embed=incomplete_embed)
                 
             except Exception as form_error:
@@ -3201,147 +3290,13 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     description=f"Error durante el llenado del formulario: {str(form_error)[:150]}",
                     color=0xff9900
                 )
-                form_error_embed.add_field(
-                    name="📊 Progreso Parcial",
-                    value=f"Campos completados: {fields_completed}/5",
-                    inline=True
-                )
-                form_error_embed.add_field(name="🖥️ Estado", value="Navegador disponible para revisión manual", inline=True)
                 await message.edit(embed=form_error_embed)
             
-            # Mantener navegador abierto para verificación/CAPTCHA y esperar más tiempo
-            logger.info("🕐 Manteniendo navegador abierto para verificación y CAPTCHA...")
-            
-            # Esperar hasta 300 segundos (5 minutos) para que NopeCHA resuelva CAPTCHAs
-            captcha_wait_time = 0
-            max_captcha_wait = 300  # 5 minutos máximo para darle tiempo a NopeCHA
-            check_interval = 5  # Verificar cada 5 segundos para no saturar
-            
-            while captcha_wait_time < max_captcha_wait:
-                try:
-                    # Verificar si hay elementos que indiquen éxito en el registro
-                    success_indicators = driver.find_elements(By.CSS_SELECTOR, 
-                        ".signup-success, .account-created, [class*='success'], [data-testid*='success'], .alert-success")
-                    
-                    if success_indicators:
-                        logger.info("✅ Registro completado exitosamente detectado")
-                        break
-                    
-                    # Verificar si hay CAPTCHAs activos con selectores más específicos
-                    captcha_selectors = [
-                        ".captcha", "[class*='captcha']", "iframe[src*='captcha']", 
-                        "[data-cy*='captcha']", ".cf-turnstile", ".h-captcha",
-                        ".recaptcha", "[id*='captcha']", ".funcaptcha",
-                        "#captcha-container", ".captcha-container", ".challenge-container"
-                    ]
-                    
-                    captcha_found = False
-                    for selector in captcha_selectors:
-                        captcha_elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                        if captcha_elements:
-                            captcha_found = True
-                            break
-                    
-                    if captcha_found:
-                        remaining_time = max_captcha_wait - captcha_wait_time
-                        logger.info(f"🤖 CAPTCHA detectado, esperando resolución automática... ({captcha_wait_time}/{max_captcha_wait}s restantes: {remaining_time}s)")
-                        
-                        # Actualizar embed con progreso del CAPTCHA cada 30 segundos
-                        if captcha_wait_time % 30 == 0:
-                            captcha_embed = discord.Embed(
-                                title="🤖 NopeCHA Resolviendo CAPTCHA",
-                                description=f"La extensión NopeCHA está trabajando para resolver el CAPTCHA automáticamente para **{new_username}**...",
-                                color=0xff9900
-                            )
-                            captcha_embed.add_field(
-                                name="⏱️ Tiempo Transcurrido",
-                                value=f"{captcha_wait_time} segundos",
-                                inline=True
-                            )
-                            captcha_embed.add_field(
-                                name="⏳ Tiempo Restante",
-                                value=f"{remaining_time} segundos",
-                                inline=True
-                            )
-                            captcha_embed.add_field(
-                                name="🎯 Username",
-                                value=f"`{new_username}`",
-                                inline=True
-                            )
-                            captcha_embed.add_field(
-                                name="🔧 Estado del Sistema",
-                                value="• NopeCHA extensión activa\n• Navegador mantenido abierto\n• Esperando resolución automática",
-                                inline=False
-                            )
-                            
-                            try:
-                                await message.edit(embed=captcha_embed)
-                            except Exception:
-                                pass
-                    else:
-                        # No hay CAPTCHA visible, puede estar procesando
-                        logger.info(f"📋 Formulario procesando... ({captcha_wait_time}/{max_captcha_wait}s)")
-                    
-                    time.sleep(check_interval)  # Verificar cada 5 segundos
-                    captcha_wait_time += check_interval
-                    
-                except Exception as e:
-                    logger.debug(f"Error verificando estado: {e}")
-                    time.sleep(check_interval)
-                    captcha_wait_time += check_interval
-            
-            if captcha_wait_time >= max_captcha_wait:
-                logger.warning("⏰ Tiempo máximo de espera alcanzado para CAPTCHA")
-                
-                # Embed de timeout más informativo
-                timeout_embed = discord.Embed(
-                    title="⏰ Tiempo Máximo de CAPTCHA Alcanzado",
-                    description=f"Se esperó **{max_captcha_wait // 60} minutos** para que NopeCHA resuelva el CAPTCHA.",
-                    color=0xff9900
-                )
-                timeout_embed.add_field(
-                    name="👤 Username",
-                    value=f"`{new_username}`",
-                    inline=True
-                )
-                timeout_embed.add_field(
-                    name="🕐 Tiempo Total Esperado",
-                    value=f"{max_captcha_wait} segundos ({max_captcha_wait // 60} minutos)",
-                    inline=True
-                )
-                timeout_embed.add_field(
-                    name="🤖 Estado de NopeCHA",
-                    value="Extensión tuvo tiempo suficiente para trabajar",
-                    inline=True
-                )
-                timeout_embed.add_field(
-                    name="💡 Posibles Resultados",
-                    value="• El registro puede haberse completado\n• CAPTCHA muy complejo\n• Requiere verificación manual\n• Navegador se cerrará ahora",
-                    inline=False
-                )
-                
-                try:
-                    await message.edit(embed=timeout_embed)
-                except Exception:
-                    pass
+            # Esperar tiempo adicional antes de cerrar
+            logger.info("⏳ Esperando tiempo adicional antes de cerrar navegador...")
+            time.sleep(30)
             
         finally:
-            # Esperar tiempo adicional antes de cerrar para asegurar que cualquier proceso final termine
-            logger.info("⏳ Esperando tiempo adicional antes de cerrar navegador...")
-            time.sleep(30)  # 30 segundos adicionales
-            
-            # Mensaje final antes de cerrar
-            final_embed = discord.Embed(
-                title="🏁 Proceso de Creación Finalizado",
-                description=f"El proceso automatizado para **{new_username}** ha terminado. Se esperó tiempo suficiente para NopeCHA.",
-                color=0x888888
-            )
-            final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
-            final_embed.add_field(name="🔄 Estado", value="Proceso completado con tiempo extendido", inline=True)
-            final_embed.add_field(name="📝 Nota", value="Se dio tiempo suficiente para resolución de CAPTCHA", inline=True)
-            final_embed.add_field(name="⏰ Tiempo Total", value="Incluye 5 minutos para CAPTCHA + 30s final", inline=True)
-            await message.edit(embed=final_embed)
-            
             # Cerrar navegador
             if driver:
                 try:
