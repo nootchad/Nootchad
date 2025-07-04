@@ -71,12 +71,6 @@
       "verified_at": 1751657425.070738
     }
   },
-  "pending_verifications": {
-    "1233495164111290428": {
-      "roblox_username": "elturipi123WZ",
-      "verification_code": "hesizv75-rbx",
-      "created_at": 1751667763.5075257
-    }
-  },
-  "last_updated": "2025-07-04T22:22:43.507529"
+  "pending_verifications": {},
+  "last_updated": "2025-07-04T22:42:23.320930"
 }
