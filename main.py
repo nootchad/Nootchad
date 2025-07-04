@@ -4121,14 +4121,7 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
             
         logger.info(f"Owner {interaction.user.name} aplicó cookie válida en navegador para cuenta {account_info['username']} (ID: {account_info['id']})")
         
-    except Exception as e:
-        logger.error(f"Error en comando cookielog: {e}")
-        embed = discord.Embed(
-            title="❌ Error",
-            description=f"Ocurrió un error al procesar las cookies en el navegador: {str(e)}",
-            color=0xff0000
-        )
-        await interaction.followup.send(embed=embed, ephemeral=True)
+    
 
 @bot.tree.command(name="verify", description="Verificar tu cuenta de Roblox usando descripción personalizada")
 async def verify_command(interaction: discord.Interaction, roblox_username: str):
