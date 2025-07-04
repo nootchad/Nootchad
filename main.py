@@ -28,7 +28,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException, InvalidSessionIdException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import subprocess
 
@@ -2725,6 +2725,13 @@ def detect_captcha(driver):
     try:
         logger.info("🔍 Iniciando detección de CAPTCHA...")
         
+        # Verificar que el driver esté activo
+        try:
+            driver.current_url
+        except Exception as e:
+            logger.error(f"❌ Driver no está activo: {e}")
+            return None
+        
         # Lista de selectores de CAPTCHA comunes
         captcha_selectors = [
             # hCaptcha
@@ -2753,45 +2760,64 @@ def detect_captcha(driver):
         # Verificar en página principal primero
         for selector in captcha_selectors:
             try:
+                # Verificar conexión antes de cada operación
+                if not driver.service.is_connectable():
+                    logger.warning("⚠️ Driver service no está disponible")
+                    return None
+                    
                 elements = driver.find_elements(By.CSS_SELECTOR, selector)
                 for element in elements:
-                    # Verificar si el elemento es visible
-                    if element.is_displayed():
-                        sitekey = element.get_attribute("data-sitekey")
-                        if sitekey:
-                            logger.info(f"🎯 CAPTCHA detectado con selector '{selector}': {sitekey}")
-                            return sitekey
-                        
-                        # Si no tiene sitekey, pero es un CAPTCHA, buscar en atributos
-                        for attr in ["data-sitekey", "data-site-key", "site-key", "sitekey"]:
-                            sitekey = element.get_attribute(attr)
+                    try:
+                        # Verificar si el elemento es visible con timeout
+                        if element.is_displayed():
+                            sitekey = element.get_attribute("data-sitekey")
                             if sitekey:
-                                logger.info(f"🎯 CAPTCHA detectado con atributo '{attr}': {sitekey}")
+                                logger.info(f"🎯 CAPTCHA detectado con selector '{selector}': {sitekey}")
                                 return sitekey
+                            
+                            # Si no tiene sitekey, pero es un CAPTCHA, buscar en atributos
+                            for attr in ["data-sitekey", "data-site-key", "site-key", "sitekey"]:
+                                try:
+                                    sitekey = element.get_attribute(attr)
+                                    if sitekey:
+                                        logger.info(f"🎯 CAPTCHA detectado con atributo '{attr}': {sitekey}")
+                                        return sitekey
+                                except Exception:
+                                    continue
+                    except Exception as element_error:
+                        logger.debug(f"Error procesando elemento: {element_error}")
+                        continue
+            except (WebDriverException, ConnectionError, TimeoutException) as e:
+                logger.debug(f"Error de conexión con selector {selector}: {e}")
+                continue
             except Exception as e:
-                logger.debug(f"Error con selector {selector}: {e}")
+                logger.debug(f"Error general con selector {selector}: {e}")
                 continue
         
-        # Buscar en iframes
-        logger.info("🔍 Buscando CAPTCHA en iframes...")
-        iframes = driver.find_elements(By.TAG_NAME, "iframe")
-        
-        for i, iframe in enumerate(iframes):
-            try:
-                src = iframe.get_attribute("src")
-                if not src:
-                    continue
+        # Buscar en iframes con verificaciones de conexión
+        try:
+            logger.info("🔍 Buscando CAPTCHA en iframes...")
+            iframes = driver.find_elements(By.TAG_NAME, "iframe")
+            
+            for i, iframe in enumerate(iframes):
+                try:
+                    # Verificar conexión antes de procesar iframe
+                    driver.current_url  # Test de conectividad
                     
-                logger.debug(f"🔍 Verificando iframe {i+1}: {src[:100]}...")
-                
-                # Verificar si es un iframe de CAPTCHA conocido
-                captcha_domains = ["hcaptcha.com", "recaptcha.net", "google.com/recaptcha", "turnstile", "cloudflare"]
-                
-                if any(domain in src for domain in captcha_domains):
-                    logger.info(f"🎯 CAPTCHA iframe detectado: {src}")
+                    src = iframe.get_attribute("src")
+                    if not src:
+                        continue
+                        
+                    logger.debug(f"🔍 Verificando iframe {i+1}: {src[:100]}...")
                     
-                    # Cambiar al iframe
-                    driver.switch_to.frame(iframe)
+                    # Verificar si es un iframe de CAPTCHA conocido
+                    captcha_domains = ["hcaptcha.com", "recaptcha.net", "google.com/recaptcha", "turnstile", "cloudflare"]
+                    
+                    if any(domain in src for domain in captcha_domains):
+                        logger.info(f"🎯 CAPTCHA iframe detectado: {src}")
+                        
+                        # Cambiar al iframe con timeout
+                        driver.switch_to.frame(iframe)
                     
                     try:
                         # Buscar sitekey dentro del iframe
@@ -2858,21 +2884,39 @@ def detect_captcha(driver):
         except Exception as e:
             logger.debug(f"Error buscando en código fuente: {e}")
         
-        logger.warning("⚠️ No se detectó ningún CAPTCHA en la página")
-        logger.info(f"🔍 DEBUG: URL actual del navegador: {driver.current_url}")
-        logger.info(f"🔍 DEBUG: Título de la página: {driver.title}")
+        except (WebDriverException, ConnectionError, TimeoutException) as iframe_error:
+            logger.warning(f"⚠️ Error de conexión procesando iframes: {iframe_error}")
+        except Exception as iframe_error:
+            logger.debug(f"Error general procesando iframes: {iframe_error}")
         
-        # Log de elementos encontrados para debugging
+        # Verificación final de conectividad
+        try:
+            current_url = driver.current_url
+            page_title = driver.title
+            logger.warning("⚠️ No se detectó ningún CAPTCHA en la página")
+            logger.info(f"🔍 DEBUG: URL actual del navegador: {current_url}")
+            logger.info(f"🔍 DEBUG: Título de la página: {page_title}")
+        except Exception as final_check_error:
+            logger.error(f"❌ Error en verificación final - driver probablemente desconectado: {final_check_error}")
+            return None
+        
+        # Log de elementos encontrados para debugging (solo si driver está activo)
         try:
             all_elements = driver.find_elements(By.CSS_SELECTOR, "*[data-sitekey], *[sitekey], .g-recaptcha, .h-captcha")
             logger.info(f"🔍 DEBUG: Elementos relacionados con CAPTCHA encontrados: {len(all_elements)}")
-            for i, elem in enumerate(all_elements[:5]):  # Solo primeros 5
-                logger.info(f"  {i+1}. Tag: {elem.tag_name}, Attributes: {elem.get_attribute('outerHTML')[:100]}...")
+            for i, elem in enumerate(all_elements[:3]):  # Reducido a 3 elementos
+                try:
+                    logger.info(f"  {i+1}. Tag: {elem.tag_name}, Attributes: {elem.get_attribute('outerHTML')[:100]}...")
+                except:
+                    logger.info(f"  {i+1}. Elemento no accesible")
         except Exception as debug_e:
             logger.warning(f"🔍 DEBUG: Error obteniendo elementos: {debug_e}")
         
         return None
         
+    except (WebDriverException, ConnectionError, TimeoutException) as connection_error:
+        logger.error(f"❌ Error de conexión detectando CAPTCHA: {connection_error}")
+        return None
     except Exception as e:
         logger.error(f"❌ Error grave detectando CAPTCHA: {e}")
         return None
