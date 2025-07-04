@@ -2859,6 +2859,18 @@ def detect_captcha(driver):
             logger.debug(f"Error buscando en código fuente: {e}")
         
         logger.warning("⚠️ No se detectó ningún CAPTCHA en la página")
+        logger.info(f"🔍 DEBUG: URL actual del navegador: {driver.current_url}")
+        logger.info(f"🔍 DEBUG: Título de la página: {driver.title}")
+        
+        # Log de elementos encontrados para debugging
+        try:
+            all_elements = driver.find_elements(By.CSS_SELECTOR, "*[data-sitekey], *[sitekey], .g-recaptcha, .h-captcha")
+            logger.info(f"🔍 DEBUG: Elementos relacionados con CAPTCHA encontrados: {len(all_elements)}")
+            for i, elem in enumerate(all_elements[:5]):  # Solo primeros 5
+                logger.info(f"  {i+1}. Tag: {elem.tag_name}, Attributes: {elem.get_attribute('outerHTML')[:100]}...")
+        except Exception as debug_e:
+            logger.warning(f"🔍 DEBUG: Error obteniendo elementos: {debug_e}")
+        
         return None
         
     except Exception as e:
@@ -2878,6 +2890,7 @@ def resolver_captcha(sitekey, url):
             
         logger.info(f"🤖 Resolviendo CAPTCHA con sitekey: {sitekey[:20]}...")
         logger.info(f"🌐 URL: {url}")
+        logger.info(f"🔑 API Key configurada: {api_key[:10]}... (longitud: {len(api_key)})")
         
         # Determinar tipo de CAPTCHA basado en la URL o sitekey
         captcha_type = "hcaptcha"  # Por defecto
@@ -2905,9 +2918,12 @@ def resolver_captcha(sitekey, url):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
         
-        logger.info(f"📤 Enviando solicitud a NopeCHA API...")
+        logger.info(f"📤 INICIANDO SOLICITUD A API NOPECHA...")
+        logger.info(f"📋 Payload: {payload}")
+        logger.info(f"🌐 URL de API: https://api.nopecha.com/token")
         
         # Hacer la solicitud con timeout
+        logger.info(f"⏳ Enviando solicitud POST...")
         response = requests.post(
             "https://api.nopecha.com/token", 
             json=payload,
@@ -2915,30 +2931,37 @@ def resolver_captcha(sitekey, url):
             timeout=30
         )
         
-        logger.info(f"📥 Respuesta de API: Status {response.status_code}")
+        logger.info(f"📥 RESPUESTA RECIBIDA DE API NOPECHA:")
+        logger.info(f"📊 Status Code: {response.status_code}")
+        logger.info(f"📋 Headers de respuesta: {dict(response.headers)}")
+        logger.info(f"📝 Contenido de respuesta: {response.text}")
         
         if response.status_code == 200:
             result = response.json()
-            logger.info(f"📋 Resultado completo: {result}")
+            logger.info(f"✅ Respuesta JSON exitosa: {result}")
             
             token = result.get("data")
             if token:
-                logger.info(f"✅ CAPTCHA resuelto exitosamente - Token: {token[:20]}...")
+                logger.info(f"🎉 CAPTCHA RESUELTO EXITOSAMENTE!")
+                logger.info(f"🎫 Token obtenido: {token[:20]}... (longitud: {len(token)})")
                 return token
             else:
                 error_msg = result.get("error", "Sin mensaje de error")
-                logger.error(f"❌ No se obtuvo token del CAPTCHA. Error: {error_msg}")
+                logger.error(f"❌ API respondió OK pero sin token. Error: {error_msg}")
                 logger.error(f"❌ Respuesta completa: {result}")
                 return None
         else:
-            logger.error(f"❌ Error HTTP en API NopeCHA: {response.status_code}")
-            logger.error(f"❌ Respuesta: {response.text}")
+            logger.error(f"❌ ERROR HTTP EN API NOPECHA:")
+            logger.error(f"🔴 Status Code: {response.status_code}")
+            logger.error(f"📝 Respuesta completa: {response.text}")
             
             # Intentar con tipo diferente si falla
             if captcha_type != "hcaptcha":
-                logger.info(f"🔄 Reintentando con tipo hcaptcha...")
+                logger.info(f"🔄 REINTENTANDO CON TIPO HCAPTCHA...")
                 payload["type"] = "hcaptcha"
+                logger.info(f"📋 Nuevo payload: {payload}")
                 
+                logger.info(f"⏳ Enviando segunda solicitud POST...")
                 response2 = requests.post(
                     "https://api.nopecha.com/token", 
                     json=payload,
@@ -2946,11 +2969,15 @@ def resolver_captcha(sitekey, url):
                     timeout=30
                 )
                 
+                logger.info(f"📥 Segunda respuesta: Status {response2.status_code}")
+                logger.info(f"📝 Segunda respuesta contenido: {response2.text}")
+                
                 if response2.status_code == 200:
                     result2 = response2.json()
                     token = result2.get("data")
                     if token:
-                        logger.info(f"✅ CAPTCHA resuelto en segundo intento")
+                        logger.info(f"✅ CAPTCHA resuelto en segundo intento!")
+                        logger.info(f"🎫 Token del segundo intento: {token[:20]}...")
                         return token
                         
             return None
@@ -3475,6 +3502,11 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                             sitekey = detect_captcha(driver)
                             
                             if sitekey:
+                                logger.info(f"🎯 CAPTCHA DETECTADO EXITOSAMENTE!")
+                                logger.info(f"🔑 Sitekey encontrado: {sitekey}")
+                                logger.info(f"🌐 URL donde se detectó: {driver.current_url}")
+                                logger.info(f"🔄 Intento #{captcha_attempts} de {max_captcha_attempts}")
+                                
                                 # Actualizar estado de CAPTCHA detectado
                                 captcha_detect_embed = discord.Embed(
                                     title="🤖 CAPTCHA Detectado",
@@ -3488,7 +3520,14 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                                 await message.edit(embed=captcha_detect_embed)
                                 
                                 # Resolver CAPTCHA
+                                logger.info(f"🚀 LLAMANDO A FUNCIÓN resolver_captcha()...")
                                 token = resolver_captcha(sitekey, driver.current_url)
+                                logger.info(f"🎯 Función resolver_captcha() terminó. Token obtenido: {'SÍ' if token else 'NO'}")
+                                
+                                if token:
+                                    logger.info(f"🎫 Token recibido: {token[:30]}... (longitud total: {len(token)})")
+                                else:
+                                    logger.error(f"❌ No se obtuvo token de resolver_captcha()")
                                 
                                 if token:
                                     logger.info("✅ CAPTCHA resuelto, aplicando token...")
