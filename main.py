@@ -1280,7 +1280,7 @@ class VIPServerScraper:
             logger.info("🤖 Configurando extensión NopeCHA...")
             
             # Esperar más tiempo a que la extensión se cargue completamente
-            time.sleep(5)
+            time.sleep(10)  # Aumentado de 5 a 10 segundos
             
             # Verificar si NopeCHA está presente en las extensiones
             try:
@@ -1324,7 +1324,7 @@ class VIPServerScraper:
                         logger.info("🔧 NopeCHA configurada para activación automática en CAPTCHAs")
                         
                         # Permitir más tiempo para inicialización de extensión
-                        time.sleep(3)
+                        time.sleep(10)  # Aumentado para dar más tiempo a NopeCHA
                     except Exception:
                         logger.warning("⚠️ No se pudo configurar NopeCHA manualmente, se activará automáticamente")
                 
@@ -3212,69 +3212,91 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             # Mantener navegador abierto para verificación/CAPTCHA y esperar más tiempo
             logger.info("🕐 Manteniendo navegador abierto para verificación y CAPTCHA...")
             
-            # Esperar hasta 60 segundos para que NopeCHA resuelva CAPTCHAs
+            # Esperar hasta 300 segundos (5 minutos) para que NopeCHA resuelva CAPTCHAs
             captcha_wait_time = 0
-            max_captcha_wait = 60  # 60 segundos máximo
+            max_captcha_wait = 300  # 5 minutos máximo para darle tiempo a NopeCHA
+            check_interval = 5  # Verificar cada 5 segundos para no saturar
             
             while captcha_wait_time < max_captcha_wait:
                 try:
                     # Verificar si hay elementos que indiquen éxito en el registro
                     success_indicators = driver.find_elements(By.CSS_SELECTOR, 
-                        ".signup-success, .account-created, [class*='success'], [data-testid*='success']")
+                        ".signup-success, .account-created, [class*='success'], [data-testid*='success'], .alert-success")
                     
                     if success_indicators:
                         logger.info("✅ Registro completado exitosamente detectado")
                         break
                     
-                    # Verificar si hay CAPTCHAs activos
-                    captcha_elements = driver.find_elements(By.CSS_SELECTOR, 
-                        ".captcha, [class*='captcha'], iframe[src*='captcha'], [data-cy*='captcha'], .cf-turnstile")
+                    # Verificar si hay CAPTCHAs activos con selectores más específicos
+                    captcha_selectors = [
+                        ".captcha", "[class*='captcha']", "iframe[src*='captcha']", 
+                        "[data-cy*='captcha']", ".cf-turnstile", ".h-captcha",
+                        ".recaptcha", "[id*='captcha']", ".funcaptcha",
+                        "#captcha-container", ".captcha-container", ".challenge-container"
+                    ]
                     
-                    if captcha_elements:
-                        logger.info(f"🤖 CAPTCHA detectado, esperando resolución automática... ({captcha_wait_time}/{max_captcha_wait}s)")
-                        
-                        # Actualizar embed con progreso del CAPTCHA
-                        captcha_embed = discord.Embed(
-                            title="🤖 Resolviendo CAPTCHA",
-                            description=f"NopeCHA está resolviendo el CAPTCHA automáticamente para **{new_username}**...",
-                            color=0xff9900
-                        )
-                        captcha_embed.add_field(
-                            name="⏱️ Tiempo Transcurrido",
-                            value=f"{captcha_wait_time}/{max_captcha_wait} segundos",
-                            inline=True
-                        )
-                        captcha_embed.add_field(
-                            name="🤖 Estado",
-                            value="Esperando resolución automática...",
-                            inline=True
-                        )
-                        captcha_embed.add_field(
-                            name="🎯 Username",
-                            value=f"`{new_username}`",
-                            inline=True
-                        )
-                        
-                        try:
-                            await message.edit(embed=captcha_embed)
-                        except Exception:
-                            pass
+                    captcha_found = False
+                    for selector in captcha_selectors:
+                        captcha_elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                        if captcha_elements:
+                            captcha_found = True
+                            break
                     
-                    time.sleep(2)  # Verificar cada 2 segundos
-                    captcha_wait_time += 2
+                    if captcha_found:
+                        remaining_time = max_captcha_wait - captcha_wait_time
+                        logger.info(f"🤖 CAPTCHA detectado, esperando resolución automática... ({captcha_wait_time}/{max_captcha_wait}s restantes: {remaining_time}s)")
+                        
+                        # Actualizar embed con progreso del CAPTCHA cada 30 segundos
+                        if captcha_wait_time % 30 == 0:
+                            captcha_embed = discord.Embed(
+                                title="🤖 NopeCHA Resolviendo CAPTCHA",
+                                description=f"La extensión NopeCHA está trabajando para resolver el CAPTCHA automáticamente para **{new_username}**...",
+                                color=0xff9900
+                            )
+                            captcha_embed.add_field(
+                                name="⏱️ Tiempo Transcurrido",
+                                value=f"{captcha_wait_time} segundos",
+                                inline=True
+                            )
+                            captcha_embed.add_field(
+                                name="⏳ Tiempo Restante",
+                                value=f"{remaining_time} segundos",
+                                inline=True
+                            )
+                            captcha_embed.add_field(
+                                name="🎯 Username",
+                                value=f"`{new_username}`",
+                                inline=True
+                            )
+                            captcha_embed.add_field(
+                                name="🔧 Estado del Sistema",
+                                value="• NopeCHA extensión activa\n• Navegador mantenido abierto\n• Esperando resolución automática",
+                                inline=False
+                            )
+                            
+                            try:
+                                await message.edit(embed=captcha_embed)
+                            except Exception:
+                                pass
+                    else:
+                        # No hay CAPTCHA visible, puede estar procesando
+                        logger.info(f"📋 Formulario procesando... ({captcha_wait_time}/{max_captcha_wait}s)")
+                    
+                    time.sleep(check_interval)  # Verificar cada 5 segundos
+                    captcha_wait_time += check_interval
                     
                 except Exception as e:
                     logger.debug(f"Error verificando estado: {e}")
-                    time.sleep(2)
-                    captcha_wait_time += 2
+                    time.sleep(check_interval)
+                    captcha_wait_time += check_interval
             
             if captcha_wait_time >= max_captcha_wait:
                 logger.warning("⏰ Tiempo máximo de espera alcanzado para CAPTCHA")
                 
-                # Embed de timeout
+                # Embed de timeout más informativo
                 timeout_embed = discord.Embed(
-                    title="⏰ Tiempo de CAPTCHA Agotado",
-                    description=f"Se alcanzó el tiempo máximo de espera para la resolución del CAPTCHA.",
+                    title="⏰ Tiempo Máximo de CAPTCHA Alcanzado",
+                    description=f"Se esperó **{max_captcha_wait // 60} minutos** para que NopeCHA resuelva el CAPTCHA.",
                     color=0xff9900
                 )
                 timeout_embed.add_field(
@@ -3283,13 +3305,18 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     inline=True
                 )
                 timeout_embed.add_field(
-                    name="🕐 Tiempo Esperado",
-                    value=f"{max_captcha_wait} segundos",
+                    name="🕐 Tiempo Total Esperado",
+                    value=f"{max_captcha_wait} segundos ({max_captcha_wait // 60} minutos)",
                     inline=True
                 )
                 timeout_embed.add_field(
-                    name="💡 Resultado",
-                    value="El formulario puede haber sido enviado pero requiere verificación manual",
+                    name="🤖 Estado de NopeCHA",
+                    value="Extensión tuvo tiempo suficiente para trabajar",
+                    inline=True
+                )
+                timeout_embed.add_field(
+                    name="💡 Posibles Resultados",
+                    value="• El registro puede haberse completado\n• CAPTCHA muy complejo\n• Requiere verificación manual\n• Navegador se cerrará ahora",
                     inline=False
                 )
                 
@@ -3299,15 +3326,20 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     pass
             
         finally:
+            # Esperar tiempo adicional antes de cerrar para asegurar que cualquier proceso final termine
+            logger.info("⏳ Esperando tiempo adicional antes de cerrar navegador...")
+            time.sleep(30)  # 30 segundos adicionales
+            
             # Mensaje final antes de cerrar
             final_embed = discord.Embed(
                 title="🏁 Proceso de Creación Finalizado",
-                description=f"El proceso automatizado para **{new_username}** ha terminado.",
+                description=f"El proceso automatizado para **{new_username}** ha terminado. Se esperó tiempo suficiente para NopeCHA.",
                 color=0x888888
             )
             final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
-            final_embed.add_field(name="🔄 Estado", value="Proceso completado", inline=True)
-            final_embed.add_field(name="📝 Nota", value="Verifica manualmente el resultado del registro", inline=True)
+            final_embed.add_field(name="🔄 Estado", value="Proceso completado con tiempo extendido", inline=True)
+            final_embed.add_field(name="📝 Nota", value="Se dio tiempo suficiente para resolución de CAPTCHA", inline=True)
+            final_embed.add_field(name="⏰ Tiempo Total", value="Incluye 5 minutos para CAPTCHA + 30s final", inline=True)
             await message.edit(embed=final_embed)
             
             # Cerrar navegador
