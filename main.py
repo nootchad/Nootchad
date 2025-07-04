@@ -2367,6 +2367,15 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
 async def on_ready():
     logger.info(f'🤖 {bot.user} ha conectado exitosamente a Discord!')
     
+    # Verificar API key de CAPTCHA
+    import os
+    captcha_api_key = os.getenv("CAPTCHA2")
+    if captcha_api_key:
+        logger.info(f"✅ API key de CAPTCHA configurada: {captcha_api_key[:10]}...")
+    else:
+        logger.warning("⚠️ API key de CAPTCHA (CAPTCHA2) no encontrada en variables de entorno")
+        logger.warning("⚠️ Los CAPTCHAs no podrán resolverse automáticamente")
+    
     # Inicializar servidor web para control remoto
     try:
         await remote_control.start_web_server()
@@ -2712,124 +2721,413 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
         return False
 
 def detect_captcha(driver):
-    """Detectar CAPTCHA y obtener sitekey"""
+    """Detectar CAPTCHA y obtener sitekey con detección mejorada"""
     try:
-        # Buscar el iframe de hCaptcha
-        iframes = driver.find_elements(By.TAG_NAME, "iframe")
-        sitekey = None
+        logger.info("🔍 Iniciando detección de CAPTCHA...")
         
-        for iframe in iframes:
-            src = iframe.get_attribute("src")
-            if src and "hcaptcha" in src:
-                driver.switch_to.frame(iframe)
+        # Lista de selectores de CAPTCHA comunes
+        captcha_selectors = [
+            # hCaptcha
+            "[data-sitekey]",
+            ".h-captcha",
+            "#h-captcha",
+            "iframe[src*='hcaptcha']",
+            
+            # reCaptcha
+            ".g-recaptcha",
+            "#g-recaptcha", 
+            ".recaptcha-checkbox",
+            "iframe[src*='recaptcha']",
+            
+            # Cloudflare Turnstile
+            ".cf-turnstile",
+            "iframe[src*='turnstile']",
+            
+            # Genéricos
+            "[data-callback]",
+            "[data-theme]",
+            "div[class*='captcha']",
+            "div[id*='captcha']"
+        ]
+        
+        # Verificar en página principal primero
+        for selector in captcha_selectors:
+            try:
+                elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                for element in elements:
+                    # Verificar si el elemento es visible
+                    if element.is_displayed():
+                        sitekey = element.get_attribute("data-sitekey")
+                        if sitekey:
+                            logger.info(f"🎯 CAPTCHA detectado con selector '{selector}': {sitekey}")
+                            return sitekey
+                        
+                        # Si no tiene sitekey, pero es un CAPTCHA, buscar en atributos
+                        for attr in ["data-sitekey", "data-site-key", "site-key", "sitekey"]:
+                            sitekey = element.get_attribute(attr)
+                            if sitekey:
+                                logger.info(f"🎯 CAPTCHA detectado con atributo '{attr}': {sitekey}")
+                                return sitekey
+            except Exception as e:
+                logger.debug(f"Error con selector {selector}: {e}")
+                continue
+        
+        # Buscar en iframes
+        logger.info("🔍 Buscando CAPTCHA en iframes...")
+        iframes = driver.find_elements(By.TAG_NAME, "iframe")
+        
+        for i, iframe in enumerate(iframes):
+            try:
+                src = iframe.get_attribute("src")
+                if not src:
+                    continue
+                    
+                logger.debug(f"🔍 Verificando iframe {i+1}: {src[:100]}...")
+                
+                # Verificar si es un iframe de CAPTCHA conocido
+                captcha_domains = ["hcaptcha.com", "recaptcha.net", "google.com/recaptcha", "turnstile", "cloudflare"]
+                
+                if any(domain in src for domain in captcha_domains):
+                    logger.info(f"🎯 CAPTCHA iframe detectado: {src}")
+                    
+                    # Cambiar al iframe
+                    driver.switch_to.frame(iframe)
+                    
+                    try:
+                        # Buscar sitekey dentro del iframe
+                        for selector in captcha_selectors:
+                            try:
+                                sitekey_elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                                for element in sitekey_elements:
+                                    for attr in ["data-sitekey", "data-site-key", "site-key", "sitekey"]:
+                                        sitekey = element.get_attribute(attr)
+                                        if sitekey:
+                                            driver.switch_to.default_content()
+                                            logger.info(f"✅ Sitekey encontrado en iframe: {sitekey}")
+                                            return sitekey
+                            except Exception as e:
+                                logger.debug(f"Error en iframe con selector {selector}: {e}")
+                                continue
+                        
+                        # Si no encontramos sitekey pero detectamos el iframe, extraer de URL
+                        if "sitekey=" in src:
+                            import urllib.parse as urlparse
+                            parsed_url = urlparse.urlparse(src)
+                            params = urlparse.parse_qs(parsed_url.query)
+                            sitekey = params.get('sitekey', [None])[0]
+                            if sitekey:
+                                driver.switch_to.default_content()
+                                logger.info(f"✅ Sitekey extraído de URL del iframe: {sitekey}")
+                                return sitekey
+                                
+                    finally:
+                        # Siempre volver al contenido principal
+                        driver.switch_to.default_content()
+                        
+            except Exception as e:
+                logger.debug(f"Error procesando iframe {i+1}: {e}")
                 try:
-                    sitekey_element = driver.find_element(By.CSS_SELECTOR, "[data-sitekey]")
-                    sitekey = sitekey_element.get_attribute("data-sitekey")
                     driver.switch_to.default_content()
-                    logger.info(f"🔍 Sitekey encontrado: {sitekey}")
-                    return sitekey
                 except:
                     pass
-                driver.switch_to.default_content()
+                continue
         
-        # También buscar en el contenido principal
+        # Buscar en el código fuente de la página
+        logger.info("🔍 Buscando CAPTCHA en código fuente...")
         try:
-            sitekey_elements = driver.find_elements(By.CSS_SELECTOR, "[data-sitekey]")
-            for element in sitekey_elements:
-                sitekey = element.get_attribute("data-sitekey")
-                if sitekey:
-                    logger.info(f"🔍 Sitekey encontrado en página principal: {sitekey}")
-                    return sitekey
-        except:
-            pass
+            page_source = driver.page_source
             
+            # Buscar patrones de sitekey en el HTML
+            import re
+            
+            patterns = [
+                r'data-sitekey["\s]*=[\s]*["\']([^"\']+)["\']',
+                r'sitekey["\s]*:["\s]*["\']([^"\']+)["\']',
+                r'site-key["\s]*=[\s]*["\']([^"\']+)["\']',
+                r'"sitekey":\s*"([^"]+)"',
+                r'\'sitekey\':\s*\'([^\']+)\''
+            ]
+            
+            for pattern in patterns:
+                matches = re.findall(pattern, page_source, re.IGNORECASE)
+                if matches:
+                    sitekey = matches[0]
+                    logger.info(f"✅ Sitekey encontrado en código fuente: {sitekey}")
+                    return sitekey
+                    
+        except Exception as e:
+            logger.debug(f"Error buscando en código fuente: {e}")
+        
+        logger.warning("⚠️ No se detectó ningún CAPTCHA en la página")
         return None
         
     except Exception as e:
-        logger.error(f"Error detectando CAPTCHA: {e}")
+        logger.error(f"❌ Error grave detectando CAPTCHA: {e}")
         return None
 
 def resolver_captcha(sitekey, url):
-    """Resolver CAPTCHA usando NopeCHA API"""
+    """Resolver CAPTCHA usando NopeCHA API con detección automática de tipo"""
     try:
         import requests
         import os
         
         api_key = os.getenv("CAPTCHA2")
         if not api_key:
-            logger.error("❌ API key CAPTCHA2 no encontrada")
+            logger.error("❌ API key CAPTCHA2 no encontrada en variables de entorno")
             return None
             
-        logger.info(f"🤖 Resolviendo CAPTCHA con sitekey: {sitekey}")
+        logger.info(f"🤖 Resolviendo CAPTCHA con sitekey: {sitekey[:20]}...")
+        logger.info(f"🌐 URL: {url}")
         
-        response = requests.post("https://api.nopecha.com/token", json={
-            "type": "hcaptcha",
+        # Determinar tipo de CAPTCHA basado en la URL o sitekey
+        captcha_type = "hcaptcha"  # Por defecto
+        
+        if "recaptcha" in url.lower() or "google.com" in url.lower():
+            captcha_type = "recaptcha"
+        elif "cloudflare" in url.lower() or "turnstile" in url.lower():
+            captcha_type = "turnstile"
+        elif "hcaptcha" in url.lower():
+            captcha_type = "hcaptcha"
+        
+        logger.info(f"🎯 Tipo de CAPTCHA detectado: {captcha_type}")
+        
+        # Preparar payload para la API
+        payload = {
+            "type": captcha_type,
             "sitekey": sitekey,
-            "url": url
-        }, headers={
+            "url": url,
+            "enterprise": False  # Cambiar a True si es enterprise
+        }
+        
+        headers = {
             "Content-Type": "application/json",
-            "x-api-key": api_key
-        })
+            "x-api-key": api_key,
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        
+        logger.info(f"📤 Enviando solicitud a NopeCHA API...")
+        
+        # Hacer la solicitud con timeout
+        response = requests.post(
+            "https://api.nopecha.com/token", 
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+        
+        logger.info(f"📥 Respuesta de API: Status {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
+            logger.info(f"📋 Resultado completo: {result}")
+            
             token = result.get("data")
             if token:
-                logger.info(f"✅ CAPTCHA resuelto exitosamente")
+                logger.info(f"✅ CAPTCHA resuelto exitosamente - Token: {token[:20]}...")
                 return token
             else:
-                logger.error(f"❌ No se obtuvo token del CAPTCHA: {result}")
+                error_msg = result.get("error", "Sin mensaje de error")
+                logger.error(f"❌ No se obtuvo token del CAPTCHA. Error: {error_msg}")
+                logger.error(f"❌ Respuesta completa: {result}")
                 return None
         else:
-            logger.error(f"❌ Error en API NopeCHA: {response.status_code} - {response.text}")
+            logger.error(f"❌ Error HTTP en API NopeCHA: {response.status_code}")
+            logger.error(f"❌ Respuesta: {response.text}")
+            
+            # Intentar con tipo diferente si falla
+            if captcha_type != "hcaptcha":
+                logger.info(f"🔄 Reintentando con tipo hcaptcha...")
+                payload["type"] = "hcaptcha"
+                
+                response2 = requests.post(
+                    "https://api.nopecha.com/token", 
+                    json=payload,
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response2.status_code == 200:
+                    result2 = response2.json()
+                    token = result2.get("data")
+                    if token:
+                        logger.info(f"✅ CAPTCHA resuelto en segundo intento")
+                        return token
+                        
             return None
             
+    except requests.exceptions.Timeout:
+        logger.error(f"❌ Timeout resolviendo CAPTCHA - la API tardó más de 30 segundos")
+        return None
+    except requests.exceptions.ConnectionError:
+        logger.error(f"❌ Error de conexión con la API de NopeCHA")
+        return None
     except Exception as e:
-        logger.error(f"❌ Error resolviendo CAPTCHA: {e}")
+        logger.error(f"❌ Error inesperado resolviendo CAPTCHA: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
         return None
 
 def aplicar_token_captcha(driver, token):
-    """Aplicar token de CAPTCHA resuelto"""
+    """Aplicar token de CAPTCHA resuelto con múltiples métodos"""
     try:
-        # Buscar y rellenar el campo de respuesta del CAPTCHA
+        logger.info(f"🔧 Aplicando token de CAPTCHA: {token[:20]}...")
+        
+        # Lista expandida de selectores de respuesta de CAPTCHA
         captcha_response_selectors = [
+            # hCaptcha
             "textarea[name='h-captcha-response']",
-            "textarea[name='g-recaptcha-response']",
             "#h-captcha-response",
-            "#g-recaptcha-response",
             "[name='h-captcha-response']",
-            "[name='g-recaptcha-response']"
+            ".h-captcha-response",
+            
+            # reCaptcha
+            "textarea[name='g-recaptcha-response']", 
+            "#g-recaptcha-response",
+            "[name='g-recaptcha-response']",
+            ".g-recaptcha-response",
+            
+            # Cloudflare Turnstile
+            "[name='cf-turnstile-response']",
+            "#cf-turnstile-response",
+            
+            # Genéricos
+            "textarea[name*='captcha-response']",
+            "input[name*='captcha-response']",
+            "textarea[id*='captcha-response']",
+            "input[id*='captcha-response']"
         ]
         
+        token_aplicado = False
+        
+        # Método 1: Buscar y rellenar campos de respuesta
         for selector in captcha_response_selectors:
             try:
-                response_field = driver.find_element(By.CSS_SELECTOR, selector)
-                driver.execute_script(f"arguments[0].value = '{token}';", response_field)
-                logger.info(f"✅ Token aplicado en campo: {selector}")
-                
-                # Ejecutar callback del CAPTCHA si existe
-                try:
-                    driver.execute_script("""
-                        if (window.hcaptcha && window.hcaptcha.execute) {
-                            window.hcaptcha.execute();
-                        }
-                        if (window.grecaptcha && window.grecaptcha.execute) {
-                            window.grecaptcha.execute();
-                        }
-                    """)
-                    logger.info("✅ Callback de CAPTCHA ejecutado")
-                except:
-                    pass
+                response_fields = driver.find_elements(By.CSS_SELECTOR, selector)
+                for field in response_fields:
+                    # Verificar que el campo esté presente y sea editable
+                    if field.is_enabled():
+                        # Usar JavaScript para asegurar que el valor se establezca
+                        driver.execute_script("arguments[0].style.display = 'block';", field)
+                        driver.execute_script("arguments[0].value = arguments[1];", field, token)
+                        
+                        # También intentar con setAttribute
+                        driver.execute_script("arguments[0].setAttribute('value', arguments[1]);", field, token)
+                        
+                        logger.info(f"✅ Token aplicado en campo: {selector}")
+                        token_aplicado = True
+                        break
+                        
+                if token_aplicado:
+                    break
                     
-                return True
-            except:
+            except Exception as e:
+                logger.debug(f"Error con selector {selector}: {e}")
                 continue
+        
+        # Método 2: Buscar en iframes si no se encontró en página principal
+        if not token_aplicado:
+            logger.info("🔍 Buscando campos de respuesta en iframes...")
+            
+            iframes = driver.find_elements(By.TAG_NAME, "iframe")
+            for i, iframe in enumerate(iframes):
+                try:
+                    driver.switch_to.frame(iframe)
+                    
+                    for selector in captcha_response_selectors:
+                        try:
+                            response_fields = driver.find_elements(By.CSS_SELECTOR, selector)
+                            for field in response_fields:
+                                if field.is_enabled():
+                                    driver.execute_script("arguments[0].value = arguments[1];", field, token)
+                                    logger.info(f"✅ Token aplicado en iframe {i+1}: {selector}")
+                                    token_aplicado = True
+                                    break
+                            if token_aplicado:
+                                break
+                        except:
+                            continue
+                    
+                    if token_aplicado:
+                        break
+                        
+                except Exception as e:
+                    logger.debug(f"Error procesando iframe {i+1}: {e}")
+                finally:
+                    try:
+                        driver.switch_to.default_content()
+                    except:
+                        pass
+        
+        # Método 3: Ejecutar callbacks y triggers de JavaScript
+        if token_aplicado:
+            logger.info("🎯 Ejecutando callbacks de CAPTCHA...")
+            
+            try:
+                # Lista de callbacks posibles
+                callbacks = [
+                    # hCaptcha
+                    """
+                    if (window.hcaptcha) {
+                        if (window.hcaptcha.execute) window.hcaptcha.execute();
+                        if (window.hcaptcha.getResponse) {
+                            console.log('hCaptcha response:', window.hcaptcha.getResponse());
+                        }
+                    }
+                    """,
+                    
+                    # reCaptcha
+                    """
+                    if (window.grecaptcha) {
+                        if (window.grecaptcha.execute) window.grecaptcha.execute();
+                        if (window.grecaptcha.getResponse) {
+                            console.log('reCaptcha response:', window.grecaptcha.getResponse());
+                        }
+                    }
+                    """,
+                    
+                    # Triggers genéricos
+                    """
+                    // Disparar eventos change y input en campos de respuesta
+                    document.querySelectorAll('textarea[name*="captcha-response"], input[name*="captcha-response"]').forEach(function(field) {
+                        var event = new Event('change', { bubbles: true });
+                        field.dispatchEvent(event);
+                        
+                        var inputEvent = new Event('input', { bubbles: true });
+                        field.dispatchEvent(inputEvent);
+                    });
+                    """,
+                    
+                    # Buscar formularios y submits
+                    """
+                    // Buscar botones de submit relacionados con CAPTCHA
+                    var submitButtons = document.querySelectorAll('button[type="submit"], input[type="submit"], button:contains("Submit"), button:contains("Verify")');
+                    console.log('Found submit buttons:', submitButtons.length);
+                    """
+                ]
                 
-        logger.warning("⚠️ No se encontró campo de respuesta de CAPTCHA")
-        return False
+                for callback in callbacks:
+                    try:
+                        driver.execute_script(callback)
+                        logger.debug("✅ Callback ejecutado exitosamente")
+                    except Exception as e:
+                        logger.debug(f"Error ejecutando callback: {e}")
+                
+                logger.info("✅ Callbacks de CAPTCHA ejecutados")
+                
+            except Exception as e:
+                logger.warning(f"⚠️ Error ejecutando callbacks: {e}")
+        
+        if token_aplicado:
+            logger.info("✅ Token de CAPTCHA aplicado exitosamente")
+            return True
+        else:
+            logger.warning("⚠️ No se pudo aplicar el token - no se encontraron campos de respuesta")
+            return False
         
     except Exception as e:
-        logger.error(f"❌ Error aplicando token de CAPTCHA: {e}")
+        logger.error(f"❌ Error crítico aplicando token de CAPTCHA: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
         return False
 
 @bot.tree.command(name="createaccount", description="[OWNER ONLY] Crear nueva cuenta de Roblox con nombres RbxServers")
