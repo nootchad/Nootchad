@@ -1,6 +1,6 @@
 {
   "users": {
-    "1374194847786729472": {
+    "1296905103088816190": {
       "games": {
         "109983668079237": {
           "server_links": [
@@ -16,8 +16,8 @@
           "server_details": {
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=32657066938160878046996355994328": {
               "source_url": "https://rbxservers.xyz/servers/7c2560b9-5e17-4291-a621-01757b6cace6",
-              "discovered_at": "2025-07-04T22:43:24.260855",
-              "extraction_time": 13.95,
+              "discovered_at": "2025-07-04T22:25:28.317574",
+              "extraction_time": 14.88,
               "server_info": {
                 "page_title": "[\ud83c\udf2e] Steal a Brainrot - 4X LUCKY!!!! NO STEAL - RBXServers",
                 "server_id": "7c2560b9-5e17-4291-a621-01757b6cace6"
@@ -26,8 +26,8 @@
             },
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=00137132313154942936415120780690": {
               "source_url": "https://rbxservers.xyz/servers/f414ae3c-5650-46f1-a762-79cb9c6df362",
-              "discovered_at": "2025-07-04T22:43:42.771381",
-              "extraction_time": 18.51,
+              "discovered_at": "2025-07-04T22:25:45.673712",
+              "extraction_time": 17.36,
               "server_info": {
                 "page_title": "[\ud83c\udf2e] Steal a Brainrot - Crazy Farming | STEAL = BAN - RBXServers",
                 "server_id": "f414ae3c-5650-46f1-a762-79cb9c6df362"
@@ -36,8 +36,8 @@
             },
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607": {
               "source_url": "https://rbxservers.xyz/servers/c4a8a903-2098-4586-a8d9-11c0a7f40876",
-              "discovered_at": "2025-07-04T22:43:59.296657",
-              "extraction_time": 16.53,
+              "discovered_at": "2025-07-04T22:26:04.586632",
+              "extraction_time": 18.91,
               "server_info": {
                 "page_title": "[\ud83c\udf2e] Steal a Brainrot - Unnamed Server 1442 - RBXServers",
                 "server_id": "c4a8a903-2098-4586-a8d9-11c0a7f40876"
@@ -46,8 +46,8 @@
             },
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=12675423603067666790387687977589": {
               "source_url": "https://rbxservers.xyz/servers/fe992f5c-b71a-4230-b08c-1192c584225c",
-              "discovered_at": "2025-07-04T22:44:17.345114",
-              "extraction_time": 18.05,
+              "discovered_at": "2025-07-04T22:26:20.635416",
+              "extraction_time": 16.05,
               "server_info": {
                 "page_title": "[\ud83c\udf2e] Steal a Brainrot - Awaiting Moderation - RBXServers",
                 "server_id": "fe992f5c-b71a-4230-b08c-1192c584225c"
@@ -56,8 +56,8 @@
             },
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36961051040976493630866209379302": {
               "source_url": "https://rbxservers.xyz/servers/c8732b4e-5c29-4abd-bcf1-7fe131b8b6ca",
-              "discovered_at": "2025-07-04T22:44:30.665531",
-              "extraction_time": 13.32,
+              "discovered_at": "2025-07-04T22:26:39.212571",
+              "extraction_time": 18.58,
               "server_info": {
                 "page_title": "[\ud83c\udf2e] Steal a Brainrot - luck event server NO STEAL - RBXServers",
                 "server_id": "c8732b4e-5c29-4abd-bcf1-7fe131b8b6ca"
@@ -72,7 +72,7 @@
           "game_id": "109983668079237",
           "server_link": "Found 5 servers",
           "action": "scrape_complete",
-          "timestamp": "2025-07-04T22:44:35.401438",
+          "timestamp": "2025-07-04T22:26:39.394995",
           "game_name": "[\ud83c\udf2e] Steal a Brainrot - RBXServers"
         }
       ],
@@ -81,8 +81,8 @@
     }
   },
   "metadata": {
-    "created_at": "2025-07-04T22:44:35.401764",
-    "last_updated": "2025-07-04T22:44:35.401770",
+    "created_at": "2025-07-04T22:26:39.396942",
+    "last_updated": "2025-07-04T22:26:39.396946",
     "total_users": 1,
     "total_servers": 5
   }
