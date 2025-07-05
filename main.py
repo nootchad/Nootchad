@@ -22,6 +22,7 @@ from discord.ext import commands
 from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
 from report_system import ServerReportSystem
+from rbxserversbot import setup_roblox_control_commands
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -2329,6 +2330,9 @@ report_system = ServerReportSystem()
 # Set report system reference in scraper
 scraper.report_system = report_system
 
+# Setup Roblox control commands
+roblox_control_commands = None
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -2426,6 +2430,14 @@ async def on_ready():
 
     # Verification system is now manual-based, no API needed
     logger.info("✅ Sistema de verificación manual inicializado exitosamente")
+
+    # Setup Roblox control commands
+    global roblox_control_commands
+    try:
+        roblox_control_commands = setup_roblox_control_commands(bot, remote_control)
+        logger.info("🤖 Comandos de control remoto de Roblox configurados")
+    except Exception as e:
+        logger.error(f"❌ Error configurando comandos de control remoto: {e}")
 
     # Sync slash commands after bot is ready
     try:
