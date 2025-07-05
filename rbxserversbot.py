@@ -108,9 +108,17 @@ class RobloxControlCommands:
                     lua_script=lua_script
                 )
 
-                if hasattr(response, 'status') and response.status == 200:
-                    response_data = await response.json()
-                    command_id = response_data.get('command_id')
+                # El response ya es un web.Response con los datos, no necesita .json()
+                if response and hasattr(response, '_body'):
+                    # Extraer el command_id directamente de los comandos activos
+                    # Buscar el comando más reciente para este usuario
+                    command_id = None
+                    current_time = asyncio.get_event_loop().time()
+                    for cmd_id, cmd_data in self.remote_control.active_commands.items():
+                        if (cmd_data.get('action') == action and 
+                            abs(cmd_data.get('timestamp', 0) - current_time) < 10):  # Último comando en 10 segundos
+                            command_id = cmd_id
+                            break
 
                     # Crear embed de confirmación
                     embed = discord.Embed(
@@ -636,42 +644,7 @@ end
         else:
             return kwargs.get('custom_script', 'print("Comando ejecutado por RbxServers")')
 
-    async def send_command_to_roblox(self, action, server_link=None, target_user=None, target_script='any', message=None, lua_script=None):
-        """Enviar comando a script de Roblox"""
-        command_id = f"cmd_{int(asyncio.get_event_loop().time())}_{secrets.token_hex(4)}"
-
-        # Generar script Lua automáticamente si no se proporciona uno
-        if not lua_script and action in ["teleport", "chat", "follow", "dance"]:
-            lua_script = self.generate_lua_script(action, 
-                                                target_user=target_user, 
-                                                message=message,
-                                                server_link=server_link)
-
-        command_data = {
-            'command_id': command_id,
-            'action': action,
-            'server_link': server_link,
-            'target_user': target_user,
-            'target_script': target_script,
-            'message': message or 'bot by RbxServers **Testing** 🤖',
-            'lua_script': lua_script,
-            'timestamp': asyncio.get_event_loop().time(),
-            'status': 'pending'
-        }
-
-        # Enviar comando al servidor
-        async with aiohttp.ClientSession() as session:
-            try:
-                url = f'http://localhost:{REMOTE_CONTROL_PORT}/command'
-                async with session.post(url, json=command_data, headers={'X-Webhook-Secret': WEBHOOK_SECRET}) as resp:
-                    return resp
-            except Exception as e:
-                logger.error(f"Error sending command: {e}")
-                return None
-
-    def get_command_status(self, command_id):
-        """Obtener el estado de un comando"""
-        return self.active_commands.get(command_id)
+    
 
 # Función para registrar los comandos en el bot principal
 def setup_roblox_control_commands(bot, remote_control):
