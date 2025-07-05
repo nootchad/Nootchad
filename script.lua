@@ -1,569 +1,232 @@
-
--- RbxServers Remote Control Script
--- Ejecutor-compatible version (KRNL, Synapse, etc.)
--- Conecta con el bot de Discord para recibir comandos remotos
+-- RbxServers Remote Control Script (Codex Compatible)
+-- Version simplificada para ejecutores básicos
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local RunService = game:GetService("RunService")
-local TextChatService = game:GetService("TextChatService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Configuración
-local CONFIG = {
-    DISCORD_BOT_URL = "https://88dc778a-5e3f-42c2-9003-e39e90eef002-00-hscv33ahp0ok.spock.replit.dev",
-    SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999)),
-    ROBLOX_USERNAME = "RbxServersBot",
-    HEARTBEAT_INTERVAL = 15,
-    CHECK_COMMANDS_INTERVAL = 8,
-    MAX_RETRIES = 3
-}
+-- Configuración simple
+local BOT_URL = "https://88dc778a-5e3f-42c2-9003-e39e90eef002-00-hscv33ahp0ok.spock.replit.dev"
+local SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999))
+local USERNAME = "RbxServersBot"
 
--- Variables globales
+-- Variables
 local isConnected = false
-local currentTargetUser = nil
-local lastHeartbeat = 0
-local lastCommandCheck = 0
-local httpEnabled = false
+local currentTarget = nil
 
--- Función para verificar si estamos en un ejecutor que soporta HTTP
-local function checkExecutorHTTP()
-    local executors = {
-        "KRNL", "Synapse", "Script-Ware", "Sentinel", "ProtoSmasher", 
-        "Sirhurt", "Fluxus", "Oxygen U", "JJSploit", "WeAreDevs", "Delta"
-    }
+-- Función HTTP simple
+local function httpRequest(method, url, data)
+    local headers = {["Content-Type"] = "application/json"}
+    local body = ""
 
-    -- Verificar variables globales de ejecutores conocidos
-    for _, executor in pairs(executors) do
-        if _G[executor] or getgenv()[executor] then
-            print("✅ Ejecutor detectado: " .. executor)
-            return true
-        end
+    if data then
+        body = HttpService:JSONEncode(data)
     end
-
-    -- Verificar funciones específicas de ejecutores
-    if syn and syn.request then
-        print("✅ Synapse X detected - usando syn.request")
-        return "synapse"
-    elseif delta and delta.request then
-        print("✅ Delta Executor detected - usando delta.request")
-        return "delta"
-    elseif http_request then
-        print("✅ HTTP request function available")
-        return "generic"
-    elseif http and http.request then
-        print("✅ HTTP request function available")
-        return "request"
-    elseif request then
-        print("✅ Request function available")
-        return "request"
-    end
-
-    return false
-end
-
--- Función para hacer HTTP requests usando funciones de ejecutor
-local function makeExecutorRequest(method, url, data, headers)
-    headers = headers or {}
-    headers["Content-Type"] = "application/json"
 
     local requestData = {
         Url = url,
         Method = method,
-        Headers = headers
+        Headers = headers,
+        Body = body
     }
 
-    if data then
-        local success, encoded = pcall(function()
-            return HttpService:JSONEncode(data)
-        end)
-        if success then
-            requestData.Body = encoded
-        end
-    end
-
-    -- Intentar diferentes métodos de HTTP según el ejecutor
-    local httpFunction = nil
-
-    if syn and syn.request then
-        httpFunction = syn.request
-    elseif delta and delta.request then
-        httpFunction = delta.request
-    elseif http_request then
-        httpFunction = http_request  
-    elseif http and http.request then
-        httpFunction = http.request
-    elseif request then
-        httpFunction = request
-    end
-
-    if not httpFunction then
-        warn("❌ No HTTP function available in this executor")
-        return nil
-    end
-
-    for attempt = 1, CONFIG.MAX_RETRIES do
-        print("🔄 HTTP Request attempt " .. attempt .. " to: " .. url)
-
-        local success, result = pcall(function()
-            return httpFunction(requestData)
-        end)
-
-        if success and result then
-            if result.Success or result.StatusCode == 200 then
-                print("✅ HTTP Request successful")
-                local body = result.Body or result.body or ""
-
-                local decodeSuccess, responseData = pcall(function()
-                    return HttpService:JSONDecode(body)
-                end)
-
-                if decodeSuccess then
-                    return responseData
-                else
-                    return {status = "success", body = body}
-                end
-            else
-                warn("❌ HTTP Request failed with status: " .. tostring(result.StatusCode or result.status_code or "unknown"))
-            end
+    -- Usar función HTTP del ejecutor
+    local success, result = pcall(function()
+        if request then
+            return request(requestData)
+        elseif http_request then
+            return http_request(requestData)
+        elseif syn and syn.request then
+            return syn.request(requestData)
         else
-            warn("❌ HTTP Request error (attempt " .. attempt .. "): " .. tostring(result))
+            return nil
+        end
+    end)
 
-            if attempt < CONFIG.MAX_RETRIES then
-                wait(attempt * 2)
-            end
+    if success and result and result.Success then
+        local responseBody = result.Body or ""
+        local decodeSuccess, responseData = pcall(function()
+            return HttpService:JSONDecode(responseBody)
+        end)
+
+        if decodeSuccess then
+            return responseData
+        else
+            return {status = "success", body = responseBody}
         end
     end
 
-    return {status = "error", message = "All HTTP attempts failed"}
+    return nil
 end
 
--- Función para conectar con el bot de Discord
-local function connectToBot()
-    print("🔄 Conectando con bot de Discord...")
-    print("📡 URL: " .. CONFIG.DISCORD_BOT_URL .. "/roblox/connect")
-    print("🎮 Game ID: " .. tostring(game.PlaceId))
-    print("👤 Username: " .. CONFIG.ROBLOX_USERNAME)
+-- Conectar al bot
+local function connectBot()
+    print("🔄 Conectando...")
 
     local connectData = {
-        script_id = CONFIG.SCRIPT_ID,
-        roblox_username = CONFIG.ROBLOX_USERNAME,
+        script_id = SCRIPT_ID,
+        roblox_username = USERNAME,
         game_id = tostring(game.PlaceId),
-        timestamp = tick(),
-        game_name = game.Name or "Unknown Game"
+        timestamp = tick()
     }
 
-    print("📦 Enviando datos de conexión...")
-    local response = makeExecutorRequest("POST", CONFIG.DISCORD_BOT_URL .. "/roblox/connect", connectData)
+    local response = httpRequest("POST", BOT_URL .. "/roblox/connect", connectData)
 
     if response and response.status == "success" then
         isConnected = true
-        httpEnabled = true
-        print("✅ Conectado exitosamente al bot de Discord")
-        print("🆔 Script ID: " .. CONFIG.SCRIPT_ID)
+        print("✅ Conectado al bot")
         return true
     else
-        warn("❌ Error al conectar con bot de Discord")
-        if response then
-            warn("📋 Respuesta: " .. tostring(response.status or "unknown"))
-            if response.message then
-                warn("💬 Mensaje: " .. tostring(response.message))
-            end
-        end
+        print("❌ Error conectando")
         return false
     end
 end
 
--- Función para enviar heartbeat
+-- Enviar heartbeat
 local function sendHeartbeat()
     if not isConnected then return end
 
-    local player = Players.LocalPlayer
-    local status = player and "active_in_game" or "active"
-
-    local response = makeExecutorRequest("POST", CONFIG.DISCORD_BOT_URL .. "/roblox/heartbeat", {
-        script_id = CONFIG.SCRIPT_ID,
-        status = status,
-        timestamp = tick(),
-        current_target = currentTargetUser
+    local response = httpRequest("POST", BOT_URL .. "/roblox/heartbeat", {
+        script_id = SCRIPT_ID,
+        status = "active",
+        timestamp = tick()
     })
-
-    if response and response.status == "success" then
-        lastHeartbeat = tick()
-    end
 end
 
--- Función para enviar mensaje en el chat
-local function sendChatMessage(message)
-    local success = false
+-- Enviar mensaje en chat
+local function sendMessage(message)
+    local player = Players.LocalPlayer
+    if not player or not player.Character then return false end
 
-    -- Método 1: TextChatService (nuevo sistema)
-    if TextChatService then
-        local textChannel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-        if textChannel then
-            local success1, error1 = pcall(function()
-                textChannel:SendAsync(message)
-            end)
-            if success1 then
-                success = true
-                print("💬 Mensaje enviado via TextChatService: " .. message)
-            end
-        end
+    local head = player.Character:FindFirstChild("Head")
+    if head then
+        game:GetService("Chat"):Chat(head, message, Enum.ChatColor.Blue)
+        return true
     end
-
-    -- Método 2: Chat Legacy
-    if not success then
-        local Chat = game:GetService("Chat")
-        if Chat and Players.LocalPlayer.Character then
-            local head = Players.LocalPlayer.Character:FindFirstChild("Head")
-            if head then
-                local success2, error2 = pcall(function()
-                    Chat:Chat(head, message, Enum.ChatColor.Blue)
-                end)
-                if success2 then
-                    success = true
-                    print("💬 Mensaje enviado via Chat Legacy: " .. message)
-                end
-            end
-        end
-    end
-
-    -- Método 3: ReplicatedStorage Event
-    if not success then
-        local chatEvent = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-        if chatEvent then
-            local sayMessageRequest = chatEvent:FindFirstChild("SayMessageRequest")
-            if sayMessageRequest then
-                local success3, error3 = pcall(function()
-                    sayMessageRequest:FireServer(message, "All")
-                end)
-                if success3 then
-                    success = true
-                    print("💬 Mensaje enviado via ReplicatedStorage: " .. message)
-                end
-            end
-        end
-    end
-
-    return success
+    return false
 end
 
--- Función para seguir a un usuario
-local function followUser(username)
-    local targetPlayer = Players:FindFirstChild(username)
+-- Unirse a servidor por Job ID
+local function joinServer(placeId, jobId)
+    print("🚀 Uniéndose a servidor...")
+    print("Place ID: " .. tostring(placeId))
+    print("Job ID: " .. tostring(jobId))
 
-    if not targetPlayer then
-        warn("❌ Usuario " .. username .. " no encontrado en el servidor")
+    local numericPlaceId = tonumber(placeId)
+    if not numericPlaceId then
+        print("❌ Place ID inválido")
         return false
     end
 
-    currentTargetUser = username
-    print("👥 Siguiendo a usuario: " .. username)
-
-    local function startFollowing()
-        local player = Players.LocalPlayer
-        if not player or not player.Character then return end
-
-        local humanoid = player.Character:FindFirstChild("Humanoid")
-        if not humanoid then return end
-
-        if targetPlayer and targetPlayer.Character then
-            local targetPosition = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if targetPosition then
-                humanoid:MoveTo(targetPosition.Position)
-            end
-        end
+    local player = Players.LocalPlayer
+    if not player then
+        print("❌ Player no encontrado")
+        return false
     end
 
-    local followConnection
-    followConnection = RunService.Heartbeat:Connect(function()
-        if currentTargetUser == username then
-            startFollowing()
-        else
-            followConnection:Disconnect()
-        end
-    end)
-
-    return true
-end
-
--- Función para abrir enlace de servidor privado (solo funciona desde cliente)
-local function openPrivateServerLink(serverLink)
-    print("🔗 Abriendo enlace de servidor privado en navegador...")
-    print("🌐 Link: " .. serverLink)
-
-    -- Método 1: Usar OpenBrowserWindow si está disponible (algunos ejecutores)
-    if syn and syn.open_web_page then
-        local success, error = pcall(function()
-            syn.open_web_page(serverLink)
-        end)
-        if success then
-            print("✅ Enlace abierto exitosamente via Synapse")
-            return true, "Enlace abierto en navegador via Synapse"
-        end
-    end
-
-    -- Método 2: Copiar al portapapeles
-    if setclipboard then
-        local success, error = pcall(function()
-            setclipboard(serverLink)
-        end)
-        if success then
-            print("📋 Enlace copiado al portapapeles")
-            return true, "Enlace copiado al portapapeles - pégalo en tu navegador para unirte"
-        end
-    end
-
-    -- Método 3: Mostrar en consola para copiar manualmente
-    print("📋 ENLACE DEL SERVIDOR PRIVADO:")
-    print("🔗 " .. serverLink)
-    print("💡 Copia este enlace y pégalo en tu navegador para unirte al servidor")
-    
-    return true, "Enlace mostrado en consola - copia y pega en tu navegador"
-end
-
--- Función CORREGIDA para unirse a un servidor por Job ID
-local function joinServerByJobId(placeId, jobId)
-    print("🚀 Procesando unión por Job ID...")
-    print("🆔 Place ID: " .. tostring(placeId))
-    print("🎯 Job ID: " .. tostring(jobId))
-
-    -- Validar parámetros
-    if not placeId or not jobId then
-        print("❌ Parámetros inválidos: placeId o jobId faltante")
-        return false, "Parámetros inválidos"
-    end
-
-    -- Validar que placeId sea numérico
-    local numericPlaceId = tonumber(placeId)
-    if not numericPlaceId then
-        print("❌ Place ID debe ser numérico: " .. tostring(placeId))
-        return false, "Place ID inválido"
-    end
-
-    -- Validar que jobId sea string y no esté vacío
-    local stringJobId = tostring(jobId)
-    if stringJobId == "" or stringJobId == "nil" then
-        print("❌ Job ID inválido: " .. tostring(jobId))
-        return false, "Job ID inválido"
-    end
-
-    -- Verificar que el jugador local existe
-    local localPlayer = Players.LocalPlayer
-    if not localPlayer then
-        print("❌ No se pudo obtener el jugador local")
-        return false, "Jugador local no disponible"
-    end
-
-    print("✅ Parámetros validados correctamente")
-    print("✅ Place ID numérico: " .. tostring(numericPlaceId))
-    print("✅ Job ID string: " .. stringJobId)
-
-    -- Usar TeleportToPlaceInstance con parámetros correctos
-    local success, errorMessage = pcall(function()
-        -- La función correcta requiere: placeId (number), jobId (string), players (table)
-        local playersTable = {localPlayer}
-        TeleportService:TeleportToPlaceInstance(numericPlaceId, stringJobId, playersTable)
+    local success, err = pcall(function()
+        TeleportService:TeleportToPlaceInstance(numericPlaceId, jobId, {player})
     end)
 
     if success then
-        print("✅ Teleport por Job ID iniciado exitosamente!")
-        print("⏳ Conectando al servidor...")
-        return true, "Teleport iniciado - conectando al servidor"
+        print("✅ Teleport iniciado")
+        return true
     else
-        print("❌ Error en teleport por Job ID: " .. tostring(errorMessage))
-        
-        -- Intentar método alternativo si falla
-        print("🔄 Intentando método alternativo...")
-        local success2, errorMessage2 = pcall(function()
-            TeleportService:TeleportToPlaceInstance(numericPlaceId, stringJobId, {localPlayer}, nil, nil)
-        end)
-        
-        if success2 then
-            print("✅ Teleport alternativo exitoso!")
-            return true, "Teleport alternativo iniciado"
-        else
-            print("❌ Error en teleport alternativo: " .. tostring(errorMessage2))
-            return false, "Error en teleport: " .. tostring(errorMessage) .. " | Alt: " .. tostring(errorMessage2)
-        end
+        print("❌ Error teleport: " .. tostring(err))
+        return false
     end
 end
 
--- Función para ejecutar script de Lua automáticamente
-local function executeScript(luaScript)
-    print("📜 Ejecutando script automáticamente...")
-    
-    if not luaScript or luaScript == "" then
-        print("❌ Script vacío o inválido")
-        return false, "Script vacío"
-    end
-    
-    local success, errorMessage = pcall(function()
-        loadstring(luaScript)()
-    end)
-    
-    if success then
-        print("✅ Script ejecutado exitosamente")
-        return true, "Script ejecutado correctamente"
-    else
-        print("❌ Error ejecutando script: " .. tostring(errorMessage))
-        return false, "Error ejecutando script: " .. tostring(errorMessage)
-    end
-end
-
--- Función para procesar comandos
-local function processCommand(command)
-    print("📥 Procesando comando: " .. command.action)
+-- Procesar comandos
+local function processCommand(cmd)
+    print("📥 Comando: " .. cmd.action)
 
     local success = false
-    local resultMessage = ""
+    local result = ""
 
-    if command.action == "join_server" then
-        if command.server_link then
-            -- El server_link ahora contiene "PlaceId:XXXX|JobId:YYYY"
-            print("🔍 Parseando server_link: " .. command.server_link)
-            
-            local placeId, jobId = command.server_link:match("PlaceId:(%d+)|JobId:([%w%-]+)")
-            
-            if placeId and jobId then
-                print("📥 Comando join_server recibido:")
-                print("🆔 Place ID extraído: " .. placeId)
-                print("🎯 Job ID extraído: " .. jobId)
-                
-                success, resultMessage = joinServerByJobId(placeId, jobId)
-                
-                if success then
-                    -- Enviar mensaje después del teleport
-                    spawn(function()
-                        wait(2)
-                        sendChatMessage(command.message or "bot by RbxServers **Testing** 🤖")
-                    end)
-                end
-            else
-                print("❌ No se pudo parsear server_link: " .. command.server_link)
-                resultMessage = "Formato de server_link inválido - esperado PlaceId:XXXX|JobId:YYYY, recibido: " .. command.server_link
-            end
+    if cmd.action == "join_server" and cmd.server_link then
+        local placeId, jobId = cmd.server_link:match("PlaceId:(%d+)|JobId:([%w%-]+)")
+        if placeId and jobId then
+            success = joinServer(placeId, jobId)
+            result = success and "Teleport iniciado" or "Error en teleport"
         else
-            resultMessage = "Server link no proporcionado"
+            result = "Formato server_link inválido"
         end
 
-    elseif command.action == "execute_script" then
-        if command.lua_script then
-            print("🚀 Comando de ejecutar script recibido")
-            success, resultMessage = executeScript(command.lua_script)
-            
-            -- Enviar mensaje opcional después del script
-            if success and command.message then
-                spawn(function()
-                    wait(2)
-                    sendChatMessage(command.message)
-                end)
-            end
-        else
-            resultMessage = "No se proporcionó script de Lua para ejecutar"
-        end
+    elseif cmd.action == "send_message" then
+        success = sendMessage(cmd.message or "Bot by RbxServers 🤖")
+        result = success and "Mensaje enviado" or "Error enviando mensaje"
 
-    elseif command.action == "send_message" then
-        success = sendChatMessage(command.message or "bot by RbxServers **Testing** 🤖")
-        resultMessage = success and "Mensaje enviado en chat" or "Error al enviar mensaje"
-
-    elseif command.action == "follow_user" then
-        if command.target_user then
-            success = followUser(command.target_user)
-            resultMessage = success and ("Siguiendo a " .. command.target_user) or ("Error siguiendo a " .. command.target_user)
-        else
-            resultMessage = "Usuario objetivo no especificado"
-        end
+    elseif cmd.action == "execute_script" and cmd.lua_script then
+        local executeSuccess, executeErr = pcall(function()
+            loadstring(cmd.lua_script)()
+        end)
+        success = executeSuccess
+        result = success and "Script ejecutado" or ("Error: " .. tostring(executeErr))
 
     else
-        resultMessage = "Acción desconocida: " .. command.action
+        result = "Acción desconocida"
     end
 
-    -- Enviar resultado de vuelta al bot
-    local response = makeExecutorRequest("POST", CONFIG.DISCORD_BOT_URL .. "/roblox/command_result", {
-        command_id = command.command_id,
-        script_id = CONFIG.SCRIPT_ID,
+    -- Enviar resultado
+    httpRequest("POST", BOT_URL .. "/roblox/command_result", {
+        command_id = cmd.command_id,
+        script_id = SCRIPT_ID,
         success = success,
-        message = resultMessage,
+        message = result,
         timestamp = tick()
     })
 
-    if response then
-        print("📤 Resultado enviado: " .. (success and "✅" or "❌") .. " " .. resultMessage)
-    end
+    print("📤 Resultado: " .. result)
 end
 
--- Función para verificar comandos pendientes
-local function checkForCommands()
+-- Verificar comandos
+local function checkCommands()
     if not isConnected then return end
 
-    local response = makeExecutorRequest("GET", CONFIG.DISCORD_BOT_URL .. "/roblox/get_commands?script_id=" .. CONFIG.SCRIPT_ID)
+    local response = httpRequest("GET", BOT_URL .. "/roblox/get_commands?script_id=" .. SCRIPT_ID)
 
     if response and response.status == "success" and response.commands then
-        for _, command in pairs(response.commands) do
-            processCommand(command)
+        for _, cmd in pairs(response.commands) do
+            processCommand(cmd)
         end
     end
 end
 
--- Función principal de inicialización
-local function initialize()
-    print("🤖 RbxServers Remote Control Script iniciando...")
-    print("🔧 Script ID: " .. CONFIG.SCRIPT_ID)
-    print("👤 Username: " .. CONFIG.ROBLOX_USERNAME)
-    print("🌐 Bot URL: " .. CONFIG.DISCORD_BOT_URL)
-    print("🎮 Game ID: " .. tostring(game.PlaceId))
+-- Inicializar
+local function init()
+    print("🤖 RbxServers Bot iniciando...")
+    print("Script ID: " .. SCRIPT_ID)
 
-    -- Verificar ejecutor HTTP
-    local executorType = checkExecutorHTTP()
-    if not executorType then
-        warn("❌ Este ejecutor no soporta HTTP requests")
-        warn("💡 Ejecutores compatibles: KRNL, Synapse X, Script-Ware, Fluxus, Delta, etc.")
-        return false
+    -- Verificar HTTP
+    if not request and not http_request and not (syn and syn.request) then
+        print("❌ Ejecutor sin soporte HTTP")
+        return
     end
 
-    print("✅ Ejecutor compatible detectado")
+    print("✅ HTTP disponible")
 
-    -- Conectar con el bot
-    local connectionSuccess = false
-    for attempt = 1, 3 do
-        print("🔄 Intento de conexión " .. attempt .. "/3")
-
-        local success, result = pcall(connectToBot)
-
-        if success and result then
-            connectionSuccess = true
-            break
-        else
-            warn("❌ Intento " .. attempt .. " falló")
-            if attempt < 3 then
-                wait(3)
-            end
-        end
-    end
-
-    if connectionSuccess then
-        print("🟢 Sistema de control remoto activado exitosamente")
+    -- Conectar
+    if connectBot() then
+        print("🟢 Sistema activo")
 
         -- Loop principal
         spawn(function()
+            local lastHeartbeat = 0
+            local lastCommandCheck = 0
+
             while isConnected do
-                local success, err = pcall(function()
-                    local currentTime = tick()
+                local currentTime = tick()
 
-                    if currentTime - lastHeartbeat >= CONFIG.HEARTBEAT_INTERVAL then
-                        sendHeartbeat()
-                    end
+                if currentTime - lastHeartbeat >= 15 then
+                    sendHeartbeat()
+                    lastHeartbeat = currentTime
+                end
 
-                    if currentTime - lastCommandCheck >= CONFIG.CHECK_COMMANDS_INTERVAL then
-                        checkForCommands()
-                        lastCommandCheck = currentTime
-                    end
-                end)
-
-                if not success then
-                    warn("⚠️ Error en loop principal: " .. tostring(err))
+                if currentTime - lastCommandCheck >= 8 then
+                    checkCommands()
+                    lastCommandCheck = currentTime
                 end
 
                 wait(2)
@@ -572,47 +235,23 @@ local function initialize()
 
         -- Mensaje de confirmación
         wait(3)
-        spawn(function()
-            sendChatMessage("🤖 Bot de RbxServers conectado y listo (FIXED)")
-        end)
+        sendMessage("🤖 Bot RbxServers conectado (FIXED)")
 
     else
-        warn("💥 No se pudo conectar con el bot de Discord")
-        warn("🔧 Verifica que:")
-        warn("   • El bot de Discord esté ejecutándose")
-        warn("   • Estés usando la cuenta RbxServersBot")
-        warn("   • Tu ejecutor tenga HTTP habilitado")
+        print("❌ Error en conexión")
     end
 end
 
--- Manejar desconexión
-Players.PlayerRemoving:Connect(function(player)
-    if player == Players.LocalPlayer then
-        isConnected = false
-    end
-end)
-
--- Inicializar
-local function safeInitialize()
-    local success, err = pcall(initialize)
-    if not success then
-        warn("❌ Error en inicialización: " .. tostring(err))
-        wait(5)
-        print("🔄 Reintentando inicialización...")
-        safeInitialize()
-    end
-end
-
+-- Verificar player y ejecutar
 if Players.LocalPlayer then
-    safeInitialize()
+    init()
 else
     Players.PlayerAdded:Connect(function(player)
         if player == Players.LocalPlayer then
-            safeInitialize()
+            init()
         end
     end)
 end
 
-print("✅ Script de control remoto CORREGIDO para ejecutores cargado")
-print("🔧 ARREGLADO: Error de teleport 'Unable to cast value to Object'")
-print("🌐 URL: https://88dc778a-5e3f-42c2-9003-e39e90eef002-00-hscv33ahp0ok.spock.replit.dev")
+print("✅ Script cargado para Codex Executor")
+print("🌐 URL: " .. BOT_URL)
