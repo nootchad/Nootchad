@@ -12,7 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Configuración
 local CONFIG = {
-    DISCORD_BOT_URL = "https://ff9f04a0-22b8-4ac1-87a4-ddc8f597fd48-00-2rxpz3sa0pa8b.janeway.replit.dev",
+    DISCORD_BOT_URL = "https://88dc778a-5e3f-42c2-9003-e39e90eef002-00-hscv33ahp0ok.spock.replit.dev",
     SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999)),
     ROBLOX_USERNAME = "RbxServersBot",
     HEARTBEAT_INTERVAL = 15,
@@ -615,4 +615,4 @@ end
 
 print("✅ Script de control remoto CORREGIDO para ejecutores cargado")
 print("🔧 ARREGLADO: Error de teleport 'Unable to cast value to Object'")
-print("🌐 URL: https://ff9f04a0-22b8-4ac1-87a4-ddc8f597fd48-00-2rxpz3sa0pa8b.janeway.replit.dev")
+print("🌐 URL: https://88dc778a-5e3f-42c2-9003-e39e90eef002-00-hscv33ahp0ok.spock.replit.dev")
