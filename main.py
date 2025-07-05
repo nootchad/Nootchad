@@ -182,8 +182,13 @@ class RobloxRemoteControl:
             if script_id in self.connected_scripts:
                 # Buscar comandos pendientes para este script
                 pending_commands = []
+                commands_to_mark_sent = []
+                
                 for cmd_id, cmd_data in list(self.active_commands.items()):
-                    if cmd_data.get('target_script') == script_id or cmd_data.get('target_script') == 'any':
+                    # Solo enviar comandos que están 'pending', no los ya 'sent'
+                    if (cmd_data.get('status') == 'pending' and 
+                        (cmd_data.get('target_script') == script_id or cmd_data.get('target_script') == 'any')):
+                        
                         command_payload = {
                             'command_id': cmd_id,
                             'action': cmd_data['action'],
@@ -201,18 +206,27 @@ class RobloxRemoteControl:
                             logger.info(f"⚠️ Comando {cmd_id} sin script Lua")
                         
                         pending_commands.append(command_payload)
-                        # Marcar como enviado
-                        cmd_data['status'] = 'sent'
-                        logger.info(f"✅ Comando {cmd_id} marcado como enviado con payload completo")
+                        commands_to_mark_sent.append(cmd_id)
+                        
+                        logger.info(f"📨 Comando {cmd_id} ({cmd_data['action']}) preparado para envío a script {script_id}")
+                
+                # Marcar comandos como enviados DESPUÉS de crear la respuesta
+                for cmd_id in commands_to_mark_sent:
+                    if cmd_id in self.active_commands:
+                        self.active_commands[cmd_id]['status'] = 'sent'
+                        logger.info(f"✅ Comando {cmd_id} marcado como enviado")
                 
                 if pending_commands:
-                    logger.info(f"📡 Enviando {len(pending_commands)} comandos a script {script_id}")
+                    logger.info(f"📡 Enviando {len(pending_commands)} comandos nuevos a script {script_id}")
+                else:
+                    logger.debug(f"📭 No hay comandos pendientes para script {script_id}")
                 
                 return web.json_response({
                     'status': 'success',
                     'commands': pending_commands
                 })
             else:
+                logger.warning(f"❌ Script {script_id} no está registrado")
                 return web.json_response({'status': 'error', 'message': 'Script not registered'}, status=404)
                 
         except Exception as e:
@@ -233,10 +247,12 @@ class RobloxRemoteControl:
                 self.active_commands[command_id]['result'] = message
                 self.active_commands[command_id]['completed_at'] = asyncio.get_event_loop().time()
                 
-                logger.info(f"📝 Command {command_id} result: {'✅' if success else '❌'} - {message}")
+                action = self.active_commands[command_id].get('action', 'unknown')
+                logger.info(f"📝 Command {command_id} ({action}) result from {script_id}: {'✅' if success else '❌'} - {message}")
                 
-                return web.json_response({'status': 'success'})
+                return web.json_response({'status': 'success', 'message': 'Result recorded'})
             else:
+                logger.warning(f"❌ Result received for unknown command {command_id} from script {script_id}")
                 return web.json_response({'status': 'error', 'message': 'Command not found'}, status=404)
                 
         except Exception as e:

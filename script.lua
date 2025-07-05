@@ -134,14 +134,32 @@ end
 
 -- Verificar comandos pendientes
 local function checkCommands()
-    if not isConnected then return end
+    if not isConnected then 
+        print("❌ No conectado, saltando verificación de comandos")
+        return 
+    end
 
+    print("🔍 Verificando comandos pendientes para script:", SCRIPT_ID)
     local response = httpRequest("GET", BOT_URL .. "/roblox/get_commands?script_id=" .. SCRIPT_ID)
 
-    if response and response.status == "success" and response.commands then
-        for _, cmd in pairs(response.commands) do
-            processCommand(cmd)
+    if response then
+        print("📥 Respuesta recibida del servidor:", HttpService:JSONEncode(response))
+        
+        if response.status == "success" then
+            if response.commands and #response.commands > 0 then
+                print("📨 Comandos recibidos:", #response.commands)
+                for i, cmd in pairs(response.commands) do
+                    print("🎯 Procesando comando", i, ":", cmd.action, "ID:", cmd.command_id)
+                    processCommand(cmd)
+                end
+            else
+                print("📭 No hay comandos pendientes")
+            end
+        else
+            print("❌ Error en respuesta del servidor:", response.message or "Sin mensaje")
         end
+    else
+        print("❌ No se recibió respuesta del servidor")
     end
 end
 
