@@ -18,16 +18,21 @@ local function httpRequest(method, url, data)
     local headers = {["Content-Type"] = "application/json"}
     local body = ""
 
-    if data then
+    -- Solo agregar body para métodos que lo permiten
+    if data and (method == "POST" or method == "PUT" or method == "PATCH") then
         body = HttpService:JSONEncode(data)
     end
 
     local requestData = {
         Url = url,
         Method = method,
-        Headers = headers,
-        Body = body
+        Headers = headers
     }
+    
+    -- Solo agregar Body si no es GET o HEAD
+    if method ~= "GET" and method ~= "HEAD" and body ~= "" then
+        requestData.Body = body
+    end
 
     print("🌐 Haciendo petición HTTP:", method, url)
 

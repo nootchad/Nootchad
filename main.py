@@ -94,10 +94,11 @@ class RobloxRemoteControl:
         # Ruta raíz para información del bot
         self.app.router.add_get('/', self.handle_root)
         
-        # Rutas para el script de Roblox
+        # Rutas para el script de Roblox con manejo explícito de métodos
         self.app.router.add_post('/roblox/connect', self.handle_script_connect)
         self.app.router.add_post('/roblox/heartbeat', self.handle_heartbeat)
         self.app.router.add_get('/roblox/get_commands', self.handle_get_commands)
+        self.app.router.add_options('/roblox/get_commands', self.handle_options)
         self.app.router.add_post('/roblox/command_result', self.handle_command_result)
         self.app.router.add_get('/roblox/get_join_script', self.handle_get_join_script)
         
@@ -181,6 +182,14 @@ class RobloxRemoteControl:
             script_id = request.query.get('script_id', 'unknown')
             logger.info(f"🔍 Script {script_id} solicitando comandos...")
             
+            # Verificar método HTTP
+            if request.method != 'GET':
+                logger.warning(f"⚠️ Método incorrecto para get_commands: {request.method}")
+                return web.json_response({
+                    'status': 'error',
+                    'message': 'Method not allowed'
+                }, status=405)
+            
             # Siempre responder, incluso si el script no está registrado
             pending_commands = []
             commands_to_mark_sent = []
@@ -223,26 +232,47 @@ class RobloxRemoteControl:
             else:
                 logger.debug(f"📭 No hay comandos pendientes para script {script_id}")
             
-            # RESPUESTA SIMPLIFICADA Y GARANTIZADA
+            # RESPUESTA SIMPLIFICADA Y GARANTIZADA para GET
             response_data = {
                 'status': 'success',
-                'commands': pending_commands
+                'commands': pending_commands,
+                'server_time': asyncio.get_event_loop().time()
             }
             
-            logger.info(f"📤 Enviando respuesta a script {script_id}: {len(pending_commands)} comandos")
-            return web.json_response(response_data)
+            logger.info(f"📤 Enviando respuesta GET a script {script_id}: {len(pending_commands)} comandos")
+            
+            # Asegurar que no hay body en GET response y usar headers correctos
+            return web.json_response(
+                response_data,
+                status=200,
+                headers={
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                }
+            )
                 
         except Exception as e:
             logger.error(f"❌ Error crítico en get_commands: {e}")
             import traceback
             logger.error(f"❌ Traceback completo: {traceback.format_exc()}")
             
-            # Respuesta de emergencia simplificada
+            # Respuesta de emergencia simplificada para GET
             emergency_response = {
-                'status': 'success',
+                'status': 'error',
+                'message': 'Internal server error',
                 'commands': []
             }
-            return web.json_response(emergency_response)
+            return web.json_response(
+                emergency_response,
+                status=500,
+                headers={
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
+                }
+            )
     
     async def handle_command_result(self, request):
         """Recibir resultado de comando ejecutado"""
@@ -320,6 +350,18 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
                 'message': str(e)
             }, status=500)
 
+    async def handle_options(self, request):
+        """Manejar peticiones OPTIONS para CORS"""
+        return web.Response(
+            status=200,
+            headers={
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Max-Age': '86400'
+            }
+        )
+    
     async def handle_root(self, request):
         """Manejar ruta raíz - mostrar información del bot"""
         try:
