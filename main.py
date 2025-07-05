@@ -246,7 +246,6 @@ class RobloxRemoteControl:
                 response_data,
                 status=200,
                 headers={
-                    'Content-Type': 'application/json',
                     'Cache-Control': 'no-cache',
                     'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -269,7 +268,6 @@ class RobloxRemoteControl:
                 emergency_response,
                 status=500,
                 headers={
-                    'Content-Type': 'application/json',
                     'Cache-Control': 'no-cache'
                 }
             )
