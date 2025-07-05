@@ -13,7 +13,7 @@ local USERNAME = "RbxServersBot"
 local isConnected = false
 local currentTarget = nil
 
--- Función HTTP mejorada
+-- Función HTTP mejorada con mejor logging
 local function httpRequest(method, url, data)
     local headers = {["Content-Type"] = "application/json"}
     local body = ""
@@ -29,6 +29,8 @@ local function httpRequest(method, url, data)
         Body = body
     }
 
+    print("🌐 Haciendo petición HTTP:", method, url)
+
     local success, result = pcall(function()
         if request then
             return request(requestData)
@@ -37,21 +39,42 @@ local function httpRequest(method, url, data)
         elseif syn and syn.request then
             return syn.request(requestData)
         else
+            print("❌ No hay función HTTP disponible")
             return nil
         end
     end)
 
-    if success and result and result.Success then
-        local responseBody = result.Body or ""
-        local decodeSuccess, responseData = pcall(function()
-            return HttpService:JSONDecode(responseBody)
-        end)
+    if success and result then
+        print("📡 Resultado HTTP recibido:")
+        print("  - Success:", tostring(result.Success))
+        print("  - StatusCode:", tostring(result.StatusCode))
+        
+        if result.Success then
+            local responseBody = result.Body or ""
+            print("  - Body length:", tostring(#responseBody))
+            print("  - Body preview:", tostring(responseBody):sub(1, 100))
+            
+            if responseBody ~= "" then
+                local decodeSuccess, responseData = pcall(function()
+                    return HttpService:JSONDecode(responseBody)
+                end)
 
-        if decodeSuccess then
-            return responseData
+                if decodeSuccess then
+                    print("✅ JSON decodificado exitosamente")
+                    return responseData
+                else
+                    print("⚠️ Error decodificando JSON, devolviendo respuesta raw")
+                    return {status = "success", body = responseBody}
+                end
+            else
+                print("⚠️ Respuesta vacía del servidor")
+                return {status = "success", commands = {}}
+            end
         else
-            return {status = "success", body = responseBody}
+            print("❌ Request no exitoso - StatusCode:", tostring(result.StatusCode))
         end
+    else
+        print("❌ Error en petición HTTP:", tostring(result))
     end
 
     return nil
@@ -143,22 +166,51 @@ local function checkCommands()
     local response = httpRequest("GET", BOT_URL .. "/roblox/get_commands?script_id=" .. SCRIPT_ID)
 
     if response then
-        print("📥 Respuesta recibida del servidor")
+        print("📥 RESPUESTA RECIBIDA DEL SERVIDOR:")
+        print("📋 Tipo de respuesta:", type(response))
         
-        -- Verificar si la respuesta tiene status success o es válida
-        if response.status == "success" or response.commands then
-            local commands = response.commands or {}
-            if #commands > 0 then
-                print("📨 Comandos recibidos:", #commands)
-                for i, cmd in pairs(commands) do
-                    print("🎯 Procesando comando", i, ":", cmd.action, "ID:", cmd.command_id)
-                    processCommand(cmd)
+        -- Debug: mostrar la respuesta completa
+        if type(response) == "table" then
+            print("📊 Campos en respuesta:")
+            for key, value in pairs(response) do
+                print("  - " .. tostring(key) .. ": " .. tostring(type(value)))
+                if key == "commands" and type(value) == "table" then
+                    print("    📨 Número de comandos: " .. tostring(#value))
+                end
+            end
+        end
+        
+        -- Manejo mejorado de la respuesta
+        if type(response) == "table" then
+            local commands = response.commands
+            
+            if type(commands) == "table" then
+                if #commands > 0 then
+                    print("✅ Comandos recibidos:", #commands)
+                    for i, cmd in pairs(commands) do
+                        if type(cmd) == "table" and cmd.command_id and cmd.action then
+                            print("🎯 Procesando comando", i, ":", cmd.action, "ID:", cmd.command_id)
+                            processCommand(cmd)
+                        else
+                            print("⚠️ Comando inválido en posición", i)
+                        end
+                    end
+                else
+                    print("📭 No hay comandos pendientes")
                 end
             else
-                print("📭 No hay comandos pendientes")
+                print("⚠️ Campo 'commands' no es una tabla válida")
+            end
+            
+            if response.status then
+                print("📊 Status del servidor:", response.status)
+            end
+            
+            if response.message then
+                print("💬 Mensaje del servidor:", response.message)
             end
         else
-            print("⚠️ Respuesta del servidor:", response.message or response.error or "Formato inesperado")
+            print("❌ Respuesta no es una tabla válida")
         end
     else
         print("❌ No se recibió respuesta del servidor (conexión/timeout)")
