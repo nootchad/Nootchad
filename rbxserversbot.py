@@ -349,14 +349,18 @@ TeleportService:TeleportToPlaceInstance({place_id}, "{job_id}", player)
 '''
 
         elif action == "chat":
-            message = kwargs.get('message', 'Hello from RbxServers!')
-            return f'''
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-if player.Character and player.Character:FindFirstChild("Head") then
-    game:GetService("Chat"):Chat(player.Character.Head, "{message}", Enum.ChatColor.Blue)
-end
-'''
+            message = kwargs.get('message', 'hola mundo')
+            return f'''local CHAT_MESSAGE = "{message}"
+local CHANNEL = "RBXGeneral"
+
+local TextChatService = game:GetService("TextChatService")
+local channel = TextChatService.TextChannels:FindFirstChild(CHANNEL)
+
+if channel then
+    channel:SendAsync(CHAT_MESSAGE)
+else
+    warn("No se encontró el canal de chat:", CHANNEL)
+end'''
 
         elif action == "follow":
             target_user = kwargs.get('target_user', '')
