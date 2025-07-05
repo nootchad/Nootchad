@@ -82,13 +82,20 @@ class RobloxControlCommands:
                     await interaction.followup.send(embed=embed, ephemeral=True)
                     return
 
-                # Enviar comando al script de Roblox
+                # Generar script Lua automáticamente
+                lua_script = self.generate_lua_script(action, 
+                                                    target_user=target_user, 
+                                                    message=message,
+                                                    server_link=server_link)
+
+                # Enviar comando al script de Roblox con script Lua incluido
                 command_data = {
                     "action": action,
                     "server_link": server_link,
                     "target_user": target_user,
                     "target_script": "any",
-                    "message": message or f"Comando ejecutado por {interaction.user.name}"
+                    "message": message or f"Comando ejecutado por {interaction.user.name}",
+                    "lua_script": lua_script
                 }
 
                 # Usar el sistema de control remoto existente
@@ -97,7 +104,8 @@ class RobloxControlCommands:
                     server_link=server_link,
                     target_user=target_user,
                     target_script="any",
-                    message=message or f"Comando ejecutado por {interaction.user.name}"
+                    message=message or f"Comando ejecutado por {interaction.user.name}",
+                    lua_script=lua_script
                 )
 
                 if hasattr(response, 'status') and response.status == 200:
@@ -160,6 +168,133 @@ class RobloxControlCommands:
                 embed = discord.Embed(
                     title="❌ Error Interno",
                     description=f"Ocurrió un error al procesar el comando: {str(e)[:200]}",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+
+        # Comando para ejecutar setup completo automáticamente
+        @self.bot.tree.command(name="setup_roblox", description="[OWNER ONLY] Setup completo: enviar script de conexión + script principal")
+        async def setup_roblox_command(interaction: discord.Interaction):
+            """Enviar script de conexión automática y luego el script principal"""
+            user_id = str(interaction.user.id)
+
+            if user_id != DISCORD_OWNER_ID:
+                embed = discord.Embed(
+                    title="❌ Acceso Denegado",
+                    description="Este comando solo puede ser usado por el owner del bot.",
+                    color=0xff0000
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            await interaction.response.defer(ephemeral=True)
+
+            try:
+                # Paso 1: Enviar script de auto-conexión
+                auto_connect_script = self.generate_lua_script("auto_connect")
+                
+                await self.remote_control.send_command_to_roblox(
+                    action="execute_script",
+                    lua_script=auto_connect_script,
+                    message="Script de auto-conexión enviado"
+                )
+
+                # Esperar un momento para que se conecte
+                await asyncio.sleep(3)
+
+                # Paso 2: Enviar script principal
+                script_content = ""
+                try:
+                    with open("script.lua", "r", encoding="utf-8") as f:
+                        script_content = f.read()
+                except Exception as e:
+                    logger.error(f"Error leyendo script.lua: {e}")
+
+                if script_content:
+                    await self.remote_control.send_command_to_roblox(
+                        action="execute_script",
+                        lua_script=script_content,
+                        message="Script principal ejecutado después de conexión"
+                    )
+
+                embed = discord.Embed(
+                    title="✅ Setup Completo Enviado",
+                    description="Se enviaron ambos scripts: conexión automática y script principal.",
+                    color=0x00ff88
+                )
+                embed.add_field(name="🔗 Paso 1", value="Script de auto-conexión enviado", inline=False)
+                embed.add_field(name="🤖 Paso 2", value=f"Script principal enviado ({len(script_content)} chars)", inline=False)
+                embed.add_field(name="⏱️ Estado", value="Ejecutándose automáticamente", inline=False)
+
+                await interaction.followup.send(embed=embed, ephemeral=True)
+
+            except Exception as e:
+                logger.error(f"Error in setup_roblox command: {e}")
+                embed = discord.Embed(
+                    title="❌ Error en Setup",
+                    description=f"Error ejecutando setup automático: {str(e)[:200]}",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+
+        # Comando para ejecutar script principal automáticamente
+        @self.bot.tree.command(name="auto_script", description="[OWNER ONLY] Ejecutar script principal de Roblox automáticamente")
+        async def auto_script_command(interaction: discord.Interaction):
+            """Ejecutar el script principal automáticamente"""
+            user_id = str(interaction.user.id)
+
+            if user_id != DISCORD_OWNER_ID:
+                embed = discord.Embed(
+                    title="❌ Acceso Denegado",
+                    description="Este comando solo puede ser usado por el owner del bot.",
+                    color=0xff0000
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            await interaction.response.defer(ephemeral=True)
+
+            try:
+                # Leer el script principal de script.lua
+                script_content = ""
+                try:
+                    with open("script.lua", "r", encoding="utf-8") as f:
+                        script_content = f.read()
+                except Exception as e:
+                    logger.error(f"Error leyendo script.lua: {e}")
+
+                if not script_content:
+                    embed = discord.Embed(
+                        title="❌ Script No Encontrado",
+                        description="No se pudo cargar el script desde script.lua",
+                        color=0xff0000
+                    )
+                    await interaction.followup.send(embed=embed, ephemeral=True)
+                    return
+
+                # Enviar comando para ejecutar el script principal
+                response = await self.remote_control.send_command_to_roblox(
+                    action="execute_script",
+                    lua_script=script_content,
+                    message="Script principal ejecutado automáticamente"
+                )
+
+                embed = discord.Embed(
+                    title="✅ Script Principal Enviado",
+                    description="El script principal de Roblox ha sido enviado para ejecución automática.",
+                    color=0x00ff88
+                )
+                embed.add_field(name="📁 Archivo", value="`script.lua`", inline=True)
+                embed.add_field(name="📊 Tamaño", value=f"{len(script_content)} caracteres", inline=True)
+                embed.add_field(name="🎮 Acción", value="execute_script", inline=True)
+
+                await interaction.followup.send(embed=embed, ephemeral=True)
+
+            except Exception as e:
+                logger.error(f"Error in auto_script command: {e}")
+                embed = discord.Embed(
+                    title="❌ Error",
+                    description=f"Error ejecutando script automático: {str(e)[:200]}",
                     color=0xff0000
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -396,6 +531,105 @@ if player.Character and player.Character:FindFirstChild("Humanoid") then
     track:Play()
     wait(10)
     track:Stop()
+end
+'''
+
+        elif action == "auto_connect":
+            return '''
+-- Script automático de conexión RbxServers
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local RunService = game:GetService("RunService")
+
+-- Configuración
+local BOT_URL = "https://bafd2949-5867-4fe4-9819-094f8e85b36b-00-1g3uf5hqr1q6d.kirk.replit.dev"
+local SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999))
+local USERNAME = "RbxServersBot"
+
+-- Variables
+local isConnected = false
+local currentTarget = nil
+
+-- Función HTTP
+local function httpRequest(method, url, data)
+    local headers = {["Content-Type"] = "application/json"}
+    local body = ""
+
+    if data then
+        body = HttpService:JSONEncode(data)
+    end
+
+    local requestData = {
+        Url = url,
+        Method = method,
+        Headers = headers,
+        Body = body
+    }
+
+    local success, result = pcall(function()
+        if request then
+            return request(requestData)
+        elseif http_request then
+            return http_request(requestData)
+        elseif syn and syn.request then
+            return syn.request(requestData)
+        else
+            return nil
+        end
+    end)
+
+    if success and result and result.Success then
+        local responseBody = result.Body or ""
+        local decodeSuccess, responseData = pcall(function()
+            return HttpService:JSONDecode(responseBody)
+        end)
+
+        if decodeSuccess then
+            return responseData
+        else
+            return {status = "success", body = responseBody}
+        end
+    end
+
+    return nil
+end
+
+-- Conectar al bot
+local function connectBot()
+    print("🔄 Conectando al bot...")
+
+    local connectData = {
+        script_id = SCRIPT_ID,
+        roblox_username = USERNAME,
+        game_id = tostring(game.PlaceId),
+        timestamp = tick()
+    }
+
+    local response = httpRequest("POST", BOT_URL .. "/roblox/connect", connectData)
+
+    if response and response.status == "success" then
+        isConnected = true
+        print("✅ Conectado al bot RbxServers")
+        return true
+    else
+        print("❌ Error conectando al bot")
+        return false
+    end
+end
+
+-- Inicializar conexión
+if connectBot() then
+    print("🤖 RbxServers Bot conectado automáticamente")
+    
+    -- Enviar mensaje de confirmación
+    spawn(function()
+        wait(2)
+        local player = Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChild("Head") then
+            game:GetService("Chat"):Chat(player.Character.Head, "🤖 Bot RbxServers conectado automáticamente", Enum.ChatColor.Green)
+        end
+    end)
 end
 '''
 

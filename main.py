@@ -184,17 +184,27 @@ class RobloxRemoteControl:
                 pending_commands = []
                 for cmd_id, cmd_data in list(self.active_commands.items()):
                     if cmd_data.get('target_script') == script_id or cmd_data.get('target_script') == 'any':
-                        pending_commands.append({
+                        command_payload = {
                             'command_id': cmd_id,
                             'action': cmd_data['action'],
                             'server_link': cmd_data.get('server_link'),
                             'target_user': cmd_data.get('target_user'),
                             'message': cmd_data.get('message', 'bot by RbxServers **Testing** 🤖'),
-                            'lua_script': cmd_data.get('lua_script'),
                             'timestamp': cmd_data['timestamp']
-                        })
+                        }
+                        
+                        # Incluir script Lua si está disponible
+                        if cmd_data.get('lua_script'):
+                            command_payload['lua_script'] = cmd_data['lua_script']
+                            logger.info(f"📤 Enviando script Lua con comando {cmd_id}")
+                        
+                        pending_commands.append(command_payload)
                         # Marcar como enviado
                         cmd_data['status'] = 'sent'
+                        logger.info(f"✅ Comando {cmd_id} marcado como enviado")
+                
+                if pending_commands:
+                    logger.info(f"📡 Enviando {len(pending_commands)} comandos a script {script_id}")
                 
                 return web.json_response({
                     'status': 'success',
