@@ -542,6 +542,36 @@ if player.Character and player.Character:FindFirstChild("Humanoid") then
 end
 '''
 
+        elif action == "rejoin":
+            return '''-- Script de Rejoin Simple para Roblox
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+print("Ejecutando rejoin...")
+TeleportService:Teleport(game.PlaceId, Player)'''
+
+        elif action == "jump":
+            return '''-- Script de Salto para Roblox
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+-- Verificar que el jugador existe
+if Player and Player.Character then
+    local character = Player.Character
+    local humanoid = character:FindFirstChild("Humanoid")
+
+    -- Verificar que el Humanoid existe
+    if humanoid then
+        print("Haciendo salto...")
+        humanoid.Jump = true
+    else
+        print("No se encontró el Humanoid")
+    end
+else
+    print("No se encontró el personaje")
+end'''
+
         elif action == "auto_connect":
             return '''
 -- Script automático de conexión RbxServers
