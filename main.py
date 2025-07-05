@@ -196,12 +196,14 @@ class RobloxRemoteControl:
                         # Incluir script Lua si está disponible
                         if cmd_data.get('lua_script'):
                             command_payload['lua_script'] = cmd_data['lua_script']
-                            logger.info(f"📤 Enviando script Lua con comando {cmd_id}")
+                            logger.info(f"📤 Enviando script Lua con comando {cmd_id} (tamaño: {len(cmd_data['lua_script'])} chars)")
+                        else:
+                            logger.info(f"⚠️ Comando {cmd_id} sin script Lua")
                         
                         pending_commands.append(command_payload)
                         # Marcar como enviado
                         cmd_data['status'] = 'sent'
-                        logger.info(f"✅ Comando {cmd_id} marcado como enviado")
+                        logger.info(f"✅ Comando {cmd_id} marcado como enviado con payload completo")
                 
                 if pending_commands:
                     logger.info(f"📡 Enviando {len(pending_commands)} comandos a script {script_id}")

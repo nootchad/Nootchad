@@ -1,13 +1,11 @@
--- RbxServers Remote Control Script (Codex Compatible)
--- Version simplificada para ejecutores básicos
-
+-- Script completo de conexión RbxServers
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local RunService = game:GetService("RunService")
 
--- Configuración simple
-local BOT_URL = "https://88dc778a-5e3f-42c2-9003-e39e90eef002-00-hscv33ahp0ok.spock.replit.dev"
+-- Configuración
+local BOT_URL = "https://bafd2949-5867-4fe4-9819-094f8e85b36b-00-1g3uf5hqr1q6d.kirk.replit.dev"
 local SCRIPT_ID = "rbx_bot_" .. tostring(math.random(100000, 999999))
 local USERNAME = "RbxServersBot"
 
@@ -15,7 +13,7 @@ local USERNAME = "RbxServersBot"
 local isConnected = false
 local currentTarget = nil
 
--- Función HTTP simple
+-- Función HTTP mejorada
 local function httpRequest(method, url, data)
     local headers = {["Content-Type"] = "application/json"}
     local body = ""
@@ -31,7 +29,6 @@ local function httpRequest(method, url, data)
         Body = body
     }
 
-    -- Usar función HTTP del ejecutor
     local success, result = pcall(function()
         if request then
             return request(requestData)
@@ -60,128 +57,82 @@ local function httpRequest(method, url, data)
     return nil
 end
 
--- Conectar al bot
-local function connectBot()
-    print("🔄 Conectando...")
+-- Ejecutar script Lua recibido
+local function executeScript(scriptCode)
+    print("🎯 Ejecutando script Lua recibido...")
 
-    local connectData = {
-        script_id = SCRIPT_ID,
-        roblox_username = USERNAME,
-        game_id = tostring(game.PlaceId),
-        timestamp = tick()
-    }
-
-    local response = httpRequest("POST", BOT_URL .. "/roblox/connect", connectData)
-
-    if response and response.status == "success" then
-        isConnected = true
-        print("✅ Conectado al bot")
-        return true
-    else
-        print("❌ Error conectando")
-        return false
-    end
-end
-
--- Enviar heartbeat
-local function sendHeartbeat()
-    if not isConnected then return end
-
-    local response = httpRequest("POST", BOT_URL .. "/roblox/heartbeat", {
-        script_id = SCRIPT_ID,
-        status = "active",
-        timestamp = tick()
-    })
-end
-
--- Enviar mensaje en chat
-local function sendMessage(message)
-    local player = Players.LocalPlayer
-    if not player or not player.Character then return false end
-
-    local head = player.Character:FindFirstChild("Head")
-    if head then
-        game:GetService("Chat"):Chat(head, message, Enum.ChatColor.Blue)
-        return true
-    end
-    return false
-end
-
--- Unirse a servidor por Job ID
-local function joinServer(placeId, jobId)
-    print("🚀 Uniéndose a servidor...")
-    print("Place ID: " .. tostring(placeId))
-    print("Job ID: " .. tostring(jobId))
-
-    local numericPlaceId = tonumber(placeId)
-    if not numericPlaceId then
-        print("❌ Place ID inválido")
-        return false
-    end
-
-    local player = Players.LocalPlayer
-    if not player then
-        print("❌ Player no encontrado")
-        return false
-    end
-
-    local success, err = pcall(function()
-        TeleportService:TeleportToPlaceInstance(numericPlaceId, jobId, {player})
+    local success, result = pcall(function()
+        return loadstring(scriptCode)()
     end)
 
     if success then
-        print("✅ Teleport iniciado")
-        return true
+        print("✅ Script ejecutado exitosamente")
+        return "Script ejecutado exitosamente"
     else
-        print("❌ Error teleport: " .. tostring(err))
-        return false
+        print("❌ Error ejecutando script:", result)
+        return "Error ejecutando script: " .. tostring(result)
     end
 end
 
--- Procesar comandos
+-- Procesar comando recibido
 local function processCommand(cmd)
-    print("📥 Comando: " .. cmd.action)
+    print("📥 Procesando comando:", cmd.action, "ID:", cmd.command_id)
 
     local success = false
-    local result = ""
+    local result = "Comando no procesado"
 
-    if cmd.action == "join_server" and cmd.server_link then
-        local placeId, jobId = cmd.server_link:match("PlaceId:(%d+)|JobId:([%w%-]+)")
-        if placeId and jobId then
-            success = joinServer(placeId, jobId)
-            result = success and "Teleport iniciado" or "Error en teleport"
-        else
-            result = "Formato server_link inválido"
-        end
-
-    elseif cmd.action == "send_message" then
-        success = sendMessage(cmd.message or "Bot by RbxServers 🤖")
-        result = success and "Mensaje enviado" or "Error enviando mensaje"
-
-    elseif cmd.action == "execute_script" and cmd.lua_script then
-        local executeSuccess, executeErr = pcall(function()
-            loadstring(cmd.lua_script)()
-        end)
-        success = executeSuccess
-        result = success and "Script ejecutado" or ("Error: " .. tostring(executeErr))
-
+    -- Si hay script Lua personalizado, ejecutarlo
+    if cmd.lua_script and cmd.lua_script ~= "" then
+        result = executeScript(cmd.lua_script)
+        success = true
     else
-        result = "Acción desconocida"
+        -- Procesar acciones específicas
+        if cmd.action == "chat" then
+            local message = cmd.message or "Bot RbxServers activo"
+            local player = Players.LocalPlayer
+            if player and player.Character and player.Character:FindFirstChild("Head") then
+                game:GetService("Chat"):Chat(player.Character.Head, message, Enum.ChatColor.Blue)
+                result = "Mensaje enviado: " .. message
+                success = true
+            else
+                result = "No se pudo enviar mensaje - jugador no encontrado"
+            end
+
+        elseif cmd.action == "teleport" then
+            if cmd.server_link then
+                -- Extraer place_id del enlace
+                local place_id = string.match(cmd.server_link, "games/(%d+)")
+                local job_id = string.match(cmd.server_link, "privateServerLinkCode=([^&]+)")
+
+                if place_id and job_id then
+                    TeleportService:TeleportToPlaceInstance(tonumber(place_id), job_id, Players.LocalPlayer)
+                    result = "Teletransporte iniciado a " .. place_id
+                    success = true
+                else
+                    result = "Error: No se pudo extraer place_id o job_id del enlace"
+                end
+            else
+                result = "Error: No se proporcionó server_link"
+            end
+
+        else
+            result = "Acción no implementada: " .. cmd.action
+        end
     end
 
-    -- Enviar resultado
-    httpRequest("POST", BOT_URL .. "/roblox/command_result", {
+    -- Enviar resultado de vuelta al bot
+    local resultData = {
         command_id = cmd.command_id,
         script_id = SCRIPT_ID,
         success = success,
-        message = result,
-        timestamp = tick()
-    })
+        message = result
+    }
 
-    print("📤 Resultado: " .. result)
+    httpRequest("POST", BOT_URL .. "/roblox/command_result", resultData)
+    print("📤 Resultado enviado:", success and "✅" or "❌", result)
 end
 
--- Verificar comandos
+-- Verificar comandos pendientes
 local function checkCommands()
     if not isConnected then return end
 
@@ -194,64 +145,71 @@ local function checkCommands()
     end
 end
 
--- Inicializar
-local function init()
-    print("🤖 RbxServers Bot iniciando...")
-    print("Script ID: " .. SCRIPT_ID)
+-- Enviar heartbeat
+local function sendHeartbeat()
+    if not isConnected then return end
 
-    -- Verificar HTTP
-    if not request and not http_request and not (syn and syn.request) then
-        print("❌ Ejecutor sin soporte HTTP")
-        return
-    end
+    local heartbeatData = {
+        script_id = SCRIPT_ID,
+        status = "active",
+        timestamp = tick()
+    }
 
-    print("✅ HTTP disponible")
+    httpRequest("POST", BOT_URL .. "/roblox/heartbeat", heartbeatData)
+end
 
-    -- Conectar
-    if connectBot() then
-        print("🟢 Sistema activo")
+-- Conectar al bot
+local function connectBot()
+    print("🔄 Conectando al bot...")
 
-        -- Loop principal
-        spawn(function()
-            local lastHeartbeat = 0
-            local lastCommandCheck = 0
+    local connectData = {
+        script_id = SCRIPT_ID,
+        roblox_username = USERNAME,
+        game_id = tostring(game.PlaceId),
+        timestamp = tick()
+    }
 
-            while isConnected do
-                local currentTime = tick()
+    local response = httpRequest("POST", BOT_URL .. "/roblox/connect", connectData)
 
-                if currentTime - lastHeartbeat >= 15 then
-                    sendHeartbeat()
-                    lastHeartbeat = currentTime
-                end
-
-                if currentTime - lastCommandCheck >= 8 then
-                    checkCommands()
-                    lastCommandCheck = currentTime
-                end
-
-                wait(2)
-            end
-        end)
-
-        -- Mensaje de confirmación
-        wait(3)
-        sendMessage("🤖 Bot RbxServers conectado (FIXED)")
-
+    if response and response.status == "success" then
+        isConnected = true
+        print("✅ Conectado al bot RbxServers")
+        return true
     else
-        print("❌ Error en conexión")
+        print("❌ Error conectando al bot")
+        return false
     end
 end
 
--- Verificar player y ejecutar
-if Players.LocalPlayer then
-    init()
-else
-    Players.PlayerAdded:Connect(function(player)
-        if player == Players.LocalPlayer then
-            init()
+-- Inicializar conexión y loop principal
+if connectBot() then
+    print("🤖 RbxServers Bot conectado exitosamente")
+
+    -- Enviar mensaje de confirmación
+    spawn(function()
+        wait(2)
+        local player = Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChild("Head") then
+            game:GetService("Chat"):Chat(player.Character.Head, "🤖 Bot RbxServers conectado y listo", Enum.ChatColor.Green)
         end
     end)
-end
 
-print("✅ Script cargado para Codex Executor")
-print("🌐 URL: " .. BOT_URL)
+    -- Loop principal para verificar comandos y enviar heartbeats
+    spawn(function()
+        while isConnected do
+            checkCommands()
+            wait(5) -- Verificar comandos cada 5 segundos
+        end
+    end)
+
+    spawn(function()
+        while isConnected do
+            sendHeartbeat()
+            wait(15) -- Enviar heartbeat cada 15 segundos
+        end
+    end)
+
+    print("🔄 Loops de verificación iniciados")
+else
+    print("❌ No se pudo conectar al bot")
+end
