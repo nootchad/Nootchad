@@ -143,12 +143,14 @@ local function checkCommands()
     local response = httpRequest("GET", BOT_URL .. "/roblox/get_commands?script_id=" .. SCRIPT_ID)
 
     if response then
-        print("📥 Respuesta recibida del servidor:", HttpService:JSONEncode(response))
+        print("📥 Respuesta recibida del servidor")
         
-        if response.status == "success" then
-            if response.commands and #response.commands > 0 then
-                print("📨 Comandos recibidos:", #response.commands)
-                for i, cmd in pairs(response.commands) do
+        -- Verificar si la respuesta tiene status success o es válida
+        if response.status == "success" or response.commands then
+            local commands = response.commands or {}
+            if #commands > 0 then
+                print("📨 Comandos recibidos:", #commands)
+                for i, cmd in pairs(commands) do
                     print("🎯 Procesando comando", i, ":", cmd.action, "ID:", cmd.command_id)
                     processCommand(cmd)
                 end
@@ -156,10 +158,10 @@ local function checkCommands()
                 print("📭 No hay comandos pendientes")
             end
         else
-            print("❌ Error en respuesta del servidor:", response.message or "Sin mensaje")
+            print("⚠️ Respuesta del servidor:", response.message or response.error or "Formato inesperado")
         end
     else
-        print("❌ No se recibió respuesta del servidor")
+        print("❌ No se recibió respuesta del servidor (conexión/timeout)")
     end
 end
 

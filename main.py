@@ -178,6 +178,7 @@ class RobloxRemoteControl:
         """Enviar comandos pendientes al script"""
         try:
             script_id = request.query.get('script_id', 'unknown')
+            logger.debug(f"🔍 Script {script_id} solicitando comandos...")
             
             if script_id in self.connected_scripts:
                 # Buscar comandos pendientes para este script
@@ -203,7 +204,7 @@ class RobloxRemoteControl:
                             command_payload['lua_script'] = cmd_data['lua_script']
                             logger.info(f"📤 Enviando script Lua con comando {cmd_id} (tamaño: {len(cmd_data['lua_script'])} chars)")
                         else:
-                            logger.info(f"⚠️ Comando {cmd_id} sin script Lua")
+                            logger.debug(f"⚠️ Comando {cmd_id} sin script Lua")
                         
                         pending_commands.append(command_payload)
                         commands_to_mark_sent.append(cmd_id)
@@ -221,17 +222,30 @@ class RobloxRemoteControl:
                 else:
                     logger.debug(f"📭 No hay comandos pendientes para script {script_id}")
                 
+                # Siempre devolver respuesta exitosa, incluso sin comandos
                 return web.json_response({
                     'status': 'success',
                     'commands': pending_commands
                 })
             else:
                 logger.warning(f"❌ Script {script_id} no está registrado")
-                return web.json_response({'status': 'error', 'message': 'Script not registered'}, status=404)
+                # Aunque no esté registrado, devolver respuesta exitosa vacía
+                return web.json_response({
+                    'status': 'success', 
+                    'commands': [],
+                    'message': 'Script not registered but responding'
+                })
                 
         except Exception as e:
             logger.error(f"Error in get commands: {e}")
-            return web.json_response({'status': 'error', 'message': str(e)}, status=400)
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            # Devolver respuesta exitosa vacía en caso de error
+            return web.json_response({
+                'status': 'success',
+                'commands': [],
+                'error': str(e)
+            })
     
     async def handle_command_result(self, request):
         """Recibir resultado de comando ejecutado"""
