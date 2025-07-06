@@ -69,14 +69,13 @@
       "roblox_username": "salvadore1240",
       "verification_code": "server-629_rbx",
       "verified_at": 1751657425.070738
+    },
+    "1202861936358719499": {
+      "roblox_username": "Joshualo67",
+      "verification_code": "vipv2024_ok",
+      "verified_at": 1751767037.5678284
     }
   },
-  "pending_verifications": {
-    "1233495164111290428": {
-      "roblox_username": "elturipi123WZ",
-      "verification_code": "hesizv75-rbx",
-      "created_at": 1751667763.5075257
-    }
-  },
-  "last_updated": "2025-07-04T22:22:43.507529"
+  "pending_verifications": {},
+  "last_updated": "2025-07-06T01:57:17.567832"
 }
