@@ -36,7 +36,7 @@ class RobloxControlCommands:
             if user_id != DISCORD_OWNER_ID:
                 embed = discord.Embed(
                     title="❌ Acceso Denegado",
-                    description="Este comando solo puede ser usado por el owner del bot.",
+                    description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
                     color=0xff0000
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -189,7 +189,7 @@ class RobloxControlCommands:
             if user_id != DISCORD_OWNER_ID:
                 embed = discord.Embed(
                     title="❌ Acceso Denegado",
-                    description="Este comando solo puede ser usado por el owner del bot.",
+                    description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
                     color=0xff0000
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -200,7 +200,7 @@ class RobloxControlCommands:
             try:
                 # Paso 1: Enviar script de auto-conexión
                 auto_connect_script = self.generate_lua_script("auto_connect")
-                
+
                 await self.remote_control.send_command_to_roblox(
                     action="execute_script",
                     lua_script=auto_connect_script,
@@ -254,7 +254,7 @@ class RobloxControlCommands:
             if user_id != DISCORD_OWNER_ID:
                 embed = discord.Embed(
                     title="❌ Acceso Denegado",
-                    description="Este comando solo puede ser usado por el owner del bot.",
+                    description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
                     color=0xff0000
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -316,7 +316,7 @@ class RobloxControlCommands:
             if user_id != DISCORD_OWNER_ID:
                 embed = discord.Embed(
                     title="❌ Acceso Denegado",
-                    description="Este comando solo puede ser usado por el owner del bot.",
+                    description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
                     color=0xff0000
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -659,7 +659,7 @@ end
 -- Inicializar conexión
 if connectBot() then
     print("🤖 RbxServers Bot conectado automáticamente")
-    
+
     -- Enviar mensaje de confirmación
     spawn(function()
         wait(2)
@@ -674,7 +674,7 @@ end
         else:
             return kwargs.get('custom_script', 'print("Comando ejecutado por RbxServers")')
 
-    
+
 
 # Función para registrar los comandos en el bot principal
 def setup_roblox_control_commands(bot, remote_control):

@@ -65,6 +65,10 @@ DISCORD_OWNER_ID = "916070251895091241"  # Tu Discord ID
 WEBHOOK_SECRET = "rbxservers_webhook_secret_2024"
 REMOTE_CONTROL_PORT = 8080
 
+# Delegated access settings
+DELEGATED_OWNERS_FILE = "delegated_owners.json"
+delegated_owners = set()  # Set de user IDs con acceso delegado
+
 # Game categories mapping
 GAME_CATEGORIES = {
     "rpg": ["roleplay", "adventure", "fantasy", "medieval", "simulator"],
@@ -639,6 +643,58 @@ class RobloxVerificationSystem:
             logger.info(f"Saved warnings data for {len(self.warnings)} users")
         except Exception as e:
             logger.error(f"Error saving warnings data: {e}")
+
+def load_delegated_owners():
+    """Cargar lista de owners delegados"""
+    global delegated_owners
+    try:
+        if Path(DELEGATED_OWNERS_FILE).exists():
+            with open(DELEGATED_OWNERS_FILE, 'r') as f:
+                data = json.load(f)
+                delegated_owners = set(data.get('delegated_owners', []))
+                logger.info(f"Loaded {len(delegated_owners)} delegated owners")
+        else:
+            delegated_owners = set()
+            logger.info("No delegated owners file found, starting with empty set")
+    except Exception as e:
+        logger.error(f"Error loading delegated owners: {e}")
+        delegated_owners = set()
+
+def save_delegated_owners():
+    """Guardar lista de owners delegados"""
+    try:
+        data = {
+            'delegated_owners': list(delegated_owners),
+            'last_updated': datetime.now().isoformat(),
+            'total_delegated': len(delegated_owners)
+        }
+        with open(DELEGATED_OWNERS_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        logger.info(f"Saved {len(delegated_owners)} delegated owners")
+    except Exception as e:
+        logger.error(f"Error saving delegated owners: {e}")
+
+def is_owner_or_delegated(user_id: str) -> bool:
+    """Verificar si un usuario es owner original o tiene acceso delegado"""
+    return user_id == DISCORD_OWNER_ID or user_id in delegated_owners
+
+def add_delegated_owner(user_id: str) -> bool:
+    """Agregar usuario a la lista de owners delegados"""
+    global delegated_owners
+    if user_id not in delegated_owners:
+        delegated_owners.add(user_id)
+        save_delegated_owners()
+        return True
+    return False
+
+def remove_delegated_owner(user_id: str) -> bool:
+    """Remover usuario de la lista de owners delegados"""
+    global delegated_owners
+    if user_id in delegated_owners:
+        delegated_owners.remove(user_id)
+        save_delegated_owners()
+        return True
+    return False
 
     async def send_expiration_alert(self, discord_id: str, roblox_username: str):
         """Enviar alerta por DM cuando expire la verificación"""
@@ -2503,9 +2559,14 @@ async def on_ready():
                 logger.error(f"❌ Error leyendo archivo para debug: {e}")
         else:
             logger.error(f"❌ Archivo {scraper.users_servers_file} no existe")
+    
+    # Cargar owners delegados
+    load_delegated_owners()
+    
     logger.info(f"📈 Usuarios verificados: {len(roblox_verification.verified_users)}")
     logger.info(f"🚫 Usuarios baneados: {len(roblox_verification.banned_users)}")
     logger.info(f"⚠️ Usuarios con advertencias: {len(roblox_verification.warnings)}")
+    logger.info(f"👑 Owners delegados: {len(delegated_owners)}")
 
     # Verification system is now manual-based, no API needed
     logger.info("✅ Sistema de verificación manual inicializado exitosamente")
@@ -3253,11 +3314,11 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
     """Comando solo para el owner que crea cuentas de Roblox usando Selenium con NopeCHA API"""
     user_id = str(interaction.user.id)
     
-    # Verificar que solo el owner pueda usar este comando
-    if user_id != DISCORD_OWNER_ID:
+    # Verificar que solo el owner o delegados puedan usar este comando
+    if not is_owner_or_delegated(user_id):
         embed = discord.Embed(
             title="❌ Acceso Denegado",
-            description="Este comando solo puede ser usado por el owner del bot.",
+            description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
             color=0xff0000
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -3751,11 +3812,11 @@ async def cookielog_command(interaction: discord.Interaction, vnc_mode: bool = F
     """Comando solo para el owner que prueba cookies empezando por el secreto COOKIE y luego alt.txt"""
     user_id = str(interaction.user.id)
     
-    # Verificar que solo el owner pueda usar este comando
-    if user_id != DISCORD_OWNER_ID:
+    # Verificar que solo el owner o delegados puedan usar este comando
+    if not is_owner_or_delegated(user_id):
         embed = discord.Embed(
             title="❌ Acceso Denegado",
-            description="Este comando solo puede ser usado por el owner del bot.",
+            description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
             color=0xff0000
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -4173,6 +4234,277 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         embed = discord.Embed(
             title="❌ Error",
             description=f"Ocurrió un error al procesar las cookies en el navegador: {str(e)}",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="grantaccess", description="[OWNER ONLY] Otorgar acceso a comandos de owner a otro usuario")
+async def grant_access_command(interaction: discord.Interaction, user_id: str):
+    """Otorgar acceso de owner a otro usuario - SOLO EL OWNER ORIGINAL"""
+    caller_id = str(interaction.user.id)
+    
+    # SOLO el owner original puede usar este comando
+    if caller_id != DISCORD_OWNER_ID:
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner original del bot.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        # Validar que el user_id sea numérico
+        if not user_id.isdigit():
+            embed = discord.Embed(
+                title="❌ ID Inválido",
+                description="El ID de usuario debe ser numérico.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar que no sea el mismo owner
+        if user_id == DISCORD_OWNER_ID:
+            embed = discord.Embed(
+                title="❌ Error",
+                description="No puedes otorgarte acceso a ti mismo (ya eres el owner original).",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Intentar obtener información del usuario
+        try:
+            target_user = bot.get_user(int(user_id))
+            if not target_user:
+                target_user = await bot.fetch_user(int(user_id))
+        except Exception:
+            target_user = None
+        
+        # Agregar a la lista de delegados
+        was_added = add_delegated_owner(user_id)
+        
+        if was_added:
+            embed = discord.Embed(
+                title="✅ Acceso Otorgado",
+                description=f"Se ha otorgado acceso de owner al usuario.",
+                color=0x00ff88
+            )
+            embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
+            embed.add_field(name="🆔 User ID", value=f"`{user_id}`", inline=True)
+            embed.add_field(name="👑 Acceso", value="Comandos de Owner", inline=True)
+            
+            if target_user:
+                embed.add_field(name="📝 Nombre", value=f"{target_user.name}#{target_user.discriminator}", inline=True)
+            
+            embed.add_field(
+                name="🔧 Comandos Disponibles:",
+                value="• `/createaccount` - Crear cuentas de Roblox\n• `/cookielog` - Probar cookies\n• `/control` - Control remoto\n• `/roblox_status` - Estado de scripts\n• Y otros comandos de owner",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="⚠️ Importante:",
+                value="• Solo el owner original puede otorgar/revocar acceso\n• El acceso se mantiene hasta ser revocado\n• Usa `/revokeaccess` para remover acceso",
+                inline=False
+            )
+            
+            embed.set_footer(text=f"Total de owners delegados: {len(delegated_owners)}")
+            
+            logger.info(f"Owner {interaction.user.name} granted access to user {user_id}")
+            
+        else:
+            embed = discord.Embed(
+                title="⚠️ Usuario Ya Tiene Acceso",
+                description=f"El usuario ya tiene acceso de owner.",
+                color=0xffaa00
+            )
+            embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
+            embed.add_field(name="📊 Estado", value="Ya delegado", inline=True)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in grant access command: {e}")
+        embed = discord.Embed(
+            title="❌ Error",
+            description=f"Ocurrió un error al otorgar acceso: {str(e)}",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="revokeaccess", description="[OWNER ONLY] Revocar acceso a comandos de owner de otro usuario")
+async def revoke_access_command(interaction: discord.Interaction, user_id: str):
+    """Revocar acceso de owner a otro usuario - SOLO EL OWNER ORIGINAL"""
+    caller_id = str(interaction.user.id)
+    
+    # SOLO el owner original puede usar este comando
+    if caller_id != DISCORD_OWNER_ID:
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner original del bot.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        # Validar que el user_id sea numérico
+        if not user_id.isdigit():
+            embed = discord.Embed(
+                title="❌ ID Inválido",
+                description="El ID de usuario debe ser numérico.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar que no sea el mismo owner
+        if user_id == DISCORD_OWNER_ID:
+            embed = discord.Embed(
+                title="❌ Error",
+                description="No puedes revocarte acceso a ti mismo (eres el owner original).",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Intentar obtener información del usuario
+        try:
+            target_user = bot.get_user(int(user_id))
+            if not target_user:
+                target_user = await bot.fetch_user(int(user_id))
+        except Exception:
+            target_user = None
+        
+        # Remover de la lista de delegados
+        was_removed = remove_delegated_owner(user_id)
+        
+        if was_removed:
+            embed = discord.Embed(
+                title="✅ Acceso Revocado",
+                description=f"Se ha revocado el acceso de owner al usuario.",
+                color=0x00ff88
+            )
+            embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
+            embed.add_field(name="🆔 User ID", value=f"`{user_id}`", inline=True)
+            embed.add_field(name="🚫 Acceso", value="Revocado", inline=True)
+            
+            if target_user:
+                embed.add_field(name="📝 Nombre", value=f"{target_user.name}#{target_user.discriminator}", inline=True)
+            
+            embed.add_field(
+                name="📋 Comandos Afectados:",
+                value="• Ya no puede usar `/createaccount`\n• Ya no puede usar `/cookielog`\n• Ya no puede usar `/control`\n• Ya no puede usar otros comandos de owner",
+                inline=False
+            )
+            
+            embed.set_footer(text=f"Total de owners delegados restantes: {len(delegated_owners)}")
+            
+            logger.info(f"Owner {interaction.user.name} revoked access from user {user_id}")
+            
+        else:
+            embed = discord.Embed(
+                title="⚠️ Usuario No Tenía Acceso",
+                description=f"El usuario no tenía acceso de owner previamente.",
+                color=0xffaa00
+            )
+            embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
+            embed.add_field(name="📊 Estado", value="Sin acceso previo", inline=True)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in revoke access command: {e}")
+        embed = discord.Embed(
+            title="❌ Error",
+            description=f"Ocurrió un error al revocar acceso: {str(e)}",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="listaccess", description="[OWNER ONLY] Ver lista de usuarios con acceso delegado")
+async def list_access_command(interaction: discord.Interaction):
+    """Ver lista de usuarios con acceso delegado - SOLO EL OWNER ORIGINAL"""
+    caller_id = str(interaction.user.id)
+    
+    # SOLO el owner original puede usar este comando
+    if caller_id != DISCORD_OWNER_ID:
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner original del bot.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        if not delegated_owners:
+            embed = discord.Embed(
+                title="👑 Lista de Acceso Delegado",
+                description="No hay usuarios con acceso delegado actualmente.",
+                color=0x888888
+            )
+            embed.add_field(
+                name="💡 Para otorgar acceso:",
+                value="Usa `/grantaccess [user_id]`",
+                inline=False
+            )
+        else:
+            embed = discord.Embed(
+                title="👑 Lista de Acceso Delegado",
+                description=f"Usuarios con acceso de owner: **{len(delegated_owners)}**",
+                color=0x3366ff
+            )
+            
+            users_info = []
+            for user_id in delegated_owners:
+                try:
+                    target_user = bot.get_user(int(user_id))
+                    if not target_user:
+                        target_user = await bot.fetch_user(int(user_id))
+                    
+                    if target_user:
+                        users_info.append(f"• **{target_user.name}#{target_user.discriminator}**\n  ID: `{user_id}`\n  {target_user.mention}")
+                    else:
+                        users_info.append(f"• **Usuario Desconocido**\n  ID: `{user_id}`")
+                except Exception:
+                    users_info.append(f"• **Usuario No Encontrado**\n  ID: `{user_id}`")
+            
+            embed.add_field(
+                name="📋 Usuarios con Acceso:",
+                value="\n\n".join(users_info) if users_info else "Ninguno",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="🔧 Gestión:",
+                value="• `/grantaccess [user_id]` - Otorgar acceso\n• `/revokeaccess [user_id]` - Revocar acceso",
+                inline=False
+            )
+        
+        embed.add_field(
+            name="⚠️ Recordatorio:",
+            value="Solo el owner original puede gestionar el acceso delegado. Los usuarios delegados pueden usar comandos de owner pero no pueden otorgar acceso a otros.",
+            inline=False
+        )
+        
+        embed.set_footer(text=f"Owner original: {interaction.user.name}#{interaction.user.discriminator}")
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in list access command: {e}")
+        embed = discord.Embed(
+            title="❌ Error",
+            description=f"Ocurrió un error al listar accesos: {str(e)}",
             color=0xff0000
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
