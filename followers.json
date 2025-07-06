@@ -74,8 +74,24 @@
       "roblox_username": "Joshualo67",
       "verification_code": "vipv2024_ok",
       "verified_at": 1751767037.5678284
+    },
+    "734554324813873184": {
+      "roblox_username": "Luis_Amasifuen123",
+      "verification_code": "check_173-check",
+      "verified_at": 1751767526.445654
+    },
+    "1281980963315912746": {
+      "roblox_username": "arepita_gamer1",
+      "verification_code": "serverx50-ok",
+      "verified_at": 1751768652.6778836
     }
   },
-  "pending_verifications": {},
-  "last_updated": "2025-07-06T01:57:17.567832"
+  "pending_verifications": {
+    "1337938669230882921": {
+      "roblox_username": "pizza_pizza746",
+      "verification_code": "vipx2025_bot",
+      "created_at": 1751769563.8287358
+    }
+  },
+  "last_updated": "2025-07-06T02:39:23.828738"
 }
