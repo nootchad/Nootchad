@@ -5350,9 +5350,9 @@ async def alerts_command(interaction: discord.Interaction,
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="follow", description="[OWNER ONLY] Enviar 1 seguidor bot a un perfil de Roblox")
+@bot.tree.command(name="follow", description="[OWNER ONLY] Enviar 1 seguidor bot a un perfil de Roblox usando navegador")
 async def follow_command(interaction: discord.Interaction, roblox_username: str):
-    """Comando solo para el owner que envía 1 seguidor bot a un perfil de Roblox"""
+    """Comando solo para el owner que envía 1 seguidor bot a un perfil de Roblox usando Selenium"""
     user_id = str(interaction.user.id)
     
     # Verificar que solo el owner o delegados puedan usar este comando
@@ -5367,6 +5367,7 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str)
     
     await interaction.response.defer(ephemeral=True)
     
+    driver = None
     try:
         # Obtener cookie del secreto
         roblox_cookie = os.getenv('COOKIE')
@@ -5381,17 +5382,17 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str)
         
         # Mensaje inicial
         embed = discord.Embed(
-            title="👤 Enviando Seguidor Bot",
-            description=f"Iniciando proceso para enviar 1 seguidor bot a **{roblox_username}**",
+            title="👤 Enviando Seguidor Bot via Navegador",
+            description=f"Iniciando proceso para enviar 1 seguidor bot a **{roblox_username}** usando navegador automatizado",
             color=0xffaa00
         )
         embed.add_field(name="👤 Usuario Objetivo", value=f"`{roblox_username}`", inline=True)
-        embed.add_field(name="🤖 Seguidores a Enviar", value="1", inline=True)
-        embed.add_field(name="🔄 Estado", value="Obteniendo información del usuario...", inline=True)
+        embed.add_field(name="🤖 Método", value="Selenium + JavaScript", inline=True)
+        embed.add_field(name="🔄 Estado", value="Iniciando navegador...", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
         
-        # Obtener información del usuario objetivo usando requests
+        # Obtener información del usuario objetivo usando requests primero
         async with aiohttp.ClientSession() as session:
             # Buscar usuario por nombre
             search_url = "https://users.roblox.com/v1/usernames/users"
@@ -5432,120 +5433,274 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str)
                 
                 logger.info(f"🎯 Usuario encontrado: {roblox_username} (ID: {target_user_id})")
         
-        # Actualizar estado
-        progress_embed = discord.Embed(
-            title="🔐 Autenticando Bot",
-            description=f"Usuario **{roblox_username}** encontrado. Autenticando con cookie del secreto...",
+        # Actualizar estado - Iniciando navegador
+        browser_embed = discord.Embed(
+            title="🌐 Iniciando Navegador",
+            description=f"Usuario **{roblox_username}** encontrado. Iniciando navegador Chrome con cookies...",
             color=0x3366ff
         )
-        progress_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
-        progress_embed.add_field(name="🆔 Display Name", value=target_display_name, inline=True)
-        progress_embed.add_field(name="🔄 Estado", value="Verificando autenticación...", inline=True)
+        browser_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
+        browser_embed.add_field(name="🆔 Display Name", value=target_display_name, inline=True)
+        browser_embed.add_field(name="🔄 Estado", value="Configurando navegador...", inline=True)
         
-        await message.edit(embed=progress_embed)
+        await message.edit(embed=browser_embed)
         
-        # Verificar autenticación de la cookie
-        async with aiohttp.ClientSession() as session:
-            auth_headers = {
-                'Cookie': f'.ROBLOSECURITY={roblox_cookie}',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-            
-            # Verificar que la cookie funcione
-            async with session.get('https://users.roblox.com/v1/users/authenticated', headers=auth_headers) as response:
-                if response.status != 200:
-                    embed = discord.Embed(
-                        title="❌ Cookie Inválida",
-                        description="La cookie del secreto COOKIE no es válida o ha expirado.",
-                        color=0xff0000
-                    )
-                    await message.edit(embed=embed)
-                    return
-                
-                bot_user_data = await response.json()
-                bot_username = bot_user_data.get('name', 'Unknown')
-                bot_user_id = bot_user_data.get('id', 'Unknown')
-                
-                logger.info(f"✅ Cookie válida para usuario: {bot_username} (ID: {bot_user_id})")
+        # Crear driver Chrome
+        logger.info("🚀 Creando driver Chrome para comando follow...")
+        driver = scraper.create_driver()
         
-        # Actualizar estado
-        follow_embed = discord.Embed(
-            title="👥 Siguiendo Usuario",
-            description=f"Autenticación exitosa como **{bot_username}**. Enviando solicitud de seguimiento...",
+        # Aplicar cookies de Roblox inmediatamente
+        logger.info("🍪 Aplicando cookies de Roblox al navegador...")
+        
+        # Navegar a Roblox primero
+        driver.get("https://www.roblox.com")
+        time.sleep(3)
+        
+        # Limpiar cookies existentes y agregar la cookie del secreto
+        driver.delete_all_cookies()
+        
+        cookie_dict = {
+            'name': '.ROBLOSECURITY',
+            'value': roblox_cookie,
+            'domain': '.roblox.com',
+            'path': '/',
+            'secure': True,
+            'httpOnly': True
+        }
+        
+        driver.add_cookie(cookie_dict)
+        logger.info("✅ Cookie del secreto aplicada al navegador")
+        
+        # Refrescar para aplicar las cookies
+        driver.refresh()
+        time.sleep(5)
+        
+        # Actualizar estado - Navegando al perfil
+        nav_embed = discord.Embed(
+            title="🔍 Navegando al Perfil",
+            description=f"Navegador iniciado exitosamente. Navegando al perfil de **{roblox_username}**...",
             color=0x00ff88
         )
-        follow_embed.add_field(name="🤖 Bot Cuenta", value=f"{bot_username} (ID: {bot_user_id})", inline=True)
-        follow_embed.add_field(name="👤 Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
-        follow_embed.add_field(name="🔄 Estado", value="Procesando seguimiento...", inline=True)
+        nav_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
+        nav_embed.add_field(name="🍪 Cookies", value="✅ Aplicadas", inline=True)
+        nav_embed.add_field(name="🔄 Estado", value="Navegando al perfil...", inline=True)
         
-        await message.edit(embed=follow_embed)
+        await message.edit(embed=nav_embed)
         
-        # Intentar seguir al usuario
-        follow_success = False
-        follow_error = None
+        # Navegar al perfil del usuario objetivo
+        profile_url = f"https://www.roblox.com/users/{target_user_id}/profile"
+        logger.info(f"🔗 Navegando a: {profile_url}")
+        driver.get(profile_url)
+        time.sleep(10)  # Esperar a que cargue completamente
         
-        async with aiohttp.ClientSession() as session:
-            # Obtener CSRF token
-            async with session.post('https://auth.roblox.com/v2/logout', headers=auth_headers) as csrf_response:
-                csrf_token = csrf_response.headers.get('x-csrf-token')
-                
-                if not csrf_token:
-                    follow_error = "No se pudo obtener CSRF token"
-                else:
-                    # Headers con CSRF token
-                    follow_headers = {
-                        'Cookie': f'.ROBLOSECURITY={roblox_cookie}',
-                        'X-CSRF-TOKEN': csrf_token,
-                        'Content-Type': 'application/json',
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        # Verificar que estamos logueados
+        try:
+            # Buscar elementos que indiquen que estamos logueados
+            logged_in_elements = driver.find_elements(By.CSS_SELECTOR, 
+                ".nav-menu, .notification-stream, [data-testid='navigation-profile']")
+            
+            if not logged_in_elements:
+                logger.warning("⚠️ No se detectaron elementos de login, pero continuando...")
+        except Exception as e:
+            logger.warning(f"⚠️ Error verificando login: {e}")
+        
+        # Actualizar estado - Buscando botón de follow
+        search_embed = discord.Embed(
+            title="👥 Procesando Seguimiento",
+            description=f"En el perfil de **{roblox_username}**. Buscando botón de follow...",
+            color=0xffaa00
+        )
+        search_embed.add_field(name="👤 Perfil Cargado", value=f"{roblox_username}", inline=True)
+        search_embed.add_field(name="🔗 URL", value=f"[Ver Perfil]({profile_url})", inline=True)
+        search_embed.add_field(name="🔄 Estado", value="Ejecutando JavaScript...", inline=True)
+        
+        await message.edit(embed=search_embed)
+        
+        # Ejecutar el script JavaScript para encontrar y hacer clic en follow
+        follow_script = """
+        // Script para encontrar y hacer clic en el botón de follow
+        try {
+            // Primero buscar el botón de 3 puntos (menú)
+            const menuButtons = document.querySelectorAll('[aria-label*="menu"], [aria-label*="More"], button[aria-label*="more"], .three-dots, [data-testid*="menu"]');
+            
+            let menuButton = null;
+            for (let btn of menuButtons) {
+                if (btn.offsetParent !== null) { // Verificar que sea visible
+                    menuButton = btn;
+                    break;
+                }
+            }
+            
+            if (!menuButton) {
+                // Buscar por texto o ícono de 3 puntos
+                const allButtons = document.querySelectorAll('button');
+                for (let btn of allButtons) {
+                    const text = btn.innerText.trim();
+                    if (text === '⋯' || text === '...' || text === '•••' || 
+                        btn.querySelector('svg') || btn.querySelector('.icon')) {
+                        menuButton = btn;
+                        break;
                     }
+                }
+            }
+            
+            if (menuButton) {
+                console.log('Botón de menú encontrado, haciendo clic...');
+                menuButton.click();
+                
+                // Esperar a que aparezca el menú
+                setTimeout(() => {
+                    // Buscar el botón de follow en el menú
+                    const followButton = Array.from(document.querySelectorAll('[role="menuitem"]'))
+                        .find(el => el.innerText.trim().toLowerCase().includes('follow'));
                     
-                    # Enviar solicitud de seguimiento
-                    follow_url = f"https://friends.roblox.com/v1/users/{target_user_id}/follow"
-                    
-                    async with session.post(follow_url, headers=follow_headers) as follow_response:
-                        if follow_response.status == 200:
-                            follow_success = True
-                            logger.info(f"✅ Seguimiento exitoso: {bot_username} -> {roblox_username}")
-                        else:
-                            try:
-                                error_data = await follow_response.json()
-                                follow_error = error_data.get('errors', [{}])[0].get('message', f'Status {follow_response.status}')
-                            except:
-                                follow_error = f"HTTP {follow_response.status}"
-                            logger.error(f"❌ Error siguiendo usuario: {follow_error}")
+                    if (followButton) {
+                        console.log('Botón de follow encontrado en menú, haciendo clic...');
+                        followButton.click();
+                        return 'success_menu';
+                    } else {
+                        console.log('No se encontró botón de follow en menú');
+                        return 'no_follow_in_menu';
+                    }
+                }, 2000);
+                
+                return 'menu_clicked';
+            } else {
+                // Si no hay menú, buscar botón de follow directo
+                const directFollowButtons = document.querySelectorAll('button, a, [role="button"]');
+                
+                for (let btn of directFollowButtons) {
+                    const text = btn.innerText.trim().toLowerCase();
+                    if ((text.includes('follow') || text.includes('seguir')) && 
+                        !text.includes('unfollow') && !text.includes('following') &&
+                        btn.offsetParent !== null) {
+                        console.log('Botón de follow directo encontrado, haciendo clic...');
+                        btn.click();
+                        return 'success_direct';
+                    }
+                }
+                
+                return 'no_follow_button';
+            }
+        } catch (error) {
+            console.error('Error en script de follow:', error);
+            return 'error: ' + error.message;
+        }
+        """
+        
+        logger.info("🎯 Ejecutando script JavaScript para hacer follow...")
+        result = driver.execute_script(follow_script)
+        logger.info(f"📝 Resultado del script: {result}")
+        
+        # Esperar un poco más para que se procese el menú
+        time.sleep(5)
+        
+        # Segundo intento con el script del menú si el primero fue exitoso
+        if result == 'menu_clicked':
+            logger.info("🔄 Ejecutando segundo script para clic en follow del menú...")
+            
+            follow_menu_script = """
+            try {
+                const followButton = Array.from(document.querySelectorAll('[role="menuitem"]'))
+                    .find(el => el.innerText.trim().toLowerCase().includes('follow'));
+                
+                if (followButton) {
+                    console.log('Botón de follow encontrado en menú, haciendo clic...');
+                    followButton.click();
+                    return 'follow_clicked';
+                } else {
+                    console.log('Botones de menú disponibles:');
+                    const menuItems = document.querySelectorAll('[role="menuitem"]');
+                    for (let item of menuItems) {
+                        console.log('- ' + item.innerText.trim());
+                    }
+                    return 'no_follow_found';
+                }
+            } catch (error) {
+                return 'error: ' + error.message;
+            }
+            """
+            
+            menu_result = driver.execute_script(follow_menu_script)
+            logger.info(f"📝 Resultado del menú: {menu_result}")
+            result = menu_result
+        
+        # Esperar un poco más para confirmar la acción
+        time.sleep(3)
+        
+        # Verificar si el follow fue exitoso revisando cambios en la página
+        verification_script = """
+        try {
+            // Buscar indicadores de que ya estamos siguiendo al usuario
+            const followingIndicators = document.querySelectorAll('button, a, [role="button"]');
+            
+            for (let btn of followingIndicators) {
+                const text = btn.innerText.trim().toLowerCase();
+                if (text.includes('following') || text.includes('unfollow') || 
+                    text.includes('siguiendo') || text.includes('dejar de seguir')) {
+                    return 'following_detected';
+                }
+            }
+            
+            return 'no_following_indicator';
+        } catch (error) {
+            return 'verification_error';
+        }
+        """
+        
+        verification_result = driver.execute_script(verification_script)
+        logger.info(f"🔍 Verificación de seguimiento: {verification_result}")
+        
+        # Determinar el resultado final
+        follow_success = (
+            result in ['success_direct', 'follow_clicked'] or
+            verification_result == 'following_detected'
+        )
+        
+        # Mantener navegador abierto unos segundos más para verificación manual
+        time.sleep(5)
         
         # Resultado final
         if follow_success:
             success_embed = discord.Embed(
                 title="✅ ¡Seguidor Enviado Exitosamente!",
-                description=f"El bot **{bot_username}** ahora está siguiendo a **{roblox_username}**",
+                description=f"El bot ha seguido exitosamente a **{roblox_username}** usando el navegador automatizado",
                 color=0x00ff88
             )
-            success_embed.add_field(name="🤖 Bot Seguidor", value=f"{bot_username}", inline=True)
             success_embed.add_field(name="👤 Usuario Seguido", value=f"{roblox_username}", inline=True)
-            success_embed.add_field(name="📊 Total Enviado", value="1 seguidor", inline=True)
+            success_embed.add_field(name="🤖 Método", value="Navegador + JavaScript", inline=True)
+            success_embed.add_field(name="📊 Resultado", value=f"`{result}`", inline=True)
             success_embed.add_field(
                 name="🔗 Perfil del Usuario",
-                value=f"[Ver Perfil](https://www.roblox.com/users/{target_user_id}/profile)",
+                value=f"[Ver Perfil]({profile_url})",
+                inline=False
+            )
+            success_embed.add_field(
+                name="✅ Confirmación",
+                value=f"Script ejecutado: `{result}`\nVerificación: `{verification_result}`",
                 inline=False
             )
             success_embed.set_footer(text=f"Ejecutado por: {interaction.user.name}")
             
             await message.edit(embed=success_embed)
-            logger.info(f"Owner {interaction.user.name} envió seguidor bot exitosamente a {roblox_username}")
+            logger.info(f"✅ Owner {interaction.user.name} envió seguidor bot exitosamente a {roblox_username} via navegador")
         else:
             error_embed = discord.Embed(
-                title="❌ Error Enviando Seguidor",
-                description=f"No se pudo enviar el seguidor a **{roblox_username}**",
-                color=0xff0000
+                title="⚠️ Proceso Completado con Advertencias",
+                description=f"El script se ejecutó pero no se pudo confirmar el seguimiento automáticamente",
+                color=0xff9900
             )
-            error_embed.add_field(name="🤖 Bot Cuenta", value=f"{bot_username}", inline=True)
             error_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username}", inline=True)
-            error_embed.add_field(name="❌ Error", value=follow_error or "Error desconocido", inline=True)
+            error_embed.add_field(name="🤖 Script", value=f"`{result}`", inline=True)
+            error_embed.add_field(name="🔍 Verificación", value=f"`{verification_result}`", inline=True)
             error_embed.add_field(
                 name="💡 Posibles Causas:",
-                value="• El usuario tiene los seguidores desactivados\n• La cuenta bot está limitada\n• El usuario ya está siendo seguido\n• Límites de API de Roblox",
+                value="• El usuario ya está siendo seguido\n• El botón de follow no estaba visible\n• Cambio en la interfaz de Roblox\n• Restricciones de la cuenta",
+                inline=False
+            )
+            error_embed.add_field(
+                name="🔗 Verificar Manualmente:",
+                value=f"[Ver Perfil]({profile_url})",
                 inline=False
             )
             
@@ -5559,6 +5714,18 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str)
             color=0xff0000
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
+    
+    finally:
+        # Cerrar navegador
+        if driver:
+            try:
+                logger.info("🔒 Cerrando navegador...")
+                driver.quit()
+                logger.info("✅ Navegador cerrado exitosamente")
+            except Exception as close_error:
+                logger.warning(f"Error cerrando navegador: {close_error}")
+        
+        logger.info(f"Owner {interaction.user.name} completó comando follow para {roblox_username}")
 
 @bot.tree.command(name="listaccess", description="[OWNER ONLY] Ver lista de usuarios con acceso delegado")
 async def list_access_command(interaction: discord.Interaction):
