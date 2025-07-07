@@ -4890,18 +4890,8 @@ async def perform_complete_logout(previous_cookie):
         logger.error(f"❌ Error crítico en logout: {e}")
         return False
 
-@bot.tree.command(name="friend", description="[OWNER ONLY] Enviar solicitudes de amistad al ID de usuario especificado")
-async def friend_command(interaction: discord.Interaction, user_id: int, cantidad: int = 1):
-    """Comando para enviar múltiples solicitudes de amistad usando las cookies disponibles"""
-    user_discord_id = str(interaction.user.id)
-    
-    # Verificar que solo el owner o delegados puedan usar este comando
-    if not is_owner_or_delegated(user_discord_id):
-        embed = discord.Embed(
-            title="❌ Acceso Denegado",
-            description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
-            color=0xff0000
-        )
+
+
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
     
