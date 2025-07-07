@@ -4607,20 +4607,28 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         # URL de la API de amistad de Roblox
         friend_url = f"https://friends.roblox.com/v1/users/{user_id}/request-friendship"
         
-        # Enviar solicitudes con cada cookie
-        for i, cookie_data in enumerate(cookies_a_usar):
+        # Enviar solicitudes con rotación automática de cookies
+        cookie_index = 0
+        solicitudes_enviadas = 0
+        max_intentos_por_cookie = 2  # Máximo 2 intentos con la misma cookie antes de rotar
+        
+        while solicitudes_enviadas < cantidad_real and cookie_index < len(cookies_disponibles):
+            cookie_data = cookies_disponibles[cookie_index % len(cookies_disponibles)]
+            intento_cookie = 0
+            cookie_exitosa = False
+            
             try:
-                logger.info(f"🍪 Usando cookie {i+1}/{cantidad_real} de {cookie_data['source']} (longitud: {len(cookie_data['cookie'])})")
+                logger.info(f"🍪 Usando cookie {cookie_index + 1} ({cookie_data['source']}) - Solicitud {solicitudes_enviadas + 1}/{cantidad_real}")
                 
                 # Actualizar progreso
                 progress_embed = discord.Embed(
                     title="🤝 Enviando Solicitudes de Amistad",
-                    description=f"Procesando solicitud **{i+1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
+                    description=f"Procesando solicitud **{solicitudes_enviadas + 1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
                     color=0xffaa00
                 )
                 progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-                progress_embed.add_field(name="🍪 Cookie Actual", value=cookie_data['source'], inline=True)
-                progress_embed.add_field(name="📊 Progreso", value=f"{i+1}/{cantidad_real}", inline=True)
+                progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{cookie_index + 1})", inline=True)
+                progress_embed.add_field(name="📊 Progreso", value=f"{solicitudes_enviadas + 1}/{cantidad_real}", inline=True)
                 progress_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
                 progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
@@ -4665,27 +4673,67 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                     except Exception as req_error:
                         resultado = {"status": "error", "message": f"Error de request: {str(req_error)[:50]}"}
                 
-                # Procesar resultado
+                # Procesar resultado y decidir si rotar cookie
                 if resultado and resultado["status"] == "success":
                     exitosas += 1
+                    solicitudes_enviadas += 1
+                    cookie_exitosa = True
                     logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']}")
+                    
                 elif resultado and resultado["status"] == "already_friends":
                     ya_amigos += 1
+                    solicitudes_enviadas += 1
+                    cookie_exitosa = True
                     logger.info(f"👥 Ya son amigos - cookie {cookie_data['source']}")
+                    
                 else:
-                    fallidas += 1
+                    # Error - verificar si es rate limit o error de cookie
                     error_msg = resultado["message"] if resultado else "Error desconocido"
-                    errores.append(f"Cookie {i+1}: {error_msg[:50]}")
-                    logger.warning(f"❌ Solicitud fallida con cookie {cookie_data['source']}: {error_msg}")
+                    
+                    # Si es rate limit (429) o error 401, rotar a siguiente cookie inmediatamente
+                    if ("429" in error_msg or "401" in error_msg or "rate limit" in error_msg.lower() or 
+                        "too many requests" in error_msg.lower() or "cookie inválida" in error_msg.lower()):
+                        
+                        logger.warning(f"⚠️ Rate limit o cookie inválida detectada: {error_msg} - Rotando a siguiente cookie")
+                        fallidas += 1
+                        errores.append(f"Cookie {cookie_index + 1}: {error_msg[:50]} (ROTANDO)")
+                        
+                        # Forzar rotación inmediata
+                        intento_cookie = max_intentos_por_cookie
+                        
+                    else:
+                        # Otro tipo de error - intentar una vez más con la misma cookie
+                        intento_cookie += 1
+                        if intento_cookie < max_intentos_por_cookie:
+                            logger.info(f"🔄 Reintentando con misma cookie (intento {intento_cookie + 1}/{max_intentos_por_cookie})")
+                            await asyncio.sleep(2)
+                            continue
+                        else:
+                            fallidas += 1
+                            errores.append(f"Cookie {cookie_index + 1}: {error_msg[:50]}")
+                            logger.warning(f"❌ Solicitud fallida con cookie {cookie_data['source']}: {error_msg}")
                 
-                # Pequeña pausa entre solicitudes para evitar rate limiting
-                if i < cantidad_real - 1:
-                    await asyncio.sleep(3)
+                # Decidir si rotar a siguiente cookie
+                if cookie_exitosa or intento_cookie >= max_intentos_por_cookie:
+                    cookie_index += 1
+                    logger.info(f"🔄 Rotando a siguiente cookie (índice: {cookie_index})")
+                    
+                    # Pausa entre rotaciones de cookies para evitar rate limiting
+                    if solicitudes_enviadas < cantidad_real and cookie_index < len(cookies_disponibles):
+                        await asyncio.sleep(3)
+                
+                # Si completamos todas las solicitudes o se agotaron las cookies, salir
+                if solicitudes_enviadas >= cantidad_real or cookie_index >= len(cookies_disponibles):
+                    break
                     
             except Exception as e:
                 fallidas += 1
-                errores.append(f"Cookie {i+1}: {str(e)[:50]}")
+                errores.append(f"Cookie {cookie_index + 1}: {str(e)[:50]}")
                 logger.error(f"❌ Error general con cookie {cookie_data['source']}: {e}")
+                
+                # Rotar a siguiente cookie en caso de error crítico
+                cookie_index += 1
+                await asyncio.sleep(2)
         
         # Crear embed final con resultados
         if exitosas > 0:
