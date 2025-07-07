@@ -159,14 +159,18 @@
       "roblox_username": "eliminenbodrio_stars",
       "verification_code": "code_26-vip",
       "verified_at": 1751850116.2388833
-    }
-  },
-  "pending_verifications": {
+    },
     "1290793417349271654": {
       "roblox_username": "elpepe706uwu",
-      "verification_code": "vipx2025xrbx",
-      "created_at": 1751851095.7600193
+      "verification_code": "bot_2025_ok",
+      "verified_at": 1751853799.4084086
+    },
+    "1114605609862570135": {
+      "roblox_username": "xBlu3_V3bx3",
+      "verification_code": "verifyv2025_vip",
+      "verified_at": 1751854629.7116292
     }
   },
-  "last_updated": "2025-07-07T01:18:15.760023"
+  "pending_verifications": {},
+  "last_updated": "2025-07-07T02:17:09.711633"
 }
