@@ -5006,11 +5006,11 @@ async def friendrestart_command(interaction: discord.Interaction, user_id: int, 
     await interaction.response.defer(ephemeral=True)
     
     try:
-        # Importar el nuevo sistema
-        from friend_browser_restart import FriendRequestBrowserRestart
+        # Importar el nuevo sistema mejorado
+        from friend_browser_improved import FriendRequestBrowserImproved
         
         # Crear instancia del sistema
-        friend_system = FriendRequestBrowserRestart(scraper)
+        friend_system = FriendRequestBrowserImproved(scraper)
         
         # Crear embed inicial
         initial_embed = discord.Embed(
