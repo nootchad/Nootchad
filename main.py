@@ -5350,6 +5350,216 @@ async def alerts_command(interaction: discord.Interaction,
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+@bot.tree.command(name="follow", description="[OWNER ONLY] Enviar 1 seguidor bot a un perfil de Roblox")
+async def follow_command(interaction: discord.Interaction, roblox_username: str):
+    """Comando solo para el owner que envía 1 seguidor bot a un perfil de Roblox"""
+    user_id = str(interaction.user.id)
+    
+    # Verificar que solo el owner o delegados puedan usar este comando
+    if not is_owner_or_delegated(user_id):
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        # Obtener cookie del secreto
+        roblox_cookie = os.getenv('COOKIE')
+        if not roblox_cookie or len(roblox_cookie.strip()) < 50:
+            embed = discord.Embed(
+                title="❌ Cookie No Encontrada",
+                description="La cookie de Roblox no está configurada en el secreto COOKIE o es inválida.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Mensaje inicial
+        embed = discord.Embed(
+            title="👤 Enviando Seguidor Bot",
+            description=f"Iniciando proceso para enviar 1 seguidor bot a **{roblox_username}**",
+            color=0xffaa00
+        )
+        embed.add_field(name="👤 Usuario Objetivo", value=f"`{roblox_username}`", inline=True)
+        embed.add_field(name="🤖 Seguidores a Enviar", value="1", inline=True)
+        embed.add_field(name="🔄 Estado", value="Obteniendo información del usuario...", inline=True)
+        
+        message = await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        # Obtener información del usuario objetivo usando requests
+        async with aiohttp.ClientSession() as session:
+            # Buscar usuario por nombre
+            search_url = "https://users.roblox.com/v1/usernames/users"
+            search_payload = {
+                "usernames": [roblox_username],
+                "excludeBannedUsers": True
+            }
+            search_headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+            
+            async with session.post(search_url, json=search_payload, headers=search_headers) as response:
+                if response.status != 200:
+                    embed = discord.Embed(
+                        title="❌ Error de API",
+                        description=f"No se pudo acceder a la API de Roblox (Status: {response.status})",
+                        color=0xff0000
+                    )
+                    await message.edit(embed=embed)
+                    return
+                
+                search_data = await response.json()
+                users_found = search_data.get("data", [])
+                
+                if not users_found:
+                    embed = discord.Embed(
+                        title="❌ Usuario No Encontrado",
+                        description=f"No se encontró el usuario **{roblox_username}** en Roblox.",
+                        color=0xff0000
+                    )
+                    await message.edit(embed=embed)
+                    return
+                
+                target_user = users_found[0]
+                target_user_id = target_user.get("id")
+                target_display_name = target_user.get("displayName", roblox_username)
+                
+                logger.info(f"🎯 Usuario encontrado: {roblox_username} (ID: {target_user_id})")
+        
+        # Actualizar estado
+        progress_embed = discord.Embed(
+            title="🔐 Autenticando Bot",
+            description=f"Usuario **{roblox_username}** encontrado. Autenticando con cookie del secreto...",
+            color=0x3366ff
+        )
+        progress_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
+        progress_embed.add_field(name="🆔 Display Name", value=target_display_name, inline=True)
+        progress_embed.add_field(name="🔄 Estado", value="Verificando autenticación...", inline=True)
+        
+        await message.edit(embed=progress_embed)
+        
+        # Verificar autenticación de la cookie
+        async with aiohttp.ClientSession() as session:
+            auth_headers = {
+                'Cookie': f'.ROBLOSECURITY={roblox_cookie}',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            
+            # Verificar que la cookie funcione
+            async with session.get('https://users.roblox.com/v1/users/authenticated', headers=auth_headers) as response:
+                if response.status != 200:
+                    embed = discord.Embed(
+                        title="❌ Cookie Inválida",
+                        description="La cookie del secreto COOKIE no es válida o ha expirado.",
+                        color=0xff0000
+                    )
+                    await message.edit(embed=embed)
+                    return
+                
+                bot_user_data = await response.json()
+                bot_username = bot_user_data.get('name', 'Unknown')
+                bot_user_id = bot_user_data.get('id', 'Unknown')
+                
+                logger.info(f"✅ Cookie válida para usuario: {bot_username} (ID: {bot_user_id})")
+        
+        # Actualizar estado
+        follow_embed = discord.Embed(
+            title="👥 Siguiendo Usuario",
+            description=f"Autenticación exitosa como **{bot_username}**. Enviando solicitud de seguimiento...",
+            color=0x00ff88
+        )
+        follow_embed.add_field(name="🤖 Bot Cuenta", value=f"{bot_username} (ID: {bot_user_id})", inline=True)
+        follow_embed.add_field(name="👤 Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
+        follow_embed.add_field(name="🔄 Estado", value="Procesando seguimiento...", inline=True)
+        
+        await message.edit(embed=follow_embed)
+        
+        # Intentar seguir al usuario
+        follow_success = False
+        follow_error = None
+        
+        async with aiohttp.ClientSession() as session:
+            # Obtener CSRF token
+            async with session.post('https://auth.roblox.com/v2/logout', headers=auth_headers) as csrf_response:
+                csrf_token = csrf_response.headers.get('x-csrf-token')
+                
+                if not csrf_token:
+                    follow_error = "No se pudo obtener CSRF token"
+                else:
+                    # Headers con CSRF token
+                    follow_headers = {
+                        'Cookie': f'.ROBLOSECURITY={roblox_cookie}',
+                        'X-CSRF-TOKEN': csrf_token,
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                    
+                    # Enviar solicitud de seguimiento
+                    follow_url = f"https://friends.roblox.com/v1/users/{target_user_id}/follow"
+                    
+                    async with session.post(follow_url, headers=follow_headers) as follow_response:
+                        if follow_response.status == 200:
+                            follow_success = True
+                            logger.info(f"✅ Seguimiento exitoso: {bot_username} -> {roblox_username}")
+                        else:
+                            try:
+                                error_data = await follow_response.json()
+                                follow_error = error_data.get('errors', [{}])[0].get('message', f'Status {follow_response.status}')
+                            except:
+                                follow_error = f"HTTP {follow_response.status}"
+                            logger.error(f"❌ Error siguiendo usuario: {follow_error}")
+        
+        # Resultado final
+        if follow_success:
+            success_embed = discord.Embed(
+                title="✅ ¡Seguidor Enviado Exitosamente!",
+                description=f"El bot **{bot_username}** ahora está siguiendo a **{roblox_username}**",
+                color=0x00ff88
+            )
+            success_embed.add_field(name="🤖 Bot Seguidor", value=f"{bot_username}", inline=True)
+            success_embed.add_field(name="👤 Usuario Seguido", value=f"{roblox_username}", inline=True)
+            success_embed.add_field(name="📊 Total Enviado", value="1 seguidor", inline=True)
+            success_embed.add_field(
+                name="🔗 Perfil del Usuario",
+                value=f"[Ver Perfil](https://www.roblox.com/users/{target_user_id}/profile)",
+                inline=False
+            )
+            success_embed.set_footer(text=f"Ejecutado por: {interaction.user.name}")
+            
+            await message.edit(embed=success_embed)
+            logger.info(f"Owner {interaction.user.name} envió seguidor bot exitosamente a {roblox_username}")
+        else:
+            error_embed = discord.Embed(
+                title="❌ Error Enviando Seguidor",
+                description=f"No se pudo enviar el seguidor a **{roblox_username}**",
+                color=0xff0000
+            )
+            error_embed.add_field(name="🤖 Bot Cuenta", value=f"{bot_username}", inline=True)
+            error_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username}", inline=True)
+            error_embed.add_field(name="❌ Error", value=follow_error or "Error desconocido", inline=True)
+            error_embed.add_field(
+                name="💡 Posibles Causas:",
+                value="• El usuario tiene los seguidores desactivados\n• La cuenta bot está limitada\n• El usuario ya está siendo seguido\n• Límites de API de Roblox",
+                inline=False
+            )
+            
+            await message.edit(embed=error_embed)
+    
+    except Exception as e:
+        logger.error(f"Error en comando follow: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description=f"Ocurrió un error durante el proceso: {str(e)[:200]}",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="listaccess", description="[OWNER ONLY] Ver lista de usuarios con acceso delegado")
 async def list_access_command(interaction: discord.Interaction):
     """Ver lista de usuarios con acceso delegado - SOLO EL OWNER ORIGINAL"""
