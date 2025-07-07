@@ -3197,6 +3197,10 @@ user_monitoring = RobloxUserMonitoring()
 # Setup Roblox control commands
 roblox_control_commands = None
 
+# Import theme and maintenance systems
+theme_system = None
+maintenance_system = None
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -3307,6 +3311,18 @@ async def on_ready():
         logger.info("🤖 Comandos de control remoto de Roblox configurados")
     except Exception as e:
         logger.error(f"❌ Error configurando comandos de control remoto: {e}")
+
+    # Setup theme and maintenance systems
+    global theme_system, maintenance_system
+    try:
+        from theme_system import setup_theme_commands
+        from maintenance_system import setup_maintenance_commands
+        
+        theme_system = setup_theme_commands(bot)
+        maintenance_system = setup_maintenance_commands(bot)
+        logger.info("🎨 Sistemas de temas y mantenimiento configurados")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistemas de temas y mantenimiento: {e}")
 
     # Inicializar sistema de monitoreo de usuarios
     try:
