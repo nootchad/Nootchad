@@ -1,0 +1,21 @@
+{
+  "user_themes": {
+    "916070251895091241": {
+      "preset": "minimal",
+      "custom_colors": null,
+      "last_updated": "2025-07-07T11:46:12.479724"
+    }
+  },
+  "last_updated": "2025-07-07T11:46:12.479732",
+  "total_users": 1,
+  "available_presets": [
+    "default",
+    "dark",
+    "neon",
+    "ocean",
+    "forest",
+    "sunset",
+    "purple",
+    "minimal"
+  ]
+}
