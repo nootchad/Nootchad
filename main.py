@@ -2745,6 +2745,392 @@ report_system = ServerReportSystem()
 # Set report system reference in scraper
 scraper.report_system = report_system
 
+# Sistema de alertas de usuarios
+class RobloxUserMonitoring:
+    def __init__(self):
+        self.monitored_users = {}  # discord_id -> {roblox_username, roblox_user_id, last_status, notifications_enabled}
+        self.user_states = {}      # roblox_user_id -> {online, game_id, game_name, last_check}
+        self.alerts_file = "user_alerts.json"
+        self.monitoring_task = None
+        self.load_alerts_data()
+    
+    def load_alerts_data(self):
+        """Cargar datos de alertas desde archivo"""
+        try:
+            if Path(self.alerts_file).exists():
+                with open(self.alerts_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.monitored_users = data.get('monitored_users', {})
+                    self.user_states = data.get('user_states', {})
+                    logger.info(f"✅ Alertas cargadas: {len(self.monitored_users)} usuarios monitoreados")
+            else:
+                logger.info("⚠️ Archivo de alertas no encontrado, inicializando vacío")
+        except Exception as e:
+            logger.error(f"❌ Error cargando alertas: {e}")
+            self.monitored_users = {}
+            self.user_states = {}
+    
+    def save_alerts_data(self):
+        """Guardar datos de alertas a archivo"""
+        try:
+            data = {
+                'monitored_users': self.monitored_users,
+                'user_states': self.user_states,
+                'last_updated': datetime.now().isoformat(),
+                'total_monitored': len(self.monitored_users)
+            }
+            with open(self.alerts_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+            logger.info(f"💾 Datos de alertas guardados exitosamente")
+        except Exception as e:
+            logger.error(f"❌ Error guardando alertas: {e}")
+    
+    async def add_user_to_monitoring(self, discord_id: str, roblox_username: str) -> tuple[bool, str]:
+        """Agregar usuario al monitoreo"""
+        try:
+            # Obtener información del usuario de Roblox usando la API
+            user_info = await roblox_verification.get_roblox_user_by_username(roblox_username)
+            if not user_info:
+                return False, f"No se pudo encontrar el usuario '{roblox_username}' en Roblox"
+            
+            roblox_user_id = str(user_info['id'])
+            
+            # Agregar al monitoreo
+            self.monitored_users[discord_id] = {
+                'roblox_username': roblox_username,
+                'roblox_user_id': roblox_user_id,
+                'notifications_enabled': True,
+                'added_at': datetime.now().isoformat()
+            }
+            
+            # Inicializar estado
+            if roblox_user_id not in self.user_states:
+                self.user_states[roblox_user_id] = {
+                    'online': False,
+                    'game_id': None,
+                    'game_name': None,
+                    'last_check': datetime.now().isoformat(),
+                    'last_online': None
+                }
+            
+            self.save_alerts_data()
+            
+            # Verificar estado inmediatamente
+            await self.check_user_status_immediate(roblox_user_id)
+            
+            return True, f"Usuario '{roblox_username}' agregado al monitoreo exitosamente"
+            
+        except Exception as e:
+            logger.error(f"Error agregando usuario al monitoreo: {e}")
+            return False, f"Error interno: {str(e)}"
+    
+    async def remove_user_from_monitoring(self, discord_id: str) -> bool:
+        """Remover usuario del monitoreo"""
+        if discord_id in self.monitored_users:
+            del self.monitored_users[discord_id]
+            self.save_alerts_data()
+            return True
+        return False
+    
+    async def get_roblox_cookie(self) -> str:
+        """Obtener cookie de Roblox del secreto"""
+        try:
+            cookie = os.getenv('COOKIE')
+            if cookie and len(cookie.strip()) > 50:
+                return cookie.strip()
+            else:
+                logger.warning("⚠️ Cookie del secreto COOKIE no válida")
+                return None
+        except Exception as e:
+            logger.error(f"Error obteniendo cookie: {e}")
+            return None
+    
+    async def check_user_status_immediate(self, roblox_user_id: str):
+        """Verificar estado de usuario inmediatamente"""
+        try:
+            cookie = await self.get_roblox_cookie()
+            if not cookie:
+                logger.warning("⚠️ No se puede verificar estado sin cookie válida")
+                return
+            
+            # Obtener estado actual del usuario
+            current_status = await self.get_user_presence(roblox_user_id, cookie)
+            
+            if current_status:
+                # Actualizar estado
+                self.user_states[roblox_user_id].update(current_status)
+                self.user_states[roblox_user_id]['last_check'] = datetime.now().isoformat()
+                
+                logger.info(f"✅ Estado inicial verificado para usuario {roblox_user_id}: {'online' if current_status['online'] else 'offline'}")
+            
+        except Exception as e:
+            logger.error(f"Error verificando estado inmediato: {e}")
+    
+    async def get_user_presence(self, roblox_user_id: str, cookie: str) -> dict:
+        """Obtener presencia de usuario usando la API de Roblox"""
+        try:
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    'Cookie': f'.ROBLOSECURITY={cookie}',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+                
+                # API de presencia de Roblox
+                url = f"https://presence.roblox.com/v1/presence/users"
+                payload = {"userIds": [int(roblox_user_id)]}
+                
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        user_presences = data.get('userPresences', [])
+                        
+                        if user_presences:
+                            presence = user_presences[0]
+                            game_id = presence.get('placeId')
+                            
+                            status = {
+                                'online': presence.get('userPresenceType') in [1, 2, 3],  # 1=Online, 2=InGame, 3=InStudio
+                                'game_id': str(game_id) if game_id else None,
+                                'game_name': None,
+                                'presence_type': presence.get('userPresenceType', 0)
+                            }
+                            
+                            # Obtener nombre del juego si está jugando
+                            if game_id:
+                                game_name = await self.get_game_name(game_id, session, headers)
+                                status['game_name'] = game_name
+                            
+                            return status
+                    else:
+                        logger.warning(f"⚠️ Error API presencia: {response.status}")
+                        return None
+        
+        except Exception as e:
+            logger.error(f"Error obteniendo presencia: {e}")
+            return None
+    
+    async def get_game_name(self, game_id: int, session: aiohttp.ClientSession, headers: dict) -> str:
+        """Obtener nombre del juego"""
+        try:
+            url = f"https://games.roblox.com/v1/games?universeIds={game_id}"
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    games = data.get('data', [])
+                    if games:
+                        return games[0].get('name', f'Game {game_id}')
+            return f'Game {game_id}'
+        except Exception as e:
+            logger.debug(f"Error obteniendo nombre del juego: {e}")
+            return f'Game {game_id}'
+    
+    async def check_all_users(self):
+        """Verificar estado de todos los usuarios monitoreados"""
+        try:
+            if not self.monitored_users:
+                return
+            
+            cookie = await self.get_roblox_cookie()
+            if not cookie:
+                logger.warning("⚠️ No se puede verificar usuarios sin cookie válida")
+                return
+            
+            logger.info(f"🔍 Verificando estado de {len(self.monitored_users)} usuarios monitoreados...")
+            
+            # Obtener todos los IDs de usuarios únicos
+            roblox_user_ids = list(set([data['roblox_user_id'] for data in self.monitored_users.values()]))
+            
+            for roblox_user_id in roblox_user_ids:
+                try:
+                    # Obtener estado actual
+                    current_status = await self.get_user_presence(roblox_user_id, cookie)
+                    
+                    if current_status is None:
+                        continue
+                    
+                    # Comparar con estado anterior
+                    old_state = self.user_states.get(roblox_user_id, {})
+                    
+                    # Detectar cambios
+                    status_changed = False
+                    notifications = []
+                    
+                    # Cambio de conexión (offline -> online)
+                    if not old_state.get('online', False) and current_status['online']:
+                        notifications.append({
+                            'type': 'connected',
+                            'message': '🟢 **Se conectó**',
+                            'color': 0x00ff00
+                        })
+                        status_changed = True
+                    
+                    # Cambio de conexión (online -> offline)
+                    elif old_state.get('online', False) and not current_status['online']:
+                        notifications.append({
+                            'type': 'disconnected',
+                            'message': '🔴 **Se desconectó**',
+                            'color': 0xff0000
+                        })
+                        status_changed = True
+                    
+                    # Cambio de juego
+                    old_game = old_state.get('game_id')
+                    new_game = current_status.get('game_id')
+                    
+                    if current_status['online'] and old_game != new_game:
+                        if new_game and not old_game:
+                            # Empezó a jugar
+                            notifications.append({
+                                'type': 'started_playing',
+                                'message': f'🎮 **Empezó a jugar:** {current_status.get("game_name", "Unknown Game")}',
+                                'color': 0x00aaff,
+                                'game_name': current_status.get('game_name'),
+                                'game_id': new_game
+                            })
+                            status_changed = True
+                        elif not new_game and old_game:
+                            # Dejó de jugar
+                            notifications.append({
+                                'type': 'stopped_playing',
+                                'message': f'⏹️ **Dejó de jugar:** {old_state.get("game_name", "Unknown Game")}',
+                                'color': 0xffaa00
+                            })
+                            status_changed = True
+                        elif new_game and old_game and new_game != old_game:
+                            # Cambió de juego
+                            notifications.append({
+                                'type': 'changed_game',
+                                'message': f'🔄 **Cambió de juego:** {current_status.get("game_name", "Unknown Game")}',
+                                'color': 0xaa00ff,
+                                'game_name': current_status.get('game_name'),
+                                'game_id': new_game
+                            })
+                            status_changed = True
+                    
+                    # Actualizar estado
+                    if current_status['online']:
+                        current_status['last_online'] = datetime.now().isoformat()
+                    current_status['last_check'] = datetime.now().isoformat()
+                    
+                    self.user_states[roblox_user_id] = current_status
+                    
+                    # Enviar notificaciones
+                    if status_changed and notifications:
+                        await self.send_notifications(roblox_user_id, notifications)
+                    
+                    await asyncio.sleep(1)  # Pequeña pausa entre verificaciones
+                    
+                except Exception as e:
+                    logger.error(f"Error verificando usuario {roblox_user_id}: {e}")
+                    continue
+            
+            # Guardar datos actualizados
+            self.save_alerts_data()
+            logger.info(f"✅ Verificación de usuarios completada")
+            
+        except Exception as e:
+            logger.error(f"Error en verificación masiva: {e}")
+    
+    async def send_notifications(self, roblox_user_id: str, notifications: list):
+        """Enviar notificaciones a usuarios de Discord"""
+        try:
+            # Encontrar todos los usuarios de Discord que monitorean este usuario de Roblox
+            discord_users = []
+            for discord_id, data in self.monitored_users.items():
+                if (data['roblox_user_id'] == roblox_user_id and 
+                    data.get('notifications_enabled', True)):
+                    discord_users.append(discord_id)
+            
+            if not discord_users:
+                return
+            
+            roblox_username = None
+            for data in self.monitored_users.values():
+                if data['roblox_user_id'] == roblox_user_id:
+                    roblox_username = data['roblox_username']
+                    break
+            
+            if not roblox_username:
+                return
+            
+            # Enviar notificación a cada usuario de Discord
+            for discord_id in discord_users:
+                try:
+                    user = bot.get_user(int(discord_id))
+                    if not user:
+                        user = await bot.fetch_user(int(discord_id))
+                    
+                    if user:
+                        for notification in notifications:
+                            embed = discord.Embed(
+                                title=f"🔔 Alerta de Usuario",
+                                description=f"**{roblox_username}** {notification['message']}",
+                                color=notification['color'],
+                                timestamp=datetime.now()
+                            )
+                            
+                            embed.add_field(
+                                name="👤 Usuario",
+                                value=f"[{roblox_username}](https://www.roblox.com/users/{roblox_user_id}/profile)",
+                                inline=True
+                            )
+                            
+                            embed.add_field(
+                                name="⏰ Hora",
+                                value=f"<t:{int(time.time())}:T>",
+                                inline=True
+                            )
+                            
+                            if notification.get('game_name') and notification.get('game_id'):
+                                embed.add_field(
+                                    name="🎮 Juego",
+                                    value=f"[{notification['game_name']}](https://www.roblox.com/games/{notification['game_id']})",
+                                    inline=False
+                                )
+                            
+                            embed.set_footer(text="RbxServers • Sistema de Alertas")
+                            
+                            await user.send(embed=embed)
+                            logger.info(f"📨 Notificación enviada a {user.name}: {notification['message']}")
+                            
+                            await asyncio.sleep(0.5)  # Evitar rate limits
+                
+                except Exception as e:
+                    logger.error(f"Error enviando notificación a usuario {discord_id}: {e}")
+                    continue
+        
+        except Exception as e:
+            logger.error(f"Error enviando notificaciones: {e}")
+    
+    def start_monitoring(self):
+        """Iniciar tarea de monitoreo"""
+        if self.monitoring_task is None or self.monitoring_task.done():
+            self.monitoring_task = asyncio.create_task(self.monitoring_loop())
+            logger.info("🔄 Tarea de monitoreo de usuarios iniciada")
+    
+    def stop_monitoring(self):
+        """Detener tarea de monitoreo"""
+        if self.monitoring_task and not self.monitoring_task.done():
+            self.monitoring_task.cancel()
+            logger.info("⏹️ Tarea de monitoreo de usuarios detenida")
+    
+    async def monitoring_loop(self):
+        """Loop principal de monitoreo cada 5 minutos"""
+        try:
+            while True:
+                await self.check_all_users()
+                await asyncio.sleep(300)  # 5 minutos
+        except asyncio.CancelledError:
+            logger.info("🔄 Loop de monitoreo cancelado")
+        except Exception as e:
+            logger.error(f"Error en loop de monitoreo: {e}")
+            # Reiniciar después de 1 minuto si hay error
+            await asyncio.sleep(60)
+            await self.monitoring_loop()
+
+# Instancia global del sistema de alertas
+user_monitoring = RobloxUserMonitoring()
+
 # Setup Roblox control commands
 roblox_control_commands = None
 
@@ -2858,6 +3244,13 @@ async def on_ready():
         logger.info("🤖 Comandos de control remoto de Roblox configurados")
     except Exception as e:
         logger.error(f"❌ Error configurando comandos de control remoto: {e}")
+
+    # Inicializar sistema de monitoreo de usuarios
+    try:
+        user_monitoring.start_monitoring()
+        logger.info("🔔 Sistema de alertas de usuarios iniciado")
+    except Exception as e:
+        logger.error(f"❌ Error iniciando sistema de alertas: {e}")
 
     # Sync slash commands after bot is ready
     try:
@@ -4704,6 +5097,255 @@ async def revoke_access_command(interaction: discord.Interaction, user_id: str):
         embed = discord.Embed(
             title="❌ Error",
             description=f"Ocurrió un error al revocar acceso: {str(e)}",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="alerts", description="Configurar alertas de estado de usuarios de Roblox")
+async def alerts_command(interaction: discord.Interaction, 
+                        accion: str, 
+                        usuario_roblox: str = None):
+    """Comando para configurar alertas de estado de usuarios de Roblox"""
+    
+    # Verificar verificación de usuario
+    if not await check_verification(interaction):
+        return
+    
+    user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    user_logger.info(f"🔔 Comando /alerts ejecutado por {username} (ID: {user_id}) - Acción: {accion}")
+    
+    try:
+        if accion.lower() == "agregar":
+            if not usuario_roblox:
+                embed = discord.Embed(
+                    title="❌ Usuario Requerido",
+                    description="Debes especificar el nombre de usuario de Roblox para agregar al monitoreo.",
+                    color=0xff0000
+                )
+                embed.add_field(
+                    name="💡 Uso correcto:",
+                    value="`/alerts agregar [nombre_usuario_roblox]`",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Verificar si ya está monitoreando este usuario
+            if user_id in user_monitoring.monitored_users:
+                current_user = user_monitoring.monitored_users[user_id]['roblox_username']
+                embed = discord.Embed(
+                    title="⚠️ Ya Monitoreando Usuario",
+                    description=f"Ya estás monitoreando a **{current_user}**. Usa `/alerts quitar` primero para monitorear a otro usuario.",
+                    color=0xffaa00
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Agregar usuario al monitoreo
+            success, message = await user_monitoring.add_user_to_monitoring(user_id, usuario_roblox)
+            
+            if success:
+                embed = discord.Embed(
+                    title="✅ Alertas Configuradas",
+                    description=f"Ahora recibirás alertas sobre el estado de **{usuario_roblox}**.",
+                    color=0x00ff88
+                )
+                embed.add_field(
+                    name="🔔 Tipos de Alertas:",
+                    value="• 🟢 Cuando se conecte\n• 🔴 Cuando se desconecte\n• 🎮 Cuando empiece a jugar\n• ⏹️ Cuando deje de jugar\n• 🔄 Cuando cambie de juego",
+                    inline=False
+                )
+                embed.add_field(
+                    name="⏰ Frecuencia:",
+                    value="Verificación cada 5 minutos",
+                    inline=True
+                )
+                embed.add_field(
+                    name="👤 Usuario Monitoreado:",
+                    value=f"[{usuario_roblox}](https://www.roblox.com/users/{user_monitoring.monitored_users[user_id]['roblox_user_id']}/profile)",
+                    inline=True
+                )
+                embed.add_field(
+                    name="💡 Gestionar Alertas:",
+                    value="`/alerts estado` - Ver estado actual\n`/alerts quitar` - Desactivar alertas",
+                    inline=False
+                )
+                
+                # Obtener estado actual
+                roblox_user_id = user_monitoring.monitored_users[user_id]['roblox_user_id']
+                current_state = user_monitoring.user_states.get(roblox_user_id, {})
+                
+                if current_state.get('online'):
+                    status_text = "🟢 En línea"
+                    if current_state.get('game_name'):
+                        status_text += f" - Jugando: {current_state['game_name']}"
+                else:
+                    status_text = "🔴 Desconectado"
+                
+                embed.add_field(
+                    name="📊 Estado Actual:",
+                    value=status_text,
+                    inline=False
+                )
+                
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                logger.info(f"✅ Usuario {user_id} configuró alertas para {usuario_roblox}")
+            else:
+                embed = discord.Embed(
+                    title="❌ Error",
+                    description=message,
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        elif accion.lower() == "quitar":
+            success = await user_monitoring.remove_user_from_monitoring(user_id)
+            
+            if success:
+                embed = discord.Embed(
+                    title="✅ Alertas Desactivadas",
+                    description="Ya no recibirás alertas de estado de usuarios.",
+                    color=0x00ff88
+                )
+                embed.add_field(
+                    name="💡 Para reactivar:",
+                    value="Usa `/alerts agregar [usuario_roblox]`",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                logger.info(f"✅ Usuario {user_id} desactivó alertas")
+            else:
+                embed = discord.Embed(
+                    title="⚠️ Sin Alertas Activas",
+                    description="No tienes alertas configuradas actualmente.",
+                    color=0xffaa00
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        elif accion.lower() == "estado":
+            if user_id not in user_monitoring.monitored_users:
+                embed = discord.Embed(
+                    title="⚠️ Sin Alertas Configuradas",
+                    description="No tienes alertas configuradas actualmente.",
+                    color=0xffaa00
+                )
+                embed.add_field(
+                    name="💡 Para configurar:",
+                    value="`/alerts agregar [usuario_roblox]`",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Mostrar estado actual
+            monitored_data = user_monitoring.monitored_users[user_id]
+            roblox_username = monitored_data['roblox_username']
+            roblox_user_id = monitored_data['roblox_user_id']
+            
+            current_state = user_monitoring.user_states.get(roblox_user_id, {})
+            
+            embed = discord.Embed(
+                title="📊 Estado de Alertas",
+                description=f"Información sobre el monitoreo de **{roblox_username}**",
+                color=0x3366ff
+            )
+            
+            embed.add_field(
+                name="👤 Usuario Monitoreado:",
+                value=f"[{roblox_username}](https://www.roblox.com/users/{roblox_user_id}/profile)",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="🔔 Alertas:",
+                value="✅ Activas",
+                inline=True
+            )
+            
+            # Estado actual
+            if current_state.get('online'):
+                status_text = "🟢 En línea"
+                status_color = "🟢"
+                if current_state.get('game_name'):
+                    status_text += f"\n🎮 Jugando: [{current_state['game_name']}](https://www.roblox.com/games/{current_state.get('game_id', '')})"
+            else:
+                status_text = "🔴 Desconectado"
+                status_color = "🔴"
+            
+            embed.add_field(
+                name="📊 Estado Actual:",
+                value=status_text,
+                inline=False
+            )
+            
+            # Última verificación
+            last_check = current_state.get('last_check')
+            if last_check:
+                try:
+                    last_check_dt = datetime.fromisoformat(last_check.replace('Z', '+00:00'))
+                    timestamp = int(last_check_dt.timestamp())
+                    embed.add_field(
+                        name="⏰ Última Verificación:",
+                        value=f"<t:{timestamp}:R>",
+                        inline=True
+                    )
+                except:
+                    embed.add_field(
+                        name="⏰ Última Verificación:",
+                        value="Hace un momento",
+                        inline=True
+                    )
+            
+            # Última vez en línea
+            last_online = current_state.get('last_online')
+            if last_online and not current_state.get('online'):
+                try:
+                    last_online_dt = datetime.fromisoformat(last_online.replace('Z', '+00:00'))
+                    timestamp = int(last_online_dt.timestamp())
+                    embed.add_field(
+                        name="🕐 Última vez en línea:",
+                        value=f"<t:{timestamp}:R>",
+                        inline=True
+                    )
+                except:
+                    pass
+            
+            embed.add_field(
+                name="💡 Acciones:",
+                value="`/alerts quitar` - Desactivar alertas\n`/alerts agregar [otro_usuario]` - Cambiar usuario",
+                inline=False
+            )
+            
+            embed.set_footer(text="Las alertas se verifican cada 5 minutos")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        else:
+            # Acción inválida
+            embed = discord.Embed(
+                title="❌ Acción Inválida",
+                description="Acción no reconocida. Usa una de las acciones disponibles.",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="✅ Acciones Disponibles:",
+                value="`agregar` - Agregar usuario al monitoreo\n`quitar` - Quitar alertas\n`estado` - Ver estado actual",
+                inline=False
+            )
+            embed.add_field(
+                name="💡 Ejemplos:",
+                value="`/alerts agregar username123`\n`/alerts quitar`\n`/alerts estado`",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+    
+    except Exception as e:
+        logger.error(f"Error en comando alerts: {e}")
+        embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error procesando las alertas. Inténtalo nuevamente.",
             color=0xff0000
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
