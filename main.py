@@ -4498,17 +4498,18 @@ def extract_cookies_from_cookiesnew():
             # Buscar líneas que contienen cookies de Roblox
             if '_|WARNING:-DO-NOT-SHARE-THIS.' in line and '|_' in line:
                 try:
-                    # Extraer la cookie completa desde _|WARNING hasta el final
-                    if line.startswith('_|WARNING:-DO-NOT-SHARE-THIS.'):
-                        # La cookie está en toda la línea después del warning
-                        cookie_value = line
-                        if cookie_value and len(cookie_value) > 100:  # Las cookies completas son mucho más largas
+                    # Extraer solo la parte de la cookie después del warning completo
+                    warning_text = '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_'
+                    if warning_text in line:
+                        # La cookie real está después del warning
+                        cookie_value = line.split(warning_text)[1].strip()
+                        if cookie_value and len(cookie_value) > 50:  # Validar que la cookie tenga contenido
                             roblox_cookies.append({
                                 'cookie': cookie_value,
                                 'source': f'Cookiesnew.md:L{line_num}',
                                 'line': line_num
                             })
-                            logger.info(f"🍪 Cookie extraída de Cookiesnew.md línea {line_num}")
+                            logger.info(f"🍪 Cookie extraída de Cookiesnew.md línea {line_num} (longitud: {len(cookie_value)})")
                 except Exception as e:
                     logger.debug(f"Error procesando línea {line_num}: {e}")
                     continue
@@ -4564,23 +4565,12 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         # 2. Cookies del archivo Cookiesnew.md
         cookiesnew_cookies = extract_cookies_from_cookiesnew()
         for i, cookie_data in enumerate(cookiesnew_cookies):
-            # Extraer solo la parte de la cookie después del warning
-            full_cookie_line = cookie_data['cookie']
-            if '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_' in full_cookie_line:
-                # Extraer solo la parte de la cookie después del warning
-                cookie_value = full_cookie_line.split('_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_')[1].strip()
-                cookies_disponibles.append({
-                    'cookie': cookie_value,
-                    'source': cookie_data['source'],
-                    'index': i + 1
-                })
-            else:
-                # Si no tiene el formato esperado, usar la cookie completa
-                cookies_disponibles.append({
-                    'cookie': cookie_data['cookie'],
-                    'source': cookie_data['source'],
-                    'index': i + 1
-                })
+            # Las cookies ya vienen procesadas desde extract_cookies_from_cookiesnew()
+            cookies_disponibles.append({
+                'cookie': cookie_data['cookie'],
+                'source': cookie_data['source'],
+                'index': i + 1
+            })
         
         if not cookies_disponibles:
             embed = discord.Embed(
@@ -4620,7 +4610,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         # Enviar solicitudes con cada cookie
         for i, cookie_data in enumerate(cookies_a_usar):
             try:
-                logger.info(f"🍪 Usando cookie {i+1}/{cantidad_real} de {cookie_data['source']}")
+                logger.info(f"🍪 Usando cookie {i+1}/{cantidad_real} de {cookie_data['source']} (longitud: {len(cookie_data['cookie'])})")
                 
                 # Actualizar progreso
                 progress_embed = discord.Embed(
@@ -4641,59 +4631,61 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                 headers = {
                     "Cookie": f".ROBLOSECURITY={cookie_data['cookie']}",
                     "Content-Type": "application/json",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "application/json",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Origin": "https://www.roblox.com",
+                    "Referer": f"https://www.roblox.com/users/{user_id}/profile"
                 }
                 
-                async with aiohttp.ClientSession() as session:
-                    # Primer intento sin token CSRF
-                    async with session.post(friend_url, headers=headers) as response:
-                        if response.status == 403:
-                            # Se requiere token CSRF
-                            csrf_token = response.headers.get("x-csrf-token")
-                            if csrf_token:
-                                headers["x-csrf-token"] = csrf_token
-                                # Segundo intento con token CSRF
-                                async with session.post(friend_url, headers=headers) as csrf_response:
-                                    resultado = await process_friend_response(csrf_response, user_id, cookie_data['source'])
+                resultado = None
+                
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
+                    try:
+                        # Primer intento sin token CSRF
+                        async with session.post(friend_url, headers=headers, json={}) as response:
+                            logger.info(f"📡 Respuesta inicial: {response.status} para cookie {cookie_data['source']}")
+                            
+                            if response.status == 403:
+                                # Se requiere token CSRF
+                                csrf_token = response.headers.get("x-csrf-token")
+                                if csrf_token:
+                                    logger.info(f"🔑 Token CSRF obtenido: {csrf_token[:20]}...")
+                                    headers["x-csrf-token"] = csrf_token
+                                    # Segundo intento con token CSRF
+                                    async with session.post(friend_url, headers=headers, json={}) as csrf_response:
+                                        resultado = await process_friend_response(csrf_response, user_id, cookie_data['source'])
+                                else:
+                                    resultado = {"status": "error", "message": "No se pudo obtener token CSRF"}
                             else:
-                                resultado = {"status": "error", "message": "No se pudo obtener token CSRF"}
-                        elif response.status == 200:
-                            resultado = {"status": "success", "message": "Solicitud enviada exitosamente"}
-                        elif response.status == 400:
-                            response_data = {}
-                            try:
-                                response_data = await response.json()
-                            except:
-                                pass
-                            error_message = response_data.get('errors', [{}])[0].get('message', 'Error desconocido')
-                            if "already friends" in error_message.lower() or "ya son amigos" in error_message.lower():
-                                resultado = {"status": "already_friends", "message": "Ya son amigos"}
-                            else:
-                                resultado = {"status": "error", "message": error_message}
-                        else:
-                            response_text = await response.text()
-                            resultado = {"status": "error", "message": f"HTTP {response.status}: {response_text[:100]}"}
+                                resultado = await process_friend_response(response, user_id, cookie_data['source'])
+                    
+                    except asyncio.TimeoutError:
+                        resultado = {"status": "error", "message": "Timeout de conexión"}
+                    except Exception as req_error:
+                        resultado = {"status": "error", "message": f"Error de request: {str(req_error)[:50]}"}
                 
                 # Procesar resultado
-                if resultado["status"] == "success":
+                if resultado and resultado["status"] == "success":
                     exitosas += 1
                     logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']}")
-                elif resultado["status"] == "already_friends":
+                elif resultado and resultado["status"] == "already_friends":
                     ya_amigos += 1
                     logger.info(f"👥 Ya son amigos - cookie {cookie_data['source']}")
                 else:
                     fallidas += 1
-                    errores.append(f"Cookie {i+1}: {resultado['message'][:50]}")
-                    logger.warning(f"❌ Solicitud fallida con cookie {cookie_data['source']}: {resultado['message']}")
+                    error_msg = resultado["message"] if resultado else "Error desconocido"
+                    errores.append(f"Cookie {i+1}: {error_msg[:50]}")
+                    logger.warning(f"❌ Solicitud fallida con cookie {cookie_data['source']}: {error_msg}")
                 
                 # Pequeña pausa entre solicitudes para evitar rate limiting
                 if i < cantidad_real - 1:
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     
             except Exception as e:
                 fallidas += 1
-                errores.append(f"Cookie {i+1}: Error de conexión")
-                logger.error(f"❌ Error con cookie {cookie_data['source']}: {e}")
+                errores.append(f"Cookie {i+1}: {str(e)[:50]}")
+                logger.error(f"❌ Error general con cookie {cookie_data['source']}: {e}")
         
         # Crear embed final con resultados
         if exitosas > 0:
@@ -4776,25 +4768,66 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
 async def process_friend_response(response, user_id, cookie_source):
     """Procesar respuesta de solicitud de amistad y retornar resultado"""
     try:
+        logger.info(f"📊 Procesando respuesta {response.status} para {cookie_source}")
+        
         if response.status == 200:
-            return {"status": "success", "message": "Solicitud enviada exitosamente"}
+            # Verificar si realmente fue exitoso
+            try:
+                response_data = await response.json()
+                logger.info(f"✅ Respuesta 200 exitosa: {response_data}")
+                return {"status": "success", "message": "Solicitud enviada exitosamente"}
+            except:
+                # Respuesta 200 sin JSON también es éxito
+                return {"status": "success", "message": "Solicitud enviada exitosamente"}
+        
         elif response.status == 400:
             response_data = {}
             try:
                 response_data = await response.json()
+                logger.info(f"📋 Respuesta 400 JSON: {response_data}")
             except:
-                pass
-            error_message = response_data.get('errors', [{}])[0].get('message', 'Error desconocido')
-            if "already friends" in error_message.lower():
-                return {"status": "already_friends", "message": "Ya son amigos"}
+                response_text = await response.text()
+                logger.info(f"📋 Respuesta 400 texto: {response_text[:100]}")
+                return {"status": "error", "message": f"Error 400: {response_text[:50]}"}
+            
+            # Buscar mensaje de error en diferentes estructuras
+            error_message = "Error desconocido"
+            
+            if 'errors' in response_data and response_data['errors']:
+                error_info = response_data['errors'][0]
+                if isinstance(error_info, dict):
+                    error_message = error_info.get('message', error_info.get('code', 'Error sin mensaje'))
+                else:
+                    error_message = str(error_info)
+            elif 'message' in response_data:
+                error_message = response_data['message']
+            
+            # Verificar diferentes variaciones de "ya son amigos"
+            error_lower = error_message.lower()
+            if any(phrase in error_lower for phrase in [
+                "already friends", "ya son amigos", "are already friends", 
+                "friend request already sent", "already sent", "pending friend request"
+            ]):
+                return {"status": "already_friends", "message": "Ya son amigos o solicitud pendiente"}
             else:
                 return {"status": "error", "message": error_message}
+        
         elif response.status == 401:
             return {"status": "error", "message": "Cookie inválida o expirada"}
+        
+        elif response.status == 403:
+            return {"status": "error", "message": "Acceso denegado - posible token CSRF faltante"}
+        
         else:
-            response_text = await response.text()
-            return {"status": "error", "message": f"HTTP {response.status}: {response_text[:50]}"}
+            try:
+                response_text = await response.text()
+                logger.warning(f"⚠️ Respuesta inesperada {response.status}: {response_text[:100]}")
+                return {"status": "error", "message": f"HTTP {response.status}: {response_text[:50]}"}
+            except:
+                return {"status": "error", "message": f"HTTP {response.status}: Error obteniendo respuesta"}
+    
     except Exception as e:
+        logger.error(f"❌ Error procesando respuesta: {e}")
         return {"status": "error", "message": f"Error procesando respuesta: {str(e)[:50]}"}
 
 async def handle_friend_response(response, message, user_id, user_name):
