@@ -4480,9 +4480,48 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
         error_embed.add_field(name="💡 Sugerencia", value="Verifica la conexión y configuración del navegador", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-@bot.tree.command(name="friend", description="[OWNER ONLY] Enviar solicitud de amistad al ID de usuario especificado")
-async def friend_command(interaction: discord.Interaction, user_id: int):
-    """Comando para enviar solicitud de amistad usando la cookie del bot"""
+def extract_cookies_from_cookiesnew():
+    """Extraer cookies de Roblox del archivo Cookiesnew.md"""
+    try:
+        if not Path("Cookiesnew.md").exists():
+            logger.warning("⚠️ Archivo Cookiesnew.md no encontrado")
+            return []
+        
+        with open("Cookiesnew.md", "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        roblox_cookies = []
+        lines = content.split('\n')
+        
+        for line_num, line in enumerate(lines, 1):
+            line = line.strip()
+            if line.startswith('_|WARNING:-DO-NOT-SHARE-THIS.') and line.endswith('|_'):
+                try:
+                    # Extraer la cookie que está entre los delimitadores
+                    start_marker = '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_'
+                    if start_marker in line:
+                        cookie_value = line.replace(start_marker, '').strip()
+                        if cookie_value and len(cookie_value) > 50:
+                            roblox_cookies.append({
+                                'cookie': cookie_value,
+                                'source': f'Cookiesnew.md:L{line_num}',
+                                'line': line_num
+                            })
+                            logger.info(f"🍪 Cookie extraída de Cookiesnew.md línea {line_num}")
+                except Exception as e:
+                    logger.debug(f"Error procesando línea {line_num}: {e}")
+                    continue
+        
+        logger.info(f"✅ {len(roblox_cookies)} cookies extraídas de Cookiesnew.md")
+        return roblox_cookies
+        
+    except Exception as e:
+        logger.error(f"❌ Error extrayendo cookies de Cookiesnew.md: {e}")
+        return []
+
+@bot.tree.command(name="friend", description="[OWNER ONLY] Enviar solicitudes de amistad al ID de usuario especificado")
+async def friend_command(interaction: discord.Interaction, user_id: int, cantidad: int = 1):
+    """Comando para enviar múltiples solicitudes de amistad usando las cookies disponibles"""
     user_discord_id = str(interaction.user.id)
     
     # Verificar que solo el owner o delegados puedan usar este comando
@@ -4495,102 +4534,255 @@ async def friend_command(interaction: discord.Interaction, user_id: int):
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
     
+    # Validar cantidad
+    if cantidad < 1 or cantidad > 11:
+        embed = discord.Embed(
+            title="❌ Cantidad Inválida",
+            description="La cantidad debe estar entre 1 y 11.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
     await interaction.response.defer(ephemeral=True)
     
     try:
-        # Obtener cookie del secreto COOKIE
+        # Recopilar todas las cookies disponibles
+        cookies_disponibles = []
+        
+        # 1. Cookie del secreto COOKIE (primera prioridad)
         secret_cookie = os.getenv('COOKIE')
-        if not secret_cookie or len(secret_cookie.strip()) < 50:
+        if secret_cookie and len(secret_cookie.strip()) > 50:
+            cookies_disponibles.append({
+                'cookie': secret_cookie.strip(),
+                'source': 'SECRET_COOKIE',
+                'index': 0
+            })
+            logger.info("🔐 Cookie del secreto COOKIE agregada")
+        
+        # 2. Cookies del archivo Cookiesnew.md
+        cookiesnew_cookies = extract_cookies_from_cookiesnew()
+        for i, cookie_data in enumerate(cookiesnew_cookies):
+            cookies_disponibles.append({
+                'cookie': cookie_data['cookie'],
+                'source': cookie_data['source'],
+                'index': i + 1
+            })
+        
+        if not cookies_disponibles:
             embed = discord.Embed(
-                title="❌ Cookie No Encontrada",
-                description="No se encontró una cookie válida en el secreto COOKIE.",
+                title="❌ Sin Cookies Disponibles",
+                description="No se encontraron cookies válidas ni en el secreto COOKIE ni en Cookiesnew.md.",
                 color=0xff0000
-            )
-            embed.add_field(
-                name="🔧 Configuración Requerida:",
-                value="Asegúrate de que el secreto `COOKIE` contenga una cookie válida de Roblox",
-                inline=False
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
+        # Limitar cantidad a las cookies disponibles
+        cantidad_real = min(cantidad, len(cookies_disponibles))
+        cookies_a_usar = cookies_disponibles[:cantidad_real]
+        
         # Crear embed inicial
         initial_embed = discord.Embed(
-            title="🤝 Enviando Solicitud de Amistad",
-            description=f"Procesando solicitud de amistad para el usuario ID: `{user_id}`",
+            title="🤝 Enviando Solicitudes de Amistad",
+            description=f"Procesando **{cantidad_real}** solicitudes de amistad para el usuario ID: `{user_id}`",
             color=0xffaa00
         )
         initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-        initial_embed.add_field(name="🍪 Autenticación", value="Cookie del secreto", inline=True)
-        initial_embed.add_field(name="⏳ Estado", value="Enviando solicitud...", inline=True)
+        initial_embed.add_field(name="🍪 Cookies Disponibles", value=f"{len(cookies_disponibles)} total", inline=True)
+        initial_embed.add_field(name="📊 Cantidad Solicitada", value=f"{cantidad_real}/{cantidad}", inline=True)
+        initial_embed.add_field(name="⏳ Estado", value="Iniciando envío...", inline=False)
         
         message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
         
-        # Configurar headers con la cookie
-        headers = {
-            "Cookie": f".ROBLOSECURITY={secret_cookie.strip()}",
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
+        # Contadores de resultados
+        exitosas = 0
+        fallidas = 0
+        ya_amigos = 0
+        errores = []
         
         # URL de la API de amistad de Roblox
         friend_url = f"https://friends.roblox.com/v1/users/{user_id}/request-friendship"
         
-        async with aiohttp.ClientSession() as session:
-            # Primer intento sin token CSRF
-            async with session.post(friend_url, headers=headers) as response:
-                if response.status == 403:
-                    # Se requiere token CSRF
-                    csrf_token = response.headers.get("x-csrf-token")
-                    if not csrf_token:
-                        embed = discord.Embed(
-                            title="❌ Error de Autenticación",
-                            description="No se pudo obtener el token CSRF requerido.",
-                            color=0xff0000
-                        )
-                        embed.add_field(
-                            name="🔧 Posibles Causas:",
-                            value="• Cookie inválida o expirada\n• Problemas de conexión con Roblox\n• Usuario no encontrado",
-                            inline=False
-                        )
-                        await message.edit(embed=embed)
-                        return
-                    
-                    # Actualizar headers con token CSRF
-                    headers["x-csrf-token"] = csrf_token
-                    
-                    # Segundo intento con token CSRF
-                    async with session.post(friend_url, headers=headers) as csrf_response:
-                        await handle_friend_response(csrf_response, message, user_id, interaction.user.name)
-                        
-                elif response.status == 200:
-                    # Éxito sin necesidad de CSRF
-                    await handle_friend_response(response, message, user_id, interaction.user.name)
+        # Enviar solicitudes con cada cookie
+        for i, cookie_data in enumerate(cookies_a_usar):
+            try:
+                logger.info(f"🍪 Usando cookie {i+1}/{cantidad_real} de {cookie_data['source']}")
+                
+                # Actualizar progreso
+                progress_embed = discord.Embed(
+                    title="🤝 Enviando Solicitudes de Amistad",
+                    description=f"Procesando solicitud **{i+1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
+                    color=0xffaa00
+                )
+                progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+                progress_embed.add_field(name="🍪 Cookie Actual", value=cookie_data['source'], inline=True)
+                progress_embed.add_field(name="📊 Progreso", value=f"{i+1}/{cantidad_real}", inline=True)
+                progress_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
+                progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
+                progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+                
+                await message.edit(embed=progress_embed)
+                
+                # Configurar headers con la cookie actual
+                headers = {
+                    "Cookie": f".ROBLOSECURITY={cookie_data['cookie']}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+                
+                async with aiohttp.ClientSession() as session:
+                    # Primer intento sin token CSRF
+                    async with session.post(friend_url, headers=headers) as response:
+                        if response.status == 403:
+                            # Se requiere token CSRF
+                            csrf_token = response.headers.get("x-csrf-token")
+                            if csrf_token:
+                                headers["x-csrf-token"] = csrf_token
+                                # Segundo intento con token CSRF
+                                async with session.post(friend_url, headers=headers) as csrf_response:
+                                    resultado = await process_friend_response(csrf_response, user_id, cookie_data['source'])
+                            else:
+                                resultado = {"status": "error", "message": "No se pudo obtener token CSRF"}
+                        elif response.status == 200:
+                            resultado = {"status": "success", "message": "Solicitud enviada exitosamente"}
+                        elif response.status == 400:
+                            response_data = {}
+                            try:
+                                response_data = await response.json()
+                            except:
+                                pass
+                            error_message = response_data.get('errors', [{}])[0].get('message', 'Error desconocido')
+                            if "already friends" in error_message.lower() or "ya son amigos" in error_message.lower():
+                                resultado = {"status": "already_friends", "message": "Ya son amigos"}
+                            else:
+                                resultado = {"status": "error", "message": error_message}
+                        else:
+                            response_text = await response.text()
+                            resultado = {"status": "error", "message": f"HTTP {response.status}: {response_text[:100]}"}
+                
+                # Procesar resultado
+                if resultado["status"] == "success":
+                    exitosas += 1
+                    logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']}")
+                elif resultado["status"] == "already_friends":
+                    ya_amigos += 1
+                    logger.info(f"👥 Ya son amigos - cookie {cookie_data['source']}")
                 else:
-                    # Otro tipo de error
-                    response_text = await response.text()
-                    embed = discord.Embed(
-                        title="❌ Error en Solicitud",
-                        description=f"Error inesperado al enviar solicitud de amistad.",
-                        color=0xff0000
-                    )
-                    embed.add_field(name="📊 Código de Estado", value=f"`{response.status}`", inline=True)
-                    embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-                    embed.add_field(name="📝 Respuesta", value=f"```{response_text[:200]}{'...' if len(response_text) > 200 else ''}```", inline=False)
-                    await message.edit(embed=embed)
+                    fallidas += 1
+                    errores.append(f"Cookie {i+1}: {resultado['message'][:50]}")
+                    logger.warning(f"❌ Solicitud fallida con cookie {cookie_data['source']}: {resultado['message']}")
+                
+                # Pequeña pausa entre solicitudes para evitar rate limiting
+                if i < cantidad_real - 1:
+                    await asyncio.sleep(2)
+                    
+            except Exception as e:
+                fallidas += 1
+                errores.append(f"Cookie {i+1}: Error de conexión")
+                logger.error(f"❌ Error con cookie {cookie_data['source']}: {e}")
         
-        logger.info(f"Owner {interaction.user.name} usó comando friend para usuario ID: {user_id}")
+        # Crear embed final con resultados
+        if exitosas > 0:
+            color = 0x00ff88  # Verde si hay éxitos
+            title = "✅ Solicitudes Completadas"
+        elif ya_amigos > 0:
+            color = 0xffaa00  # Amarillo si ya son amigos
+            title = "👥 Solicitudes Procesadas"
+        else:
+            color = 0xff0000  # Rojo si todas fallaron
+            title = "❌ Solicitudes Fallidas"
+        
+        final_embed = discord.Embed(
+            title=title,
+            description=f"Procesamiento completado para el usuario ID: `{user_id}`",
+            color=color
+        )
+        
+        final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        final_embed.add_field(name="📊 Total Procesadas", value=f"{cantidad_real}", inline=True)
+        final_embed.add_field(name="🍪 Cookies Usadas", value=f"{len(cookies_a_usar)}", inline=True)
+        
+        final_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
+        final_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
+        final_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+        
+        # Agregar detalles de cookies usadas
+        cookies_detail = "\n".join([f"• {cookie['source']}" for cookie in cookies_a_usar[:5]])
+        if len(cookies_a_usar) > 5:
+            cookies_detail += f"\n• ... y {len(cookies_a_usar) - 5} más"
+        
+        final_embed.add_field(
+            name="🍪 Fuentes de Cookies:",
+            value=cookies_detail,
+            inline=False
+        )
+        
+        # Agregar errores si los hay (limitado)
+        if errores:
+            errores_text = "\n".join(errores[:3])
+            if len(errores) > 3:
+                errores_text += f"\n... y {len(errores) - 3} errores más"
+            final_embed.add_field(
+                name="⚠️ Errores:",
+                value=f"```{errores_text}```",
+                inline=False
+            )
+        
+        # Agregar información de resumen
+        if exitosas > 0:
+            final_embed.add_field(
+                name="🎉 Resultado:",
+                value=f"Se enviaron {exitosas} solicitudes de amistad exitosamente.",
+                inline=False
+            )
+        elif ya_amigos > 0:
+            final_embed.add_field(
+                name="💡 Información:",
+                value="Las cuentas ya son amigas del usuario objetivo o ya tienen solicitudes pendientes.",
+                inline=False
+            )
+        
+        final_embed.set_footer(text=f"Comando ejecutado por {interaction.user.name}")
+        
+        await message.edit(embed=final_embed)
+        
+        logger.info(f"Owner {interaction.user.name} usó comando friend para usuario ID: {user_id} con {cantidad_real} cookies")
         
     except Exception as e:
         logger.error(f"Error en comando friend: {e}")
         error_embed = discord.Embed(
             title="❌ Error Interno",
-            description=f"Ocurrió un error durante el envío de la solicitud de amistad.",
+            description=f"Ocurrió un error durante el envío de las solicitudes de amistad.",
             color=0xff0000
         )
         error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}```", inline=False)
-        error_embed.add_field(name="💡 Sugerencia", value="Verifica la cookie y la conexión a internet", inline=False)
+        error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+async def process_friend_response(response, user_id, cookie_source):
+    """Procesar respuesta de solicitud de amistad y retornar resultado"""
+    try:
+        if response.status == 200:
+            return {"status": "success", "message": "Solicitud enviada exitosamente"}
+        elif response.status == 400:
+            response_data = {}
+            try:
+                response_data = await response.json()
+            except:
+                pass
+            error_message = response_data.get('errors', [{}])[0].get('message', 'Error desconocido')
+            if "already friends" in error_message.lower():
+                return {"status": "already_friends", "message": "Ya son amigos"}
+            else:
+                return {"status": "error", "message": error_message}
+        elif response.status == 401:
+            return {"status": "error", "message": "Cookie inválida o expirada"}
+        else:
+            response_text = await response.text()
+            return {"status": "error", "message": f"HTTP {response.status}: {response_text[:50]}"}
+    except Exception as e:
+        return {"status": "error", "message": f"Error procesando respuesta: {str(e)[:50]}"}
 
 async def handle_friend_response(response, message, user_id, user_name):
     """Manejar la respuesta de la solicitud de amistad"""
