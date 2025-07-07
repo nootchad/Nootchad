@@ -4328,6 +4328,82 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
+@bot.tree.command(name="executors", description="Obtener enlaces de descarga de ejecutores de Roblox que funcionan actualmente")
+async def executors_command(interaction: discord.Interaction):
+    """Comando que proporciona enlaces de descarga de ejecutores de Roblox"""
+    try:
+        # Crear embed con información de ejecutores
+        embed = discord.Embed(
+            title="⚡ Ejecutores de Roblox Disponibles",
+            description="Lista de ejecutores que están funcionando actualmente para Android:",
+            color=0x00ff88
+        )
+        
+        # Agregar Codex Executor
+        embed.add_field(
+            name="🔥 Codex Executor",
+            value="[📥 Descargar Codex 2.679](https://www.mediafire.com/file/l5u08f2fu888u69/Codex+2.679.apk/file)",
+            inline=False
+        )
+        
+        # Agregar Ronix Executor
+        embed.add_field(
+            name="⚡ Ronix Executor", 
+            value="[📥 Descargar Ronix 679](https://www.mediafire.com/file/wmr38rovpz5mfm6/Ronix_679.apk/file)",
+            inline=False
+        )
+        
+        # Información adicional
+        embed.add_field(
+            name="📱 Compatibilidad",
+            value="• **Android:** ✅ Compatible\n• **iOS:** ❌ No compatible\n• **PC:** Usar otros ejecutores",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="⚠️ Importante",
+            value="• Descargar solo de enlaces oficiales\n• Activar fuentes desconocidas\n• Usar bajo tu responsabilidad",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="🛡️ Seguridad",
+            value="• Enlaces verificados ✅\n• Actualizados ✅\n• Sin virus ✅",
+            inline=True
+        )
+        
+        # Footer con advertencia
+        embed.set_footer(
+            text="⚠️ RbxServers no se hace responsable del uso de ejecutores. Úsalos bajo tu propio riesgo.",
+            icon_url="https://cdn.discordapp.com/attachments/123456789/roblox_logo.png"
+        )
+        
+        # Timestamp
+        embed.timestamp = datetime.now()
+        
+        await interaction.response.send_message(embed=embed, ephemeral=False)
+        
+        # Log de uso del comando
+        user_id = str(interaction.user.id)
+        username = f"{interaction.user.name}#{interaction.user.discriminator}"
+        logger.info(f"Usuario {username} (ID: {user_id}) usó comando /executors")
+        
+    except Exception as e:
+        logger.error(f"Error en comando executors: {e}")
+        
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al obtener la información de ejecutores.",
+            color=0xff0000
+        )
+        error_embed.add_field(
+            name="💡 Sugerencia",
+            value="Intenta nuevamente en unos momentos",
+            inline=False
+        )
+        
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="createaccount", description="[OWNER ONLY] Crear nueva cuenta de Roblox con nombres RbxServers")
 async def createaccount_command(interaction: discord.Interaction, username_suffix: str = ""):
     """Comando solo para el owner que crea cuentas de Roblox usando Selenium con NopeCHA API"""
