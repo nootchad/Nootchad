@@ -84,14 +84,78 @@
       "roblox_username": "arepita_gamer1",
       "verification_code": "serverx50-ok",
       "verified_at": 1751768652.6778836
-    }
-  },
-  "pending_verifications": {
+    },
+    "916762331113988156": {
+      "roblox_username": "ferrantorres98",
+      "verification_code": "verify_2024vcheck",
+      "verified_at": 1751813103.8495827
+    },
+    "1227266291648303136": {
+      "roblox_username": "emmanuelp11111",
+      "verification_code": "vip-2024_check",
+      "verified_at": 1751813380.3684146
+    },
+    "1243750012383395862": {
+      "roblox_username": "Gru_Eve",
+      "verification_code": "botx2024xcheck",
+      "verified_at": 1751814854.352897
+    },
+    "1316513229849231401": {
+      "roblox_username": "maneymigustavo",
+      "verification_code": "rbxv43_vip",
+      "verified_at": 1751815963.0036418
+    },
     "1337938669230882921": {
       "roblox_username": "pizza_pizza746",
-      "verification_code": "vipx2025_bot",
-      "created_at": 1751769563.8287358
+      "verification_code": "rbx_2025xvip",
+      "verified_at": 1751817471.151862
+    },
+    "1267882722534363269": {
+      "roblox_username": "Guichito172",
+      "verification_code": "serverv2024xcheck",
+      "verified_at": 1751818297.9002404
+    },
+    "1391396562596266127": {
+      "roblox_username": "Rodrigo_Aquino9",
+      "verification_code": "code-2025vok",
+      "verified_at": 1751820448.5550883
+    },
+    "1200251719460847619": {
+      "roblox_username": "DanyDeadRails",
+      "verification_code": "checkx2025-bot",
+      "verified_at": 1751821024.7639158
+    },
+    "1345221061511352330": {
+      "roblox_username": "antonio18882",
+      "verification_code": "hesiz-502vbot",
+      "verified_at": 1751822292.938381
+    },
+    "1322286682711654471": {
+      "roblox_username": "Haland201333",
+      "verification_code": "hesizx614_vip",
+      "verified_at": 1751823182.1461422
+    },
+    "1209241290383040522": {
+      "roblox_username": "al3j0pr5",
+      "verification_code": "rbx_436_bot",
+      "verified_at": 1751823507.2613811
+    },
+    "550884851000016898": {
+      "roblox_username": "iker10354",
+      "verification_code": "verify-2025_ok",
+      "verified_at": 1751823880.275515
+    },
+    "1166205593250439219": {
+      "roblox_username": "Trapomojao8",
+      "verification_code": "checkv2025-rbx",
+      "verified_at": 1751826666.8509302
+    },
+    "749827874470756403": {
+      "roblox_username": "oreo_cat201",
+      "verification_code": "codex2024xrbx",
+      "verified_at": 1751847939.592859
     }
   },
-  "last_updated": "2025-07-06T02:39:23.828738"
+  "pending_verifications": {},
+  "last_updated": "2025-07-07T00:25:39.592864"
 }
