@@ -5351,7 +5351,7 @@ async def alerts_command(interaction: discord.Interaction,
         await interaction.followup.send(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="follow", description="[OWNER ONLY] Enviar 1 seguidor bot a un perfil de Roblox usando navegador")
-async def follow_command(interaction: discord.Interaction, roblox_username: str):
+async def follow_command(interaction: discord.Interaction, roblox_username: str, vnc_mode: bool = False):
     """Comando solo para el owner que envía 1 seguidor bot a un perfil de Roblox usando Selenium"""
     user_id = str(interaction.user.id)
     
@@ -5381,13 +5381,14 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str)
             return
         
         # Mensaje inicial
+        mode_display = "VNC (visible)" if vnc_mode else "headless (optimizado)"
         embed = discord.Embed(
             title="👤 Enviando Seguidor Bot via Navegador",
-            description=f"Iniciando proceso para enviar 1 seguidor bot a **{roblox_username}** usando navegador automatizado",
+            description=f"Iniciando proceso para enviar 1 seguidor bot a **{roblox_username}** usando navegador automatizado en modo {mode_display}",
             color=0xffaa00
         )
         embed.add_field(name="👤 Usuario Objetivo", value=f"`{roblox_username}`", inline=True)
-        embed.add_field(name="🤖 Método", value="Selenium + JavaScript", inline=True)
+        embed.add_field(name="🤖 Método", value=f"Selenium + JavaScript ({mode_display})", inline=True)
         embed.add_field(name="🔄 Estado", value="Iniciando navegador...", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
@@ -5436,18 +5437,84 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str)
         # Actualizar estado - Iniciando navegador
         browser_embed = discord.Embed(
             title="🌐 Iniciando Navegador",
-            description=f"Usuario **{roblox_username}** encontrado. Iniciando navegador Chrome con cookies...",
+            description=f"Usuario **{roblox_username}** encontrado. Iniciando navegador Chrome con cookies en modo {mode_display}...",
             color=0x3366ff
         )
         browser_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
         browser_embed.add_field(name="🆔 Display Name", value=target_display_name, inline=True)
-        browser_embed.add_field(name="🔄 Estado", value="Configurando navegador...", inline=True)
+        browser_embed.add_field(name="🖥️ Modo", value=mode_display, inline=True)
         
         await message.edit(embed=browser_embed)
         
-        # Crear driver Chrome
-        logger.info("🚀 Creando driver Chrome para comando follow...")
-        driver = scraper.create_driver()
+        # Crear driver Chrome con modo VNC si se especifica
+        mode_text = "VNC (visible)" if vnc_mode else "headless (optimizado)"
+        logger.info(f"🚀 Creando driver Chrome para comando follow en modo {mode_text}...")
+        
+        # Crear driver con configuración personalizada para VNC
+        if vnc_mode:
+            # Crear driver sin headless para VNC
+            chrome_options = Options()
+            # NO agregar --headless para VNC mode
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            chrome_options.add_argument("--remote-debugging-port=9225")
+            
+            # Habilitar cookies para Roblox
+            prefs = {
+                "profile.managed_default_content_settings.cookies": 1,
+                "profile.default_content_setting_values.notifications": 2,
+                "profile.managed_default_content_settings.popups": 2,
+            }
+            chrome_options.add_experimental_option("prefs", prefs)
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+
+            # Buscar Chrome binary
+            possible_chrome_paths = [
+                "/usr/bin/google-chrome-stable",
+                "/usr/bin/google-chrome",
+                "/usr/bin/chromium-browser", 
+                "/usr/bin/chromium"
+            ]
+
+            chrome_binary = None
+            for path in possible_chrome_paths:
+                if Path(path).exists():
+                    chrome_binary = path
+                    break
+
+            if chrome_binary:
+                chrome_options.binary_location = chrome_binary
+                logger.info(f"Using Chrome binary at: {chrome_binary}")
+
+            # Crear driver VNC con múltiples intentos
+            driver = None
+            approaches = [
+                lambda: webdriver.Chrome(options=chrome_options)
+            ]
+            
+            for i, approach in enumerate(approaches, 1):
+                try:
+                    logger.info(f"Trying VNC driver approach {i}...")
+                    driver = approach()
+                    logger.info(f"✅ VNC driver created successfully")
+                    break
+                except Exception as e:
+                    logger.warning(f"VNC approach {i} failed: {e}")
+                    continue
+            
+            if not driver:
+                raise Exception("VNC driver creation failed")
+                
+            driver.set_page_load_timeout(30)
+            driver.implicitly_wait(10)
+        else:
+            # Usar el driver normal (headless)
+            driver = scraper.create_driver()
         
         # Aplicar cookies de Roblox inmediatamente
         logger.info("🍪 Aplicando cookies de Roblox al navegador...")
@@ -5657,8 +5724,13 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str)
             verification_result == 'following_detected'
         )
         
-        # Mantener navegador abierto unos segundos más para verificación manual
-        time.sleep(5)
+        # Mantener navegador abierto más tiempo en modo VNC para observación
+        if vnc_mode:
+            logger.info("🔍 Modo VNC: Manteniendo navegador abierto por 30 segundos para observación...")
+            time.sleep(30)
+        else:
+            # Mantener navegador abierto unos segundos más para verificación manual
+            time.sleep(5)
         
         # Resultado final
         if follow_success:
