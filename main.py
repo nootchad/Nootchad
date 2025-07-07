@@ -3200,6 +3200,9 @@ roblox_control_commands = None
 # Import maintenance system
 maintenance_system = None
 
+# Import startup alert system
+startup_alert_system = None
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -3321,6 +3324,16 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de mantenimiento: {e}")
 
+    # Setup startup alert system
+    global startup_alert_system
+    try:
+        from alert_system import setup_alert_commands
+        
+        startup_alert_system = setup_alert_commands(bot)
+        logger.info("🔔 Sistema de alertas de inicio configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de alertas de inicio: {e}")
+
     # Inicializar sistema de monitoreo de usuarios
     try:
         user_monitoring.start_monitoring()
@@ -3336,6 +3349,15 @@ async def on_ready():
             logger.debug(f"  ↳ Comando: /{cmd.name} - {cmd.description[:50]}...")
     except Exception as e:
         logger.error(f"❌ Error sincronizando comandos: {e}")
+
+    # Enviar alertas de inicio a usuarios suscritos
+    try:
+        if startup_alert_system:
+            await startup_alert_system.send_startup_notifications(bot)
+        else:
+            logger.warning("⚠️ Sistema de alertas de inicio no disponible")
+    except Exception as e:
+        logger.error(f"❌ Error enviando alertas de inicio: {e}")
 
 # Botón de confirmación de verificación
 class VerificationConfirmButton(discord.ui.Button):
