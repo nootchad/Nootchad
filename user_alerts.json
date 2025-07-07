@@ -1,0 +1,21 @@
+{
+  "monitored_users": {
+    "916070251895091241": {
+      "roblox_username": "9011a22344",
+      "roblox_user_id": "11834624",
+      "notifications_enabled": true,
+      "added_at": "2025-07-07T01:00:28.980447"
+    }
+  },
+  "user_states": {
+    "11834624": {
+      "online": false,
+      "game_id": null,
+      "game_name": null,
+      "presence_type": 0,
+      "last_check": "2025-07-07T01:15:04.439951"
+    }
+  },
+  "last_updated": "2025-07-07T01:15:05.440383",
+  "total_monitored": 1
+}
