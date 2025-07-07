@@ -4495,13 +4495,14 @@ def extract_cookies_from_cookiesnew():
         
         for line_num, line in enumerate(lines, 1):
             line = line.strip()
-            if line.startswith('_|WARNING:-DO-NOT-SHARE-THIS.') and line.endswith('|_'):
+            # Buscar líneas que contienen cookies de Roblox
+            if '_|WARNING:-DO-NOT-SHARE-THIS.' in line and '|_' in line:
                 try:
-                    # Extraer la cookie que está entre los delimitadores
-                    start_marker = '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_'
-                    if start_marker in line:
-                        cookie_value = line.replace(start_marker, '').strip()
-                        if cookie_value and len(cookie_value) > 50:
+                    # Extraer la cookie completa desde _|WARNING hasta el final
+                    if line.startswith('_|WARNING:-DO-NOT-SHARE-THIS.'):
+                        # La cookie está en toda la línea después del warning
+                        cookie_value = line
+                        if cookie_value and len(cookie_value) > 100:  # Las cookies completas son mucho más largas
                             roblox_cookies.append({
                                 'cookie': cookie_value,
                                 'source': f'Cookiesnew.md:L{line_num}',
@@ -4563,11 +4564,23 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         # 2. Cookies del archivo Cookiesnew.md
         cookiesnew_cookies = extract_cookies_from_cookiesnew()
         for i, cookie_data in enumerate(cookiesnew_cookies):
-            cookies_disponibles.append({
-                'cookie': cookie_data['cookie'],
-                'source': cookie_data['source'],
-                'index': i + 1
-            })
+            # Extraer solo la parte de la cookie después del warning
+            full_cookie_line = cookie_data['cookie']
+            if '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_' in full_cookie_line:
+                # Extraer solo la parte de la cookie después del warning
+                cookie_value = full_cookie_line.split('_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_')[1].strip()
+                cookies_disponibles.append({
+                    'cookie': cookie_value,
+                    'source': cookie_data['source'],
+                    'index': i + 1
+                })
+            else:
+                # Si no tiene el formato esperado, usar la cookie completa
+                cookies_disponibles.append({
+                    'cookie': cookie_data['cookie'],
+                    'source': cookie_data['source'],
+                    'index': i + 1
+                })
         
         if not cookies_disponibles:
             embed = discord.Embed(
