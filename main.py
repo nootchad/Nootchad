@@ -1600,9 +1600,72 @@ class VIPServerScraper:
             logger.error(f"❌ Error extrayendo cookies de Roblox: {e}")
             return 0
 
-    def load_roblox_cookies_to_driver(self, driver, domain='roblox.com', force_refresh=False):
-        """Cargar cookies de Roblox al navegador con manejo mejorado"""
+    def logout_from_roblox(self, driver):
+        """Cerrar sesión de Roblox antes de cambiar a otra cookie"""
         try:
+            logger.info("🚪 Cerrando sesión de Roblox...")
+            
+            # Navegar a Roblox para hacer logout
+            driver.get("https://www.roblox.com")
+            time.sleep(2)
+            
+            # Ejecutar JavaScript para hacer logout
+            logout_script = """
+            // Método 1: Intentar hacer logout usando Roblox API
+            if (window.Roblox && window.Roblox.authToken) {
+                fetch('/authentication/signoutfromallsessionsandreauthenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': window.Roblox.authToken || ''
+                    }
+                }).catch(() => {});
+            }
+            
+            // Método 2: Limpiar datos de sesión del localStorage
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch(e) {}
+            
+            // Método 3: Navegar a logout URL
+            window.location.href = '/authentication/signout';
+            """
+            
+            driver.execute_script(logout_script)
+            time.sleep(3)
+            
+            # Limpiar todas las cookies de Roblox
+            try:
+                driver.delete_all_cookies()
+                logger.info("🧹 Todas las cookies eliminadas")
+            except Exception as e:
+                logger.warning(f"⚠️ Error eliminando cookies: {e}")
+            
+            # Navegar a página principal para confirmar logout
+            driver.get("https://www.roblox.com")
+            time.sleep(2)
+            
+            logger.info("✅ Logout completado - sesión cerrada")
+            return True
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Error durante logout: {e}")
+            # Incluso si hay error, intentar limpiar cookies
+            try:
+                driver.delete_all_cookies()
+                logger.info("🧹 Cookies eliminadas como respaldo")
+            except:
+                pass
+            return False
+
+    def load_roblox_cookies_to_driver(self, driver, domain='roblox.com', force_refresh=False, logout_first=False):
+        """Cargar cookies de Roblox al navegador con manejo mejorado y logout opcional"""
+        try:
+            # Hacer logout primero si se solicita
+            if logout_first:
+                self.logout_from_roblox(driver)
+            
             # Primero extraer cookies del archivo alt.txt si no las tenemos
             if domain not in self.roblox_cookies or force_refresh:
                 logger.info("🔄 Extrayendo cookies frescas desde alt.txt...")
@@ -4521,6 +4584,227 @@ def extract_cookies_from_cookiesnew():
         logger.error(f"❌ Error extrayendo cookies de Cookiesnew.md: {e}")
         return []
 
+@bot.tree.command(name="friendbrowser", description="[OWNER ONLY] Enviar solicitudes de amistad usando navegador con rotación de cookies")
+async def friendbrowser_command(interaction: discord.Interaction, user_id: int, cantidad: int = 1):
+    """Comando para enviar múltiples solicitudes de amistad usando navegador con logout automático"""
+    user_discord_id = str(interaction.user.id)
+    
+    # Verificar que solo el owner o delegados puedan usar este comando
+    if not is_owner_or_delegated(user_discord_id):
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    # Validar cantidad
+    if cantidad < 1 or cantidad > 11:
+        embed = discord.Embed(
+            title="❌ Cantidad Inválida",
+            description="La cantidad debe estar entre 1 y 11.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    driver = None
+    try:
+        # Recopilar todas las cookies disponibles
+        cookies_disponibles = []
+        
+        # 1. Cookie del secreto COOKIE (primera prioridad)
+        secret_cookie = os.getenv('COOKIE')
+        if secret_cookie and len(secret_cookie.strip()) > 50:
+            cookies_disponibles.append({
+                'cookie': secret_cookie.strip(),
+                'source': 'SECRET_COOKIE',
+                'index': 0
+            })
+            logger.info("🔐 Cookie del secreto COOKIE agregada")
+        
+        # 2. Cookies del archivo Cookiesnew.md
+        cookiesnew_cookies = extract_cookies_from_cookiesnew()
+        for i, cookie_data in enumerate(cookiesnew_cookies):
+            cookies_disponibles.append({
+                'cookie': cookie_data['cookie'],
+                'source': cookie_data['source'],
+                'index': i + 1
+            })
+        
+        if not cookies_disponibles:
+            embed = discord.Embed(
+                title="❌ Sin Cookies Disponibles",
+                description="No se encontraron cookies válidas ni en el secreto COOKIE ni en Cookiesnew.md.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Limitar cantidad a las cookies disponibles
+        cantidad_real = min(cantidad, len(cookies_disponibles))
+        cookies_a_usar = cookies_disponibles[:cantidad_real]
+        
+        # Crear embed inicial
+        initial_embed = discord.Embed(
+            title="🌐 Enviando Friend Requests via Navegador",
+            description=f"Procesando **{cantidad_real}** solicitudes usando navegador con logout automático para el usuario ID: `{user_id}`",
+            color=0xffaa00
+        )
+        initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        initial_embed.add_field(name="🍪 Cookies Disponibles", value=f"{len(cookies_disponibles)} total", inline=True)
+        initial_embed.add_field(name="🤖 Método", value="Navegador + Logout automático", inline=True)
+        initial_embed.add_field(name="⏳ Estado", value="Iniciando navegador...", inline=False)
+        
+        message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
+        
+        # Crear navegador
+        logger.info("🚀 Iniciando navegador Chrome para friend requests...")
+        driver = scraper.create_driver()
+        
+        # Aplicar configuración inicial
+        driver.set_page_load_timeout(30)
+        driver.implicitly_wait(10)
+        
+        # Contadores de resultados
+        exitosas = 0
+        fallidas = 0
+        ya_amigos = 0
+        errores = []
+        
+        # Enviar solicitudes con rotación automática de cookies y logout
+        for i, cookie_data in enumerate(cookies_a_usar):
+            try:
+                logger.info(f"🍪 Usando cookie {i + 1}/{len(cookies_a_usar)} ({cookie_data['source']}) con logout automático")
+                
+                # Actualizar progreso
+                progress_embed = discord.Embed(
+                    title="🌐 Enviando Friend Requests via Navegador",
+                    description=f"Procesando solicitud **{i + 1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
+                    color=0xffaa00
+                )
+                progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+                progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
+                progress_embed.add_field(name="🚪 Logout", value="✅ Automático entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
+                progress_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
+                progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
+                progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+                
+                await message.edit(embed=progress_embed)
+                
+                # Enviar friend request usando navegador con logout automático
+                resultado = await send_friend_request_with_browser(driver, user_id, cookie_data, i)
+                
+                # Procesar resultado
+                if resultado and resultado["status"] == "success":
+                    exitosas += 1
+                    logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']} via navegador")
+                    
+                elif resultado and resultado["status"] == "already_friends":
+                    ya_amigos += 1
+                    logger.info(f"👥 Ya son amigos - cookie {cookie_data['source']} via navegador")
+                    
+                else:
+                    fallidas += 1
+                    error_msg = resultado["message"] if resultado else "Error desconocido"
+                    errores.append(f"Cookie {i + 1}: {error_msg[:50]}")
+                    logger.warning(f"❌ Solicitud fallida con cookie {cookie_data['source']} via navegador: {error_msg}")
+                
+                # Pausa entre solicitudes para evitar rate limiting
+                if i < len(cookies_a_usar) - 1:  # No pausar después de la última
+                    logger.info("⏳ Pausa de 5 segundos antes de la siguiente cookie...")
+                    await asyncio.sleep(5)
+                    
+            except Exception as e:
+                fallidas += 1
+                errores.append(f"Cookie {i + 1}: {str(e)[:50]}")
+                logger.error(f"❌ Error general con cookie {cookie_data['source']}: {e}")
+                await asyncio.sleep(3)
+        
+        # Crear embed final con resultados
+        if exitosas > 0:
+            color = 0x00ff88  # Verde si hay éxitos
+            title = "✅ Friend Requests Completados via Navegador"
+        elif ya_amigos > 0:
+            color = 0xffaa00  # Amarillo si ya son amigos
+            title = "👥 Friend Requests Procesados via Navegador"
+        else:
+            color = 0xff0000  # Rojo si todas fallaron
+            title = "❌ Friend Requests Fallidos via Navegador"
+        
+        final_embed = discord.Embed(
+            title=title,
+            description=f"Procesamiento completado para el usuario ID: `{user_id}` usando navegador con logout automático",
+            color=color
+        )
+        
+        final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        final_embed.add_field(name="📊 Total Procesadas", value=f"{cantidad_real}", inline=True)
+        final_embed.add_field(name="🤖 Método", value="Navegador + Logout", inline=True)
+        
+        final_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
+        final_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
+        final_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+        
+        # Agregar detalles de cookies usadas
+        cookies_detail = "\n".join([f"• {cookie['source']}" for cookie in cookies_a_usar[:5]])
+        if len(cookies_a_usar) > 5:
+            cookies_detail += f"\n• ... y {len(cookies_a_usar) - 5} más"
+        
+        final_embed.add_field(
+            name="🍪 Fuentes de Cookies:",
+            value=cookies_detail,
+            inline=False
+        )
+        
+        # Agregar ventajas del método navegador
+        final_embed.add_field(
+            name="🌐 Ventajas del Navegador:",
+            value="• ✅ Logout automático entre cookies\n• ✅ Sesiones completamente separadas\n• ✅ Emulación real de usuario\n• ✅ Mayor tasa de éxito",
+            inline=False
+        )
+        
+        # Agregar errores si los hay (limitado)
+        if errores:
+            errores_text = "\n".join(errores[:3])
+            if len(errores) > 3:
+                errores_text += f"\n... y {len(errores) - 3} errores más"
+            final_embed.add_field(
+                name="⚠️ Errores:",
+                value=f"```{errores_text}```",
+                inline=False
+            )
+        
+        final_embed.set_footer(text=f"Comando ejecutado por {interaction.user.name} • Navegador con logout automático")
+        
+        await message.edit(embed=final_embed)
+        
+        logger.info(f"Owner {interaction.user.name} usó comando friendbrowser para usuario ID: {user_id} con {cantidad_real} cookies")
+        
+    except Exception as e:
+        logger.error(f"Error en comando friendbrowser: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error Interno",
+            description=f"Ocurrió un error durante el envío de las solicitudes de amistad via navegador.",
+            color=0xff0000
+        )
+        error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}```", inline=False)
+        error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+    
+    finally:
+        # Cerrar navegador
+        if driver:
+            try:
+                logger.info("🔒 Cerrando navegador...")
+                driver.quit()
+                logger.info("✅ Navegador cerrado exitosamente")
+            except Exception as close_error:
+                logger.warning(f"Error cerrando navegador: {close_error}")
+
 @bot.tree.command(name="friend", description="[OWNER ONLY] Enviar solicitudes de amistad al ID de usuario especificado")
 async def friend_command(interaction: discord.Interaction, user_id: int, cantidad: int = 1):
     """Comando para enviar múltiples solicitudes de amistad usando las cookies disponibles"""
@@ -4607,49 +4891,55 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         # URL de la API de amistad de Roblox
         friend_url = f"https://friends.roblox.com/v1/users/{user_id}/request-friendship"
         
-        # Enviar solicitudes con rotación automática de cookies
-        cookie_index = 0
-        solicitudes_enviadas = 0
-        max_intentos_por_cookie = 2  # Máximo 2 intentos con la misma cookie antes de rotar
-        
-        while solicitudes_enviadas < cantidad_real and cookie_index < len(cookies_disponibles):
-            cookie_data = cookies_disponibles[cookie_index % len(cookies_disponibles)]
-            intento_cookie = 0
-            cookie_exitosa = False
-            
+        # Enviar solicitudes con rotación automática y forzada de cookies
+        for i, cookie_data in enumerate(cookies_a_usar):
             try:
-                logger.info(f"🍪 Usando cookie {cookie_index + 1} ({cookie_data['source']}) - Solicitud {solicitudes_enviadas + 1}/{cantidad_real}")
+                logger.info(f"🍪 Usando cookie {i + 1}/{len(cookies_a_usar)} ({cookie_data['source']}) - ROTACIÓN FORZADA")
                 
                 # Actualizar progreso
                 progress_embed = discord.Embed(
-                    title="🤝 Enviando Solicitudes de Amistad",
-                    description=f"Procesando solicitud **{solicitudes_enviadas + 1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
+                    title="🤝 Enviando Solicitudes de Amistad (API)",
+                    description=f"Procesando solicitud **{i + 1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
                     color=0xffaa00
                 )
                 progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-                progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{cookie_index + 1})", inline=True)
-                progress_embed.add_field(name="📊 Progreso", value=f"{solicitudes_enviadas + 1}/{cantidad_real}", inline=True)
+                progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
+                progress_embed.add_field(name="🔄 Rotación", value="Forzada por cookie", inline=True)
                 progress_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
                 progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
                 
                 await message.edit(embed=progress_embed)
                 
-                # Configurar headers con la cookie actual
+                # Configurar headers con la cookie actual (NUEVA SESIÓN CADA VEZ)
                 headers = {
                     "Cookie": f".ROBLOSECURITY={cookie_data['cookie']}",
                     "Content-Type": "application/json",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "User-Agent": f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.{random.randint(1000, 9999)}.0 Safari/537.36",
                     "Accept": "application/json",
                     "Accept-Language": "en-US,en;q=0.9",
                     "Origin": "https://www.roblox.com",
-                    "Referer": f"https://www.roblox.com/users/{user_id}/profile"
+                    "Referer": f"https://www.roblox.com/users/{user_id}/profile",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache"
                 }
                 
                 resultado = None
                 
-                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
+                # NUEVA SESIÓN COMPLETAMENTE INDEPENDIENTE PARA CADA COOKIE
+                connector = aiohttp.TCPConnector(limit=1, limit_per_host=1, enable_cleanup_closed=True)
+                timeout = aiohttp.ClientTimeout(total=30, connect=10)
+                
+                async with aiohttp.ClientSession(
+                    connector=connector, 
+                    timeout=timeout,
+                    headers={
+                        "User-Agent": headers["User-Agent"]  # Header base diferente por sesión
+                    }
+                ) as session:
                     try:
+                        logger.info(f"📡 Nueva sesión HTTP creada para cookie {cookie_data['source']}")
+                        
                         # Primer intento sin token CSRF
                         async with session.post(friend_url, headers=headers, json={}) as response:
                             logger.info(f"📡 Respuesta inicial: {response.status} para cookie {cookie_data['source']}")
@@ -4658,9 +4948,10 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                                 # Se requiere token CSRF
                                 csrf_token = response.headers.get("x-csrf-token")
                                 if csrf_token:
-                                    logger.info(f"🔑 Token CSRF obtenido: {csrf_token[:20]}...")
+                                    logger.info(f"🔑 Token CSRF obtenido: {csrf_token[:20]}... para {cookie_data['source']}")
                                     headers["x-csrf-token"] = csrf_token
-                                    # Segundo intento con token CSRF
+                                    
+                                    # Segundo intento con token CSRF en la MISMA sesión
                                     async with session.post(friend_url, headers=headers, json={}) as csrf_response:
                                         resultado = await process_friend_response(csrf_response, user_id, cookie_data['source'])
                                 else:
@@ -4670,70 +4961,40 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                     
                     except asyncio.TimeoutError:
                         resultado = {"status": "error", "message": "Timeout de conexión"}
+                        logger.warning(f"⏰ Timeout para cookie {cookie_data['source']}")
                     except Exception as req_error:
                         resultado = {"status": "error", "message": f"Error de request: {str(req_error)[:50]}"}
+                        logger.warning(f"❌ Error de request para cookie {cookie_data['source']}: {req_error}")
                 
-                # Procesar resultado y decidir si rotar cookie
+                # Procesar resultado (CADA COOKIE ES INDEPENDIENTE)
                 if resultado and resultado["status"] == "success":
                     exitosas += 1
-                    solicitudes_enviadas += 1
-                    cookie_exitosa = True
-                    logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']}")
+                    logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']} (#{i + 1})")
                     
                 elif resultado and resultado["status"] == "already_friends":
                     ya_amigos += 1
-                    solicitudes_enviadas += 1
-                    cookie_exitosa = True
-                    logger.info(f"👥 Ya son amigos - cookie {cookie_data['source']}")
+                    logger.info(f"👥 Ya son amigos - cookie {cookie_data['source']} (#{i + 1})")
                     
                 else:
-                    # Error - verificar si es rate limit o error de cookie
+                    fallidas += 1
                     error_msg = resultado["message"] if resultado else "Error desconocido"
-                    
-                    # Si es rate limit (429) o error 401, rotar a siguiente cookie inmediatamente
-                    if ("429" in error_msg or "401" in error_msg or "rate limit" in error_msg.lower() or 
-                        "too many requests" in error_msg.lower() or "cookie inválida" in error_msg.lower()):
-                        
-                        logger.warning(f"⚠️ Rate limit o cookie inválida detectada: {error_msg} - Rotando a siguiente cookie")
-                        fallidas += 1
-                        errores.append(f"Cookie {cookie_index + 1}: {error_msg[:50]} (ROTANDO)")
-                        
-                        # Forzar rotación inmediata
-                        intento_cookie = max_intentos_por_cookie
-                        
-                    else:
-                        # Otro tipo de error - intentar una vez más con la misma cookie
-                        intento_cookie += 1
-                        if intento_cookie < max_intentos_por_cookie:
-                            logger.info(f"🔄 Reintentando con misma cookie (intento {intento_cookie + 1}/{max_intentos_por_cookie})")
-                            await asyncio.sleep(2)
-                            continue
-                        else:
-                            fallidas += 1
-                            errores.append(f"Cookie {cookie_index + 1}: {error_msg[:50]}")
-                            logger.warning(f"❌ Solicitud fallida con cookie {cookie_data['source']}: {error_msg}")
+                    errores.append(f"Cookie {i + 1}: {error_msg[:50]}")
+                    logger.warning(f"❌ Solicitud fallida con cookie {cookie_data['source']} (#{i + 1}): {error_msg}")
                 
-                # Decidir si rotar a siguiente cookie
-                if cookie_exitosa or intento_cookie >= max_intentos_por_cookie:
-                    cookie_index += 1
-                    logger.info(f"🔄 Rotando a siguiente cookie (índice: {cookie_index})")
-                    
-                    # Pausa entre rotaciones de cookies para evitar rate limiting
-                    if solicitudes_enviadas < cantidad_real and cookie_index < len(cookies_disponibles):
-                        await asyncio.sleep(3)
-                
-                # Si completamos todas las solicitudes o se agotaron las cookies, salir
-                if solicitudes_enviadas >= cantidad_real or cookie_index >= len(cookies_disponibles):
-                    break
+                # Pausa entre cookies para evitar rate limiting (OBLIGATORIA)
+                if i < len(cookies_a_usar) - 1:  # No pausar después de la última
+                    pausa_segundos = 3 + random.randint(1, 3)  # Pausa variable entre 4-6 segundos
+                    logger.info(f"⏳ Pausa de {pausa_segundos}s antes de siguiente cookie para evitar rate limiting...")
+                    await asyncio.sleep(pausa_segundos)
                     
             except Exception as e:
                 fallidas += 1
-                errores.append(f"Cookie {cookie_index + 1}: {str(e)[:50]}")
+                errores.append(f"Cookie {i + 1}: {str(e)[:50]}")
                 logger.error(f"❌ Error general con cookie {cookie_data['source']}: {e}")
                 
-                # Rotar a siguiente cookie en caso de error crítico
-                cookie_index += 1
-                await asyncio.sleep(2)
+                # Pausa incluso en error
+                if i < len(cookies_a_usar) - 1:
+                    await asyncio.sleep(2)
         
         # Crear embed final con resultados
         if exitosas > 0:
@@ -4812,6 +5073,117 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}```", inline=False)
         error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+async def send_friend_request_with_browser(driver, user_id, cookie_data, cookie_index):
+    """Enviar solicitud de amistad usando navegador con logout automático entre cookies"""
+    try:
+        logger.info(f"🌐 Enviando friend request via navegador - Cookie {cookie_index + 1} ({cookie_data['source']})")
+        
+        # Hacer logout de la sesión anterior si no es la primera cookie
+        if cookie_index > 0:
+            logger.info("🚪 Cerrando sesión anterior antes de cambiar cookie...")
+            scraper.logout_from_roblox(driver)
+        
+        # Aplicar nueva cookie con logout si es necesario
+        logout_needed = cookie_index > 0
+        cookies_applied = scraper.load_roblox_cookies_to_driver(
+            driver, 
+            'roblox.com', 
+            force_refresh=False, 
+            logout_first=logout_needed
+        )
+        
+        if cookies_applied == 0:
+            return {"status": "error", "message": "No se pudo aplicar la cookie"}
+        
+        # Navegar al perfil del usuario objetivo
+        profile_url = f"https://www.roblox.com/users/{user_id}/profile"
+        logger.info(f"🔍 Navegando al perfil: {profile_url}")
+        driver.get(profile_url)
+        time.sleep(5)
+        
+        # Buscar y hacer clic en el botón de "Add Friend"
+        try:
+            # Posibles selectores para el botón de amistad
+            friend_button_selectors = [
+                "button[aria-label='Add Friend']",
+                "button:contains('Add Friend')",
+                ".profile-action-button[data-testid='add-friend']",
+                ".btn-primary:contains('Add Friend')",
+                "#add-friend-button",
+                ".add-friend-btn",
+                "button[class*='friend']:contains('Add')"
+            ]
+            
+            friend_button = None
+            for selector in friend_button_selectors:
+                try:
+                    elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                    for element in elements:
+                        if element.is_displayed() and element.is_enabled():
+                            button_text = element.get_attribute('textContent') or element.get_attribute('innerText') or ''
+                            if any(word in button_text.lower() for word in ['add', 'friend', 'seguir']):
+                                friend_button = element
+                                break
+                    if friend_button:
+                        break
+                except:
+                    continue
+            
+            if not friend_button:
+                # Intentar buscar con XPath
+                xpath_selectors = [
+                    "//button[contains(text(), 'Add Friend')]",
+                    "//button[contains(@aria-label, 'Add Friend')]",
+                    "//button[contains(@class, 'friend')]",
+                    "//a[contains(text(), 'Add Friend')]"
+                ]
+                
+                for xpath in xpath_selectors:
+                    try:
+                        elements = driver.find_elements(By.XPATH, xpath)
+                        for element in elements:
+                            if element.is_displayed() and element.is_enabled():
+                                friend_button = element
+                                break
+                        if friend_button:
+                            break
+                    except:
+                        continue
+            
+            if friend_button:
+                logger.info("🎯 Botón de amistad encontrado, haciendo clic...")
+                driver.execute_script("arguments[0].click();", friend_button)
+                time.sleep(3)
+                
+                # Verificar si la acción fue exitosa
+                success_indicators = [
+                    "Friend request sent",
+                    "Solicitud enviada",
+                    "Request sent",
+                    "Already friends",
+                    "Ya son amigos"
+                ]
+                
+                page_text = driver.page_source.lower()
+                
+                if any(indicator.lower() in page_text for indicator in success_indicators):
+                    if any(phrase in page_text for phrase in ["already friends", "ya son amigos"]):
+                        return {"status": "already_friends", "message": "Ya son amigos"}
+                    else:
+                        return {"status": "success", "message": "Solicitud enviada exitosamente"}
+                else:
+                    return {"status": "success", "message": "Botón clickeado exitosamente"}
+            else:
+                return {"status": "error", "message": "No se encontró botón de amistad en la página"}
+                
+        except Exception as e:
+            logger.error(f"❌ Error interactuando con botón de amistad: {e}")
+            return {"status": "error", "message": f"Error en navegador: {str(e)[:50]}"}
+    
+    except Exception as e:
+        logger.error(f"❌ Error general en friend request via navegador: {e}")
+        return {"status": "error", "message": f"Error navegador: {str(e)[:50]}"}
 
 async def process_friend_response(response, user_id, cookie_source):
     """Procesar respuesta de solicitud de amistad y retornar resultado"""
