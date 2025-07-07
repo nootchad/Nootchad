@@ -5088,6 +5088,247 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
             except Exception as close_error:
                 logger.warning(f"Error cerrando navegador: {close_error}")
 
+async def send_friend_request_with_browser(driver, user_id, cookie_data, attempt_index):
+    """Enviar friend request usando navegador con logout automático entre cookies"""
+    try:
+        logger.info(f"🌐 Enviando friend request con navegador para usuario {user_id} usando {cookie_data['source']}")
+        
+        # PASO 1: Logout completo si no es el primer intento
+        if attempt_index > 0:
+            logger.info("🚪 Realizando logout completo antes de nueva cookie...")
+            
+            # Navegar a Roblox y hacer logout
+            driver.get("https://www.roblox.com")
+            time.sleep(2)
+            
+            # Ejecutar script de logout
+            logout_script = """
+            try {
+                // Limpiar localStorage y sessionStorage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Limpiar cookies específicas
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                console.log("Logout completo realizado");
+            } catch(e) {
+                console.log("Error en logout:", e);
+            }
+            """
+            driver.execute_script(logout_script)
+            
+            # Eliminar todas las cookies del navegador
+            driver.delete_all_cookies()
+            time.sleep(3)
+        
+        # PASO 2: Aplicar nueva cookie
+        logger.info(f"🍪 Aplicando cookie {cookie_data['source']}...")
+        
+        # Navegar a Roblox para aplicar cookies
+        driver.get("https://www.roblox.com")
+        time.sleep(2)
+        
+        # Agregar la nueva cookie
+        cookie_dict = {
+            'name': '.ROBLOSECURITY',
+            'value': cookie_data['cookie'],
+            'domain': '.roblox.com',
+            'path': '/',
+            'secure': True,
+            'httpOnly': True
+        }
+        
+        try:
+            driver.add_cookie(cookie_dict)
+            logger.info("✅ Cookie aplicada exitosamente")
+        except Exception as cookie_error:
+            logger.warning(f"⚠️ Error aplicando cookie: {cookie_error}")
+            return {"status": "error", "message": f"Error aplicando cookie: {str(cookie_error)[:50]}"}
+        
+        # Refrescar para aplicar la cookie
+        driver.refresh()
+        time.sleep(3)
+        
+        # PASO 3: Navegar al perfil del usuario objetivo
+        profile_url = f"https://www.roblox.com/users/{user_id}/profile"
+        logger.info(f"🔗 Navegando al perfil: {profile_url}")
+        
+        driver.get(profile_url)
+        time.sleep(5)
+        
+        # PASO 4: Buscar y hacer clic en el botón de Add Friend
+        try:
+            wait = WebDriverWait(driver, 10)
+            
+            # Selectores posibles para el botón de agregar amigo
+            friend_button_selectors = [
+                "button[data-testid='add-friend-button']",
+                "button:contains('Add Friend')",
+                "button[aria-label='Add Friend']",
+                ".btn-add-friend",
+                "button.btn-primary-md:contains('Add Friend')",
+                "button[onclick*='friend']",
+                "#add-friend-button"
+            ]
+            
+            friend_button = None
+            for selector in friend_button_selectors:
+                try:
+                    if ":contains(" in selector:
+                        # Para selectores con :contains, usar XPath
+                        xpath_selector = f"//button[contains(text(), 'Add Friend') or contains(text(), 'Agregar amigo')]"
+                        friend_button = driver.find_element(By.XPATH, xpath_selector)
+                    else:
+                        friend_button = driver.find_element(By.CSS_SELECTOR, selector)
+                    
+                    if friend_button and friend_button.is_displayed():
+                        logger.info(f"✅ Botón de Add Friend encontrado con selector: {selector}")
+                        break
+                except:
+                    continue
+            
+            if not friend_button:
+                # Buscar por texto en todos los botones
+                try:
+                    all_buttons = driver.find_elements(By.TAG_NAME, "button")
+                    for button in all_buttons:
+                        button_text = button.text.lower()
+                        if any(phrase in button_text for phrase in ['add friend', 'agregar amigo', 'seguir']):
+                            friend_button = button
+                            logger.info(f"✅ Botón encontrado por texto: {button.text}")
+                            break
+                except Exception as e:
+                    logger.debug(f"Error buscando botones por texto: {e}")
+            
+            if friend_button:
+                # Hacer scroll al botón si es necesario
+                driver.execute_script("arguments[0].scrollIntoView(true);", friend_button)
+                time.sleep(1)
+                
+                # Hacer clic en el botón
+                friend_button.click()
+                logger.info("✅ Botón de Add Friend clickeado exitosamente")
+                
+                # Esperar un momento para que se procese la request
+                time.sleep(3)
+                
+                # Verificar si la solicitud fue exitosa
+                try:
+                    # Buscar mensajes de confirmación o cambios en el botón
+                    success_indicators = [
+                        "Friend request sent",
+                        "Solicitud enviada",
+                        "Pending",
+                        "Pendiente"
+                    ]
+                    
+                    page_text = driver.page_source.lower()
+                    request_sent = any(indicator.lower() in page_text for indicator in success_indicators)
+                    
+                    if request_sent:
+                        logger.info("✅ Friend request enviado exitosamente")
+                        return {"status": "success", "message": "Friend request sent successfully"}
+                    else:
+                        # Verificar si ya son amigos
+                        already_friends_indicators = [
+                            "already friends",
+                            "ya son amigos",
+                            "friends",
+                            "amigos"
+                        ]
+                        
+                        if any(indicator in page_text for indicator in already_friends_indicators):
+                            logger.info("👥 Los usuarios ya son amigos")
+                            return {"status": "already_friends", "message": "Users are already friends"}
+                        else:
+                            logger.warning("⚠️ No se pudo confirmar el envío de friend request")
+                            return {"status": "success", "message": "Friend request attempted, status unclear"}
+                            
+                except Exception as verify_error:
+                    logger.debug(f"Error verificando resultado: {verify_error}")
+                    return {"status": "success", "message": "Friend request sent (verification failed)"}
+            
+            else:
+                logger.warning("❌ No se encontró el botón de Add Friend")
+                
+                # Log de debug - mostrar elementos disponibles
+                try:
+                    all_buttons = driver.find_elements(By.TAG_NAME, "button")
+                    button_texts = [btn.text[:30] for btn in all_buttons[:10] if btn.text.strip()]
+                    logger.debug(f"Botones disponibles: {button_texts}")
+                except:
+                    pass
+                
+                return {"status": "error", "message": "Add Friend button not found"}
+                
+        except Exception as e:
+            logger.error(f"❌ Error interactuando con la página: {e}")
+            return {"status": "error", "message": f"Page interaction error: {str(e)[:50]}"}
+    
+    except Exception as e:
+        logger.error(f"❌ Error general enviando friend request: {e}")
+        return {"status": "error", "message": f"General error: {str(e)[:50]}"}
+
+async def process_friend_response(response, user_id, cookie_source):
+    """Procesar respuesta de friend request API"""
+    try:
+        logger.info(f"📡 Procesando respuesta de friend request para usuario {user_id} desde {cookie_source}")
+        logger.info(f"📊 Status Code: {response.status}")
+        
+        if response.status == 200:
+            try:
+                response_data = await response.json()
+                logger.info(f"✅ Friend request exitoso para usuario {user_id}")
+                return {"status": "success", "message": "Friend request sent successfully"}
+            except:
+                logger.info(f"✅ Friend request exitoso para usuario {user_id} (sin JSON)")
+                return {"status": "success", "message": "Friend request sent successfully"}
+                
+        elif response.status == 400:
+            try:
+                error_data = await response.json()
+                error_message = str(error_data)
+                
+                if "already friends" in error_message.lower() or "ya son amigos" in error_message.lower():
+                    logger.info(f"👥 Usuario {user_id} ya es amigo desde {cookie_source}")
+                    return {"status": "already_friends", "message": "Users are already friends"}
+                elif "pending" in error_message.lower():
+                    logger.info(f"⏳ Solicitud pendiente para usuario {user_id} desde {cookie_source}")
+                    return {"status": "already_friends", "message": "Friend request already pending"}
+                else:
+                    logger.warning(f"❌ Error 400 para usuario {user_id}: {error_message[:100]}")
+                    return {"status": "error", "message": f"API Error 400: {error_message[:50]}"}
+            except:
+                logger.warning(f"❌ Error 400 sin detalles para usuario {user_id}")
+                return {"status": "error", "message": "API Error 400: Bad request"}
+                
+        elif response.status == 401:
+            logger.warning(f"🔐 Error de autenticación 401 para usuario {user_id} con {cookie_source}")
+            return {"status": "error", "message": "Authentication failed - invalid cookie"}
+            
+        elif response.status == 403:
+            logger.warning(f"🚫 Error de permisos 403 para usuario {user_id} con {cookie_source}")
+            return {"status": "error", "message": "Permission denied - user may have friend requests disabled"}
+            
+        elif response.status == 404:
+            logger.warning(f"👤 Usuario {user_id} no encontrado (404) con {cookie_source}")
+            return {"status": "error", "message": "User not found"}
+            
+        elif response.status == 429:
+            logger.warning(f"⏱️ Rate limit alcanzado (429) para usuario {user_id} con {cookie_source}")
+            return {"status": "error", "message": "Rate limit exceeded"}
+            
+        else:
+            logger.warning(f"❌ Error HTTP {response.status} para usuario {user_id} con {cookie_source}")
+            return {"status": "error", "message": f"HTTP Error {response.status}"}
+            
+    except Exception as e:
+        logger.error(f"❌ Error procesando respuesta: {e}")
+        return {"status": "error", "message": f"Response processing error: {str(e)[:50]}"}
+
 
 
 async def perform_complete_logout(previous_cookie):
