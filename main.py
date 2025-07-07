@@ -4817,6 +4817,81 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
             description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
             color=0xff0000
         )
+
+async def perform_complete_logout(previous_cookie):
+    """Realizar logout completo de una cookie para limpiar la sesión antes de usar la siguiente"""
+    try:
+        logger.info("🚪 Iniciando logout completo de cookie anterior...")
+        
+        # Configurar headers para logout
+        logout_headers = {
+            "Cookie": f".ROBLOSECURITY={previous_cookie}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Origin": "https://www.roblox.com",
+            "Referer": "https://www.roblox.com",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+        
+        # Crear sesión específica para logout
+        connector = aiohttp.TCPConnector(force_close=True, enable_cleanup_closed=True)
+        timeout = aiohttp.ClientTimeout(total=15, connect=5)
+        
+        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as logout_session:
+            try:
+                # PASO 1: Obtener token CSRF para logout
+                async with logout_session.get("https://www.roblox.com", headers=logout_headers) as csrf_response:
+                    csrf_token = csrf_response.headers.get("x-csrf-token")
+                    if not csrf_token:
+                        # Intentar obtener CSRF de otra manera
+                        async with logout_session.post("https://auth.roblox.com/v2/logout", headers=logout_headers, json={}) as csrf_attempt:
+                            csrf_token = csrf_attempt.headers.get("x-csrf-token")
+                
+                if csrf_token:
+                    logout_headers["x-csrf-token"] = csrf_token
+                    logger.info(f"🔑 Token CSRF para logout obtenido: {csrf_token[:15]}...")
+                
+                # PASO 2: Ejecutar logout en múltiples endpoints
+                logout_endpoints = [
+                    "https://auth.roblox.com/v2/logout",
+                    "https://auth.roblox.com/v1/logout",
+                    "https://www.roblox.com/authentication/signout"
+                ]
+                
+                logout_success = False
+                for endpoint in logout_endpoints:
+                    try:
+                        async with logout_session.post(endpoint, headers=logout_headers, json={}) as logout_response:
+                            logger.info(f"🚪 Logout intento en {endpoint}: {logout_response.status}")
+                            if logout_response.status in [200, 403]:  # 403 también puede indicar logout exitoso
+                                logout_success = True
+                                logger.info(f"✅ Logout exitoso en {endpoint}")
+                                break
+                    except Exception as e:
+                        logger.debug(f"Error en logout endpoint {endpoint}: {e}")
+                        continue
+                
+                if logout_success:
+                    logger.info("✅ Logout completo realizado exitosamente")
+                else:
+                    logger.warning("⚠️ Logout no confirmado, pero sesión debería estar limpia")
+                
+                # PASO 3: Pausa adicional para asegurar que el logout se propague
+                await asyncio.sleep(2)
+                
+            except Exception as e:
+                logger.warning(f"⚠️ Error durante logout: {e}")
+                # Continuar de todas formas, el logout parcial puede ser suficiente
+        
+        logger.info("🚪 Proceso de logout completado")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Error crítico en logout: {e}")
+        return False
+
+
+
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
     
@@ -4891,27 +4966,35 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         # URL de la API de amistad de Roblox
         friend_url = f"https://friends.roblox.com/v1/users/{user_id}/request-friendship"
         
-        # Enviar solicitudes con rotación automática y forzada de cookies
+        # Enviar solicitudes con rotación automática y logout completo entre cookies
         for i, cookie_data in enumerate(cookies_a_usar):
             try:
-                logger.info(f"🍪 Usando cookie {i + 1}/{len(cookies_a_usar)} ({cookie_data['source']}) - ROTACIÓN FORZADA")
+                logger.info(f"🍪 Usando cookie {i + 1}/{len(cookies_a_usar)} ({cookie_data['source']}) - LOGOUT + ROTACIÓN COMPLETA")
                 
                 # Actualizar progreso
                 progress_embed = discord.Embed(
-                    title="🤝 Enviando Solicitudes de Amistad (API)",
+                    title="🤝 Enviando Solicitudes de Amistad (API + Logout)",
                     description=f"Procesando solicitud **{i + 1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
                     color=0xffaa00
                 )
                 progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
                 progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
-                progress_embed.add_field(name="🔄 Rotación", value="Forzada por cookie", inline=True)
+                progress_embed.add_field(name="🚪 Logout", value="✅ Completo entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
                 progress_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
                 progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
                 
                 await message.edit(embed=progress_embed)
                 
-                # Configurar headers con la cookie actual (NUEVA SESIÓN CADA VEZ)
+                # PASO 1: LOGOUT COMPLETO de la cookie anterior (si no es la primera)
+                if i > 0:
+                    logger.info(f"🚪 Haciendo logout completo de cookie anterior antes de usar {cookie_data['source']}")
+                    await perform_complete_logout(cookies_a_usar[i-1]['cookie'])
+                    # Pausa adicional después del logout
+                    await asyncio.sleep(3)
+                
+                # PASO 2: Configurar headers con la cookie actual (SESIÓN COMPLETAMENTE NUEVA)
+                session_id = f"session_{i}_{random.randint(10000, 99999)}"
                 headers = {
                     "Cookie": f".ROBLOSECURITY={cookie_data['cookie']}",
                     "Content-Type": "application/json",
@@ -4921,13 +5004,20 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                     "Origin": "https://www.roblox.com",
                     "Referer": f"https://www.roblox.com/users/{user_id}/profile",
                     "Cache-Control": "no-cache",
-                    "Pragma": "no-cache"
+                    "Pragma": "no-cache",
+                    "X-Session-ID": session_id  # Identificador único de sesión
                 }
                 
                 resultado = None
                 
-                # NUEVA SESIÓN COMPLETAMENTE INDEPENDIENTE PARA CADA COOKIE
-                connector = aiohttp.TCPConnector(limit=1, limit_per_host=1, enable_cleanup_closed=True)
+                # PASO 3: NUEVA SESIÓN HTTP COMPLETAMENTE INDEPENDIENTE
+                connector = aiohttp.TCPConnector(
+                    limit=1, 
+                    limit_per_host=1, 
+                    enable_cleanup_closed=True,
+                    force_close=True,  # Forzar cierre de conexiones
+                    keepalive_timeout=0  # No mantener conexiones vivas
+                )
                 timeout = aiohttp.ClientTimeout(total=30, connect=10)
                 
                 async with aiohttp.ClientSession(
@@ -4938,11 +5028,11 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                     }
                 ) as session:
                     try:
-                        logger.info(f"📡 Nueva sesión HTTP creada para cookie {cookie_data['source']}")
+                        logger.info(f"📡 Nueva sesión HTTP independiente creada para cookie {cookie_data['source']} (Sesión: {session_id})")
                         
-                        # Primer intento sin token CSRF
+                        # PASO 4: Primer intento sin token CSRF
                         async with session.post(friend_url, headers=headers, json={}) as response:
-                            logger.info(f"📡 Respuesta inicial: {response.status} para cookie {cookie_data['source']}")
+                            logger.info(f"📡 Respuesta inicial: {response.status} para cookie {cookie_data['source']} (Sesión: {session_id})")
                             
                             if response.status == 403:
                                 # Se requiere token CSRF
