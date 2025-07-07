@@ -4978,125 +4978,6 @@ def extract_cookies_from_cookiesnew():
         logger.error(f"❌ Error extrayendo cookies de Cookiesnew.md: {e}")
         return []
 
-@bot.tree.command(name="friendimproved", description="[OWNER ONLY] Enviar solicitudes con SISTEMA MEJORADO contra clics interceptados")
-async def friendimproved_command(interaction: discord.Interaction, user_id: int, cantidad: int = 1):
-    """Comando para enviar múltiples solicitudes de amistad con sistema mejorado anti-intercepción"""
-    user_discord_id = str(interaction.user.id)
-    
-    # Verificar que solo el owner o delegados puedan usar este comando
-    if not is_owner_or_delegated(user_discord_id):
-        embed = discord.Embed(
-            title="❌ Acceso Denegado",
-            description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
-            color=0xff0000
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return
-    
-    # Validar cantidad
-    if cantidad < 1 or cantidad > 11:
-        embed = discord.Embed(
-            title="❌ Cantidad Inválida",
-            description="La cantidad debe estar entre 1 y 11.",
-            color=0xff0000
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return
-    
-    await interaction.response.defer(ephemeral=True)
-    
-    try:
-        # Crear sistema de friend requests mejorado
-        friend_system = FriendRequestBrowserImproved(scraper)
-        
-        # Crear mensaje inicial
-        initial_embed = discord.Embed(
-            title="🚀 Iniciando Friend Requests (SISTEMA MEJORADO)",
-            description=f"Procesando solicitudes para usuario ID: `{user_id}` con sistema anti-intercepción",
-            color=0x00aaff
-        )
-        initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-        initial_embed.add_field(name="📊 Cantidad Solicitada", value=f"{cantidad}", inline=True)
-        initial_embed.add_field(name="🛡️ Sistema", value="Mejorado Anti-Intercepción", inline=True)
-        initial_embed.add_field(name="⏳ Estado", value="Iniciando proceso...", inline=False)
-        
-        message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
-        
-        # Procesar solicitudes
-        resultado = await friend_system.process_friend_requests_improved(user_id, cantidad)
-        
-        if resultado["status"] == "completed":
-            results = resultado["results"]
-            
-            # Crear embed final
-            if results["exitosas"] > 0:
-                color = 0x00ff88  # Verde
-                title = "✅ Friend Requests Completados (SISTEMA MEJORADO)"
-            elif results["ya_amigos"] > 0:
-                color = 0xffaa00  # Amarillo
-                title = "👥 Friend Requests Procesados (SISTEMA MEJORADO)"
-            else:
-                color = 0xff0000  # Rojo
-                title = "❌ Friend Requests Fallidos (SISTEMA MEJORADO)"
-            
-            final_embed = discord.Embed(
-                title=title,
-                description=f"Proceso completado para usuario ID: `{user_id}` con sistema anti-intercepción",
-                color=color
-            )
-            
-            final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-            final_embed.add_field(name="📊 Total Procesadas", value=f"{results['total_procesadas']}", inline=True)
-            final_embed.add_field(name="🛡️ Sistema", value="Mejorado Anti-Intercepción", inline=True)
-            
-            final_embed.add_field(name="✅ Exitosas", value=f"{results['exitosas']}", inline=True)
-            final_embed.add_field(name="❌ Fallidas", value=f"{results['fallidas']}", inline=True)
-            final_embed.add_field(name="👥 Ya Amigos", value=f"{results['ya_amigos']}", inline=True)
-            
-            if results["errores"]:
-                errores_text = "\n".join(results["errores"][:5])  # Mostrar max 5 errores
-                final_embed.add_field(
-                    name="⚠️ Errores:",
-                    value=f"```{errores_text}```",
-                    inline=False
-                )
-            
-            if results["exitosas"] > 0:
-                final_embed.add_field(
-                    name="🎉 Resultado:",
-                    value=f"Se enviaron {results['exitosas']} solicitudes exitosamente con sistema anti-intercepción.",
-                    inline=False
-                )
-            elif results["ya_amigos"] > 0:
-                final_embed.add_field(
-                    name="💡 Información:",
-                    value="Las cuentas ya son amigas del usuario objetivo.",
-                    inline=False
-                )
-        
-        else:
-            # Error en el proceso
-            final_embed = discord.Embed(
-                title="❌ Error en Friend Requests (SISTEMA MEJORADO)",
-                description=f"Error: {resultado['message']}",
-                color=0xff0000
-            )
-        
-        final_embed.set_footer(text=f"Comando ejecutado por {interaction.user.name} • Sistema Anti-Intercepción")
-        
-        await message.edit(embed=final_embed)
-        
-        logger.info(f"Owner {interaction.user.name} completó friendimproved para usuario {user_id}")
-        
-    except Exception as e:
-        logger.error(f"Error en comando friendimproved: {e}")
-        error_embed = discord.Embed(
-            title="❌ Error Interno",
-            description=f"Error en el sistema mejorado: {str(e)[:100]}",
-            color=0xff0000
-        )
-        await interaction.followup.send(embed=error_embed, ephemeral=True)
-
 @bot.tree.command(name="friendrestart", description="[OWNER ONLY] Enviar solicitudes con REINICIO COMPLETO del navegador entre cookies")
 async def friendrestart_command(interaction: discord.Interaction, user_id: int, cantidad: int = 1):
     """Comando para enviar múltiples solicitudes de amistad con reinicio completo del navegador entre cada cookie"""
@@ -5127,7 +5008,6 @@ async def friendrestart_command(interaction: discord.Interaction, user_id: int, 
     try:
         # Importar el nuevo sistema
         from friend_browser_restart import FriendRequestBrowserRestart
-from friend_browser_improved import FriendRequestBrowserImproved
         
         # Crear instancia del sistema
         friend_system = FriendRequestBrowserRestart(scraper)
