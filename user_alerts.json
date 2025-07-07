@@ -9,14 +9,13 @@
   },
   "user_states": {
     "11834624": {
-      "online": true,
+      "online": false,
       "game_id": null,
       "game_name": null,
-      "presence_type": 1,
-      "last_online": "2025-07-07T12:34:25.106315",
-      "last_check": "2025-07-07T12:34:25.106323"
+      "presence_type": 0,
+      "last_check": "2025-07-07T12:39:26.237860"
     }
   },
-  "last_updated": "2025-07-07T12:34:26.107169",
+  "last_updated": "2025-07-07T12:39:28.247122",
   "total_monitored": 1
 }
