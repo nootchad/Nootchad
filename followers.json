@@ -161,6 +161,12 @@
       "verified_at": 1751850116.2388833
     }
   },
-  "pending_verifications": {},
-  "last_updated": "2025-07-07T01:01:56.238888"
+  "pending_verifications": {
+    "1290793417349271654": {
+      "roblox_username": "elpepe706uwu",
+      "verification_code": "vipx2025xrbx",
+      "created_at": 1751851095.7600193
+    }
+  },
+  "last_updated": "2025-07-07T01:18:15.760023"
 }
