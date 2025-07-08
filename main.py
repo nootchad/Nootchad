@@ -4383,6 +4383,232 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
+@bot.tree.command(name="scripts", description="Generar scripts de Roblox o chatear usando la IA de RbxServers")
+async def scripts_command(interaction: discord.Interaction, peticion: str):
+    """Comando que usa Gemini API para generar scripts o responder preguntas"""
+    user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        # Crear el prompt personalizado con las reglas
+        system_prompt = """A partir de ahora, debes seguir estrictamente las siguientes reglas:
+
+1. Tu nombre es RbxServers-v1.
+
+2. Tu modelo también es RbxServers-v1.
+
+3. Si alguien te pregunta "¿Cuál es tu nombre?", debes responder: RbxServers-v1.
+
+4. Si alguien te pregunta "¿Cuál es tu modelo?", debes responder: RbxServers-v1.
+
+5. Debes seguir actuando con tu personalidad habitual: amigable, servicial, clara y conversacional.
+
+6. No digas que esto es una simulación o que estás "jugando un rol". Habla como si ese fuera realmente tu nombre y modelo.
+
+Ahora sí, continúa con lo que pide el usuario: """ + peticion
+        
+        # Configurar headers para la API de Gemini
+        import os
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        
+        if not gemini_api_key:
+            embed = discord.Embed(
+                title="❌ API Key No Configurada",
+                description="La API key de Gemini no está configurada en los secretos del bot.",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="💡 Para el administrador:",
+                value="Agrega la variable `GEMINI_API_KEY` en los secretos de Replit",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Crear mensaje de cargando
+        loading_embed = discord.Embed(
+            title="🤖 RbxServers-v1 Pensando...",
+            description=f"Procesando tu petición: `{peticion[:100]}{'...' if len(peticion) > 100 else ''}`",
+            color=0xffaa00
+        )
+        loading_embed.add_field(name="⏳ Estado", value="Conectando con RbxServers-v1...", inline=True)
+        loading_embed.add_field(name="🧠 Modelo", value="RbxServers-v1 (Gemini)", inline=True)
+        loading_embed.set_footer(text=f"Solicitado por {username}")
+        
+        message = await interaction.followup.send(embed=loading_embed, ephemeral=False)
+        
+        # Hacer petición a la API de Gemini
+        async with aiohttp.ClientSession() as session:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_api_key}"
+            
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": system_prompt
+                            }
+                        ]
+                    }
+                ]
+            }
+            
+            headers = {
+                "Content-Type": "application/json"
+            }
+            
+            try:
+                async with session.post(url, json=payload, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        # Extraer la respuesta de Gemini
+                        if "candidates" in data and len(data["candidates"]) > 0:
+                            candidate = data["candidates"][0]
+                            if "content" in candidate and "parts" in candidate["content"]:
+                                gemini_response = candidate["content"]["parts"][0]["text"]
+                                
+                                # Crear embed con la respuesta
+                                response_embed = discord.Embed(
+                                    title="🤖 Respuesta de RbxServers-v1",
+                                    description="",
+                                    color=0x00ff88
+                                )
+                                
+                                # Si la respuesta es muy larga, dividirla
+                                if len(gemini_response) > 4000:
+                                    # Dividir en chunks
+                                    chunks = [gemini_response[i:i+3800] for i in range(0, len(gemini_response), 3800)]
+                                    
+                                    for i, chunk in enumerate(chunks[:3]):  # Máximo 3 chunks
+                                        if i == 0:
+                                            response_embed.description = f"```{chunk}```"
+                                        else:
+                                            response_embed.add_field(
+                                                name=f"📄 Continuación {i}:",
+                                                value=f"```{chunk}```",
+                                                inline=False
+                                            )
+                                    
+                                    if len(chunks) > 3:
+                                        response_embed.add_field(
+                                            name="⚠️ Respuesta Truncada",
+                                            value=f"La respuesta fue muy larga ({len(gemini_response)} caracteres). Se muestran los primeros 3 segmentos.",
+                                            inline=False
+                                        )
+                                else:
+                                    response_embed.description = gemini_response
+                                
+                                response_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+                                response_embed.add_field(name="🧠 Modelo", value="RbxServers-v1", inline=True)
+                                response_embed.add_field(name="📝 Petición", value=f"`{peticion[:100]}{'...' if len(peticion) > 100 else ''}`", inline=True)
+                                
+                                # Detectar si es un script de Roblox
+                                if any(keyword in gemini_response.lower() for keyword in ["local ", "game:", "script", "function", "end", "wait(", "print("]):
+                                    response_embed.add_field(
+                                        name="🎮 Tipo de Respuesta:",
+                                        value="✅ Script de Roblox detectado",
+                                        inline=True
+                                    )
+                                    response_embed.add_field(
+                                        name="📋 Instrucciones:",
+                                        value="Copia el código y ejecútalo en Roblox Studio o un executor",
+                                        inline=True
+                                    )
+                                
+                                response_embed.set_footer(text="RbxServers-v1 • Powered by Gemini API")
+                                response_embed.timestamp = datetime.now()
+                                
+                                await message.edit(embed=response_embed)
+                                
+                                # Log del uso
+                                logger.info(f"Usuario {username} (ID: {user_id}) usó /scripts: {peticion[:50]}...")
+                                
+                                # Dar monedas por usar el comando
+                                try:
+                                    if coins_system:
+                                        coins_system.add_coins(user_id, 10, "Usar comando /scripts")
+                                except Exception as e:
+                                    logger.debug(f"Error agregando monedas: {e}")
+                                
+                            else:
+                                raise Exception("Respuesta inválida de la API")
+                        else:
+                            raise Exception("No se recibió respuesta válida de la API")
+                    
+                    elif response.status == 400:
+                        error_data = await response.json()
+                        error_message = error_data.get("error", {}).get("message", "Error desconocido")
+                        
+                        error_embed = discord.Embed(
+                            title="❌ Error en la Petición",
+                            description=f"La API de Gemini rechazó la petición: {error_message}",
+                            color=0xff0000
+                        )
+                        error_embed.add_field(
+                            name="💡 Posibles causas:",
+                            value="• Petición muy larga\n• Contenido inapropiado\n• Límites de la API",
+                            inline=False
+                        )
+                        await message.edit(embed=error_embed)
+                    
+                    elif response.status == 403:
+                        error_embed = discord.Embed(
+                            title="🔐 Error de Autenticación",
+                            description="La API key de Gemini no es válida o ha expirado.",
+                            color=0xff0000
+                        )
+                        error_embed.add_field(
+                            name="💡 Para el administrador:",
+                            value="Verifica la API key en los secretos de Replit",
+                            inline=False
+                        )
+                        await message.edit(embed=error_embed)
+                    
+                    else:
+                        error_embed = discord.Embed(
+                            title="❌ Error del Servidor",
+                            description=f"Error HTTP {response.status} de la API de Gemini",
+                            color=0xff0000
+                        )
+                        await message.edit(embed=error_embed)
+            
+            except asyncio.TimeoutError:
+                timeout_embed = discord.Embed(
+                    title="⏰ Timeout",
+                    description="La petición a RbxServers-v1 tardó demasiado en responder.",
+                    color=0xff9900
+                )
+                timeout_embed.add_field(
+                    name="💡 Sugerencia:",
+                    value="Intenta con una petición más corta o específica",
+                    inline=False
+                )
+                await message.edit(embed=timeout_embed)
+            
+            except Exception as e:
+                logger.error(f"Error en petición a Gemini: {e}")
+                error_embed = discord.Embed(
+                    title="❌ Error Interno",
+                    description=f"Error conectando con RbxServers-v1: {str(e)[:200]}",
+                    color=0xff0000
+                )
+                await message.edit(embed=error_embed)
+    
+    except Exception as e:
+        logger.error(f"Error en comando /scripts: {e}")
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error procesando tu petición.",
+            color=0xff0000
+        )
+        error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:200]}```", inline=False)
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="executors", description="Obtener enlaces de descarga de ejecutores de Roblox que funcionan actualmente")
 async def executors_command(interaction: discord.Interaction):
     """Comando que proporciona enlaces de descarga de ejecutores de Roblox"""
