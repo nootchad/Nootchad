@@ -4520,7 +4520,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                                         inline=True
                                     )
                                 
-                                response_embed.set_footer(text="RbxServers-v1 • Powered by Gemini API")
+                                response_embed.set_footer(text="RbxServers-v1 • Powered by Hesiz")
                                 response_embed.timestamp = datetime.now()
                                 
                                 await message.edit(embed=response_embed)
