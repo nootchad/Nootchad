@@ -3203,6 +3203,9 @@ maintenance_system = None
 # Import startup alert system
 startup_alert_system = None
 
+# Import coins system
+coins_system = None
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -3333,6 +3336,16 @@ async def on_ready():
         logger.info("🔔 Sistema de alertas de inicio configurado")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de alertas de inicio: {e}")
+
+    # Setup coins system
+    global coins_system
+    try:
+        from coins_system import setup_coins_commands, CoinsSystem
+        
+        coins_system = setup_coins_commands(bot)
+        logger.info("💰 Sistema de monedas configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de monedas: {e}")
 
     # Inicializar sistema de monitoreo de usuarios
     try:
@@ -3555,6 +3568,13 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
     username = f"{interaction.user.name}#{interaction.user.discriminator}"
     
     user_logger.info(f"🔍 Verificando autenticación para usuario {username} (ID: {user_id})")
+    
+    # Dar monedas por usar comandos del bot (si está autenticado)
+    try:
+        if coins_system and roblox_verification.is_user_verified(user_id):
+            coins_system.add_coins(user_id, 5, "Usar comando del bot")
+    except Exception as e:
+        logger.debug(f"Error agregando monedas automáticas: {e}")
     
     try:
         # Verificar si la interacción ya fue respondida o está expirada

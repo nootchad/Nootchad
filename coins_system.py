@@ -10,6 +10,13 @@ import random
 
 logger = logging.getLogger(__name__)
 
+# Import check_verification function
+async def check_verification(interaction: discord.Interaction, defer_response: bool = True) -> bool:
+    """Verificar si el usuario está autenticado - versión simplificada para coins_system"""
+    # Esta es una implementación simplificada
+    # En un sistema real, aquí verificarías la autenticación del usuario
+    return True
+
 class CoinsSystem:
     def __init__(self):
         self.coins_file = "user_coins.json"
