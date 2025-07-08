@@ -3520,7 +3520,7 @@ class VerificationConfirmButton(discord.ui.Button):
             )
             success_embed.add_field(
                 name="🎮 Ahora puedes usar:",
-                value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
+                value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• `/AI` - Chatear con IA o generar scripts\n• Y todos los demás comandos",
                 inline=False
             )
             success_embed.add_field(
@@ -4383,7 +4383,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-@bot.tree.command(name="scripts", description="Generar scripts de Roblox o chatear usando la IA de RbxServers")
+@bot.tree.command(name="AI", description="Generar scripts de Roblox o chatear usando la IA de RbxServers")
 async def scripts_command(interaction: discord.Interaction, peticion: str):
     """Comando que usa Gemini API para generar scripts o responder preguntas"""
     user_id = str(interaction.user.id)
@@ -4526,12 +4526,12 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                                 await message.edit(embed=response_embed)
                                 
                                 # Log del uso
-                                logger.info(f"Usuario {username} (ID: {user_id}) usó /scripts: {peticion[:50]}...")
+                                logger.info(f"Usuario {username} (ID: {user_id}) usó /AI: {peticion[:50]}...")
                                 
                                 # Dar monedas por usar el comando
                                 try:
                                     if coins_system:
-                                        coins_system.add_coins(user_id, 10, "Usar comando /scripts")
+                                        coins_system.add_coins(user_id, 10, "Usar comando /AI")
                                 except Exception as e:
                                     logger.debug(f"Error agregando monedas: {e}")
                                 
@@ -4600,7 +4600,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                 await message.edit(embed=error_embed)
     
     except Exception as e:
-        logger.error(f"Error en comando /scripts: {e}")
+        logger.error(f"Error en comando /AI: {e}")
         error_embed = discord.Embed(
             title="❌ Error",
             description="Ocurrió un error procesando tu petición.",
