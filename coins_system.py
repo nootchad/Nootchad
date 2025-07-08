@@ -625,8 +625,8 @@ def setup_coins_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @bot.tree.command(name="addstock", description="[OWNER ONLY] Agregar artículo al stock de la tienda")
-    async def addstock_command(interaction: discord.Interaction, categoria: str, item_key: str, nombre: str, precio: int, descripcion: str, stock: int = 1):
+    @bot.tree.command(name="addstock", description="[OWNER ONLY] Gestionar stock de la tienda (agregar, remover, actualizar)")
+    async def addstock_command(interaction: discord.Interaction):
         user_id = str(interaction.user.id)
 
         # Verificar que solo el owner o delegados puedan usar este comando
@@ -640,77 +640,19 @@ def setup_coins_commands(bot):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        await interaction.response.defer(ephemeral=True)
-
-        # Validar categoría
-        categorias_validas = ["juegos", "cuentas", "robux", "premium"]
-        if categoria.lower() not in categorias_validas:
-            embed = discord.Embed(
-                title="❌ Categoría Inválida",
-                description=f"Las categorías válidas son: {', '.join(categorias_validas)}",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            return
-
-        # Validar precio y stock
-        if precio <= 0:
-            embed = discord.Embed(
-                title="❌ Precio Inválido",
-                description="El precio debe ser mayor a 0.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            return
-
-        if stock < 0:
-            embed = discord.Embed(
-                title="❌ Stock Inválido",
-                description="El stock debe ser 0 o mayor.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            return
-
-        try:
-            categoria_key = categoria.lower()
-
-            # Agregar artículo al stock
-            coins_system.shop_items[categoria_key][item_key] = {
-                "name": nombre,
-                "cost": precio,
-                "description": descripcion,
-                "stock": stock
-            }
-
-            # Guardar cambios
-            coins_system.save_coins_data()
-
-            embed = discord.Embed(
-                title="✅ Artículo Agregado",
-                description=f"El artículo ha sido agregado exitosamente a la categoría **{categoria}**.",
-                color=0x00ff88
-            )
-
-            embed.add_field(name="🆔 ID del Artículo", value=f"`{item_key}`", inline=True)
-            embed.add_field(name="📝 Nombre", value=f"`{nombre}`", inline=True)
-            embed.add_field(name="💰 Precio", value=f"{precio:,} monedas", inline=True)
-            embed.add_field(name="📊 Stock", value=f"{stock} unidades", inline=True)
-            embed.add_field(name="📂 Categoría", value=categoria.title(), inline=True)
-            embed.add_field(name="📋 Descripción", value=descripcion, inline=False)
-
-            await interaction.followup.send(embed=embed, ephemeral=True)
-
-            logger.info(f"Owner {interaction.user.name} agregó artículo '{item_key}' a categoría '{categoria}'")
-
-        except Exception as e:
-            logger.error(f"Error agregando stock: {e}")
-            embed = discord.Embed(
-                title="❌ Error",
-                description="Ocurrió un error al agregar el artículo.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
+        view = StockManagementView()
+        embed = discord.Embed(
+            title="🏪 Gestión de Stock",
+            description="Selecciona una acción para gestionar el stock de la tienda:",
+            color=0x3366ff
+        )
+        embed.add_field(
+            name="📋 Acciones Disponibles",
+            value="• **➕ Agregar**: Crear nuevos artículos\n• **➖ Remover**: Eliminar artículos existentes\n• **📊 Stock**: Actualizar cantidades\n• **💰 Precio**: Cambiar precios\n• **📋 Ver Todo**: Revisar todo el inventario",
+            inline=False
+        )
+        embed.set_footer(text="Usa el menú desplegable para comenzar")
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @bot.tree.command(name="removestock", description="[OWNER ONLY] Remover artículo del stock de la tienda")
     async def removestock_command(interaction: discord.Interaction, categoria: str, item_key: str):
@@ -1636,35 +1578,5 @@ def setup_coins_commands(bot):
         def __init__(self):
             super().__init__(timeout=300)
             self.add_item(StockManagementSelect())
-
-    @bot.tree.command(name="addstock", description="[OWNER ONLY] Gestionar stock de la tienda (agregar, remover, actualizar)")
-    async def addstock_command(interaction: discord.Interaction):
-        user_id = str(interaction.user.id)
-
-        # Verificar que solo el owner o delegados puedan usar este comando
-        from main import is_owner_or_delegated
-        if not is_owner_or_delegated(user_id):
-            embed = discord.Embed(
-                title="❌ Acceso Denegado",
-                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
-                color=0xff0000
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        view = StockManagementView()
-        embed = discord.Embed(
-            title="🏪 Gestión de Stock",
-            description="Selecciona una acción para gestionar el stock de la tienda:",
-            color=0x3366ff
-        )
-        embed.add_field(
-            name="📋 Acciones Disponibles",
-            value="• **➕ Agregar**: Crear nuevos artículos\n• **➖ Remover**: Eliminar artículos existentes\n• **📊 Stock**: Actualizar cantidades\n• **💰 Precio**: Cambiar precios\n• **📋 Ver Todo**: Revisar todo el inventario",
-            inline=False
-        )
-        embed.set_footer(text="Usa el menú desplegable para comenzar")
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
 
     return coins_system
