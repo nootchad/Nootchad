@@ -280,84 +280,16 @@ class CoinsSystem:
         """Configurar tienda de recompensas"""
         self.shop_items = {
             "juegos": {
-                "blox_fruits": {
-                    "name": "🌊 Blox Fruits - Servidor VIP Premium",
-                    "cost": 100,
-                    "description": "Acceso a servidores VIP especiales de Blox Fruits",
-                    "stock": 50
-                },
-                "pet_simulator": {
-                    "name": "🎃 Pet Simulator X - Pack Premium",
-                    "cost": 80,
-                    "description": "Acceso a servidores exclusivos con mejor rates",
-                    "stock": 30
-                },
-                "anime_fighting": {
-                    "name": "🌟 Anime Fighting Simulator - Boost Pack",
-                    "cost": 60,
-                    "description": "Servidores con XP multiplicado",
-                    "stock": 40
-                }
+                # Stock vacío - agregar artículos manualmente
             },
             "cuentas": {
-                "roblox_premium": {
-                    "name": "👑 Cuenta Roblox Premium",
-                    "cost": 500,
-                    "description": "Cuenta de Roblox con Premium activo",
-                    "stock": 5
-                },
-                "crunchyroll": {
-                    "name": "📺 Cuenta Crunchyroll Premium",
-                    "cost": 300,
-                    "description": "Acceso completo a anime sin anuncios",
-                    "stock": 10
-                },
-                "spotify": {
-                    "name": "🎵 Cuenta Spotify Premium",
-                    "cost": 250,
-                    "description": "Música sin límites ni anuncios",
-                    "stock": 15
-                },
-                "netflix": {
-                    "name": "🎬 Cuenta Netflix Premium",
-                    "cost": 400,
-                    "description": "Acceso completo a Netflix HD",
-                    "stock": 8
-                }
+                # Stock vacío - agregar artículos manualmente
             },
             "robux": {
-                "robux_100": {
-                    "name": "💎 100 Robux",
-                    "cost": 200,
-                    "description": "100 Robux directos a tu cuenta",
-                    "stock": 175
-                },
-                "robux_500": {
-                    "name": "💎 500 Robux",
-                    "cost": 800,
-                    "description": "500 Robux directos a tu cuenta",
-                    "stock": 70
-                },
-                "robux_1000": {
-                    "name": "💎 1000 Robux",
-                    "cost": 1500,
-                    "description": "1000 Robux directos a tu cuenta",
-                    "stock": 35
-                }
+                # Stock vacío - agregar artículos manualmente
             },
             "premium": {
-                "premium_7d": {
-                    "name": "⭐ Premium 7 días",
-                    "cost": 150,
-                    "description": "Acceso premium al bot por 7 días",
-                    "stock": 100
-                },
-                "premium_30d": {
-                    "name": "⭐ Premium 30 días",
-                    "cost": 500,
-                    "description": "Acceso premium al bot por 30 días",
-                    "stock": 50
-                }
+                # Stock vacío - agregar artículos manualmente
             }
         }
 
