@@ -851,7 +851,7 @@ def setup_coins_commands(bot):
 
             embed.add_field(name="🆔 ID del Artículo", value=f"`{item_key}`", inline=True)
             embed.add_field(name="📝 Nombre", value=f"`{item_name}`", inline=True)
-            embed.add_field(name="📂 Categoría", value=categoria.title()", inline=True)
+            embed.add_field(name="📂 Categoría", value=categoria.title(), inline=True)
             embed.add_field(name="📊 Stock Anterior", value=f"{stock_anterior} unidades", inline=True)
             embed.add_field(name="📊 Stock Nuevo", value=f"{nuevo_stock} unidades", inline=True)
             embed.add_field(name="🔄 Cambio", value=f"{nuevo_stock - stock_anterior:+d} unidades", inline=True)
@@ -989,7 +989,7 @@ def setup_coins_commands(bot):
         async def on_submit(self, interaction: discord.Interaction):
             item_key = self.item_key_input.value.strip()
             nombre = self.nombre_input.value.strip()
-            
+
             try:
                 precio = int(self.precio_input.value.strip())
                 stock = int(self.stock_input.value.strip())
@@ -1137,7 +1137,7 @@ def setup_coins_commands(bot):
 
         async def callback(self, interaction: discord.Interaction):
             action = self.values[0]
-            
+
             if action == "add_item":
                 # Mostrar selector de categorías para agregar
                 view = CategorySelectView("add")
@@ -1147,7 +1147,7 @@ def setup_coins_commands(bot):
                     color=0x00ff88
                 )
                 await interaction.response.edit_message(embed=embed, view=view)
-                
+
             elif action == "remove_item":
                 view = CategorySelectView("remove")
                 embed = discord.Embed(
@@ -1156,7 +1156,7 @@ def setup_coins_commands(bot):
                     color=0xff4444
                 )
                 await interaction.response.edit_message(embed=embed, view=view)
-                
+
             elif action == "update_stock":
                 view = CategorySelectView("update_stock")
                 embed = discord.Embed(
@@ -1165,7 +1165,7 @@ def setup_coins_commands(bot):
                     color=0x3366ff
                 )
                 await interaction.response.edit_message(embed=embed, view=view)
-                
+
             elif action == "update_price":
                 view = CategorySelectView("update_price")
                 embed = discord.Embed(
@@ -1174,7 +1174,7 @@ def setup_coins_commands(bot):
                     color=0xffaa00
                 )
                 await interaction.response.edit_message(embed=embed, view=view)
-                
+
             elif action == "view_all":
                 await self.show_all_stock(interaction)
 
@@ -1222,7 +1222,7 @@ def setup_coins_commands(bot):
             # Botón para volver al menú principal
             view = StockManagementView()
             embed.set_footer(text="Usa el menú para realizar más acciones")
-            
+
             await interaction.response.edit_message(embed=embed, view=view)
 
     class CategorySelectView(discord.ui.View):
@@ -1230,7 +1230,7 @@ def setup_coins_commands(bot):
             super().__init__(timeout=300)
             self.action_type = action_type
             self.add_item(CategorySelectForAction(action_type))
-            
+
             # Botón para volver al menú principal
             back_button = discord.ui.Button(
                 label="🔙 Volver al Menú",
@@ -1287,25 +1287,25 @@ def setup_coins_commands(bot):
 
         async def callback(self, interaction: discord.Interaction):
             categoria = self.values[0]
-            
+
             if self.action_type == "add":
                 modal = AddStockModal(title=f"➕ Agregar Artículo - {categoria.title()}")
                 modal.categoria = categoria
                 await interaction.response.send_modal(modal)
-                
+
             elif self.action_type == "remove":
                 await self.show_items_for_removal(interaction, categoria)
-                
+
             elif self.action_type == "update_stock":
                 await self.show_items_for_stock_update(interaction, categoria)
-                
+
             elif self.action_type == "update_price":
                 await self.show_items_for_price_update(interaction, categoria)
 
         async def show_items_for_removal(self, interaction: discord.Interaction, categoria: str):
             """Mostrar artículos para remover"""
             category_items = coins_system.shop_items.get(categoria, {})
-            
+
             if not category_items:
                 embed = discord.Embed(
                     title="❌ Categoría Vacía",
@@ -1322,23 +1322,23 @@ def setup_coins_commands(bot):
                 description="Selecciona el artículo que quieres remover:",
                 color=0xff4444
             )
-            
+
             items_list = []
             for item_key, item_data in category_items.items():
                 items_list.append(f"• **{item_data['name']}** (`{item_key}`) - {item_data['cost']:,} monedas (Stock: {item_data['stock']})")
-            
+
             embed.add_field(
                 name="📦 Artículos Disponibles",
                 value="\n".join(items_list[:10]),  # Mostrar máximo 10
                 inline=False
             )
-            
+
             await interaction.response.edit_message(embed=embed, view=view)
 
         async def show_items_for_stock_update(self, interaction: discord.Interaction, categoria: str):
             """Mostrar artículos para actualizar stock"""
             category_items = coins_system.shop_items.get(categoria, {})
-            
+
             if not category_items:
                 embed = discord.Embed(
                     title="❌ Categoría Vacía",
@@ -1355,24 +1355,24 @@ def setup_coins_commands(bot):
                 description="Selecciona el artículo cuyo stock quieres actualizar:",
                 color=0x3366ff
             )
-            
+
             items_list = []
             for item_key, item_data in category_items.items():
                 stock_status = "✅ Disponible" if item_data['stock'] > 0 else "❌ Agotado"
                 items_list.append(f"• **{item_data['name']}** (`{item_key}`) - Stock actual: {item_data['stock']} ({stock_status})")
-            
+
             embed.add_field(
                 name="📦 Artículos Disponibles",
                 value="\n".join(items_list[:10]),  # Mostrar máximo 10
                 inline=False
             )
-            
+
             await interaction.response.edit_message(embed=embed, view=view)
 
         async def show_items_for_price_update(self, interaction: discord.Interaction, categoria: str):
             """Mostrar artículos para actualizar precio"""
             category_items = coins_system.shop_items.get(categoria, {})
-            
+
             if not category_items:
                 embed = discord.Embed(
                     title="❌ Categoría Vacía",
@@ -1389,17 +1389,17 @@ def setup_coins_commands(bot):
                 description="Selecciona el artículo cuyo precio quieres actualizar:",
                 color=0xffaa00
             )
-            
+
             items_list = []
             for item_key, item_data in category_items.items():
                 items_list.append(f"• **{item_data['name']}** (`{item_key}`) - Precio actual: {item_data['cost']:,} monedas")
-            
+
             embed.add_field(
                 name="💰 Artículos Disponibles",
                 value="\n".join(items_list[:10]),  # Mostrar máximo 10
                 inline=False
             )
-            
+
             await interaction.response.edit_message(embed=embed, view=view)
 
     class ItemSelectView(discord.ui.View):
@@ -1407,7 +1407,7 @@ def setup_coins_commands(bot):
             super().__init__(timeout=300)
             self.categoria = categoria
             self.action_type = action_type
-            
+
             # Crear opciones para el select
             options = []
             for item_key, item_data in list(items.items())[:25]:  # Discord limit de 25 opciones
@@ -1416,10 +1416,10 @@ def setup_coins_commands(bot):
                     description=f"ID: {item_key} | Precio: {item_data['cost']:,} | Stock: {item_data['stock']}",
                     value=item_key
                 ))
-            
+
             if options:
                 self.add_item(ItemSelect(categoria, action_type, options))
-            
+
             # Botón para volver
             back_button = discord.ui.Button(
                 label="🔙 Volver a Categorías",
@@ -1451,15 +1451,15 @@ def setup_coins_commands(bot):
 
         async def callback(self, interaction: discord.Interaction):
             item_key = self.values[0]
-            
+
             if self.action_type == "remove":
                 modal = RemoveItemModal(self.categoria, item_key)
                 await interaction.response.send_modal(modal)
-                
+
             elif self.action_type == "update_stock":
                 modal = UpdateStockModal(self.categoria, item_key)
                 await interaction.response.send_modal(modal)
-                
+
             elif self.action_type == "update_price":
                 modal = UpdatePriceModal(self.categoria, item_key)
                 await interaction.response.send_modal(modal)
@@ -1469,9 +1469,9 @@ def setup_coins_commands(bot):
             super().__init__(title=f"➖ Confirmar Eliminación")
             self.categoria = categoria
             self.item_key = item_key
-            
+
             item_data = coins_system.shop_items[categoria][item_key]
-            
+
             self.confirm_input = discord.ui.TextInput(
                 label=f"Escribe 'CONFIRMAR' para eliminar '{item_data['name']}'",
                 placeholder="CONFIRMAR",
@@ -1521,9 +1521,9 @@ def setup_coins_commands(bot):
             super().__init__(title=f"📊 Actualizar Stock")
             self.categoria = categoria
             self.item_key = item_key
-            
+
             item_data = coins_system.shop_items[categoria][item_key]
-            
+
             self.stock_input = discord.ui.TextInput(
                 label=f"Nuevo stock para '{item_data['name']}'",
                 placeholder=f"Stock actual: {item_data['stock']}",
@@ -1540,7 +1540,7 @@ def setup_coins_commands(bot):
 
                 stock_anterior = coins_system.shop_items[self.categoria][self.item_key]['stock']
                 item_name = coins_system.shop_items[self.categoria][self.item_key]['name']
-                
+
                 coins_system.shop_items[self.categoria][self.item_key]['stock'] = nuevo_stock
                 coins_system.save_coins_data()
 
@@ -1579,9 +1579,9 @@ def setup_coins_commands(bot):
             super().__init__(title=f"💰 Actualizar Precio")
             self.categoria = categoria
             self.item_key = item_key
-            
+
             item_data = coins_system.shop_items[categoria][item_key]
-            
+
             self.price_input = discord.ui.TextInput(
                 label=f"Nuevo precio para '{item_data['name']}'",
                 placeholder=f"Precio actual: {item_data['cost']:,} monedas",
@@ -1598,7 +1598,7 @@ def setup_coins_commands(bot):
 
                 precio_anterior = coins_system.shop_items[self.categoria][self.item_key]['cost']
                 item_name = coins_system.shop_items[self.categoria][self.item_key]['name']
-                
+
                 coins_system.shop_items[self.categoria][self.item_key]['cost'] = nuevo_precio
                 coins_system.save_coins_data()
 
@@ -1665,6 +1665,6 @@ def setup_coins_commands(bot):
         )
         embed.set_footer(text="Usa el menú desplegable para comenzar")
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-    
+
 
     return coins_system
