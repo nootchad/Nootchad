@@ -10,9 +10,12 @@ import random
 logger = logging.getLogger(__name__)
 
 class StockView(discord.ui.View):
-    def __init__(self, user_id: str):
+    def __init__(self, user_id: str, current_category: str = None, current_page: int = 0):
         super().__init__(timeout=300)  # 5 minutos
         self.user_id = user_id
+        self.current_category = current_category
+        self.current_page = current_page
+        self.items_per_page = 3  # Máximo 3 artículos por página para evitar límites de Discord
 
     @discord.ui.select(
         placeholder="Selecciona una categoría...",
@@ -45,9 +48,19 @@ class StockView(discord.ui.View):
     )
     async def category_select(self, interaction: discord.Interaction, select: discord.ui.Select):
         category = select.values[0]
+        await self.show_category_page(interaction, category, 0)
+
+    async def show_category_page(self, interaction: discord.Interaction, category: str, page: int = 0):
+        """Mostrar página específica de una categoría"""
+        category_label = {
+            "juegos": "🎮 Juegos",
+            "cuentas": "👤 Cuentas", 
+            "robux": "💎 Robux",
+            "premium": "⭐ Premium"
+        }.get(category, category.title())
 
         embed = discord.Embed(
-            title=f"🏪 {select.options[next(i for i, opt in enumerate(select.options) if opt.value == category)].label}",
+            title=f"🏪 {category_label}",
             description=f"Stock disponible en la categoría {category}:",
             color=0x00ff88
         )
@@ -61,16 +74,41 @@ class StockView(discord.ui.View):
                 value="No hay artículos disponibles en esta categoría actualmente.",
                 inline=False
             )
+            total_pages = 1
         else:
-            for item_key, item_data in category_items.items():
-                stock_status = "✅ Disponible" if item_data['stock'] > 0 else "❌ Agotado"
-                affordability = "💰 Puedes comprarlo" if user_balance >= item_data['cost'] else "💸 Insuficiente"
+            # Convertir a lista para paginación
+            items_list = list(category_items.items())
+            total_items = len(items_list)
+            total_pages = (total_items + self.items_per_page - 1) // self.items_per_page
+            
+            # Validar página
+            if page >= total_pages:
+                page = 0
+            if page < 0:
+                page = total_pages - 1
+            
+            # Obtener artículos para esta página
+            start_idx = page * self.items_per_page
+            end_idx = start_idx + self.items_per_page
+            page_items = items_list[start_idx:end_idx]
+            
+            if page_items:
+                for item_key, item_data in page_items:
+                    stock_status = "✅ Disponible" if item_data['stock'] > 0 else "❌ Agotado"
+                    affordability = "💰 Puedes comprarlo" if user_balance >= item_data['cost'] else "💸 Insuficiente"
 
-                embed.add_field(
-                    name=f"{item_data['name']}",
-                    value=f"**Precio:** {item_data['cost']:,} monedas\n**Stock:** {item_data['stock']} unidades\n**Estado:** {stock_status}\n**Tu balance:** {affordability}\n\n{item_data['description']}",
-                    inline=False
-                )
+                    embed.add_field(
+                        name=f"{item_data['name']} (ID: {item_key})",
+                        value=f"**Precio:** {item_data['cost']:,} monedas\n**Stock:** {item_data['stock']} unidades\n**Estado:** {stock_status}\n**Tu balance:** {affordability}\n\n{item_data['description'][:100]}{'...' if len(item_data['description']) > 100 else ''}",
+                        inline=False
+                    )
+            
+            # Información de paginación
+            embed.add_field(
+                name="📄 Paginación",
+                value=f"Página {page + 1} de {total_pages} | Total: {total_items} artículos",
+                inline=True
+            )
 
         embed.add_field(
             name="💰 Tu Balance Actual",
@@ -78,10 +116,86 @@ class StockView(discord.ui.View):
             inline=True
         )
 
-        # Actualizar la vista con el botón de compra rápida
-        view = StockView(self.user_id)
-        view.add_item(QuickBuyButton(category))
+        # Crear nueva vista con paginación
+        view = StockViewWithPagination(self.user_id, category, page, total_pages)
+        
+        await interaction.response.edit_message(embed=embed, view=view)
 
+class StockViewWithPagination(discord.ui.View):
+    def __init__(self, user_id: str, category: str, current_page: int, total_pages: int):
+        super().__init__(timeout=300)
+        self.user_id = user_id
+        self.category = category
+        self.current_page = current_page
+        self.total_pages = total_pages
+        
+        # Añadir botón de compra rápida
+        self.add_item(QuickBuyButton(category))
+        
+        # Añadir botones de navegación solo si hay más de una página
+        if total_pages > 1:
+            # Botón página anterior
+            prev_button = discord.ui.Button(
+                label="⬅️ Anterior",
+                style=discord.ButtonStyle.secondary,
+                disabled=(current_page == 0)
+            )
+            prev_button.callback = self.previous_page
+            self.add_item(prev_button)
+            
+            # Botón página siguiente  
+            next_button = discord.ui.Button(
+                label="Siguiente ➡️",
+                style=discord.ButtonStyle.secondary,
+                disabled=(current_page >= total_pages - 1)
+            )
+            next_button.callback = self.next_page
+            self.add_item(next_button)
+        
+        # Botón para volver al selector de categorías
+        back_button = discord.ui.Button(
+            label="🔙 Cambiar Categoría",
+            style=discord.ButtonStyle.primary
+        )
+        back_button.callback = self.back_to_categories
+        self.add_item(back_button)
+
+    async def previous_page(self, interaction: discord.Interaction):
+        """Ir a la página anterior"""
+        if self.current_page > 0:
+            new_page = self.current_page - 1
+            stock_view = StockView(self.user_id, self.category, new_page)
+            await stock_view.show_category_page(interaction, self.category, new_page)
+
+    async def next_page(self, interaction: discord.Interaction):
+        """Ir a la siguiente página"""
+        if self.current_page < self.total_pages - 1:
+            new_page = self.current_page + 1
+            stock_view = StockView(self.user_id, self.category, new_page)
+            await stock_view.show_category_page(interaction, self.category, new_page)
+
+    async def back_to_categories(self, interaction: discord.Interaction):
+        """Volver al selector de categorías"""
+        embed = discord.Embed(
+            title="🏪 Tienda de Recompensas",
+            description="Selecciona una categoría del menú desplegable para ver las recompensas disponibles:",
+            color=0x3366ff
+        )
+
+        user_balance = coins_system.get_user_coins(self.user_id)
+        embed.add_field(
+            name="💰 Tu Balance",
+            value=f"**{user_balance:,}** monedas",
+            inline=True
+        )
+
+        embed.add_field(
+            name="📝 Instrucciones",
+            value="1. Selecciona una categoría\n2. Navega con los botones ⬅️ ➡️\n3. Haz clic en '🛒 Compra Rápida' para comprar",
+            inline=True
+        )
+
+        view = StockView(self.user_id)
         await interaction.response.edit_message(embed=embed, view=view)
 
 class QuickBuyButton(discord.ui.Button):
@@ -184,6 +298,9 @@ class QuickBuyModal(discord.ui.Modal):
         if coins_system.spend_coins(user_id, item_cost, f"Compra rápida: {item_found['name']}"):
             # Reducir stock
             coins_system.shop_items[self.category][item_key]['stock'] -= 1
+            
+            # GUARDAR INSTANTÁNEAMENTE después de cambio de stock
+            coins_system.save_shop_data()
 
             # Embed de confirmación
             embed = discord.Embed(
@@ -244,6 +361,7 @@ class CoinsSystem:
         self.user_coins = {}
         self.shop_items = {}
         self.load_coins_data()
+        self.load_shop_data()
         self.setup_shop()
 
     def load_coins_data(self):
@@ -275,22 +393,46 @@ class CoinsSystem:
         except Exception as e:
             logger.error(f"❌ Error guardando datos de monedas: {e}")
 
-    def setup_shop(self):
-        """Configurar tienda de recompensas"""
-        self.shop_items = {
-            "juegos": {
-                # Stock vacío - agregar artículos manualmente
-            },
-            "cuentas": {
-                # Stock vacío - agregar artículos manualmente
-            },
-            "robux": {
-                # Stock vacío - agregar artículos manualmente
-            },
-            "premium": {
-                # Stock vacío - agregar artículos manualmente
+    def load_shop_data(self):
+        """Cargar datos de la tienda desde archivo JSON"""
+        try:
+            if Path(self.shop_file).exists():
+                with open(self.shop_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.shop_items = data.get('shop_items', {})
+                    logger.info(f"✅ Datos de tienda cargados desde {self.shop_file}")
+            else:
+                self.shop_items = {}
+                logger.info(f"⚠️ Archivo de tienda no encontrado, inicializando vacío")
+        except Exception as e:
+            logger.error(f"❌ Error cargando datos de tienda: {e}")
+            self.shop_items = {}
+
+    def save_shop_data(self):
+        """Guardar datos de tienda a archivo JSON instantáneamente"""
+        try:
+            data = {
+                'shop_items': self.shop_items,
+                'last_updated': datetime.now().isoformat(),
+                'total_categories': len(self.shop_items),
+                'total_items': sum(len(category.values()) for category in self.shop_items.values())
             }
-        }
+            with open(self.shop_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+            logger.info(f"💾 Datos de tienda guardados en {self.shop_file}")
+        except Exception as e:
+            logger.error(f"❌ Error guardando datos de tienda: {e}")
+
+    def setup_shop(self):
+        """Configurar tienda de recompensas con categorías básicas si no existen"""
+        if not self.shop_items:
+            self.shop_items = {
+                "juegos": {},
+                "cuentas": {},
+                "robux": {},
+                "premium": {}
+            }
+            self.save_shop_data()
 
     def get_user_coins(self, user_id: str) -> int:
         """Obtener monedas de un usuario"""
@@ -490,11 +632,11 @@ def setup_coins_commands(bot):
 
         embed.add_field(
             name="📝 Instrucciones",
-            value="1. Selecciona una categoría\n2. Haz clic en '🛒 Compra Rápida' para comprar",
+            value="1. Selecciona una categoría\n2. Navega con los botones ⬅️ ➡️ para ver todos los artículos\n3. Haz clic en '🛒 Compra Rápida' para comprar",
             inline=True
         )
 
-        embed.set_footer(text="Usa el menú desplegable y el botón de compra para una experiencia más fácil")
+        embed.set_footer(text="Usa el menú desplegable, navegación y compra para una experiencia completa")
 
         view = StockView(user_id=str(interaction.user.id))
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
@@ -579,6 +721,9 @@ def setup_coins_commands(bot):
         if coins_system.spend_coins(user_id, item_cost, f"Compra: {item_found['name']}"):
             # Reducir stock
             coins_system.shop_items[category_key][item_key]['stock'] -= 1
+            
+            # GUARDAR STOCK INSTANTÁNEAMENTE
+            coins_system.save_shop_data()
 
             # Embed de confirmación
             embed = discord.Embed(
@@ -898,7 +1043,7 @@ def setup_coins_commands(bot):
 
             self.nombre_input = discord.ui.TextInput(
                 label="Nombre del Artículo",
-                placeholder="Ej: Juego VIP #1",
+                placeholder="Por defecto: Artículo Nuevo",
                 style=discord.TextStyle.short,
                 required=False
             )
@@ -929,41 +1074,38 @@ def setup_coins_commands(bot):
             self.add_item(self.stock_input)
 
         async def on_submit(self, interaction: discord.Interaction):
-            item_key = self.item_key_input.value.strip()
-            nombre = self.nombre_input.value.strip()
-
+            import time
+            
+            # Obtener valores con valores por defecto
+            item_key = self.item_key_input.value.strip() if self.item_key_input.value else f"item_{int(time.time())}"
+            nombre = self.nombre_input.value.strip() if self.nombre_input.value else "Artículo Nuevo"
+            descripcion = self.descripcion_input.value.strip() if self.descripcion_input.value else "Sin descripción"
+            
+            # Validar y parsear precio con valor por defecto
             try:
-                precio = int(self.precio_input.value.strip())
-                stock = int(self.stock_input.value.strip())
+                precio_str = self.precio_input.value.strip() if self.precio_input.value else "100"
+                precio = int(precio_str)
+                if precio <= 0:
+                    precio = 100  # Valor por defecto
             except ValueError:
-                embed = discord.Embed(
-                    title="❌ Error",
-                    description="El precio y el stock deben ser números enteros válidos.",
-                    color=0xff0000
-                )
-                return await interaction.response.send_message(embed=embed, ephemeral=True)
+                precio = 100  # Valor por defecto si no es válido
+            
+            # Validar y parsear stock con valor por defecto
+            try:
+                stock_str = self.stock_input.value.strip() if self.stock_input.value else "1"
+                stock = int(stock_str)
+                if stock < 0:
+                    stock = 1  # Valor por defecto
+            except ValueError:
+                stock = 1  # Valor por defecto si no es válido
 
-            descripcion = self.descripcion_input.value.strip()
             categoria_key = self.categoria.lower()
 
-            # Validar precio y stock
-            if precio <= 0:
-                embed = discord.Embed(
-                    title="❌ Precio Inválido",
-                    description="El precio debe ser mayor a 0.",
-                    color=0xff0000
-                )
-                return await interaction.response.send_message(embed=embed, ephemeral=True)
-
-            if stock < 0:
-                embed = discord.Embed(
-                    title="❌ Stock Inválido",
-                    description="El stock debe ser 0 o mayor.",
-                    color=0xff0000
-                )
-                return await interaction.response.send_message(embed=embed, ephemeral=True)
-
             try:
+                # Asegurar que existe la categoría
+                if categoria_key not in coins_system.shop_items:
+                    coins_system.shop_items[categoria_key] = {}
+                
                 # Agregar artículo al stock
                 coins_system.shop_items[categoria_key][item_key] = {
                     "name": nombre,
@@ -972,8 +1114,8 @@ def setup_coins_commands(bot):
                     "stock": stock
                 }
 
-                # Guardar cambios
-                coins_system.save_coins_data()
+                # Guardar cambios INSTANTÁNEAMENTE
+                coins_system.save_shop_data()
 
                 embed = discord.Embed(
                     title="✅ Artículo Agregado",
@@ -1435,7 +1577,9 @@ def setup_coins_commands(bot):
             try:
                 item_info = coins_system.shop_items[self.categoria][self.item_key]
                 del coins_system.shop_items[self.categoria][self.item_key]
-                coins_system.save_coins_data()
+                
+                # GUARDAR STOCK INSTANTÁNEAMENTE
+                coins_system.save_shop_data()
 
                 embed = discord.Embed(
                     title="✅ Artículo Eliminado",
@@ -1484,7 +1628,9 @@ def setup_coins_commands(bot):
                 item_name = coins_system.shop_items[self.categoria][self.item_key]['name']
 
                 coins_system.shop_items[self.categoria][self.item_key]['stock'] = nuevo_stock
-                coins_system.save_coins_data()
+                
+                # GUARDAR STOCK INSTANTÁNEAMENTE
+                coins_system.save_shop_data()
 
                 embed = discord.Embed(
                     title="✅ Stock Actualizado",
@@ -1542,7 +1688,9 @@ def setup_coins_commands(bot):
                 item_name = coins_system.shop_items[self.categoria][self.item_key]['name']
 
                 coins_system.shop_items[self.categoria][self.item_key]['cost'] = nuevo_precio
-                coins_system.save_coins_data()
+                
+                # GUARDAR STOCK INSTANTÁNEAMENTE
+                coins_system.save_shop_data()
 
                 embed = discord.Embed(
                     title="✅ Precio Actualizado",
