@@ -626,4 +626,318 @@ def setup_coins_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    @bot.tree.command(name="addstock", description="[OWNER ONLY] Agregar artículo al stock de la tienda")
+    async def addstock_command(interaction: discord.Interaction, categoria: str, item_key: str, nombre: str, precio: int, descripcion: str, stock: int = 1):
+        user_id = str(interaction.user.id)
+        
+        # Verificar que solo el owner o delegados puedan usar este comando
+        from main import is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        # Validar categoría
+        categorias_validas = ["juegos", "cuentas", "robux", "premium"]
+        if categoria.lower() not in categorias_validas:
+            embed = discord.Embed(
+                title="❌ Categoría Inválida",
+                description=f"Las categorías válidas son: {', '.join(categorias_validas)}",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Validar precio y stock
+        if precio <= 0:
+            embed = discord.Embed(
+                title="❌ Precio Inválido",
+                description="El precio debe ser mayor a 0.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        if stock < 0:
+            embed = discord.Embed(
+                title="❌ Stock Inválido",
+                description="El stock debe ser 0 o mayor.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        try:
+            categoria_key = categoria.lower()
+            
+            # Agregar artículo al stock
+            coins_system.shop_items[categoria_key][item_key] = {
+                "name": nombre,
+                "cost": precio,
+                "description": descripcion,
+                "stock": stock
+            }
+            
+            # Guardar cambios
+            coins_system.save_data()
+            
+            embed = discord.Embed(
+                title="✅ Artículo Agregado",
+                description=f"El artículo ha sido agregado exitosamente a la categoría **{categoria}**.",
+                color=0x00ff88
+            )
+            
+            embed.add_field(name="🆔 ID del Artículo", value=f"`{item_key}`", inline=True)
+            embed.add_field(name="📝 Nombre", value=f"`{nombre}`", inline=True)
+            embed.add_field(name="💰 Precio", value=f"{precio:,} monedas", inline=True)
+            embed.add_field(name="📊 Stock", value=f"{stock} unidades", inline=True)
+            embed.add_field(name="📂 Categoría", value=categoria.title(), inline=True)
+            embed.add_field(name="📋 Descripción", value=descripcion, inline=False)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+            logger.info(f"Owner {interaction.user.name} agregó artículo '{item_key}' a categoría '{categoria}'")
+            
+        except Exception as e:
+            logger.error(f"Error agregando stock: {e}")
+            embed = discord.Embed(
+                title="❌ Error",
+                description="Ocurrió un error al agregar el artículo.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @bot.tree.command(name="removestock", description="[OWNER ONLY] Remover artículo del stock de la tienda")
+    async def removestock_command(interaction: discord.Interaction, categoria: str, item_key: str):
+        user_id = str(interaction.user.id)
+        
+        # Verificar que solo el owner o delegados puedan usar este comando
+        from main import is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            categoria_key = categoria.lower()
+            
+            # Verificar que la categoría existe
+            if categoria_key not in coins_system.shop_items:
+                embed = discord.Embed(
+                    title="❌ Categoría No Encontrada",
+                    description=f"La categoría '{categoria}' no existe.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Verificar que el artículo existe
+            if item_key not in coins_system.shop_items[categoria_key]:
+                embed = discord.Embed(
+                    title="❌ Artículo No Encontrado",
+                    description=f"El artículo '{item_key}' no existe en la categoría '{categoria}'.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Obtener información del artículo antes de eliminarlo
+            item_info = coins_system.shop_items[categoria_key][item_key]
+            
+            # Remover artículo
+            del coins_system.shop_items[categoria_key][item_key]
+            
+            # Guardar cambios
+            coins_system.save_data()
+            
+            embed = discord.Embed(
+                title="✅ Artículo Removido",
+                description=f"El artículo **{item_info['name']}** ha sido removido de la categoría **{categoria}**.",
+                color=0x00ff88
+            )
+            
+            embed.add_field(name="🆔 ID Removido", value=f"`{item_key}`", inline=True)
+            embed.add_field(name="📝 Nombre", value=f"`{item_info['name']}`", inline=True)
+            embed.add_field(name="💰 Precio", value=f"{item_info['cost']:,} monedas", inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+            logger.info(f"Owner {interaction.user.name} removió artículo '{item_key}' de categoría '{categoria}'")
+            
+        except Exception as e:
+            logger.error(f"Error removiendo stock: {e}")
+            embed = discord.Embed(
+                title="❌ Error",
+                description="Ocurrió un error al remover el artículo.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @bot.tree.command(name="updatestock", description="[OWNER ONLY] Actualizar cantidad de stock de un artículo")
+    async def updatestock_command(interaction: discord.Interaction, categoria: str, item_key: str, nuevo_stock: int):
+        user_id = str(interaction.user.id)
+        
+        # Verificar que solo el owner o delegados puedan usar este comando
+        from main import is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        # Validar stock
+        if nuevo_stock < 0:
+            embed = discord.Embed(
+                title="❌ Stock Inválido",
+                description="El stock debe ser 0 o mayor.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        try:
+            categoria_key = categoria.lower()
+            
+            # Verificar que la categoría existe
+            if categoria_key not in coins_system.shop_items:
+                embed = discord.Embed(
+                    title="❌ Categoría No Encontrada",
+                    description=f"La categoría '{categoria}' no existe.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Verificar que el artículo existe
+            if item_key not in coins_system.shop_items[categoria_key]:
+                embed = discord.Embed(
+                    title="❌ Artículo No Encontrado",
+                    description=f"El artículo '{item_key}' no existe en la categoría '{categoria}'.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            # Actualizar stock
+            stock_anterior = coins_system.shop_items[categoria_key][item_key]['stock']
+            coins_system.shop_items[categoria_key][item_key]['stock'] = nuevo_stock
+            
+            # Guardar cambios
+            coins_system.save_data()
+            
+            item_name = coins_system.shop_items[categoria_key][item_key]['name']
+            
+            embed = discord.Embed(
+                title="✅ Stock Actualizado",
+                description=f"El stock de **{item_name}** ha sido actualizado.",
+                color=0x00ff88
+            )
+            
+            embed.add_field(name="🆔 ID del Artículo", value=f"`{item_key}`", inline=True)
+            embed.add_field(name="📝 Nombre", value=f"`{item_name}`", inline=True)
+            embed.add_field(name="📂 Categoría", value=categoria.title(), inline=True)
+            embed.add_field(name="📊 Stock Anterior", value=f"{stock_anterior} unidades", inline=True)
+            embed.add_field(name="📊 Stock Nuevo", value=f"{nuevo_stock} unidades", inline=True)
+            embed.add_field(name="🔄 Cambio", value=f"{nuevo_stock - stock_anterior:+d} unidades", inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+            logger.info(f"Owner {interaction.user.name} actualizó stock de '{item_key}' de {stock_anterior} a {nuevo_stock}")
+            
+        except Exception as e:
+            logger.error(f"Error actualizando stock: {e}")
+            embed = discord.Embed(
+                title="❌ Error",
+                description="Ocurrió un error al actualizar el stock.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @bot.tree.command(name="viewstock", description="[OWNER ONLY] Ver todo el stock disponible en la tienda")
+    async def viewstock_command(interaction: discord.Interaction):
+        user_id = str(interaction.user.id)
+        
+        # Verificar que solo el owner o delegados puedan usar este comando
+        from main import is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            embed = discord.Embed(
+                title="📊 Vista Completa del Stock",
+                description="Estado actual de todos los artículos en la tienda:",
+                color=0x3366ff
+            )
+            
+            total_items = 0
+            total_stock = 0
+            
+            for categoria, items in coins_system.shop_items.items():
+                if items:  # Si hay artículos en la categoría
+                    items_text = []
+                    categoria_stock = 0
+                    
+                    for item_key, item_data in items.items():
+                        stock_status = "✅" if item_data['stock'] > 0 else "❌"
+                        items_text.append(f"{stock_status} `{item_key}`: **{item_data['name']}** - {item_data['cost']:,} monedas (Stock: {item_data['stock']})")
+                        total_items += 1
+                        categoria_stock += item_data['stock']
+                        total_stock += item_data['stock']
+                    
+                    embed.add_field(
+                        name=f"📂 {categoria.title()} ({len(items)} artículos, {categoria_stock} total stock)",
+                        value="\n".join(items_text) if items_text else "Sin artículos",
+                        inline=False
+                    )
+                else:
+                    embed.add_field(
+                        name=f"📂 {categoria.title()}",
+                        value="🔴 **Vacío** - Sin artículos disponibles",
+                        inline=False
+                    )
+            
+            embed.add_field(
+                name="📈 Resumen Total",
+                value=f"• **{total_items}** artículos únicos\n• **{total_stock}** unidades en stock total\n• **{len(coins_system.shop_items)}** categorías",
+                inline=False
+            )
+            
+            embed.set_footer(text="Usa /addstock para agregar nuevos artículos")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Error viendo stock: {e}")
+            embed = discord.Embed(
+                title="❌ Error",
+                description="Ocurrió un error al obtener el stock.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
     return coins_system
