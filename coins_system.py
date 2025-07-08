@@ -950,7 +950,7 @@ def setup_coins_commands(bot):
                 label="ID del Artículo (item_key)",
                 placeholder="Ej: juego_vip_1",
                 style=discord.TextStyle.short,
-                required=False
+                required=True
             )
             self.add_item(self.item_key_input)
 
@@ -958,7 +958,7 @@ def setup_coins_commands(bot):
                 label="Nombre del Artículo",
                 placeholder="Ej: Juego VIP #1",
                 style=discord.TextStyle.short,
-                required=False
+                required=True
             )
             self.add_item(self.nombre_input)
 
@@ -966,7 +966,7 @@ def setup_coins_commands(bot):
                 label="Precio (en monedas)",
                 placeholder="Ej: 1500",
                 style=discord.TextStyle.short,
-                required=False
+                required=True
             )
             self.add_item(self.precio_input)
 
@@ -974,7 +974,7 @@ def setup_coins_commands(bot):
                 label="Descripción del Artículo",
                 placeholder="Ej: Acceso VIP al servidor de Minecraft por 30 días.",
                 style=discord.TextStyle.long,
-                required=False
+                required=True
             )
             self.add_item(self.descripcion_input)
 
@@ -982,36 +982,44 @@ def setup_coins_commands(bot):
                 label="Cantidad en Stock",
                 placeholder="Ej: 50",
                 style=discord.TextStyle.short,
-                required=False
+                required=True
             )
             self.add_item(self.stock_input)
 
         async def on_submit(self, interaction: discord.Interaction):
-            import time
-            
-            # Obtener valores con valores por defecto
-            item_key = self.item_key_input.value.strip() if self.item_key_input.value else f"item_{int(time.time())}"
-            nombre = self.nombre_input.value.strip() if self.nombre_input.value else f"Artículo {item_key}"
-            descripcion = self.descripcion_input.value.strip() if self.descripcion_input.value else "Sin descripción"
-            
-            # Validar y parsear precio y stock con valores por defecto
-            try:
-                precio_str = self.precio_input.value.strip() if self.precio_input.value else "100"
-                precio = int(precio_str)
-                if precio <= 0:
-                    precio = 100  # Valor por defecto
-            except ValueError:
-                precio = 100  # Valor por defecto si no es válido
+            item_key = self.item_key_input.value.strip()
+            nombre = self.nombre_input.value.strip()
             
             try:
-                stock_str = self.stock_input.value.strip() if self.stock_input.value else "1"
-                stock = int(stock_str)
-                if stock < 0:
-                    stock = 1  # Valor por defecto
+                precio = int(self.precio_input.value.strip())
+                stock = int(self.stock_input.value.strip())
             except ValueError:
-                stock = 1  # Valor por defecto si no es válido
+                embed = discord.Embed(
+                    title="❌ Error",
+                    description="El precio y el stock deben ser números enteros válidos.",
+                    color=0xff0000
+                )
+                return await interaction.response.send_message(embed=embed, ephemeral=True)
 
+            descripcion = self.descripcion_input.value.strip()
             categoria_key = self.categoria.lower()
+
+            # Validar precio y stock
+            if precio <= 0:
+                embed = discord.Embed(
+                    title="❌ Precio Inválido",
+                    description="El precio debe ser mayor a 0.",
+                    color=0xff0000
+                )
+                return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            if stock < 0:
+                embed = discord.Embed(
+                    title="❌ Stock Inválido",
+                    description="El stock debe ser 0 o mayor.",
+                    color=0xff0000
+                )
+                return await interaction.response.send_message(embed=embed, ephemeral=True)
 
             try:
                 # Agregar artículo al stock
