@@ -10,6 +10,227 @@ import random
 
 logger = logging.getLogger(__name__)
 
+class StockView(discord.ui.View):
+    def __init__(self, user_id: str):
+        super().__init__(timeout=300)  # 5 minutos
+        self.user_id = user_id
+        
+    @discord.ui.select(
+        placeholder="Selecciona una categoría...",
+        options=[
+            discord.SelectOption(
+                label="🎮 Juegos",
+                description="Servidores VIP y contenido premium",
+                value="juegos",
+                emoji="🎮"
+            ),
+            discord.SelectOption(
+                label="👤 Cuentas",
+                description="Cuentas premium de plataformas",
+                value="cuentas",
+                emoji="👤"
+            ),
+            discord.SelectOption(
+                label="💎 Robux",
+                description="Robux directos a tu cuenta",
+                value="robux",
+                emoji="💎"
+            ),
+            discord.SelectOption(
+                label="⭐ Premium",
+                description="Acceso premium al bot",
+                value="premium",
+                emoji="⭐"
+            )
+        ]
+    )
+    async def category_select(self, interaction: discord.Interaction, select: discord.ui.Select):
+        category = select.values[0]
+        
+        embed = discord.Embed(
+            title=f"🏪 {select.options[next(i for i, opt in enumerate(select.options) if opt.value == category)].label}",
+            description=f"Stock disponible en la categoría {category}:",
+            color=0x00ff88
+        )
+        
+        category_items = coins_system.shop_items.get(category, {})
+        user_balance = coins_system.get_user_coins(self.user_id)
+        
+        if not category_items:
+            embed.add_field(
+                name="❌ Sin Stock",
+                value="No hay artículos disponibles en esta categoría actualmente.",
+                inline=False
+            )
+        else:
+            for item_key, item_data in category_items.items():
+                stock_status = "✅ Disponible" if item_data['stock'] > 0 else "❌ Agotado"
+                affordability = "💰 Puedes comprarlo" if user_balance >= item_data['cost'] else "💸 Insuficiente"
+                
+                embed.add_field(
+                    name=f"{item_data['name']}",
+                    value=f"**Precio:** {item_data['cost']:,} monedas\n**Stock:** {item_data['stock']} unidades\n**Estado:** {stock_status}\n**Tu balance:** {affordability}\n\n{item_data['description']}",
+                    inline=False
+                )
+        
+        embed.add_field(
+            name="💰 Tu Balance Actual",
+            value=f"**{user_balance:,}** monedas",
+            inline=True
+        )
+        
+        # Actualizar la vista con el botón de compra rápida
+        view = StockView(self.user_id)
+        view.add_item(QuickBuyButton(category))
+        
+        await interaction.response.edit_message(embed=embed, view=view)
+
+class QuickBuyButton(discord.ui.Button):
+    def __init__(self, category: str):
+        super().__init__(
+            label="🛒 Compra Rápida",
+            style=discord.ButtonStyle.success,
+            emoji="🛒"
+        )
+        self.category = category
+    
+    async def callback(self, interaction: discord.Interaction):
+        modal = QuickBuyModal(self.category)
+        await interaction.response.send_modal(modal)
+
+class QuickBuyModal(discord.ui.Modal):
+    def __init__(self, category: str):
+        super().__init__(title=f"🛒 Compra Rápida - {category.title()}")
+        self.category = category
+        
+        self.item_input = discord.ui.TextInput(
+            label="Nombre del artículo",
+            placeholder="Escribe el nombre del artículo que quieres comprar...",
+            style=discord.TextStyle.short,
+            max_length=100,
+            required=True
+        )
+        self.add_item(self.item_input)
+    
+    async def on_submit(self, interaction: discord.Interaction):
+        user_id = str(interaction.user.id)
+        item_name = self.item_input.value.strip()
+        
+        # Buscar el artículo
+        item_found = None
+        item_key = None
+        
+        category_items = coins_system.shop_items.get(self.category, {})
+        
+        for item_k, item_data in category_items.items():
+            if (item_name.lower() in item_data['name'].lower() or 
+                item_name.lower() in item_k.lower() or
+                any(word in item_data['name'].lower() for word in item_name.lower().split())):
+                item_found = item_data
+                item_key = item_k
+                break
+        
+        if not item_found:
+            embed = discord.Embed(
+                title="❌ Artículo No Encontrado",
+                description=f"No se encontró '{item_name}' en la categoría {self.category}.",
+                color=0xff0000
+            )
+            
+            # Mostrar artículos disponibles
+            available_items = []
+            for item_data in category_items.values():
+                if item_data['stock'] > 0:
+                    available_items.append(f"• {item_data['name']}")
+            
+            if available_items:
+                embed.add_field(
+                    name="🛍️ Artículos Disponibles:",
+                    value="\n".join(available_items[:5]),
+                    inline=False
+                )
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar balance
+        user_balance = coins_system.get_user_coins(user_id)
+        item_cost = item_found['cost']
+        
+        if user_balance < item_cost:
+            embed = discord.Embed(
+                title="💸 Saldo Insuficiente",
+                description=f"Necesitas **{item_cost:,}** monedas pero solo tienes **{user_balance:,}**.",
+                color=0xff9900
+            )
+            embed.add_field(
+                name="💰 Te faltan",
+                value=f"**{item_cost - user_balance:,}** monedas",
+                inline=True
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar stock
+        if item_found['stock'] <= 0:
+            embed = discord.Embed(
+                title="📦 Sin Stock",
+                description=f"**{item_found['name']}** está temporalmente agotado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        # Realizar la compra
+        if coins_system.spend_coins(user_id, item_cost, f"Compra rápida: {item_found['name']}"):
+            # Reducir stock
+            coins_system.shop_items[self.category][item_key]['stock'] -= 1
+            
+            # Embed de confirmación
+            embed = discord.Embed(
+                title="✅ ¡Compra Exitosa!",
+                description=f"Has comprado **{item_found['name']}** exitosamente usando la compra rápida.",
+                color=0x00ff88
+            )
+            
+            embed.add_field(
+                name="💸 Costo",
+                value=f"{item_cost:,} monedas",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="💰 Balance Restante",
+                value=f"{coins_system.get_user_coins(user_id):,} monedas",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="📦 Descripción",
+                value=item_found['description'],
+                inline=False
+            )
+            
+            embed.add_field(
+                name="📞 Entrega",
+                value="El artículo será entregado dentro de las próximas 24 horas. Contacta al administrador si hay demoras.",
+                inline=False
+            )
+            
+            embed.set_footer(text=f"Gracias por tu compra, {interaction.user.name}!")
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            
+            # Log de la compra
+            logger.info(f"💰 Usuario {interaction.user.name} ({user_id}) compró {item_found['name']} por {item_cost} monedas (compra rápida)")
+        else:
+            embed = discord.Embed(
+                title="❌ Error en la Compra",
+                description="Ocurrió un error procesando tu compra. Intenta nuevamente.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
 # Import check_verification function
 async def check_verification(interaction: discord.Interaction, defer_response: bool = True) -> bool:
     """Verificar si el usuario está autenticado - versión simplificada para coins_system"""
@@ -322,41 +543,30 @@ def setup_coins_commands(bot):
         if not await check_verification(interaction, defer_response=False):
             return
         
+        user_balance = coins_system.get_user_coins(str(interaction.user.id))
+        
         embed = discord.Embed(
             title="🏪 Tienda de Recompensas",
-            description="Selecciona una categoría para ver las recompensas disponibles:",
+            description="Selecciona una categoría del menú desplegable para ver las recompensas disponibles:",
             color=0x3366ff
-        )
-        
-        categories_info = {
-            "🎮 **Juegos**": "Servidores VIP y contenido premium para tus juegos favoritos",
-            "👤 **Cuentas**": "Cuentas premium de diferentes plataformas",
-            "💎 **Robux**": "Robux directos a tu cuenta de Roblox",
-            "⭐ **Premium**": "Acceso premium al bot con beneficios exclusivos"
-        }
-        
-        for category, description in categories_info.items():
-            embed.add_field(
-                name=category,
-                value=description,
-                inline=False
-            )
-        
-        embed.add_field(
-            name="📝 ¿Cómo usar la tienda?",
-            value="Usa `/buy [categoría] [item]` para comprar un artículo específico",
-            inline=False
         )
         
         embed.add_field(
             name="💰 Tu Balance",
-            value=f"**{coins_system.get_user_coins(str(interaction.user.id)):,}** monedas",
+            value=f"**{user_balance:,}** monedas",
             inline=True
         )
         
-        embed.set_footer(text="Usa /buy para realizar compras")
+        embed.add_field(
+            name="📝 Instrucciones",
+            value="1. Selecciona una categoría\n2. Haz clic en '🛒 Compra Rápida' para comprar",
+            inline=True
+        )
         
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        embed.set_footer(text="Usa el menú desplegable y el botón de compra para una experiencia más fácil")
+        
+        view = StockView(user_id=str(interaction.user.id))
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @bot.tree.command(name="buy", description="Comprar un artículo de la tienda")
     async def buy_command(interaction: discord.Interaction, categoria: str, item: str):
