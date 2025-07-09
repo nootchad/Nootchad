@@ -1,9 +1,20 @@
 
-# 🎉 LANZAMIENTO OFICIAL DEL BOT
+# 🎉 **NUEVA ACTUALIZACIÓN!!**
 
-## ¡El bot funciona al 100%!
+## ¿Qué hay de nuevo?
 
-**RbxServers** está listo. **VERIFICACIÓN OBLIGATORIA** para usar el bot.
+### 🆕 Nuevos comandos:
+
+#### `/stock` 
+Con este comando puedes **conseguir recompensas** con tus monedas/créditos
+
+#### `/script`
+Con este nuevo comando puedes **crear scripts** con la nueva IA de RbxServersbot
+⚠️ Esta IA puede cometer errores y no ser tan precisa
+
+## 💰 ¿Cómo consigo monedas?
+
+Usando `/scrape` y otros comandos del bot
 
 ## 🔐 VERIFICACIÓN - PASOS
 
@@ -69,9 +80,11 @@
 1. **Verifica inmediatamente** para evitar interrupciones
 2. **Usa `/favorites`** para gestionar juegos preferidos
 3. **Usa `/servertest`** para ver TODOS tus servidores
-4. La verificación dura **24 horas**
+4. **Usa `/stock`** para conseguir recompensas con tus monedas
+5. **Usa `/script`** para crear scripts con IA
+6. La verificación dura **24 horas**
 
-## 🎊 ¡Disfruta!
+## 🎊 ¡Disfruta la nueva actualización!
 
 Acceso **GRATIS** a servidores VIP ilimitados una vez verificado.
 
