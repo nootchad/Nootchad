@@ -51,12 +51,12 @@ class ImagesSystem:
                 
                 # Crear mensaje de cargando
                 loading_embed = discord.Embed(
-                    title="🎨 RbxServers-v1 Generando Imagen...",
+                    title="🎨 RbxServers-v1 x Pollinations Generando Imagen...",
                     description=f"Creando imagen: `{descripcion[:100]}{'...' if len(descripcion) > 100 else ''}`",
                     color=0xffaa00
                 )
-                loading_embed.add_field(name="⏳ Estado", value="Conectando con RbxServers-v1...", inline=True)
-                loading_embed.add_field(name="🤖 Modelo", value="RbxServers-v1", inline=True)
+                loading_embed.add_field(name="⏳ Estado", value="Conectando con Pollinations AI...", inline=True)
+                loading_embed.add_field(name="🤖 Modelo", value="RbxServers-v1 x Pollinations", inline=True)
                 loading_embed.add_field(name="🎨 Tipo", value="Generación de Imagen", inline=True)
                 loading_embed.set_footer(text=f"Solicitado por {username}")
                 
@@ -82,16 +82,16 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                 if image_file:
                     # Crear embed con la imagen generada como archivo adjunto
                     result_embed = discord.Embed(
-                        title="🎨 Imagen Generada por RbxServers-v1",
+                        title="🎨 Imagen Generada por RbxServers-v1 x Pollinations",
                         description=f"**Descripción:** {descripcion}",
                         color=0x00ff88
                     )
                     
                     result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
-                    result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1", inline=True)
+                    result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1 x Pollinations", inline=True)
                     result_embed.add_field(name="⏰ Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
                     
-                    result_embed.set_footer(text="🎨 RbxServers-v1 • Generador de Imágenes IA")
+                    result_embed.set_footer(text="🎨 RbxServers-v1 x Pollinations • Generador de Imágenes IA")
                     result_embed.timestamp = datetime.now()
                     
                     # Adjuntar la imagen como archivo
@@ -260,16 +260,16 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                 logger.info("✅ Imagen generada con DeepAI como respaldo")
                 
                 result_embed = discord.Embed(
-                    title="🎨 Imagen Generada por RbxServers-v1",
+                    title="🎨 Imagen Generada por RbxServers-v1 x DeepAI",
                     description=f"**Descripción:** {descripcion}",
                     color=0x00ff88
                 )
                 
                 result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
-                result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1", inline=True)
+                result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1 x DeepAI", inline=True)
                 result_embed.add_field(name="🎯 Método", value="Respaldo AI", inline=True)
                 
-                result_embed.set_footer(text="🎨 RbxServers-v1 • Generador de Imágenes IA")
+                result_embed.set_footer(text="🎨 RbxServers-v1 x DeepAI • Generador de Imágenes IA")
                 result_embed.timestamp = datetime.now()
                 
                 # Adjuntar la imagen como archivo
