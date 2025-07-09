@@ -4436,14 +4436,14 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
             color=0xffaa00
         )
         loading_embed.add_field(name="⏳ Estado", value="Conectando con RbxServers-v1...", inline=True)
-        loading_embed.add_field(name="🧠 Modelo", value="RbxServers-v1 (Gemini)", inline=True)
+        loading_embed.add_field(name="🧠 Modelo", value="RbxServers-v1 (Gemini 2.0 Pro)", inline=True)
         loading_embed.set_footer(text=f"Solicitado por {username}")
         
         message = await interaction.followup.send(embed=loading_embed, ephemeral=False)
         
         # Hacer petición a la API de Gemini
         async with aiohttp.ClientSession() as session:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={gemini_api_key}"
             
             payload = {
                 "contents": [
