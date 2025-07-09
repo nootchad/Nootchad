@@ -196,6 +196,12 @@
       "verified_at": 1751938399.2606933
     }
   },
-  "pending_verifications": {},
-  "last_updated": "2025-07-08T01:33:19.260698"
+  "pending_verifications": {
+    "1333076563033460798": {
+      "roblox_username": "Donpollo_3777k",
+      "verification_code": "hesizx94_vip",
+      "created_at": 1752021665.2263768
+    }
+  },
+  "last_updated": "2025-07-09T00:41:05.226380"
 }
