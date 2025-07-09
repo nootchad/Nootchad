@@ -4436,7 +4436,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
             color=0xffaa00
         )
         loading_embed.add_field(name="⏳ Estado", value="Conectando con RbxServers-v1...", inline=True)
-        loading_embed.add_field(name="🧠 Modelo", value="RbxServers-v1 (Gemini 2.0 Pro)", inline=True)
+        loading_embed.add_field(name="🧠 Modelo", value="RbxServers-v1", inline=True)
         loading_embed.set_footer(text=f"Solicitado por {username}")
         
         message = await interaction.followup.send(embed=loading_embed, ephemeral=False)
