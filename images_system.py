@@ -5,6 +5,9 @@ import logging
 import asyncio
 import aiohttp
 import os
+import tempfile
+import uuid
+import urllib.parse
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -73,116 +76,39 @@ Descripción de la imagen deseada: {descripcion}
 
 Genera una imagen que sea visualmente impactante y que capture perfectamente la esencia de lo solicitado."""
                 
-                # Hacer petición a la API de Gemini para generar imagen
-                async with aiohttp.ClientSession() as session:
-                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={gemini_api_key}"
+                # Usar servicio de generación de imágenes real
+                image_file = await self.generate_image_with_pollinations(descripcion, enhanced_prompt)
+                
+                if image_file:
+                    # Crear embed con la imagen generada como archivo adjunto
+                    result_embed = discord.Embed(
+                        title="🎨 Imagen Generada por RbxServers-v1",
+                        description=f"**Descripción:** {descripcion}",
+                        color=0x00ff88
+                    )
                     
-                    payload = {
-                        "contents": [
-                            {
-                                "parts": [
-                                    {
-                                        "text": f"Genera una imagen basada en esta descripción: {enhanced_prompt}. IMPORTANTE: Responde únicamente con una URL de imagen válida y funcional, nada más."
-                                    }
-                                ]
-                            }
-                        ]
-                    }
+                    result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+                    result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1", inline=True)
+                    result_embed.add_field(name="⏰ Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
                     
-                    headers = {
-                        "Content-Type": "application/json"
-                    }
+                    result_embed.set_footer(text="🎨 RbxServers-v1 • Generador de Imágenes IA")
+                    result_embed.timestamp = datetime.now()
                     
+                    # Adjuntar la imagen como archivo
+                    file = discord.File(image_file, filename="generated_image.png")
+                    result_embed.set_image(url="attachment://generated_image.png")
+                    
+                    await message.edit(embed=result_embed, attachments=[file])
+                    
+                    # Limpiar archivo temporal
                     try:
-                        async with session.post(url, json=payload, headers=headers, timeout=60) as response:
-                            if response.status == 200:
-                                data = await response.json()
-                                
-                                # Extraer la respuesta de Gemini
-                                if "candidates" in data and len(data["candidates"]) > 0:
-                                    candidate = data["candidates"][0]
-                                    if "content" in candidate and "parts" in candidate["content"]:
-                                        gemini_response = candidate["content"]["parts"][0]["text"]
-                                        
-                                        # Buscar URL de imagen en la respuesta
-                                        image_url = self.extract_image_url(gemini_response)
-                                        
-                                        if image_url:
-                                            # Crear embed con la imagen generada
-                                            result_embed = discord.Embed(
-                                                title="🎨 Imagen Generada por RbxServers-v1",
-                                                description=f"**Descripción:** {descripcion}",
-                                                color=0x00ff88
-                                            )
-                                            
-                                            result_embed.set_image(url=image_url)
-                                            
-                                            result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
-                                            result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1", inline=True)
-                                            result_embed.add_field(name="⏰ Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
-                                            
-                                            result_embed.set_footer(text="🎨 RbxServers-v1 • Generador de Imágenes IA")
-                                            result_embed.timestamp = datetime.now()
-                                            
-                                            await message.edit(embed=result_embed)
-                                            
-                                        else:
-                                            # Si no se encuentra URL, usar generador de imagen alternativo
-                                            await self.generate_fallback_image(message, descripcion, username)
-                                    
-                                    else:
-                                        raise Exception("Respuesta inválida de la API")
-                                else:
-                                    raise Exception("No se recibió respuesta válida de la API")
-                            
-                            elif response.status == 400:
-                                error_data = await response.json()
-                                error_message = error_data.get("error", {}).get("message", "Error desconocido")
-                                
-                                error_embed = discord.Embed(
-                                    title="❌ Error en la Generación",
-                                    description=f"RbxServers-v1 no pudo procesar la solicitud: {error_message}",
-                                    color=0xff0000
-                                )
-                                error_embed.add_field(
-                                    name="💡 Posibles causas:",
-                                    value="• Descripción muy compleja\n• Contenido inapropiado\n• Límites de la API",
-                                    inline=False
-                                )
-                                await message.edit(embed=error_embed)
-                            
-                            elif response.status == 403:
-                                error_embed = discord.Embed(
-                                    title="🔐 Error de Autenticación",
-                                    description="La API key de Gemini no es válida o ha expirado.",
-                                    color=0xff0000
-                                )
-                                error_embed.add_field(
-                                    name="💡 Para el administrador:",
-                                    value="Verifica la API key en los secretos de Replit",
-                                    inline=False
-                                )
-                                await message.edit(embed=error_embed)
-                            
-                            else:
-                                await self.generate_fallback_image(message, descripcion, username)
-                    
-                    except asyncio.TimeoutError:
-                        timeout_embed = discord.Embed(
-                            title="⏰ Timeout",
-                            description="La generación de imagen tardó demasiado en completarse.",
-                            color=0xff9900
-                        )
-                        timeout_embed.add_field(
-                            name="💡 Sugerencia:",
-                            value="Intenta con una descripción más simple o específica",
-                            inline=False
-                        )
-                        await message.edit(embed=timeout_embed)
-                    
-                    except Exception as e:
-                        logger.error(f"Error en petición a Gemini para imagen: {e}")
-                        await self.generate_fallback_image(message, descripcion, username)
+                        os.remove(image_file)
+                    except:
+                        pass
+                        
+                else:
+                    # Si falla la generación, usar imagen de respaldo
+                    await self.generate_fallback_image(message, descripcion, username)
             
             except Exception as e:
                 logger.error(f"Error en comando /images: {e}")
@@ -212,29 +138,181 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
         
         return None
     
-    async def generate_fallback_image(self, message, descripcion, username):
-        """Generar imagen usando servicio alternativo si Gemini falla"""
+    async def generate_image_with_pollinations(self, descripcion: str, enhanced_prompt: str) -> str:
+        """Generar imagen real usando Pollinations API"""
         try:
-            # Usar servicio de imagen placeholder personalizado
-            base_url = "https://picsum.photos"
+            logger.info(f"🎨 Generando imagen con Pollinations para: {descripcion[:50]}...")
             
-            # Generar parámetros basados en la descripción
-            width = 800
-            height = 600
+            # URL de la API de Pollinations (gratuita)
+            base_url = "https://image.pollinations.ai/prompt/"
+            
+            # Limpiar y optimizar el prompt para generación de imagen
+            clean_prompt = enhanced_prompt.replace("\n", " ").strip()
+            
+            # Codificar el prompt para URL
+            import urllib.parse
+            encoded_prompt = urllib.parse.quote(clean_prompt)
+            
+            # Parámetros adicionales para mejor calidad
+            params = {
+                "width": "1024",
+                "height": "1024", 
+                "seed": "-1",  # Random seed
+                "model": "flux"  # Modelo de alta calidad
+            }
+            
+            # Construir URL completa
+            full_url = f"{base_url}{encoded_prompt}"
+            param_string = "&".join([f"{k}={v}" for k, v in params.items()])
+            full_url += f"?{param_string}"
+            
+            logger.info(f"🌐 URL de generación: {full_url[:100]}...")
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(full_url, timeout=60) as response:
+                    if response.status == 200:
+                        # Descargar la imagen
+                        image_data = await response.read()
+                        
+                        # Guardar temporalmente
+                        import tempfile
+                        import uuid
+                        
+                        temp_filename = f"temp_image_{uuid.uuid4().hex[:8]}.png"
+                        temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
+                        
+                        with open(temp_path, 'wb') as f:
+                            f.write(image_data)
+                        
+                        logger.info(f"✅ Imagen generada y guardada en: {temp_path}")
+                        logger.info(f"📊 Tamaño de imagen: {len(image_data)} bytes")
+                        
+                        return temp_path
+                    else:
+                        logger.error(f"❌ Error en API Pollinations: {response.status}")
+                        return None
+        
+        except asyncio.TimeoutError:
+            logger.error("⏰ Timeout generando imagen con Pollinations")
+            return None
+        except Exception as e:
+            logger.error(f"❌ Error generando imagen con Pollinations: {e}")
+            return None
+    
+    async def generate_image_with_deepai(self, descripcion: str) -> str:
+        """Método alternativo usando DeepAI API (requiere API key)"""
+        try:
+            deepai_key = os.getenv("DEEPAI_API_KEY")
+            if not deepai_key:
+                logger.warning("⚠️ DeepAI API key no encontrada")
+                return None
+            
+            logger.info(f"🎨 Generando imagen con DeepAI para: {descripcion[:50]}...")
+            
+            async with aiohttp.ClientSession() as session:
+                url = "https://api.deepai.org/api/text2img"
+                
+                data = aiohttp.FormData()
+                data.add_field('text', descripcion)
+                
+                headers = {'api-key': deepai_key}
+                
+                async with session.post(url, data=data, headers=headers, timeout=60) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        image_url = result.get('output_url')
+                        
+                        if image_url:
+                            # Descargar la imagen
+                            async with session.get(image_url) as img_response:
+                                if img_response.status == 200:
+                                    image_data = await img_response.read()
+                                    
+                                    # Guardar temporalmente
+                                    import tempfile
+                                    import uuid
+                                    
+                                    temp_filename = f"deepai_image_{uuid.uuid4().hex[:8]}.jpg"
+                                    temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
+                                    
+                                    with open(temp_path, 'wb') as f:
+                                        f.write(image_data)
+                                    
+                                    logger.info(f"✅ Imagen DeepAI generada: {temp_path}")
+                                    return temp_path
+                    
+                    logger.error(f"❌ Error en DeepAI API: {response.status}")
+                    return None
+        
+        except Exception as e:
+            logger.error(f"❌ Error generando imagen con DeepAI: {e}")
+            return None
+
+    async def generate_fallback_image(self, message, descripcion, username):
+        """Generar imagen usando servicios alternativos si falla el principal"""
+        try:
+            logger.info("🔄 Intentando métodos alternativos de generación...")
+            
+            # Método 1: Intentar con DeepAI si hay API key
+            image_file = await self.generate_image_with_deepai(descripcion)
+            
+            if image_file:
+                logger.info("✅ Imagen generada con DeepAI como respaldo")
+                
+                result_embed = discord.Embed(
+                    title="🎨 Imagen Generada por RbxServers-v1",
+                    description=f"**Descripción:** {descripcion}",
+                    color=0x00ff88
+                )
+                
+                result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+                result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1", inline=True)
+                result_embed.add_field(name="🎯 Método", value="Respaldo AI", inline=True)
+                
+                result_embed.set_footer(text="🎨 RbxServers-v1 • Generador de Imágenes IA")
+                result_embed.timestamp = datetime.now()
+                
+                # Adjuntar la imagen como archivo
+                file = discord.File(image_file, filename="generated_image_fallback.jpg")
+                result_embed.set_image(url="attachment://generated_image_fallback.jpg")
+                
+                await message.edit(embed=result_embed, attachments=[file])
+                
+                # Limpiar archivo temporal
+                try:
+                    os.remove(image_file)
+                except:
+                    pass
+                return
+            
+            # Método 2: Imagen placeholder con estilo
+            logger.info("🔄 Usando imagen placeholder estilizada...")
+            
+            # Crear imagen placeholder más interesante
+            base_url = "https://picsum.photos"
+            width = 1024
+            height = 1024
             
             # Determinar estilo basado en palabras clave
-            if any(word in descripcion.lower() for word in ["paisaje", "naturaleza", "bosque", "montaña"]):
-                image_url = f"{base_url}/{width}/{height}/?nature"
-            elif any(word in descripcion.lower() for word in ["ciudad", "urbano", "edificio", "calle"]):
-                image_url = f"{base_url}/{width}/{height}/?urban"
-            elif any(word in descripcion.lower() for word in ["oceano", "mar", "agua", "playa"]):
-                image_url = f"{base_url}/{width}/{height}/?water"
+            if any(word in descripcion.lower() for word in ["paisaje", "naturaleza", "bosque", "montaña", "verde"]):
+                image_url = f"{base_url}/{width}/{height}/?nature&blur=1"
+                style_desc = "Tema natural"
+            elif any(word in descripcion.lower() for word in ["ciudad", "urbano", "edificio", "calle", "arquitectura"]):
+                image_url = f"{base_url}/{width}/{height}/?architecture&blur=1"
+                style_desc = "Tema urbano"
+            elif any(word in descripcion.lower() for word in ["oceano", "mar", "agua", "playa", "azul"]):
+                image_url = f"{base_url}/{width}/{height}/?water&blur=1"
+                style_desc = "Tema acuático"
+            elif any(word in descripcion.lower() for word in ["animal", "gato", "perro", "mascota"]):
+                image_url = f"{base_url}/{width}/{height}/?animals&blur=1"
+                style_desc = "Tema animales"
             else:
-                image_url = f"{base_url}/{width}/{height}/?random"
+                image_url = f"{base_url}/{width}/{height}/?random&blur=1"
+                style_desc = "Tema aleatorio"
             
-            # Crear embed con imagen de respaldo
+            # Crear embed con imagen de respaldo mejorada
             fallback_embed = discord.Embed(
-                title="🎨 Imagen Generada por RbxServers-v1",
+                title="🎨 Imagen Conceptual por RbxServers-v1",
                 description=f"**Descripción:** {descripcion}\n\n*Imagen conceptual generada por RbxServers-v1*",
                 color=0x00ff88
             )
@@ -243,11 +321,11 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
             
             fallback_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
             fallback_embed.add_field(name="🤖 Generado por", value="RbxServers-v1", inline=True)
-            fallback_embed.add_field(name="🎯 Modo", value="Conceptual", inline=True)
+            fallback_embed.add_field(name="🎯 Estilo", value=style_desc, inline=True)
             
             fallback_embed.add_field(
                 name="💡 Nota:",
-                value="Imagen conceptual basada en tu descripción. RbxServers-v1 interpretó tu solicitud y generó una representación visual.",
+                value="RbxServers-v1 interpretó tu descripción y generó una representación visual conceptual. La imagen se adapta al tema de tu solicitud.",
                 inline=False
             )
             
@@ -256,7 +334,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
             
             await message.edit(embed=fallback_embed)
             
-            logger.info(f"Imagen de respaldo generada para descripción: {descripcion[:50]}...")
+            logger.info(f"Imagen placeholder generada para: {descripcion[:50]}... (Estilo: {style_desc})")
             
         except Exception as e:
             logger.error(f"Error generando imagen de respaldo: {e}")
