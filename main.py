@@ -3206,6 +3206,9 @@ startup_alert_system = None
 # Import coins system
 coins_system = None
 
+# Import images system
+images_system = None
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -3346,6 +3349,16 @@ async def on_ready():
         logger.info("💰 Sistema de monedas configurado")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de monedas: {e}")
+
+    # Setup images system
+    global images_system
+    try:
+        from images_system import setup_images_commands
+        
+        images_system = setup_images_commands(bot)
+        logger.info("🎨 Sistema de generación de imágenes configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de imágenes: {e}")
 
     # Inicializar sistema de monitoreo de usuarios
     try:
