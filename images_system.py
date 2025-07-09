@@ -22,7 +22,7 @@ class ImagesSystem:
         
         @self.bot.tree.command(name="images", description="Generar imágenes usando IA RbxServers-v1")
         async def images_command(interaction: discord.Interaction, descripcion: str):
-            """Comando para generar imágenes usando Gemini API"""
+            """Comando para generar imágenes usando Pollinations API"""
             user_id = str(interaction.user.id)
             username = f"{interaction.user.name}#{interaction.user.discriminator}"
             
@@ -32,22 +32,6 @@ class ImagesSystem:
                 return
             
             try:
-                # Verificar que la API key esté disponible
-                gemini_api_key = os.getenv("GEMINI_API_KEY")
-                
-                if not gemini_api_key:
-                    embed = discord.Embed(
-                        title="❌ API Key No Configurada",
-                        description="La API key de Gemini no está configurada en los secretos del bot.",
-                        color=0xff0000
-                    )
-                    embed.add_field(
-                        name="💡 Para el administrador:",
-                        value="Agrega la variable `GEMINI_API_KEY` en los secretos de Replit",
-                        inline=False
-                    )
-                    await interaction.followup.send(embed=embed, ephemeral=True)
-                    return
                 
                 # Crear mensaje de cargando
                 loading_embed = discord.Embed(
