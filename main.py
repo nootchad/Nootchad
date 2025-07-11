@@ -3385,6 +3385,14 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error enviando alertas de inicio: {e}")
 
+    # Iniciar servidor API
+    try:
+        from api_server import start_api_server
+        asyncio.create_task(start_api_server())
+        logger.info("🌐 Servidor API iniciado en puerto 5000")
+    except Exception as e:
+        logger.error(f"❌ Error iniciando servidor API: {e}")
+
 # Botón de confirmación de verificación
 class VerificationConfirmButton(discord.ui.Button):
     def __init__(self, user_id: str):
