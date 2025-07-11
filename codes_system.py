@@ -224,9 +224,9 @@ def setup_codes_commands(bot):
         user_id = str(interaction.user.id)
         username = interaction.user.name
 
-        # Verificar verificación (importar función existente)
-        from main import is_user_verified
-        if not is_user_verified(user_id):
+        # Verificar verificación
+        from main import roblox_verification
+        if not roblox_verification.is_user_verified(user_id):
             embed = discord.Embed(
                 title="❌ Verificación Requerida",
                 description="Debes estar verificado para canjear códigos promocionales.",
@@ -234,7 +234,7 @@ def setup_codes_commands(bot):
             )
             embed.add_field(
                 name="💡 ¿Cómo verificarse?",
-                value="Usa el comando `/verificar` para verificar tu cuenta de Roblox",
+                value="Usa el comando `/verify` para verificar tu cuenta de Roblox",
                 inline=False
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -251,7 +251,127 @@ def setup_codes_commands(bot):
         if result['success']:
             # Dar recompensa al usuario
             if result['reward_type'] == 'coins':
-                from coins_system import coins_system as coins_sys
+                try:
+                    from main import coins_system
+                    if coins_system:
+                        coins_system.add_coins(user_id, result['reward_amount'], f"Código canjeado: {codigo}")
+                except Exception as e:
+                    logger.error(f"Error agregando monedas por código: {e}")
+
+            # Crear embed de éxito
+            embed = discord.Embed(
+                title="✅ Código Canjeado",
+                description=f"¡Has canjeado exitosamente el código **{codigo}**!",
+                color=0x00ff88
+            )
+            embed.add_field(
+                name="🎁 Recompensa",
+                value=f"{result['reward_amount']} {result['reward_type']}",
+                inline=True
+            )
+            embed.add_field(
+                name="👤 Creador",
+                value=result.get('creator_name', 'Desconocido'),
+                inline=True
+            )
+            embed.add_field(
+                name="📝 Descripción",
+                value=result.get('description', 'Sin descripción'),
+                inline=False
+            )
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        else:
+            # Error al canjear
+            embed = discord.Embed(
+                title="❌ Error al Canjear",
+                description=result['message'],
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @bot.tree.command(name="crear_codigo", description="[OWNER ONLY] Crear un nuevo código promocional")
+    async def create_code_command(interaction: discord.Interaction, 
+                                 nombre: str, 
+                                 recompensa_tipo: str, 
+                                 recompensa_cantidad: int,
+                                 descripcion: str = "Código promocional",
+                                 usos_maximos: int = 100,
+                                 duracion_horas: int = 168):
+        user_id = str(interaction.user.id)
+
+        # Verificar que solo el owner pueda usar este comando
+        from main import is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Solo el owner del bot puede crear códigos promocionales.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        # Validar parámetros
+        if recompensa_tipo not in ['coins', 'premium']:
+            embed = discord.Embed(
+                title="❌ Tipo de Recompensa Inválido",
+                description="El tipo de recompensa debe ser 'coins' o 'premium'.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        if recompensa_cantidad <= 0 or recompensa_cantidad > 10000:
+            embed = discord.Embed(
+                title="❌ Cantidad Inválida",
+                description="La cantidad debe estar entre 1 y 10,000.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        # Crear código
+        result = codes_system.create_code(
+            code_name=nombre,
+            creator_id=user_id,
+            creator_name=interaction.user.name,
+            reward_type=recompensa_tipo,
+            reward_amount=recompensa_cantidad,
+            description=descripcion,
+            max_uses=usos_maximos,
+            duration_hours=duracion_horas
+        )
+
+        if result['success']:
+            embed = discord.Embed(
+                title="✅ Código Creado",
+                description=f"El código **{nombre}** ha sido creado exitosamente.",
+                color=0x00ff88
+            )
+            embed.add_field(name="🎟️ Código", value=f"`{nombre}`", inline=True)
+            embed.add_field(name="🎁 Recompensa", value=f"{recompensa_cantidad} {recompensa_tipo}", inline=True)
+            embed.add_field(name="👥 Usos Máximos", value=f"{usos_maximos}", inline=True)
+            embed.add_field(name="⏰ Duración", value=f"{duracion_horas} horas", inline=True)
+            embed.add_field(name="📝 Descripción", value=descripcion, inline=False)
+            embed.add_field(
+                name="💡 Para Canjear",
+                value="Los usuarios pueden usar `/canjear " + nombre + "`",
+                inline=False
+            )
+        else:
+            embed = discord.Embed(
+                title="❌ Error al Crear Código",
+                description=result['message'],
+                color=0xff0000
+            )
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    logger.info("🎟️ Comandos de códigos configurados exitosamente")
+    return codes_system
                 coins_sys.add_coins(user_id, result['reward_amount'], f"Código promocional: {codigo}")
 
             embed = discord.Embed(

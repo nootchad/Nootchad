@@ -3302,6 +3302,16 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de monedas: {e}")
 
+    # Setup codes system
+    global codes_system_setup
+    try:
+        from codes_system import setup_codes_commands
+        
+        codes_system_setup = setup_codes_commands(bot)
+        logger.info("🎟️ Sistema de códigos configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de códigos: {e}")
+
     # Setup images system
     global images_system
     try:
@@ -4573,6 +4583,54 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
         )
         error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:200]}```", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+@bot.tree.command(name="sync", description="[OWNER ONLY] Sincronizar comandos slash")
+async def sync_command(interaction: discord.Interaction):
+    """Comando para sincronizar manualmente los slash commands"""
+    user_id = str(interaction.user.id)
+    
+    # Verificar que solo el owner pueda usar este comando
+    if not is_owner_or_delegated(user_id):
+        embed = discord.Embed(
+            title="❌ Acceso Denegado",
+            description="Este comando solo puede ser usado por el owner del bot.",
+            color=0xff0000
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        synced = await bot.tree.sync()
+        embed = discord.Embed(
+            title="✅ Comandos Sincronizados",
+            description=f"Se sincronizaron {len(synced)} comandos slash exitosamente.",
+            color=0x00ff88
+        )
+        embed.add_field(
+            name="📋 Comandos Sincronizados",
+            value="\n".join([f"• /{cmd.name}" for cmd in synced[:10]]) + 
+                  (f"\n• ... y {len(synced) - 10} más" if len(synced) > 10 else ""),
+            inline=False
+        )
+        embed.add_field(
+            name="💡 Nota",
+            value="Los comandos pueden tardar hasta 1 hora en aparecer en Discord.",
+            inline=False
+        )
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        logger.info(f"Owner {interaction.user.name} sincronizó {len(synced)} comandos manualmente")
+        
+    except Exception as e:
+        logger.error(f"Error sincronizando comandos: {e}")
+        embed = discord.Embed(
+            title="❌ Error de Sincronización",
+            description=f"Error al sincronizar comandos: {str(e)[:200]}",
+            color=0xff0000
+        )
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="credits", description="Ver los créditos y reconocimientos del bot RbxServers")
 async def credits_command(interaction: discord.Interaction):
