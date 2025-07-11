@@ -286,9 +286,15 @@ def setup_anti_alt_commands(bot):
             embed.set_thumbnail(url=usuario.avatar.url if usuario.avatar else None)
             
             # Información básica
+            roblox_info = ""
+            if stats.get('roblox_username'):
+                roblox_info = f"\n**Roblox:** {stats['roblox_username']}"
+            else:
+                roblox_info = "\n**Roblox:** No verificado"
+                
             embed.add_field(
                 name="👤 Información Básica",
-                value=f"**Usuario:** {usuario.name}#{usuario.discriminator}\n**ID:** `{target_id}`\n**Nivel de Riesgo:** {stats['risk_level'].upper()}",
+                value=f"**Usuario:** {usuario.name}#{usuario.discriminator}\n**ID:** `{target_id}`{roblox_info}\n**Nivel de Riesgo:** {stats['risk_level'].upper()}",
                 inline=True
             )
             
@@ -340,18 +346,35 @@ def setup_anti_alt_commands(bot):
             # Edad de cuenta
             if stats['account_age_hours']:
                 age_days = stats['account_age_hours'] // 24
-                age_hours = stats['account_age_hours'] % 24
-                age_text = f"{int(age_days)}d {int(age_hours)}h"
+                
+                # Formatear edad en un formato más legible
+                if age_days >= 365:
+                    years = int(age_days // 365)
+                    remaining_days = int(age_days % 365)
+                    if remaining_days > 30:
+                        months = int(remaining_days // 30)
+                        age_text = f"{years} año{'s' if years != 1 else ''}, {months} mes{'es' if months != 1 else ''}"
+                    else:
+                        age_text = f"{years} año{'s' if years != 1 else ''}"
+                elif age_days >= 30:
+                    months = int(age_days // 30)
+                    remaining_days = int(age_days % 30)
+                    if remaining_days > 0:
+                        age_text = f"{months} mes{'es' if months != 1 else ''}, {remaining_days} día{'s' if remaining_days != 1 else ''}"
+                    else:
+                        age_text = f"{months} mes{'es' if months != 1 else ''}"
+                else:
+                    age_text = f"{int(age_days)} día{'s' if age_days != 1 else ''}"
                 
                 # Agregar fecha de creación si está disponible
                 if stats.get('account_created_at'):
                     try:
-                        created_date = datetime.fromisoformat(stats['account_created_at'])
+                        created_date = datetime.fromisoformat(stats['account_created_at'].replace('Z', '+00:00'))
                         age_text += f"\n(Creada: {created_date.strftime('%d/%m/%Y')})"
                     except:
                         pass
             else:
-                age_text = "Desconocida"
+                age_text = "No disponible"
             
             embed.add_field(
                 name="📅 Edad de Cuenta",

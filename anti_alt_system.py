@@ -653,6 +653,7 @@ class AntiAltSystem:
                 'cooldown_remaining_seconds': cooldown_remaining,
                 'account_age_hours': fingerprint.get('account_age_hours'),
                 'account_created_at': fingerprint.get('account_creation_date'),
+                'roblox_username': fingerprint.get('roblox_username'),
                 'flags': fingerprint.get('flags', []),
                 'first_seen': fingerprint.get('first_seen'),
                 'last_activity': fingerprint.get('last_activity'),
@@ -759,6 +760,17 @@ class AntiAltSystem:
     def update_account_info(self, discord_id: str, discord_user=None):
         """Actualizar información de la cuenta del usuario"""
         try:
+            # Obtener username de Roblox desde el sistema de verificación
+            roblox_username = None
+            try:
+                from main import roblox_verification
+                if roblox_verification and roblox_verification.is_user_verified(discord_id):
+                    verification_data = roblox_verification.verification_db.get(discord_id)
+                    if verification_data:
+                        roblox_username = verification_data.get('roblox_username', 'Unknown')
+            except Exception as e:
+                logger.warning(f"No se pudo obtener username de Roblox para {discord_id}: {e}")
+
             if discord_id not in self.user_fingerprints:
                 # Crear fingerprint básico si no existe
                 current_time = datetime.now()
@@ -766,8 +778,8 @@ class AntiAltSystem:
                 fingerprint = {
                     'discord_id': discord_id,
                     'discord_username': discord_user.name if discord_user else f"user_{discord_id}",
-                    'roblox_username': None,
-                    'account_creation_date': discord_user.created_at.isoformat() if discord_user else None,
+                    'roblox_username': roblox_username,
+                    'account_creation_date': None,
                     'first_seen': current_time.isoformat(),
                     'last_activity': current_time.isoformat(),
                     'total_code_redemptions': 0,
@@ -779,28 +791,44 @@ class AntiAltSystem:
                 }
                 
                 # Calcular edad de cuenta si tenemos la información
-                if discord_user:
-                    account_age_hours = (current_time - discord_user.created_at).total_seconds() / 3600
+                if discord_user and discord_user.created_at:
+                    # Convertir ambas fechas a UTC timezone-aware
+                    current_time_utc = current_time.replace(tzinfo=discord_user.created_at.tzinfo)
+                    account_age_seconds = (current_time_utc - discord_user.created_at).total_seconds()
+                    account_age_hours = account_age_seconds / 3600
+                    account_age_days = account_age_seconds / 86400
+                    
+                    fingerprint['account_creation_date'] = discord_user.created_at.isoformat()
                     fingerprint['account_age_hours'] = account_age_hours
+                    fingerprint['account_age_days'] = account_age_days
                     
                     if account_age_hours < self.config['min_account_age_hours']:
                         fingerprint['flags'].append('new_account')
                         fingerprint['trust_score'] -= 20
                         self.log_suspicious_activity(discord_id, 'new_account', 
-                                                   f"Cuenta muy nueva: {account_age_hours:.1f} horas")
+                                                   f"Cuenta muy nueva: {account_age_days:.1f} días")
                 
                 self.user_fingerprints[discord_id] = fingerprint
             else:
                 # Actualizar información existente
                 if discord_user:
                     self.user_fingerprints[discord_id]['discord_username'] = discord_user.name
-                    if not self.user_fingerprints[discord_id].get('account_creation_date'):
-                        self.user_fingerprints[discord_id]['account_creation_date'] = discord_user.created_at.isoformat()
-                        
-                        # Calcular edad de cuenta
+                    
+                    # Actualizar username de Roblox si está disponible
+                    if roblox_username:
+                        self.user_fingerprints[discord_id]['roblox_username'] = roblox_username
+                    
+                    # Actualizar fecha de creación si no existe
+                    if not self.user_fingerprints[discord_id].get('account_creation_date') and discord_user.created_at:
                         current_time = datetime.now()
-                        account_age_hours = (current_time - discord_user.created_at).total_seconds() / 3600
+                        current_time_utc = current_time.replace(tzinfo=discord_user.created_at.tzinfo)
+                        account_age_seconds = (current_time_utc - discord_user.created_at).total_seconds()
+                        account_age_hours = account_age_seconds / 3600
+                        account_age_days = account_age_seconds / 86400
+                        
+                        self.user_fingerprints[discord_id]['account_creation_date'] = discord_user.created_at.isoformat()
                         self.user_fingerprints[discord_id]['account_age_hours'] = account_age_hours
+                        self.user_fingerprints[discord_id]['account_age_days'] = account_age_days
 
             # Actualizar última actividad
             self.user_fingerprints[discord_id]['last_activity'] = datetime.now().isoformat()
@@ -810,7 +838,7 @@ class AntiAltSystem:
                 self.user_fingerprints[discord_id]
             )
 
-            logger.info(f"✅ Información de cuenta actualizada para {discord_id}")
+            logger.info(f"✅ Información de cuenta actualizada para {discord_id} (Roblox: {roblox_username or 'No verificado'})")
 
         except Exception as e:
             logger.error(f"❌ Error actualizando información de cuenta: {e}")

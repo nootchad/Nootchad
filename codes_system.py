@@ -195,6 +195,9 @@ class CodesSystem:
         # REGISTRAR CANJE EXITOSO EN SISTEMA ANTI-ALT
         try:
             from anti_alt_system import anti_alt_system
+            # Actualizar información del usuario primero (incluyendo username de Roblox)
+            anti_alt_system.update_account_info(user_id)
+            # Luego registrar el canje exitoso
             anti_alt_system.record_successful_redemption(user_id, code)
         except Exception as e:
             logger.warning(f"Error registrando canje exitoso en anti-alt: {e}")
