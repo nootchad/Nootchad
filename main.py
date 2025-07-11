@@ -98,6 +98,17 @@ class RobloxRemoteControl:
         # Ruta raíz para información del bot
         self.app.router.add_get('/', self.handle_root)
         
+        # Rutas de API (redirigir al puerto 5000)
+        self.app.router.add_route('*', '/stats', self.handle_api_redirect)
+        self.app.router.add_route('*', '/verification/{path:.*}', self.handle_api_redirect)
+        self.app.router.add_route('*', '/scraping/{path:.*}', self.handle_api_redirect)
+        self.app.router.add_route('*', '/servers/{path:.*}', self.handle_api_redirect)
+        self.app.router.add_route('*', '/users/{path:.*}', self.handle_api_redirect)
+        self.app.router.add_route('*', '/marketplace/{path:.*}', self.handle_api_redirect)
+        self.app.router.add_route('*', '/coins/{path:.*}', self.handle_api_redirect)
+        self.app.router.add_route('*', '/images/{path:.*}', self.handle_api_redirect)
+        self.app.router.add_route('*', '/admin/{path:.*}', self.handle_api_redirect)
+        
         # Rutas para el script de Roblox con manejo explícito de métodos
         self.app.router.add_post('/roblox/connect', self.handle_script_connect)
         self.app.router.add_post('/roblox/heartbeat', self.handle_heartbeat)
@@ -364,6 +375,55 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
             }
         )
     
+    async def handle_api_redirect(self, request):
+        """Redirigir requests de API al puerto correcto"""
+        try:
+            import aiohttp
+            
+            # Extraer la ruta solicitada
+            path = request.path_qs
+            api_url = f"http://localhost:5000{path}"
+            
+            # Preparar headers
+            headers = dict(request.headers)
+            if 'Host' in headers:
+                del headers['Host']
+            
+            # Hacer proxy de la request
+            async with aiohttp.ClientSession() as session:
+                async with session.request(
+                    method=request.method,
+                    url=api_url,
+                    headers=headers,
+                    data=await request.read() if request.method in ['POST', 'PUT', 'PATCH'] else None
+                ) as resp:
+                    body = await resp.read()
+                    
+                    # Crear respuesta con CORS headers
+                    response = web.Response(
+                        body=body,
+                        status=resp.status,
+                        headers={
+                            'Content-Type': resp.headers.get('Content-Type', 'application/json'),
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+                        }
+                    )
+                    return response
+                    
+        except Exception as e:
+            logger.error(f"Error en proxy de API: {e}")
+            return web.json_response({
+                'error': 'API no disponible',
+                'message': 'Usa el puerto 5000 para acceder a la API REST',
+                'correct_url': 'https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev:5000/'
+            }, status=503, headers={
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+            })
+
     async def handle_root(self, request):
         """Manejar ruta raíz - mostrar información del bot"""
         try:

@@ -1,17 +1,30 @@
-
 # API del Bot RbxServers
 
-## Autenticación
+## 🔐 Autenticación
 
-Todas las solicitudes requieren un Bearer token en el header `Authorization`:
+La API utiliza autenticación mediante Bearer tokens. Para acceder a los endpoints, debes incluir tu API key en el header `Authorization`.
 
+### API Keys Disponibles:
+- **Usuario**: `rbxservers_user` - Acceso a endpoints básicos de lectura y funcionalidades del bot
+- **Admin**: `rbxservers_admin` - Acceso completo incluyendo administración de usuarios y configuración
+
+### Headers Requeridos:
 ```
-Authorization: Bearer rbxservers_admin
+Authorization: Bearer rbxservers_user
+Content-Type: application/json
+Accept: application/json
 ```
 
-### API Keys disponibles:
-- `rbxservers_admin`: Acceso completo (admin)
-- `rbxservers_user`: Acceso básico (usuario)
+### Ejemplo de Request:
+```bash
+curl -H "Authorization: Bearer rbxservers_user" \
+     -H "Content-Type: application/json" \
+     https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev:5000/stats
+```
+
+### Niveles de Acceso:
+- **Usuario** (`rbxservers_user`): Acceso a endpoints básicos de lectura y funcionalidades del bot
+- **Admin** (`rbxservers_admin`): Acceso completo incluyendo administración de usuarios y configuración
 
 ## Endpoints
 
@@ -362,11 +375,11 @@ Conexión WebSocket para actualizaciones en tiempo real.
                 <span class="number">0</span>
             </div>
         </div>
-        
+
         <div class="activity-feed" id="recent-activity">
             <!-- Actividad reciente aquí -->
         </div>
-        
+
         <canvas id="usage-chart"></canvas>
         <div id="world-map"></div>
     </div>
@@ -387,7 +400,7 @@ const ws = new WebSocket('wss://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2
 
 ws.onmessage = function(event) {
     const data = JSON.parse(event.data);
-    
+
     if (data.type === 'user_activity') {
         addActivityToFeed(data.data);
         animateStatsUpdate();
@@ -417,15 +430,15 @@ function addActivityToFeed(activity) {
         <div class="action">${activity.action} en ${activity.game_name}</div>
         <div class="timestamp">${new Date(activity.timestamp).toLocaleTimeString()}</div>
     `;
-    
+
     // Animar entrada
     gsap.fromTo(item, 
         { opacity: 0, x: -50 },
         { opacity: 1, x: 0, duration: 0.5 }
     );
-    
+
     feed.prepend(item);
-    
+
     // Limitar a 10 items
     if (feed.children.length > 10) {
         gsap.to(feed.lastChild, {
@@ -443,20 +456,20 @@ async function loadDashboard() {
         // Cargar actividad reciente
         const activityResponse = await fetch(`${API_BASE}/dashboard/recent-activity`, { headers });
         const activityData = await activityResponse.json();
-        
+
         // Cargar estadísticas
         const statsResponse = await fetch(`${API_BASE}/dashboard/live-stats`, { headers });
         const statsData = await statsResponse.json();
-        
+
         // Actualizar UI con animaciones
         animateNumber(document.querySelector('#users-online .number'), statsData.stats.users_online);
         animateNumber(document.querySelector('#servers-found .number'), statsData.stats.servers_found_today);
-        
+
         // Mostrar actividad reciente
         activityData.recent_activity.forEach(activity => {
             addActivityToFeed(activity);
         });
-        
+
     } catch (error) {
         console.error('Error loading dashboard:', error);
     }
@@ -533,6 +546,78 @@ loadDashboard();
 .stat-card.pulse {
     animation: pulse 2s infinite;
 }
+```
+
+## 🌐 URLs de Acceso
+
+- **Control Remoto (Web)**: https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev:8080/
+- **API REST**: https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev:5000/
+
+> **Nota**: Es importante usar el puerto correcto:
+> - Puerto **8080** para el control remoto web
+> - Puerto **5000** para la API REST
+
+## 🔧 Configuración para el Dashboard
+
+Para conectar tu dashboard web con la API del bot, usa esta configuración:
+
+```javascript
+const API_BASE_URL = 'https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev:5000';
+const API_KEY = 'rbxservers_user'; // Para usuarios normales, 'rbxservers_admin' para admin
+
+// Configuración de headers para todas las requests
+const apiHeaders = {
+    'Authorization': `Bearer ${API_KEY}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+};
+
+// Función para hacer requests a la API
+async function apiRequest(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    const config = {
+        headers: apiHeaders,
+        ...options
+    };
+
+    try {
+        const response = await fetch(url, config);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
+}
+```
+
+## ⚠️ Solución de Problemas Comunes
+
+### 1. Error CORS
+Si recibes errores de CORS, asegúrate de que tu dominio esté en la lista de orígenes permitidos.
+
+### 2. Error 404 en OPTIONS
+Si ves errores 404 en requests OPTIONS, verifica que estés usando el puerto correcto (5000) para la API REST.
+
+### 3. URL Incorrecta
+- ✅ **Correcto**: `https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev:5000/stats`
+- ❌ **Incorrecto**: `https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev/stats`
+
+### 4. Testing de la API
+Puedes probar la API directamente:
+
+```bash
+# Verificar que la API esté funcionando
+curl https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev:5000/
+
+# Obtener estadísticas (requiere API key)
+curl -H "Authorization: Bearer rbxservers_user" \
+     https://a07a462b-cf39-43eb-85d2-3f250e733fcb-00-3l0ph7x2hrb5s.kirk.replit.dev:5000/stats
 ```
 
 ## URL de la API
