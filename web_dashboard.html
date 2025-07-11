@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RbxServers - Dashboard en Vivo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #7289da;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #7289da, #99aab5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #99aab5;
+            font-size: 1.1rem;
+        }
+
+        .status-bar {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(114, 137, 218, 0.3);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(114, 137, 218, 0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(114, 137, 218, 0.3);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #43b581;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(114, 137, 218, 0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #7289da, #99aab5);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(114, 137, 218, 0.5);
+            box-shadow: 0 10px 30px rgba(114, 137, 218, 0.2);
+        }
+
+        .card h3 {
+            color: #7289da;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #43b581;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #99aab5;
+            font-size: 0.9rem;
+        }
+
+        .user-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(153, 170, 181, 0.1);
+        }
+
+        .user-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .username {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .user-id {
+            color: #99aab5;
+            font-size: 0.8rem;
+        }
+
+        .user-time {
+            color: #43b581;
+            font-size: 0.8rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #99aab5;
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(45deg, #7289da, #99aab5);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(114, 137, 218, 0.4);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(153, 170, 181, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43b581, #7289da);
+            transition: width 0.3s ease;
+        }
+
+        .api-info {
+            background: rgba(114, 137, 218, 0.1);
+            border: 1px solid rgba(114, 137, 218, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .api-info h3 {
+            color: #7289da;
+            margin-bottom: 15px;
+        }
+
+        .api-endpoint {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 5px 0;
+            border-left: 3px solid #43b581;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        .auto-refresh {
+            color: #43b581;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            height: 200px;
+            display: flex;
+            align-items: end;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .chart-bar {
+            width: 30px;
+            background: linear-gradient(to top, #7289da, #43b581);
+            border-radius: 3px 3px 0 0;
+            transition: height 0.5s ease;
+            position: relative;
+        }
+
+        .chart-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #99aab5;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 RbxServers Dashboard</h1>
+        <p>Panel de Control en Tiempo Real</p>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-item">
+            <div class="status-dot"></div>
+            <span>Bot Online</span>
+        </div>
+        <div class="status-item">
+            <div class="status-dot"></div>
+            <span>API Activa</span>
+        </div>
+        <div class="status-item">
+            <div class="status-dot"></div>
+            <span id="lastUpdate">Actualizado: Cargando...</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="errorContainer"></div>
+        
+        <div class="grid">
+            <!-- Estadísticas Generales -->
+            <div class="card">
+                <h3>📊 Estadísticas Generales</h3>
+                <div class="stat-number" id="totalVerified">-</div>
+                <div class="stat-label">Usuarios Verificados</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="verifiedProgress"></div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <div class="stat-number" id="totalBanned">-</div>
+                    <div class="stat-label">Usuarios Baneados</div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <div class="stat-number" id="totalServers">-</div>
+                    <div class="stat-label">Servidores VIP Totales</div>
+                </div>
+            </div>
+
+            <!-- Estado del Bot -->
+            <div class="card">
+                <h3>🤖 Estado del Bot</h3>
+                <div class="stat-number" id="robloxScripts">-</div>
+                <div class="stat-label">Scripts de Roblox Conectados</div>
+                
+                <div style="margin-top: 20px;">
+                    <div class="stat-number" id="activeCommands">-</div>
+                    <div class="stat-label">Comandos Activos</div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <div class="stat-number" id="usersWithServers">-</div>
+                    <div class="stat-label">Usuarios con Servidores</div>
+                </div>
+            </div>
+
+            <!-- Usuarios Verificados Recientes -->
+            <div class="card">
+                <h3>👥 Usuarios Verificados Recientes</h3>
+                <div id="recentUsers" class="user-list">
+                    <div class="loading">Cargando usuarios...</div>
+                </div>
+            </div>
+
+            <!-- Actividad Reciente -->
+            <div class="card">
+                <h3>📈 Actividad Reciente (24h)</h3>
+                <div class="stat-number" id="recentVerifications">-</div>
+                <div class="stat-label">Verificaciones Recientes</div>
+                
+                <div style="margin-top: 20px;">
+                    <div class="stat-number" id="recentBans">-</div>
+                    <div class="stat-label">Bans Recientes (7d)</div>
+                </div>
+                
+                <div class="chart-container" id="activityChart">
+                    <div class="chart-bar" style="height: 20px;"><div class="chart-label">Lun</div></div>
+                    <div class="chart-bar" style="height: 40px;"><div class="chart-label">Mar</div></div>
+                    <div class="chart-bar" style="height: 60px;"><div class="chart-label">Mié</div></div>
+                    <div class="chart-bar" style="height: 30px;"><div class="chart-label">Jue</div></div>
+                    <div class="chart-bar" style="height: 80px;"><div class="chart-label">Vie</div></div>
+                    <div class="chart-bar" style="height: 50px;"><div class="chart-label">Sáb</div></div>
+                    <div class="chart-bar" style="height: 70px;"><div class="chart-label">Dom</div></div>
+                </div>
+            </div>
+        </div>
+
+        <button class="refresh-btn" onclick="loadAllData()">🔄 Actualizar Datos</button>
+        
+        <div class="auto-refresh">
+            ⏰ Actualización automática cada 30 segundos
+        </div>
+
+        <!-- Información de la API -->
+        <div class="api-info">
+            <h3>🔌 Endpoints de la API</h3>
+            <p>Esta página consume los siguientes endpoints en tiempo real:</p>
+            <div class="api-endpoint">GET /api/verified-users</div>
+            <div class="api-endpoint">GET /api/user-stats</div>
+            <div class="api-endpoint">GET /api/server-stats</div>
+            <div class="api-endpoint">GET /api/bot-status</div>
+            <div class="api-endpoint">GET /api/recent-activity</div>
+            <p style="margin-top: 15px; color: #99aab5;">
+                🔑 API Key: <code>rbxservers_webhook_secret_2024</code>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.origin;
+        const API_KEY = 'rbxservers_webhook_secret_2024';
+
+        const headers = {
+            'Authorization': `Bearer ${API_KEY}`,
+            'Content-Type': 'application/json'
+        };
+
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.innerHTML = `
+                <div class="error">
+                    ❌ ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                errorContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        async function apiRequest(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, { headers });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error(`Error en ${endpoint}:`, error);
+                throw error;
+            }
+        }
+
+        async function loadUserStats() {
+            try {
+                const data = await apiRequest('/api/user-stats');
+                const stats = data.statistics;
+                
+                document.getElementById('totalVerified').textContent = stats.total_verified || 0;
+                document.getElementById('totalBanned').textContent = stats.total_banned || 0;
+                
+                // Actualizar barra de progreso (máximo arbitrario de 100)
+                const progressPercent = Math.min((stats.total_verified / 100) * 100, 100);
+                document.getElementById('verifiedProgress').style.width = `${progressPercent}%`;
+                
+            } catch (error) {
+                showError('Error cargando estadísticas de usuarios');
+            }
+        }
+
+        async function loadServerStats() {
+            try {
+                const data = await apiRequest('/api/server-stats');
+                const stats = data.server_statistics;
+                
+                document.getElementById('totalServers').textContent = stats.total_servers || 0;
+                document.getElementById('usersWithServers').textContent = stats.total_users_with_servers || 0;
+                
+            } catch (error) {
+                showError('Error cargando estadísticas de servidores');
+            }
+        }
+
+        async function loadBotStatus() {
+            try {
+                const data = await apiRequest('/api/bot-status');
+                const status = data.bot_status;
+                
+                document.getElementById('robloxScripts').textContent = status.roblox_scripts_connected || 0;
+                document.getElementById('activeCommands').textContent = status.active_commands || 0;
+                
+            } catch (error) {
+                showError('Error cargando estado del bot');
+            }
+        }
+
+        async function loadVerifiedUsers() {
+            try {
+                const data = await apiRequest('/api/verified-users');
+                const users = data.users || [];
+                
+                const userListHtml = users.slice(0, 10).map(user => `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <div class="username">${user.roblox_username}</div>
+                            <div class="user-id">ID: ${user.discord_id}</div>
+                        </div>
+                        <div class="user-time">Hace ${user.days_since_verification || 0}d</div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('recentUsers').innerHTML = userListHtml || '<div class="loading">No hay usuarios verificados</div>';
+                
+            } catch (error) {
+                document.getElementById('recentUsers').innerHTML = '<div class="loading">Error cargando usuarios</div>';
+            }
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const data = await apiRequest('/api/recent-activity');
+                const activity = data.recent_activity;
+                
+                document.getElementById('recentVerifications').textContent = activity.recent_verifications?.length || 0;
+                document.getElementById('recentBans').textContent = activity.recent_bans?.length || 0;
+                
+            } catch (error) {
+                showError('Error cargando actividad reciente');
+            }
+        }
+
+        async function loadAllData() {
+            console.log('🔄 Cargando todos los datos...');
+            
+            // Actualizar timestamp
+            document.getElementById('lastUpdate').textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
+            
+            // Cargar todos los datos en paralelo
+            await Promise.allSettled([
+                loadUserStats(),
+                loadServerStats(), 
+                loadBotStatus(),
+                loadVerifiedUsers(),
+                loadRecentActivity()
+            ]);
+            
+            console.log('✅ Datos cargados completamente');
+        }
+
+        // Cargar datos al inicio
+        loadAllData();
+
+        // Actualización automática cada 30 segundos
+        setInterval(loadAllData, 30000);
+
+        // Actualizar cada minuto el timestamp de "última actualización"
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = `Actualizado: ${now.toLocaleTimeString()}`;
+        }, 60000);
+    </script>
+</body>
+</html>

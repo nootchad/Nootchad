@@ -371,121 +371,57 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
         )
     
     async def handle_root(self, request):
-        """Manejar ruta raíz - mostrar información del bot"""
+        """Manejar ruta raíz - servir dashboard completo"""
         try:
-            connected_scripts = len(self.get_connected_scripts())
-            active_commands = len([cmd for cmd in self.active_commands.values() if cmd['status'] == 'pending'])
-            
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>RbxServers Bot - Control Remoto</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 40px; background: #2c2f33; color: #ffffff; }}
-                    .container {{ max-width: 600px; margin: 0 auto; }}
-                    .status {{ background: #23272a; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
-                    .green {{ color: #43b581; }}
-                    .orange {{ color: #faa61a; }}
-                    .blue {{ color: #7289da; }}
-                    h1 {{ color: #7289da; }}
-                    .script-box {{ background: #1e2124; padding: 15px; border-radius: 5px; margin: 10px 0; }}
-                    .copy-btn {{ background: #7289da; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; }}
-                </style>
-                <script>
-                function generateScript() {{
-                    const placeId = document.getElementById('placeId').value;
-                    const jobId = document.getElementById('jobId').value;
-                    
-                    if (!placeId || !jobId) {{
-                        alert('Por favor ingresa Place ID y Job ID');
-                        return;
-                    }}
-                    
-                    fetch(`/roblox/get_join_script?place_id=${{placeId}}&job_id=${{jobId}}`)
-                        .then(response => response.json())
-                        .then(data => {{
-                            if (data.status === 'success') {{
-                                document.getElementById('generatedScript').textContent = data.script;
-                                document.getElementById('scriptInfo').innerHTML = `
-                                    <strong>Place ID:</strong> ${{data.place_id}}<br>
-                                    <strong>Job ID:</strong> ${{data.job_id}}<br>
-                                    <strong>Tipo:</strong> ${{data.script_type}}
-                                `;
-                                document.getElementById('scriptSection').style.display = 'block';
-                            }} else {{
-                                alert('Error: ' + data.message);
-                            }}
-                        }})
-                        .catch(error => {{
-                            alert('Error de conexión: ' + error);
-                        }});
-                }}
+            # Leer el archivo del dashboard
+            dashboard_path = Path("web_dashboard.html")
+            if dashboard_path.exists():
+                with open(dashboard_path, 'r', encoding='utf-8') as f:
+                    html_content = f.read()
+                return web.Response(text=html_content, content_type='text/html')
+            else:
+                # Fallback a la página simple si no existe el dashboard
+                connected_scripts = len(self.get_connected_scripts())
+                active_commands = len([cmd for cmd in self.active_commands.values() if cmd['status'] == 'pending'])
                 
-                function copyScript() {{
-                    const scriptText = document.getElementById('generatedScript').textContent;
-                    navigator.clipboard.writeText(scriptText).then(() => {{
-                        alert('¡Script copiado al portapapeles!');
-                    }});
-                }}
-                </script>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>🤖 RbxServers Bot - Control Remoto</h1>
-                    <div class="status">
-                        <h2>📊 Estado del Sistema</h2>
-                        <p><strong>Bot de Discord:</strong> <span class="green">✅ Conectado</span></p>
-                        <p><strong>Servidor Web:</strong> <span class="green">✅ Activo en puerto 8080</span></p>
-                        <p><strong>Scripts de Roblox Conectados:</strong> <span class="orange">{connected_scripts}</span></p>
-                        <p><strong>Comandos Pendientes:</strong> <span class="orange">{active_commands}</span></p>
-                    </div>
-                    
-                    <div class="status">
-                        <h2>🎮 Generador de Script de Unión Directa</h2>
-                        <p>Genera un script de Roblox para unirse directamente a un servidor específico por Job ID:</p>
-                        <p><strong>Place ID:</strong> <input type="text" id="placeId" placeholder="ej: 2753915549" style="background: #1e2124; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;"></p>
-                        <p><strong>Job ID:</strong> <input type="text" id="jobId" placeholder="ej: 0088ab2c-2d58-4f13-b8d3-7c00f9b46bd0" style="background: #1e2124; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;"></p>
-                        <button onclick="generateScript()" class="copy-btn">🚀 Generar Script</button>
-                        
-                        <div id="scriptSection" style="display: none; margin-top: 20px;">
-                            <h3>📋 Script Generado:</h3>
-                            <div id="scriptInfo" class="script-box"></div>
-                            <div class="script-box">
-                                <pre id="generatedScript" style="color: #43b581; white-space: pre-wrap; font-size: 12px;"></pre>
-                            </div>
-                            <button onclick="copyScript()" class="copy-btn">📋 Copiar Script</button>
-                            <p style="color: #faa61a; font-size: 14px;">
-                                💡 <strong>Instrucciones:</strong><br>
-                                1. Copia el script generado<br>
-                                2. Ve a cualquier juego de Roblox<br>
-                                3. Presiona F9 para abrir la consola<br>
-                                4. Pega y ejecuta el script<br>
-                                5. El script te llevará al servidor específico usando el Job ID
-                            </p>
+                simple_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>RbxServers Bot - API Activa</title>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; margin: 40px; background: #2c2f33; color: #ffffff; text-align: center; }}
+                        .container {{ max-width: 600px; margin: 0 auto; }}
+                        .status {{ background: #23272a; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
+                        .green {{ color: #43b581; }}
+                        .orange {{ color: #faa61a; }}
+                        h1 {{ color: #7289da; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>🤖 RbxServers Bot API</h1>
+                        <div class="status">
+                            <h2>📊 Estado del Sistema</h2>
+                            <p><strong>Bot de Discord:</strong> <span class="green">✅ Conectado</span></p>
+                            <p><strong>API Web:</strong> <span class="green">✅ Activa</span></p>
+                            <p><strong>Scripts de Roblox:</strong> <span class="orange">{connected_scripts}</span></p>
+                            <p><strong>Comandos Pendientes:</strong> <span class="orange">{active_commands}</span></p>
+                        </div>
+                        <div class="status">
+                            <h2>🔌 API Endpoints Disponibles</h2>
+                            <p><strong>GET</strong> /api/verified-users</p>
+                            <p><strong>GET</strong> /api/user-stats</p>
+                            <p><strong>GET</strong> /api/server-stats</p>
+                            <p><strong>GET</strong> /api/bot-status</p>
+                            <p><strong>GET</strong> /api/recent-activity</p>
+                            <p style="margin-top: 20px; color: #faa61a;">🔑 API Key: rbxservers_webhook_secret_2024</p>
                         </div>
                     </div>
-                    
-                    <div class="status">
-                        <h2>🔌 API Endpoints</h2>
-                        <p><strong>POST</strong> /roblox/connect - Conectar script de Roblox</p>
-                        <p><strong>POST</strong> /roblox/heartbeat - Heartbeat de script</p>
-                        <p><strong>GET</strong> /roblox/get_commands - Obtener comandos pendientes</p>
-                        <p><strong>POST</strong> /roblox/command_result - Enviar resultado de comando</p>
-                        <p><strong>GET</strong> /roblox/get_join_script - Generar script de unión directa</p>
-                    </div>
-                    <div class="status">
-                        <h2>ℹ️ Información</h2>
-                        <p>Este es el servidor de control remoto para el bot de RbxServers.</p>
-                        <p>Para usar el bot, ve a Discord y usa los comandos slash disponibles.</p>
-                        <p><strong>Creado por:</strong> hesiz</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            return web.Response(text=html_content, content_type='text/html')
+                </body>
+                </html>
+                """
+                return web.Response(text=simple_html, content_type='text/html')
             
         except Exception as e:
             logger.error(f"Error in root handler: {e}")
