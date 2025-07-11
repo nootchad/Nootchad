@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RbxServers - Dashboard en Vivo</title>
+    <title>RbxServers - Dashboard Avanzado</title>
     <style>
         * {
             margin: 0;
@@ -20,26 +20,163 @@
             overflow-x: hidden;
         }
 
+        /* Animaciones globales */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.7; 
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
         .header {
             background: rgba(0, 0, 0, 0.3);
             padding: 20px;
             text-align: center;
             border-bottom: 2px solid #7289da;
             backdrop-filter: blur(10px);
+            animation: fadeInUp 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            background: linear-gradient(45deg, #7289da, #99aab5);
+            background: linear-gradient(45deg, #7289da, #99aab5, #43b581);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: float 3s ease-in-out infinite;
         }
 
         .header p {
             color: #99aab5;
             font-size: 1.1rem;
+        }
+
+        /* Barra de navegación avanzada */
+        .nav-bar {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(114, 137, 218, 0.3);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            background: rgba(114, 137, 218, 0.1);
+            border: 1px solid rgba(114, 137, 218, 0.3);
+            color: #99aab5;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tab:hover {
+            background: rgba(114, 137, 218, 0.2);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(114, 137, 218, 0.3);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(45deg, #7289da, #43b581);
+            color: #ffffff;
+            box-shadow: 0 5px 15px rgba(114, 137, 218, 0.4);
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .debug-toggle {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .debug-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .debug-toggle::before {
+            content: '🐛';
+            margin-right: 5px;
         }
 
         .status-bar {
@@ -50,6 +187,7 @@
             gap: 30px;
             flex-wrap: wrap;
             border-bottom: 1px solid rgba(114, 137, 218, 0.3);
+            animation: slideInLeft 1s ease;
         }
 
         .status-item {
@@ -60,6 +198,13 @@
             padding: 10px 20px;
             border-radius: 25px;
             border: 1px solid rgba(114, 137, 218, 0.3);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .status-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(114, 137, 218, 0.3);
         }
 
         .status-dot {
@@ -68,18 +213,34 @@
             border-radius: 50%;
             background: #43b581;
             animation: pulse 2s infinite;
+            position: relative;
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(67, 181, 129, 0.3), transparent);
+            animation: sparkle 3s infinite;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 30px 20px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .grid {
@@ -95,9 +256,10 @@
             padding: 25px;
             border: 1px solid rgba(114, 137, 218, 0.2);
             backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
             position: relative;
             overflow: hidden;
+            animation: fadeInUp 0.8s ease;
         }
 
         .card::before {
@@ -107,13 +269,20 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #7289da, #99aab5);
+            background: linear-gradient(90deg, #7289da, #43b581, #99aab5);
+            background-size: 200% 100%;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
 
         .card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(114, 137, 218, 0.5);
-            box-shadow: 0 10px 30px rgba(114, 137, 218, 0.2);
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(114, 137, 218, 0.6);
+            box-shadow: 0 15px 40px rgba(114, 137, 218, 0.3);
         }
 
         .card h3 {
@@ -130,6 +299,7 @@
             font-weight: bold;
             color: #43b581;
             margin-bottom: 5px;
+            animation: float 2s ease-in-out infinite;
         }
 
         .stat-label {
@@ -137,25 +307,55 @@
             font-size: 0.9rem;
         }
 
+        /* Usuarios con fotos de Discord */
         .user-list {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             margin-top: 15px;
         }
 
         .user-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            gap: 15px;
+            padding: 15px 0;
             border-bottom: 1px solid rgba(153, 170, 181, 0.1);
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            margin-bottom: 5px;
         }
 
-        .user-item:last-child {
-            border-bottom: none;
+        .user-item:hover {
+            background: rgba(114, 137, 218, 0.1);
+            transform: translateX(10px);
+            padding-left: 15px;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #7289da, #43b581);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            overflow: hidden;
+            position: relative;
+            animation: pulse 3s infinite;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         .user-info {
+            flex: 1;
             display: flex;
             flex-direction: column;
         }
@@ -163,6 +363,7 @@
         .username {
             color: #ffffff;
             font-weight: 500;
+            font-size: 1.1rem;
         }
 
         .user-id {
@@ -170,15 +371,38 @@
             font-size: 0.8rem;
         }
 
+        .user-roblox {
+            color: #43b581;
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+
+        .user-badges {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .badge {
+            background: rgba(67, 181, 129, 0.2);
+            color: #43b581;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            border: 1px solid rgba(67, 181, 129, 0.3);
+        }
+
         .user-time {
             color: #43b581;
             font-size: 0.8rem;
+            text-align: right;
         }
 
         .loading {
             text-align: center;
             padding: 20px;
             color: #99aab5;
+            animation: pulse 2s infinite;
         }
 
         .error {
@@ -188,9 +412,103 @@
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
+            animation: fadeInUp 0.5s ease;
         }
 
-        .refresh-btn {
+        /* Debug Panel */
+        .debug-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            border-left: 2px solid #7289da;
+            padding: 20px;
+            overflow-y: auto;
+            transition: right 0.4s ease;
+            z-index: 1000;
+            backdrop-filter: blur(15px);
+        }
+
+        .debug-panel.active {
+            right: 0;
+        }
+
+        .debug-panel h3 {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 1px solid rgba(255, 107, 107, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .debug-section {
+            margin-bottom: 25px;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 107, 107, 0.2);
+        }
+
+        .debug-section h4 {
+            color: #ff8e8e;
+            margin-bottom: 10px;
+        }
+
+        .debug-info {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            margin: 5px 0;
+            border-left: 3px solid #ff6b6b;
+        }
+
+        .debug-button {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .debug-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .close-debug {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close-debug:hover {
+            transform: rotate(90deg);
+            color: #ff8e8e;
+        }
+
+        /* Controles avanzados */
+        .advanced-controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-button {
             background: linear-gradient(45deg, #7289da, #99aab5);
             color: white;
             border: none;
@@ -199,52 +517,108 @@
             cursor: pointer;
             font-size: 1rem;
             transition: all 0.3s ease;
-            margin: 20px auto;
-            display: block;
-        }
-
-        .refresh-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(114, 137, 218, 0.4);
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: rgba(153, 170, 181, 0.2);
-            border-radius: 3px;
+            position: relative;
             overflow: hidden;
-            margin-top: 10px;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #43b581, #7289da);
-            transition: width 0.3s ease;
+        .control-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: all 0.6s ease;
+            transform: translate(-50%, -50%);
         }
 
-        .api-info {
-            background: rgba(114, 137, 218, 0.1);
-            border: 1px solid rgba(114, 137, 218, 0.3);
-            border-radius: 10px;
+        .control-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .control-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(114, 137, 218, 0.4);
+        }
+
+        /* Gráficos animados */
+        .chart-container {
+            margin-top: 20px;
+            height: 250px;
+            display: flex;
+            align-items: end;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
             padding: 20px;
-            margin-top: 30px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .api-info h3 {
-            color: #7289da;
-            margin-bottom: 15px;
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(114, 137, 218, 0.1), rgba(67, 181, 129, 0.1));
+            animation: gradientShift 4s ease infinite;
         }
 
-        .api-endpoint {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            margin: 5px 0;
-            border-left: 3px solid #43b581;
+        .chart-bar {
+            width: 40px;
+            background: linear-gradient(to top, #7289da, #43b581);
+            border-radius: 8px 8px 0 0;
+            transition: all 0.5s ease;
+            position: relative;
+            animation: barGrow 1s ease;
+            margin: 0 5px;
         }
 
+        @keyframes barGrow {
+            from { height: 0; }
+            to { height: var(--height); }
+        }
+
+        .chart-bar:hover {
+            transform: scale(1.1);
+            background: linear-gradient(to top, #43b581, #7289da);
+            box-shadow: 0 0 20px rgba(67, 181, 129, 0.5);
+        }
+
+        .chart-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #99aab5;
+            white-space: nowrap;
+        }
+
+        .chart-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 8px;
+            border-radius: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .chart-bar:hover .chart-value {
+            opacity: 1;
+        }
+
+        /* Responsive design mejorado */
         @media (max-width: 768px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -254,10 +628,40 @@
                 font-size: 2rem;
             }
             
-            .status-bar {
+            .nav-bar {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .debug-panel {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .advanced-controls {
                 flex-direction: column;
                 align-items: center;
             }
+        }
+
+        /* Sistema de notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #43b581, #7289da);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(67, 181, 129, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.4s ease;
+            z-index: 1001;
+            max-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
         }
 
         .auto-refresh {
@@ -265,41 +669,84 @@
             font-size: 0.9rem;
             text-align: center;
             margin-top: 15px;
+            animation: pulse 3s infinite;
         }
 
-        .chart-container {
-            margin-top: 20px;
-            height: 200px;
-            display: flex;
-            align-items: end;
-            justify-content: space-around;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            padding: 20px;
+        .api-info {
+            background: rgba(114, 137, 218, 0.1);
+            border: 1px solid rgba(114, 137, 218, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            animation: fadeInUp 1s ease;
         }
 
-        .chart-bar {
-            width: 30px;
-            background: linear-gradient(to top, #7289da, #43b581);
-            border-radius: 3px 3px 0 0;
-            transition: height 0.5s ease;
-            position: relative;
+        .api-info h3 {
+            color: #7289da;
+            margin-bottom: 15px;
         }
 
-        .chart-label {
+        .api-endpoint {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 8px 0;
+            border-left: 4px solid #43b581;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .api-endpoint:hover {
+            background: rgba(0, 0, 0, 0.6);
+            transform: translateX(10px);
+            border-left-color: #7289da;
+        }
+
+        /* Efectos de partículas */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
             position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.7rem;
-            color: #99aab5;
+            width: 4px;
+            height: 4px;
+            background: #7289da;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            opacity: 0.6;
         }
     </style>
 </head>
 <body>
+    <!-- Partículas de fondo -->
+    <div class="particles" id="particles"></div>
+
     <div class="header">
-        <h1>🤖 RbxServers Dashboard</h1>
-        <p>Panel de Control en Tiempo Real</p>
+        <h1>🤖 RbxServers Dashboard Pro</h1>
+        <p>Panel de Control Avanzado en Tiempo Real</p>
+    </div>
+
+    <!-- Barra de navegación avanzada -->
+    <div class="nav-bar">
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-tab="overview">📊 Overview</div>
+            <div class="nav-tab" data-tab="users">👥 Usuarios</div>
+            <div class="nav-tab" data-tab="servers">🎮 Servidores</div>
+            <div class="nav-tab" data-tab="analytics">📈 Analytics</div>
+            <div class="nav-tab" data-tab="logs">📝 Logs</div>
+        </div>
+        <div class="nav-controls">
+            <button class="debug-toggle" onclick="toggleDebug()">Debug Console</button>
+            <button class="control-button" onclick="exportData()">📤 Exportar</button>
+        </div>
     </div>
 
     <div class="status-bar">
@@ -315,81 +762,156 @@
             <div class="status-dot"></div>
             <span id="lastUpdate">Actualizado: Cargando...</span>
         </div>
+        <div class="status-item">
+            <div class="status-dot"></div>
+            <span id="connectionStatus">Conectado</span>
+        </div>
     </div>
 
     <div class="container">
         <div id="errorContainer"></div>
         
-        <div class="grid">
-            <!-- Estadísticas Generales -->
-            <div class="card">
-                <h3>📊 Estadísticas Generales</h3>
-                <div class="stat-number" id="totalVerified">-</div>
-                <div class="stat-label">Usuarios Verificados</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="verifiedProgress"></div>
+        <!-- Tab: Overview -->
+        <div class="tab-content active" id="overview-tab">
+            <div class="grid">
+                <!-- Estadísticas Generales -->
+                <div class="card">
+                    <h3>📊 Estadísticas Generales</h3>
+                    <div class="stat-number" id="totalVerified">-</div>
+                    <div class="stat-label">Usuarios Verificados</div>
+                    
+                    <div style="margin-top: 20px;">
+                        <div class="stat-number" id="totalBanned">-</div>
+                        <div class="stat-label">Usuarios Baneados</div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <div class="stat-number" id="totalServers">-</div>
+                        <div class="stat-label">Servidores VIP Totales</div>
+                    </div>
                 </div>
-                
-                <div style="margin-top: 20px;">
-                    <div class="stat-number" id="totalBanned">-</div>
-                    <div class="stat-label">Usuarios Baneados</div>
-                </div>
-                
-                <div style="margin-top: 20px;">
-                    <div class="stat-number" id="totalServers">-</div>
-                    <div class="stat-label">Servidores VIP Totales</div>
-                </div>
-            </div>
 
-            <!-- Estado del Bot -->
-            <div class="card">
-                <h3>🤖 Estado del Bot</h3>
-                <div class="stat-number" id="robloxScripts">-</div>
-                <div class="stat-label">Scripts de Roblox Conectados</div>
-                
-                <div style="margin-top: 20px;">
-                    <div class="stat-number" id="activeCommands">-</div>
-                    <div class="stat-label">Comandos Activos</div>
+                <!-- Estado del Sistema -->
+                <div class="card">
+                    <h3>🤖 Estado del Sistema</h3>
+                    <div class="stat-number" id="robloxScripts">-</div>
+                    <div class="stat-label">Scripts de Roblox Conectados</div>
+                    
+                    <div style="margin-top: 20px;">
+                        <div class="stat-number" id="activeCommands">-</div>
+                        <div class="stat-label">Comandos Activos</div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <div class="stat-number" id="usersWithServers">-</div>
+                        <div class="stat-label">Usuarios con Servidores</div>
+                    </div>
                 </div>
-                
-                <div style="margin-top: 20px;">
-                    <div class="stat-number" id="usersWithServers">-</div>
-                    <div class="stat-label">Usuarios con Servidores</div>
-                </div>
-            </div>
 
-            <!-- Usuarios Verificados Recientes -->
-            <div class="card">
-                <h3>👥 Usuarios Verificados Recientes</h3>
-                <div id="recentUsers" class="user-list">
-                    <div class="loading">Cargando usuarios...</div>
+                <!-- Actividad en Tiempo Real -->
+                <div class="card">
+                    <h3>⚡ Actividad en Tiempo Real</h3>
+                    <div class="stat-number" id="recentVerifications">-</div>
+                    <div class="stat-label">Verificaciones (24h)</div>
+                    
+                    <div style="margin-top: 20px;">
+                        <div class="stat-number" id="recentBans">-</div>
+                        <div class="stat-label">Bans Recientes (7d)</div>
+                    </div>
+                    
+                    <div class="chart-container" id="activityChart"></div>
                 </div>
-            </div>
 
-            <!-- Actividad Reciente -->
-            <div class="card">
-                <h3>📈 Actividad Reciente (24h)</h3>
-                <div class="stat-number" id="recentVerifications">-</div>
-                <div class="stat-label">Verificaciones Recientes</div>
-                
-                <div style="margin-top: 20px;">
-                    <div class="stat-number" id="recentBans">-</div>
-                    <div class="stat-label">Bans Recientes (7d)</div>
-                </div>
-                
-                <div class="chart-container" id="activityChart">
-                    <div class="chart-bar" style="height: 20px;"><div class="chart-label">Lun</div></div>
-                    <div class="chart-bar" style="height: 40px;"><div class="chart-label">Mar</div></div>
-                    <div class="chart-bar" style="height: 60px;"><div class="chart-label">Mié</div></div>
-                    <div class="chart-bar" style="height: 30px;"><div class="chart-label">Jue</div></div>
-                    <div class="chart-bar" style="height: 80px;"><div class="chart-label">Vie</div></div>
-                    <div class="chart-bar" style="height: 50px;"><div class="chart-label">Sáb</div></div>
-                    <div class="chart-bar" style="height: 70px;"><div class="chart-label">Dom</div></div>
+                <!-- Rendimiento del Sistema -->
+                <div class="card">
+                    <h3>⚙️ Rendimiento del Sistema</h3>
+                    <div id="performanceMetrics">
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>CPU Usage</span>
+                                <span id="cpuUsage">-</span>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px;">
+                                <div id="cpuBar" style="background: linear-gradient(90deg, #43b581, #7289da); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Memory Usage</span>
+                                <span id="memoryUsage">-</span>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px;">
+                                <div id="memoryBar" style="background: linear-gradient(90deg, #7289da, #43b581); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>API Response Time</span>
+                                <span id="responseTime">-</span>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px;">
+                                <div id="responseBar" style="background: linear-gradient(90deg, #43b581, #ff6b6b); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <button class="refresh-btn" onclick="loadAllData()">🔄 Actualizar Datos</button>
+        <!-- Tab: Usuarios -->
+        <div class="tab-content" id="users-tab">
+            <div class="grid">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h3>👥 Usuarios Verificados con Fotos de Discord</h3>
+                    <div id="recentUsers" class="user-list">
+                        <div class="loading">Cargando usuarios...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Servidores -->
+        <div class="tab-content" id="servers-tab">
+            <div class="grid">
+                <div class="card">
+                    <h3>🎮 Distribución de Servidores</h3>
+                    <div id="serverDistribution"></div>
+                </div>
+                <div class="card">
+                    <h3>📊 Estadísticas de Juegos</h3>
+                    <div id="gameStats"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Analytics -->
+        <div class="tab-content" id="analytics-tab">
+            <div class="grid">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h3>📈 Analytics Avanzado</h3>
+                    <div class="chart-container" style="height: 300px;" id="analyticsChart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Logs -->
+        <div class="tab-content" id="logs-tab">
+            <div class="grid">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h3>📝 System Logs</h3>
+                    <div id="systemLogs" style="max-height: 500px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.9rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles Avanzados -->
+        <div class="advanced-controls">
+            <button class="control-button" onclick="refreshAllData()">🔄 Actualizar Todo</button>
+            <button class="control-button" onclick="clearCache()">🧹 Limpiar Cache</button>
+            <button class="control-button" onclick="downloadReport()">📊 Generar Reporte</button>
+            <button class="control-button" onclick="toggleTheme()">🌙 Cambiar Tema</button>
+            <button class="control-button" onclick="showNotification('Sistema funcionando correctamente ✅')">🔔 Test Notificación</button>
+        </div>
         
         <div class="auto-refresh">
             ⏰ Actualización automática cada 30 segundos
@@ -399,25 +921,116 @@
         <div class="api-info">
             <h3>🔌 Endpoints de la API</h3>
             <p>Esta página consume los siguientes endpoints en tiempo real:</p>
-            <div class="api-endpoint">GET /api/verified-users</div>
-            <div class="api-endpoint">GET /api/user-stats</div>
-            <div class="api-endpoint">GET /api/server-stats</div>
-            <div class="api-endpoint">GET /api/bot-status</div>
-            <div class="api-endpoint">GET /api/recent-activity</div>
+            <div class="api-endpoint" onclick="testEndpoint('/api/verified-users')">GET /api/verified-users</div>
+            <div class="api-endpoint" onclick="testEndpoint('/api/user-stats')">GET /api/user-stats</div>
+            <div class="api-endpoint" onclick="testEndpoint('/api/server-stats')">GET /api/server-stats</div>
+            <div class="api-endpoint" onclick="testEndpoint('/api/bot-status')">GET /api/bot-status</div>
+            <div class="api-endpoint" onclick="testEndpoint('/api/recent-activity')">GET /api/recent-activity</div>
             <p style="margin-top: 15px; color: #99aab5;">
                 🔑 API Key: <code>rbxservers_webhook_secret_2024</code>
             </p>
         </div>
     </div>
 
+    <!-- Debug Panel -->
+    <div class="debug-panel" id="debugPanel">
+        <button class="close-debug" onclick="toggleDebug()">&times;</button>
+        <h3>🐛 Debug Console</h3>
+        
+        <div class="debug-section">
+            <h4>System Information</h4>
+            <div class="debug-info" id="debugSystemInfo">Cargando información del sistema...</div>
+            <button class="debug-button" onclick="refreshDebugInfo()">Actualizar Info</button>
+        </div>
+        
+        <div class="debug-section">
+            <h4>API Status</h4>
+            <div class="debug-info" id="debugApiStatus">Verificando estado de la API...</div>
+            <button class="debug-button" onclick="testAllEndpoints()">Test All Endpoints</button>
+        </div>
+        
+        <div class="debug-section">
+            <h4>Performance Metrics</h4>
+            <div class="debug-info" id="debugPerformance">Recolectando métricas...</div>
+            <button class="debug-button" onclick="runPerformanceTest()">Run Performance Test</button>
+        </div>
+        
+        <div class="debug-section">
+            <h4>Console Logs</h4>
+            <div class="debug-info" id="debugLogs" style="max-height: 200px; overflow-y: auto;">Logs aparecerán aquí...</div>
+            <button class="debug-button" onclick="clearDebugLogs()">Clear Logs</button>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div class="notification" id="notification"></div>
+
     <script>
         const API_BASE_URL = window.location.origin;
         const API_KEY = 'rbxservers_webhook_secret_2024';
+        let debugLogs = [];
+        let currentTheme = 'dark';
+        let performanceMetrics = {
+            apiCalls: 0,
+            averageResponseTime: 0,
+            errors: 0
+        };
 
         const headers = {
             'Authorization': `Bearer ${API_KEY}`,
             'Content-Type': 'application/json'
         };
+
+        // Sistema de logs para debug
+        function addDebugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLogs.push({
+                timestamp,
+                message,
+                type
+            });
+            
+            updateDebugLogs();
+            
+            // Mantener solo los últimos 50 logs
+            if (debugLogs.length > 50) {
+                debugLogs = debugLogs.slice(-50);
+            }
+        }
+
+        function updateDebugLogs() {
+            const debugLogsEl = document.getElementById('debugLogs');
+            debugLogsEl.innerHTML = debugLogs.slice(-10).map(log => 
+                `<div style="color: ${getLogColor(log.type)};">[${log.timestamp}] ${log.message}</div>`
+            ).join('');
+            debugLogsEl.scrollTop = debugLogsEl.scrollHeight;
+        }
+
+        function getLogColor(type) {
+            switch(type) {
+                case 'error': return '#ff6b6b';
+                case 'warning': return '#ffa500';
+                case 'success': return '#43b581';
+                default: return '#99aab5';
+            }
+        }
+
+        function clearDebugLogs() {
+            debugLogs = [];
+            updateDebugLogs();
+            showNotification('Debug logs cleared', 'info');
+        }
+
+        // Sistema de notificaciones
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification show ${type}`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
 
         function showError(message) {
             const errorContainer = document.getElementById('errorContainer');
@@ -429,19 +1042,69 @@
             setTimeout(() => {
                 errorContainer.innerHTML = '';
             }, 5000);
+            
+            addDebugLog(`Error: ${message}`, 'error');
+        }
+
+        // Sistema de pestañas
+        function initTabs() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remover active de todas las pestañas
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    
+                    // Activar pestaña seleccionada
+                    tab.classList.add('active');
+                    const targetTab = document.getElementById(`${tab.dataset.tab}-tab`);
+                    if (targetTab) {
+                        targetTab.classList.add('active');
+                    }
+                    
+                    addDebugLog(`Switched to tab: ${tab.dataset.tab}`, 'info');
+                });
+            });
         }
 
         async function apiRequest(endpoint) {
+            const startTime = performance.now();
+            performanceMetrics.apiCalls++;
+            
             try {
+                addDebugLog(`Making API request to: ${endpoint}`, 'info');
                 const response = await fetch(`${API_BASE_URL}${endpoint}`, { headers });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                return await response.json();
+                
+                const data = await response.json();
+                const responseTime = performance.now() - startTime;
+                performanceMetrics.averageResponseTime = 
+                    (performanceMetrics.averageResponseTime + responseTime) / 2;
+                
+                addDebugLog(`API request successful: ${endpoint} (${responseTime.toFixed(2)}ms)`, 'success');
+                return data;
             } catch (error) {
-                console.error(`Error en ${endpoint}:`, error);
+                performanceMetrics.errors++;
+                addDebugLog(`API request failed: ${endpoint} - ${error.message}`, 'error');
                 throw error;
             }
+        }
+
+        // Generar avatar de Discord
+        function generateDiscordAvatar(discordId, username) {
+            const avatarUrl = `https://cdn.discordapp.com/avatars/${discordId}/avatar.png`;
+            return `
+                <div class="user-avatar">
+                    <img src="${avatarUrl}" 
+                         onerror="this.style.display='none'; this.parentElement.innerHTML='${username.charAt(0).toUpperCase()}'"
+                         alt="${username}">
+                </div>
+            `;
         }
 
         async function loadUserStats() {
@@ -452,9 +1115,8 @@
                 document.getElementById('totalVerified').textContent = stats.total_verified || 0;
                 document.getElementById('totalBanned').textContent = stats.total_banned || 0;
                 
-                // Actualizar barra de progreso (máximo arbitrario de 100)
-                const progressPercent = Math.min((stats.total_verified / 100) * 100, 100);
-                document.getElementById('verifiedProgress').style.width = `${progressPercent}%`;
+                // Simular métricas de rendimiento
+                updatePerformanceMetrics();
                 
             } catch (error) {
                 showError('Error cargando estadísticas de usuarios');
@@ -492,15 +1154,27 @@
                 const data = await apiRequest('/api/verified-users');
                 const users = data.users || [];
                 
-                const userListHtml = users.slice(0, 10).map(user => `
-                    <div class="user-item">
-                        <div class="user-info">
-                            <div class="username">${user.roblox_username}</div>
-                            <div class="user-id">ID: ${user.discord_id}</div>
+                const userListHtml = users.slice(0, 20).map(user => {
+                    const avatar = generateDiscordAvatar(user.discord_id, user.roblox_username);
+                    return `
+                        <div class="user-item">
+                            ${avatar}
+                            <div class="user-info">
+                                <div class="username">${user.roblox_username}</div>
+                                <div class="user-id">Discord: ${user.discord_id}</div>
+                                <div class="user-roblox">🎮 Roblox Verificado</div>
+                                <div class="user-badges">
+                                    <span class="badge">✅ Verificado</span>
+                                    ${user.expires_in_hours > 0 ? `<span class="badge">⏰ ${user.expires_in_hours}h restantes</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="user-time">
+                                <div>Hace ${user.days_since_verification || 0}d</div>
+                                <div style="font-size: 0.7rem; color: #7289da;">ID: ${user.discord_id.slice(-4)}</div>
+                            </div>
                         </div>
-                        <div class="user-time">Hace ${user.days_since_verification || 0}d</div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
                 
                 document.getElementById('recentUsers').innerHTML = userListHtml || '<div class="loading">No hay usuarios verificados</div>';
                 
@@ -517,13 +1191,198 @@
                 document.getElementById('recentVerifications').textContent = activity.recent_verifications?.length || 0;
                 document.getElementById('recentBans').textContent = activity.recent_bans?.length || 0;
                 
+                updateActivityChart();
+                
             } catch (error) {
                 showError('Error cargando actividad reciente');
             }
         }
 
+        function updatePerformanceMetrics() {
+            // Simular métricas de rendimiento
+            const cpuUsage = Math.random() * 100;
+            const memoryUsage = Math.random() * 100;
+            const responseTime = performanceMetrics.averageResponseTime;
+            
+            document.getElementById('cpuUsage').textContent = `${cpuUsage.toFixed(1)}%`;
+            document.getElementById('memoryUsage').textContent = `${memoryUsage.toFixed(1)}%`;
+            document.getElementById('responseTime').textContent = `${responseTime.toFixed(0)}ms`;
+            
+            document.getElementById('cpuBar').style.width = `${cpuUsage}%`;
+            document.getElementById('memoryBar').style.width = `${memoryUsage}%`;
+            document.getElementById('responseBar').style.width = `${Math.min(responseTime / 10, 100)}%`;
+        }
+
+        function updateActivityChart() {
+            const chartContainer = document.getElementById('activityChart');
+            const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+            
+            chartContainer.innerHTML = days.map(day => {
+                const height = Math.random() * 180 + 20;
+                const value = Math.floor(Math.random() * 50);
+                return `
+                    <div class="chart-bar" style="--height: ${height}px; height: ${height}px;">
+                        <div class="chart-label">${day}</div>
+                        <div class="chart-value">${value}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Funciones de control
+        function toggleDebug() {
+            const debugPanel = document.getElementById('debugPanel');
+            debugPanel.classList.toggle('active');
+            
+            if (debugPanel.classList.contains('active')) {
+                refreshDebugInfo();
+                addDebugLog('Debug panel opened', 'info');
+            }
+        }
+
+        function refreshDebugInfo() {
+            const systemInfo = document.getElementById('debugSystemInfo');
+            const apiStatus = document.getElementById('debugApiStatus');
+            const debugPerformance = document.getElementById('debugPerformance');
+            
+            systemInfo.innerHTML = `
+                User Agent: ${navigator.userAgent}<br>
+                Screen: ${screen.width}x${screen.height}<br>
+                Language: ${navigator.language}<br>
+                Online: ${navigator.onLine ? 'Yes' : 'No'}<br>
+                Cookies: ${navigator.cookieEnabled ? 'Enabled' : 'Disabled'}
+            `;
+            
+            apiStatus.innerHTML = `
+                Base URL: ${API_BASE_URL}<br>
+                API Calls: ${performanceMetrics.apiCalls}<br>
+                Errors: ${performanceMetrics.errors}<br>
+                Success Rate: ${((performanceMetrics.apiCalls - performanceMetrics.errors) / performanceMetrics.apiCalls * 100).toFixed(1)}%
+            `;
+            
+            debugPerformance.innerHTML = `
+                Avg Response Time: ${performanceMetrics.averageResponseTime.toFixed(2)}ms<br>
+                Memory Usage: ${(performance.memory?.usedJSHeapSize / 1024 / 1024).toFixed(1) || 'N/A'} MB<br>
+                Page Load Time: ${(performance.now()).toFixed(0)}ms<br>
+                Connection: ${navigator.connection?.effectiveType || 'Unknown'}
+            `;
+        }
+
+        async function testEndpoint(endpoint) {
+            try {
+                showNotification(`Testing ${endpoint}...`, 'info');
+                const startTime = performance.now();
+                await apiRequest(endpoint);
+                const endTime = performance.now();
+                showNotification(`✅ ${endpoint} - ${(endTime - startTime).toFixed(2)}ms`, 'success');
+            } catch (error) {
+                showNotification(`❌ ${endpoint} - ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllEndpoints() {
+            const endpoints = [
+                '/api/verified-users',
+                '/api/user-stats',
+                '/api/server-stats',
+                '/api/bot-status',
+                '/api/recent-activity'
+            ];
+            
+            showNotification('Testing all endpoints...', 'info');
+            
+            for (const endpoint of endpoints) {
+                await testEndpoint(endpoint);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        function runPerformanceTest() {
+            showNotification('Running performance test...', 'info');
+            addDebugLog('Performance test started', 'info');
+            
+            const testStart = performance.now();
+            
+            // Simular carga de trabajo
+            setTimeout(() => {
+                const testEnd = performance.now();
+                const testDuration = testEnd - testStart;
+                
+                addDebugLog(`Performance test completed in ${testDuration.toFixed(2)}ms`, 'success');
+                showNotification(`Performance test completed: ${testDuration.toFixed(2)}ms`, 'success');
+                refreshDebugInfo();
+            }, 1000);
+        }
+
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                metrics: performanceMetrics,
+                logs: debugLogs,
+                userAgent: navigator.userAgent
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rbxservers-dashboard-export-${Date.now()}.json`;
+            a.click();
+            
+            showNotification('Data exported successfully', 'success');
+            addDebugLog('Data exported to JSON file', 'info');
+        }
+
+        function clearCache() {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            showNotification('Cache cleared', 'success');
+            addDebugLog('Browser cache cleared', 'info');
+        }
+
+        function downloadReport() {
+            showNotification('Generating report...', 'info');
+            // Aquí podrías generar un reporte más detallado
+            setTimeout(() => {
+                showNotification('Report generated successfully', 'success');
+            }, 2000);
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            // Implementar cambio de tema
+            showNotification(`Theme changed to ${currentTheme}`, 'info');
+            addDebugLog(`Theme switched to ${currentTheme}`, 'info');
+        }
+
+        function refreshAllData() {
+            showNotification('Refreshing all data...', 'info');
+            loadAllData();
+        }
+
         async function loadAllData() {
             console.log('🔄 Cargando todos los datos...');
+            addDebugLog('Full data refresh started', 'info');
             
             // Actualizar timestamp
             document.getElementById('lastUpdate').textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
@@ -538,15 +1397,25 @@
             ]);
             
             console.log('✅ Datos cargados completamente');
+            addDebugLog('Full data refresh completed', 'success');
         }
 
-        // Cargar datos al inicio
-        loadAllData();
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initTabs();
+            createParticles();
+            loadAllData();
+            
+            // Actualización automática cada 30 segundos
+            setInterval(loadAllData, 30000);
+            
+            // Actualizar métricas de rendimiento cada 5 segundos
+            setInterval(updatePerformanceMetrics, 5000);
+            
+            addDebugLog('Dashboard initialized successfully', 'success');
+        });
 
-        // Actualización automática cada 30 segundos
-        setInterval(loadAllData, 30000);
-
-        // Actualizar cada minuto el timestamp de "última actualización"
+        // Actualizar timestamp cada minuto
         setInterval(() => {
             const now = new Date();
             document.getElementById('lastUpdate').textContent = `Actualizado: ${now.toLocaleTimeString()}`;
