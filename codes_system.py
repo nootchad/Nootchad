@@ -228,6 +228,20 @@ class CodesSystem:
         self.save_data()
         return True
 
+    def delete_code(self, code: str) -> bool:
+        """Eliminar un código completamente de la base de datos"""
+        code = code.upper().strip()
+        if code not in self.codes:
+            return False
+
+        # Eliminar de codes y codes_usage
+        del self.codes[code]
+        if code in self.codes_usage:
+            del self.codes_usage[code]
+        
+        self.save_data()
+        return True
+
     def get_user_codes(self, creator_id: str) -> list:
         """Obtener códigos creados por un usuario"""
         user_codes = []
@@ -757,6 +771,125 @@ def setup_codes_commands(bot):
         embed.set_footer(text="Sistema de códigos promocionales - RbxServers Bot")
 
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @bot.tree.command(name="eliminar_codigo", description="[OWNER ONLY] Eliminar un código promocional completamente")
+    async def delete_code_command(interaction: discord.Interaction, codigo: str):
+        user_id = str(interaction.user.id)
+
+        # Verificar que solo el owner pueda usar este comando
+        from main import is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Solo el owner del bot puede eliminar códigos.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        # Verificar que el código existe
+        code_info = codes_system.get_code_info(codigo)
+        if not code_info:
+            embed = discord.Embed(
+                title="❌ Código No Encontrado",
+                description=f"El código **{codigo.upper()}** no existe.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+
+        # Verificar que el código le pertenece al usuario
+        if code_info['creator_id'] != user_id:
+            embed = discord.Embed(
+                title="❌ Sin Permisos",
+                description="Solo puedes eliminar códigos que tú creaste.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+
+        # Mostrar información del código antes de eliminar
+        confirm_embed = discord.Embed(
+            title="⚠️ Confirmar Eliminación",
+            description=f"¿Estás seguro de que quieres **ELIMINAR COMPLETAMENTE** el código **{codigo.upper()}**?",
+            color=0xff9900
+        )
+        confirm_embed.add_field(
+            name="📊 Información del Código",
+            value=f"• **Recompensa:** {code_info['reward_amount']} {code_info['reward_type']}\n• **Usos:** {code_info['current_uses']}/{code_info['max_uses']}\n• **Usuarios únicos:** {len(code_info['usage_list'])}",
+            inline=False
+        )
+        confirm_embed.add_field(
+            name="⚠️ ADVERTENCIA",
+            value="Esta acción **NO SE PUEDE DESHACER**. El código y todo su historial de uso se eliminarán permanentemente.",
+            inline=False
+        )
+        confirm_embed.add_field(
+            name="💡 Alternativa",
+            value="Si solo quieres desactivar el código temporalmente, usa `/desactivar_codigo` en su lugar.",
+            inline=False
+        )
+
+        # Crear botones de confirmación
+        class DeleteConfirmView(discord.ui.View):
+            def __init__(self):
+                super().__init__(timeout=60)
+
+            @discord.ui.button(label="✅ Sí, Eliminar", style=discord.ButtonStyle.danger)
+            async def confirm_delete(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                if button_interaction.user.id != interaction.user.id:
+                    await button_interaction.response.send_message("❌ Solo quien ejecutó el comando puede confirmar.", ephemeral=True)
+                    return
+
+                # Eliminar código
+                if codes_system.delete_code(codigo):
+                    success_embed = discord.Embed(
+                        title="🗑️ Código Eliminado Exitosamente",
+                        description=f"El código **{codigo.upper()}** ha sido eliminado completamente de la base de datos.",
+                        color=0x00ff88
+                    )
+                    success_embed.add_field(
+                        name="📊 Información Final",
+                        value=f"• **Código eliminado:** `{codigo.upper()}`\n• **Usos finales:** {code_info['current_uses']}/{code_info['max_uses']}\n• **Usuarios afectados:** {len(code_info['usage_list'])}",
+                        inline=False
+                    )
+                    success_embed.add_field(
+                        name="💾 Base de Datos",
+                        value="Todos los registros del código han sido eliminados permanentemente.",
+                        inline=False
+                    )
+                else:
+                    success_embed = discord.Embed(
+                        title="❌ Error",
+                        description="No se pudo eliminar el código.",
+                        color=0xff0000
+                    )
+
+                await button_interaction.response.edit_message(embed=success_embed, view=None)
+
+            @discord.ui.button(label="❌ Cancelar", style=discord.ButtonStyle.secondary)
+            async def cancel_delete(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                if button_interaction.user.id != interaction.user.id:
+                    await button_interaction.response.send_message("❌ Solo quien ejecutó el comando puede cancelar.", ephemeral=True)
+                    return
+
+                cancel_embed = discord.Embed(
+                    title="🔄 Eliminación Cancelada",
+                    description=f"El código **{codigo.upper()}** no ha sido eliminado.",
+                    color=0xffaa00
+                )
+                cancel_embed.add_field(
+                    name="💡 El código sigue disponible",
+                    value="Puedes gestionarlo con `/ver_codigo` o `/desactivar_codigo`",
+                    inline=False
+                )
+
+                await button_interaction.response.edit_message(embed=cancel_embed, view=None)
+
+        view = DeleteConfirmView()
+        await interaction.followup.send(embed=confirm_embed, view=view, ephemeral=True)
 
     logger.info("🎟️ Comandos de códigos configurados exitosamente")
     return codes_system
