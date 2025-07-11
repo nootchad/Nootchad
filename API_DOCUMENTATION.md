@@ -7,7 +7,7 @@
 **Versión:** 1.0.0  
 **Puerto:** 5000 (automáticamente mapeado a 80/443 en producción)  
 **Creado por:** hesiz  
-**URL Base:** `http://localhost:5000` (desarrollo) | `https://3c1525f4-678e-4a8f-a0f3-6fd818f430a8-00-2l9rwpvizcpst.janeway.replit.dev:5000` (producción)
+**URL Base:** `https://3c1525f4-678e-4a8f-a0f3-6fd818f430a8-00-2l9rwpvizcpst.janeway.replit.dev:5000`
 
 ## 🔗 Endpoints Disponibles
 
@@ -203,16 +203,10 @@ El dashboard será una interfaz web exclusiva para owners que incluirá:
 
 ## 🚀 Cómo Usar la API
 
-### **1. Desarrollo Local**
-```bash
-node api_server.js
-```
-La API estará disponible en `http://localhost:5000`
+### **1. Uso de la API**
+La API se ejecuta automáticamente en Replit y está disponible en tu URL de producción.
 
-### **2. Producción en Replit**
-La API se ejecuta automáticamente y está disponible en tu URL de Replit.
-
-### **3. Ejemplos de Uso**
+### **2. Ejemplos de Uso**
 
 #### JavaScript/Fetch
 ```javascript
