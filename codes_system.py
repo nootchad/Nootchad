@@ -112,30 +112,69 @@ class CodesSystem:
         return code
 
     def redeem_code(self, user_id: str, username: str, code: str) -> dict:
-        """Canjear un código promocional"""
+        """Canjear un código promocional con validación anti-alt"""
         code = code.upper().strip()
+
+        # VALIDACIÓN ANTI-ALT PRIMERO
+        try:
+            from anti_alt_system import anti_alt_system
+            
+            # Validar con sistema anti-alt
+            can_redeem, validation_message = anti_alt_system.validate_code_redemption(user_id, code)
+            if not can_redeem:
+                # Registrar intento fallido
+                anti_alt_system.record_failed_attempt(user_id, validation_message)
+                return {'success': False, 'message': f'🛡️ Anti-Alt: {validation_message}'}
+        except Exception as e:
+            logger.warning(f"Error en validación anti-alt: {e}")
+            # Continuar sin validación anti-alt si hay error
 
         # Verificar que el código existe
         if code not in self.codes:
+            try:
+                from anti_alt_system import anti_alt_system
+                anti_alt_system.record_failed_attempt(user_id, "Código inválido")
+            except:
+                pass
             return {'success': False, 'message': 'Código no válido o no existe'}
 
         code_data = self.codes[code]
 
         # Verificar que el código está activo
         if not code_data['active']:
+            try:
+                from anti_alt_system import anti_alt_system
+                anti_alt_system.record_failed_attempt(user_id, "Código desactivado")
+            except:
+                pass
             return {'success': False, 'message': 'Este código ha sido desactivado'}
 
         # Verificar expiración
         expires_at = datetime.fromisoformat(code_data['expires_at'])
         if datetime.now() > expires_at:
+            try:
+                from anti_alt_system import anti_alt_system
+                anti_alt_system.record_failed_attempt(user_id, "Código expirado")
+            except:
+                pass
             return {'success': False, 'message': 'Este código ha expirado'}
 
         # Verificar usos máximos
         if code_data['current_uses'] >= code_data['max_uses']:
+            try:
+                from anti_alt_system import anti_alt_system
+                anti_alt_system.record_failed_attempt(user_id, "Código agotado")
+            except:
+                pass
             return {'success': False, 'message': 'Este código ha alcanzado el límite de usos'}
 
         # Verificar que el usuario no lo haya usado antes
         if any(usage['user_id'] == user_id for usage in self.codes_usage[code]):
+            try:
+                from anti_alt_system import anti_alt_system
+                anti_alt_system.record_failed_attempt(user_id, "Código ya usado")
+            except:
+                pass
             return {'success': False, 'message': 'Ya has usado este código anteriormente'}
 
         # Registrar uso
@@ -152,6 +191,13 @@ class CodesSystem:
 
         # Guardar cambios inmediatamente
         self.save_data()
+
+        # REGISTRAR CANJE EXITOSO EN SISTEMA ANTI-ALT
+        try:
+            from anti_alt_system import anti_alt_system
+            anti_alt_system.record_successful_redemption(user_id, code)
+        except Exception as e:
+            logger.warning(f"Error registrando canje exitoso en anti-alt: {e}")
 
         logger.info(f"✅ Usuario {username} ({user_id}) canjeó código {code}")
 
