@@ -4622,6 +4622,108 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
         error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:200]}```", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
+@bot.tree.command(name="credits", description="Ver los créditos y reconocimientos del bot RbxServers")
+async def credits_command(interaction: discord.Interaction):
+    """Comando que muestra los créditos del bot con diseño negro y blanco"""
+    try:
+        # Crear embed con colores negro y blanco como la imagen
+        embed = discord.Embed(
+            title="🏆 Créditos de RbxServers",
+            description="**Reconocimiento especial a todas las personas que han contribuido al desarrollo y mejora de este bot.**",
+            color=0x2F3136  # Color gris oscuro/negro de Discord
+        )
+        
+        # Desarrollador principal
+        embed.add_field(
+            name="👑 Desarrollador Principal",
+            value="**hesiz / 991hz**\n*Creador y arquitecto principal del bot*",
+            inline=False
+        )
+        
+        # Co-desarrolladores
+        embed.add_field(
+            name="🤝 Co-desarrolladores",
+            value="**Zenni / 991hz**\n*Desarrollo de funcionalidades avanzadas*",
+            inline=True
+        )
+        
+        # Colaboradores
+        embed.add_field(
+            name="🛠️ Colaboradores",
+            value="**Zenni / 991hz**\n*Soporte técnico y optimizaciones*",
+            inline=True
+        )
+        
+        # Agradecimientos especiales
+        embed.add_field(
+            name="🌟 Agradecimientos Especiales",
+            value="• **Comunidad de Discord** - Por el feedback constante\n• **Beta Testers** - Por encontrar y reportar bugs\n• **Usuarios activos** - Por hacer crecer la comunidad",
+            inline=False
+        )
+        
+        # Tecnologías utilizadas
+        embed.add_field(
+            name="⚙️ Tecnologías",
+            value="• **Python 3.11** - Lenguaje principal\n• **Discord.py** - API de Discord\n• **Selenium** - Web scraping\n• **Replit** - Hosting y desarrollo",
+            inline=True
+        )
+        
+        # Estadísticas del bot
+        embed.add_field(
+            name="📊 Estadísticas",
+            value=f"• **Usuarios verificados:** {len(roblox_verification.verified_users)}\n• **Comandos disponibles:** 49+\n• **Servidores VIP:** Miles de enlaces\n• **Uptime:** 24/7",
+            inline=True
+        )
+        
+        # Información del proyecto
+        embed.add_field(
+            name="📝 Información del Proyecto",
+            value="**RbxServers** es un proyecto de código abierto dedicado a proporcionar acceso fácil y seguro a servidores VIP de Roblox, con funcionalidades avanzadas como verificación automática, marketplace comunitario y mucho más.",
+            inline=False
+        )
+        
+        # Links importantes
+        embed.add_field(
+            name="🔗 Enlaces Importantes",
+            value="• [Servidor de Discord](https://discord.gg/rbxservers)\n• [GitHub Repository](https://github.com/hesiz/rbxservers)\n• [Reportar Bugs](https://discord.gg/rbxservers)",
+            inline=False
+        )
+        
+        # Footer con imagen
+        embed.set_footer(
+            text="Gracias por usar RbxServers • Desarrollado con ❤️ por hesiz y el equipo",
+            icon_url="https://cdn.discordapp.com/attachments/123456789/roblox_logo.png"
+        )
+        
+        # Thumbnail con logo de Discord (blanco)
+        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/123456789/discord_white_logo.png")
+        
+        # Timestamp
+        embed.timestamp = datetime.now()
+        
+        await interaction.response.send_message(embed=embed, ephemeral=False)
+        
+        # Log de uso del comando
+        user_id = str(interaction.user.id)
+        username = f"{interaction.user.name}#{interaction.user.discriminator}"
+        logger.info(f"Usuario {username} (ID: {user_id}) usó comando /credits")
+        
+    except Exception as e:
+        logger.error(f"Error en comando credits: {e}")
+        
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al mostrar los créditos.",
+            color=0xff0000
+        )
+        error_embed.add_field(
+            name="💡 Sugerencia",
+            value="Intenta nuevamente en unos momentos",
+            inline=False
+        )
+        
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
+
 @bot.tree.command(name="executors", description="Obtener enlaces de descarga de ejecutores de Roblox que funcionan actualmente")
 async def executors_command(interaction: discord.Interaction):
     """Comando que proporciona enlaces de descarga de ejecutores de Roblox"""
