@@ -1,11 +1,18 @@
 {
   "shop_items": {
-    "juegos": {},
+    "juegos": {
+      "item_1752216910": {
+        "name": "izan",
+        "cost": 20,
+        "description": "Sin descripci\u00f3n",
+        "stock": 100
+      }
+    },
     "cuentas": {},
     "robux": {},
     "premium": {}
   },
-  "last_updated": "2025-07-08T07:25:52.812753",
+  "last_updated": "2025-07-11T06:55:10.803052",
   "total_categories": 4,
-  "total_items": 0
+  "total_items": 1
 }
