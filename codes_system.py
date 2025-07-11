@@ -118,7 +118,7 @@ class CodesSystem:
         # VALIDACIÓN ANTI-ALT PRIMERO
         try:
             from anti_alt_system import anti_alt_system
-            
+
             # Validar con sistema anti-alt
             can_redeem, validation_message = anti_alt_system.validate_code_redemption(user_id, code)
             if not can_redeem:
@@ -238,7 +238,7 @@ class CodesSystem:
         del self.codes[code]
         if code in self.codes_usage:
             del self.codes_usage[code]
-        
+
         self.save_data()
         return True
 

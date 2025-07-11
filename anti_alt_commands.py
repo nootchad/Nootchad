@@ -255,7 +255,7 @@ def setup_anti_alt_commands(bot):
             target_id = str(usuario.id)
             
             # Actualizar información de cuenta antes de obtener estadísticas
-            anti_alt_system.update_account_info(target_id)
+            anti_alt_system.update_account_info(target_id, usuario)
             
             stats = anti_alt_system.get_user_stats(target_id)
             

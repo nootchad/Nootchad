@@ -550,9 +550,22 @@ class AntiAltSystem:
         """Obtener cantidad de canjes del día"""
         try:
             fingerprint = self.user_fingerprints.get(discord_id, {})
-            # Esta implementación requiere integración con el sistema de códigos
-            # Por ahora retornamos 0, se debe integrar con codes_system.py
-            return 0
+            redeemed_codes = fingerprint.get('redeemed_codes', [])
+            
+            # Contar canjes del día actual
+            today = datetime.now().date()
+            daily_count = 0
+            
+            for code_entry in redeemed_codes:
+                if isinstance(code_entry, dict):
+                    try:
+                        code_timestamp = datetime.fromisoformat(code_entry['timestamp'])
+                        if code_timestamp.date() == today:
+                            daily_count += 1
+                    except:
+                        continue
+            
+            return daily_count
 
         except Exception as e:
             logger.error(f"❌ Error obteniendo canjes diarios: {e}")
@@ -616,10 +629,21 @@ class AntiAltSystem:
             suspicious_count = len(self.suspicious_activities.get(discord_id, []))
             on_cooldown, cooldown_remaining = self.check_cooldown(discord_id, 'code_redeem')
 
+            # Obtener códigos canjeados
+            redeemed_codes = fingerprint.get('redeemed_codes', [])
+            code_names = []
+            
+            # Extraer nombres de códigos canjeados
+            for code_entry in redeemed_codes:
+                if isinstance(code_entry, dict):
+                    code_names.append(code_entry.get('code', 'Unknown'))
+                else:
+                    code_names.append(str(code_entry))
+
             stats = {
                 'discord_id': discord_id,
                 'trust_score': fingerprint.get('trust_score', 100),
-                'risk_level': fingerprint.get('risk_level', 'unknown'),
+                'risk_level': fingerprint.get('risk_level', 'low'),
                 'total_redemptions': fingerprint.get('total_code_redemptions', 0),
                 'failed_attempts': fingerprint.get('failed_attempts', 0),
                 'suspicious_activities_count': suspicious_count,
@@ -628,9 +652,11 @@ class AntiAltSystem:
                 'on_cooldown': on_cooldown,
                 'cooldown_remaining_seconds': cooldown_remaining,
                 'account_age_hours': fingerprint.get('account_age_hours'),
+                'account_created_at': fingerprint.get('account_creation_date'),
                 'flags': fingerprint.get('flags', []),
                 'first_seen': fingerprint.get('first_seen'),
-                'last_activity': fingerprint.get('last_activity')
+                'last_activity': fingerprint.get('last_activity'),
+                'redeemed_codes': code_names
             }
 
             return stats
@@ -730,14 +756,59 @@ class AntiAltSystem:
         except Exception as e:
             logger.error(f"❌ Error en limpieza de datos: {e}")
 
-    def update_account_info(self, discord_id: str):
+    def update_account_info(self, discord_id: str, discord_user=None):
         """Actualizar información de la cuenta del usuario"""
         try:
             if discord_id not in self.user_fingerprints:
-                self.user_fingerprints[discord_id] = self._create_user_fingerprint(discord_id)
+                # Crear fingerprint básico si no existe
+                current_time = datetime.now()
+                
+                fingerprint = {
+                    'discord_id': discord_id,
+                    'discord_username': discord_user.name if discord_user else f"user_{discord_id}",
+                    'roblox_username': None,
+                    'account_creation_date': discord_user.created_at.isoformat() if discord_user else None,
+                    'first_seen': current_time.isoformat(),
+                    'last_activity': current_time.isoformat(),
+                    'total_code_redemptions': 0,
+                    'failed_attempts': 0,
+                    'trust_score': 100,
+                    'risk_level': 'low',
+                    'flags': [],
+                    'redeemed_codes': []
+                }
+                
+                # Calcular edad de cuenta si tenemos la información
+                if discord_user:
+                    account_age_hours = (current_time - discord_user.created_at).total_seconds() / 3600
+                    fingerprint['account_age_hours'] = account_age_hours
+                    
+                    if account_age_hours < self.config['min_account_age_hours']:
+                        fingerprint['flags'].append('new_account')
+                        fingerprint['trust_score'] -= 20
+                        self.log_suspicious_activity(discord_id, 'new_account', 
+                                                   f"Cuenta muy nueva: {account_age_hours:.1f} horas")
+                
+                self.user_fingerprints[discord_id] = fingerprint
+            else:
+                # Actualizar información existente
+                if discord_user:
+                    self.user_fingerprints[discord_id]['discord_username'] = discord_user.name
+                    if not self.user_fingerprints[discord_id].get('account_creation_date'):
+                        self.user_fingerprints[discord_id]['account_creation_date'] = discord_user.created_at.isoformat()
+                        
+                        # Calcular edad de cuenta
+                        current_time = datetime.now()
+                        account_age_hours = (current_time - discord_user.created_at).total_seconds() / 3600
+                        self.user_fingerprints[discord_id]['account_age_hours'] = account_age_hours
 
             # Actualizar última actividad
             self.user_fingerprints[discord_id]['last_activity'] = datetime.now().isoformat()
+            
+            # Recalcular nivel de riesgo
+            self.user_fingerprints[discord_id]['risk_level'] = self._calculate_risk_level(
+                self.user_fingerprints[discord_id]
+            )
 
             logger.info(f"✅ Información de cuenta actualizada para {discord_id}")
 
