@@ -3155,6 +3155,9 @@ images_system = None
 from web_api import setup_web_api
 web_api_system = None
 
+# Anti-alt system commands
+anti_alt_commands = None
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -3321,6 +3324,16 @@ async def on_ready():
         logger.info("🎨 Sistema de generación de imágenes configurado")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de imágenes: {e}")
+
+    # Setup anti-alt system commands
+    global anti_alt_commands
+    try:
+        from anti_alt_commands import setup_anti_alt_commands
+        
+        anti_alt_commands = setup_anti_alt_commands(bot)
+        logger.info("🛡️ Sistema anti-alt configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema anti-alt: {e}")
 
     # Inicializar sistema de monitoreo de usuarios
     try:
