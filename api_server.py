@@ -128,8 +128,8 @@ async def get_general_stats(api_info: dict = Depends(get_api_key_info)):
                 total_games += len(user_games)
         
         # Estadísticas del marketplace
-        marketplace_listings = len(marketplace.listings)
-        total_exchanges = len(marketplace.exchanges)
+        marketplace_listings = len(getattr(marketplace, 'listings', {}))
+        total_exchanges = len(getattr(marketplace, 'exchanges', {}))
         
         # Estadísticas de monedas
         total_users_with_coins = len(coins_system.user_coins) if coins_system else 0
@@ -418,9 +418,10 @@ async def get_user_history(user_id: str, api_info: dict = Depends(get_api_key_in
 async def get_marketplace_listings(api_info: dict = Depends(get_api_key_info)):
     """Obtener todas las listings del marketplace"""
     try:
+        listings = getattr(marketplace, 'listings', {})
         return {
-            "listings": marketplace.listings,
-            "total_listings": len(marketplace.listings)
+            "listings": listings,
+            "total_listings": len(listings)
         }
     except Exception as e:
         logger.error(f"Error getting marketplace listings: {e}")
