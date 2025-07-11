@@ -1525,6 +1525,7 @@
                 document.getElementById('recentBans').textContent = activity.recent_bans?.length || 0;
                 
                 updateActivityChart();
+                updateHourlyChart(); // Actualizar también el gráfico por horas
                 updateCommandDistribution();
                 
             } catch (error) {
@@ -1552,12 +1553,64 @@
             const chartContainer = document.getElementById('activityChart');
             const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
             
-            chartContainer.innerHTML = days.map(day => {
-                const height = Math.random() * 180 + 20;
-                const value = Math.floor(Math.random() * 50);
+            // Simular datos de actividad basados en las verificaciones actuales
+            const totalVerified = parseInt(document.getElementById('totalVerified').textContent) || 0;
+            const recentVerifications = parseInt(document.getElementById('recentVerifications').textContent) || 0;
+            
+            chartContainer.innerHTML = days.map((day, index) => {
+                // Generar actividad más realista basada en datos disponibles
+                const baseActivity = Math.floor(totalVerified / 30); // Actividad base por día
+                const variance = Math.random() * 0.4 + 0.8; // Variación entre 80% y 120%
+                const weekendFactor = (index === 5 || index === 6) ? 0.7 : 1; // Menos actividad en fines de semana
+                
+                const value = Math.max(1, Math.floor(baseActivity * variance * weekendFactor));
+                const maxHeight = 180;
+                const height = Math.min(maxHeight, Math.max(20, (value / Math.max(baseActivity * 1.2, 1)) * maxHeight));
+                
                 return `
                     <div class="chart-bar" style="--height: ${height}px; height: ${height}px;">
                         <div class="chart-label">${day}</div>
+                        <div class="chart-value">${value}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateHourlyChart() {
+            const hourlyChartContainer = document.getElementById('hourlyChart');
+            if (!hourlyChartContainer) return;
+            
+            const hours = [];
+            const currentHour = new Date().getHours();
+            
+            // Generar las últimas 12 horas
+            for (let i = 11; i >= 0; i--) {
+                const hour = (currentHour - i + 24) % 24;
+                hours.push(`${hour.toString().padStart(2, '0')}:00`);
+            }
+            
+            const totalCommands = parseInt(document.getElementById('analyticsCommands').textContent) || 0;
+            const baseActivity = Math.floor(totalCommands / 24); // Actividad base por hora
+            
+            hourlyChartContainer.innerHTML = hours.map((hour, index) => {
+                // Simular patrones de actividad realistas por hora
+                const hourNum = parseInt(hour.split(':')[0]);
+                let activityMultiplier = 1;
+                
+                // Patrones de actividad típicos
+                if (hourNum >= 6 && hourNum <= 9) activityMultiplier = 1.5; // Mañana alta
+                else if (hourNum >= 10 && hourNum <= 14) activityMultiplier = 1.8; // Mediodía muy alta
+                else if (hourNum >= 15 && hourNum <= 18) activityMultiplier = 1.6; // Tarde alta
+                else if (hourNum >= 19 && hourNum <= 22) activityMultiplier = 1.4; // Noche moderada
+                else if (hourNum >= 23 || hourNum <= 5) activityMultiplier = 0.3; // Madrugada baja
+                
+                const variance = Math.random() * 0.4 + 0.8;
+                const value = Math.max(0, Math.floor(baseActivity * activityMultiplier * variance));
+                const height = Math.min(180, Math.max(10, (value / (baseActivity * 2)) * 180));
+                
+                return `
+                    <div class="chart-bar" style="--height: ${height}px; height: ${height}px;">
+                        <div class="chart-label">${hour}</div>
                         <div class="chart-value">${value}</div>
                     </div>
                 `;
@@ -2127,6 +2180,9 @@
                 loadVerifiedUsers(),
                 loadRecentActivity()
             ]);
+            
+            // Actualizar gráficos adicionales
+            updateHourlyChart();
             
             console.log('✅ Datos cargados completamente');
             addDebugLog('Full data refresh completed', 'success');
