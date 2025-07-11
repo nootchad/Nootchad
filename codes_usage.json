@@ -7,9 +7,16 @@
         "redeemed_at": "2025-07-11T19:56:10.458605",
         "reward_type": "normal",
         "reward_amount": 91
+      },
+      {
+        "user_id": "916070251895091241",
+        "username": ".pesopluma",
+        "redeemed_at": "2025-07-11T20:24:52.435559",
+        "reward_type": "normal",
+        "reward_amount": 91
       }
     ]
   },
-  "total_usages": 1,
-  "last_updated": "2025-07-11T19:56:10.459068"
+  "total_usages": 2,
+  "last_updated": "2025-07-11T20:24:52.436166"
 }

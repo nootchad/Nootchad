@@ -3,15 +3,15 @@
   "suspicious_activities": {},
   "username_history": {},
   "cooldowns": {
-    "1318245738349854811": {
+    "916070251895091241": {
       "code_redeem": {
-        "expires_at": "2025-07-11T20:08:10.459515",
+        "expires_at": "2025-07-11T20:36:52.436530",
         "duration_minutes": 12,
-        "set_at": "2025-07-11T19:56:10.459525"
+        "set_at": "2025-07-11T20:24:52.436540"
       }
     }
   },
-  "last_updated": "2025-07-11T19:56:10.459607",
+  "last_updated": "2025-07-11T20:24:52.436739",
   "config": {
     "min_account_age_hours": 24,
     "username_similarity_threshold": 0.8,
