@@ -87,13 +87,14 @@ class RobloxRemoteControl:
     def __init__(self):
         self.active_commands = {}  # Comandos pendientes para el script de Roblox
         self.connected_scripts = {}  # Scripts conectados
-        self.app = None
+        self.app = web.Application()  # Inicializar la aplicación inmediatamente
         self.runner = None
         self.site = None
         
     async def start_web_server(self):
         """Iniciar servidor web para comunicación con Roblox"""
-        self.app = web.Application()
+        if not self.app:
+            self.app = web.Application()
         
         # Ruta raíz para información del bot
         self.app.router.add_get('/', self.handle_root)
@@ -115,7 +116,12 @@ class RobloxRemoteControl:
             self.site = web.TCPSite(self.runner, '0.0.0.0', REMOTE_CONTROL_PORT)
             await self.site.start()
             logger.info(f"🌐 Remote control server started on 0.0.0.0:{REMOTE_CONTROL_PORT}")
-            logger.info(f"🔗 Server accessible at: https://{os.getenv('REPL_SLUG', 'unknown')}-{os.getenv('REPL_OWNER', 'unknown')}.replit.dev")
+            
+            # Obtener la URL pública del Repl
+            repl_url = f"https://{os.getenv('REPL_SLUG', 'workspace')}-{os.getenv('REPL_OWNER', 'paysencharlee')}.replit.dev"
+            logger.info(f"🔗 Server accessible at: {repl_url}")
+            logger.info(f"🌐 API endpoints available at: {repl_url}/api/")
+            logger.info(f"🔑 Use API key: {WEBHOOK_SECRET}")
         except Exception as e:
             logger.error(f"❌ Failed to start remote control server: {e}")
     
@@ -3262,13 +3268,13 @@ async def on_ready():
     
     # Inicializar servidor web para control remoto
     try:
-        await remote_control.start_web_server()
-        logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
-        
-        # Configurar API web para acceso externo
+        # Configurar API web ANTES de iniciar el servidor
         global web_api_system
         web_api_system = setup_web_api(remote_control.app, roblox_verification, scraper, remote_control)
         logger.info("🌐 API web configurada para acceso externo desde páginas web")
+        
+        await remote_control.start_web_server()
+        logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
         
     except Exception as e:
         logger.error(f"❌ Error al inicializar control remoto: {e}")

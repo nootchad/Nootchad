@@ -21,6 +21,7 @@ class WebAPI:
         """Configurar rutas de la API web"""
         
         # Middleware de CORS para permitir acceso desde tu página web
+        @web.middleware
         async def cors_middleware(request, handler):
             response = await handler(request)
             response.headers['Access-Control-Allow-Origin'] = '*'
@@ -28,7 +29,9 @@ class WebAPI:
             response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
             return response
         
-        app.middlewares.append(cors_middleware)
+        # Solo agregar middleware si no existe
+        if cors_middleware not in app.middlewares:
+            app.middlewares.append(cors_middleware)
         
         # Rutas para tu página web
         app.router.add_get('/api/verified-users', self.get_verified_users)
