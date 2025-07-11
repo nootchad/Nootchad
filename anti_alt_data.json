@@ -1,0 +1,25 @@
+{
+  "user_fingerprints": {},
+  "suspicious_activities": {},
+  "username_history": {},
+  "cooldowns": {
+    "1318245738349854811": {
+      "code_redeem": {
+        "expires_at": "2025-07-11T20:08:10.459515",
+        "duration_minutes": 12,
+        "set_at": "2025-07-11T19:56:10.459525"
+      }
+    }
+  },
+  "last_updated": "2025-07-11T19:56:10.459607",
+  "config": {
+    "min_account_age_hours": 24,
+    "username_similarity_threshold": 0.8,
+    "max_codes_per_day": 3,
+    "cooldown_base_minutes": 15,
+    "cooldown_multiplier": 2,
+    "max_cooldown_hours": 24,
+    "suspicious_threshold": 5,
+    "similar_username_penalty_hours": 2
+  }
+}

@@ -4,20 +4,30 @@
       "games": {
         "109983668079237": {
           "server_links": [
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664",
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=35262088656276182478237464796838",
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=59892533253337769407724469730381",
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=46459343194242645481010059315566",
-            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=95408721173933070695596419366291",
-            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60833260294073792563456328119459"
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=95408721173933070695596419366291"
           ],
           "game_name": "[\ud83c\udf6c] Steal a Brainrot - RBXServers",
           "game_image_url": "https://rbxservers.xyz/svgs/roblox.svg",
           "category": "puzzle",
           "server_details": {
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664": {
+              "source_url": "https://rbxservers.xyz/servers/0e3914ae-5719-4594-a5c6-70ed9d0d3219",
+              "discovered_at": "2025-07-11T19:54:34.376985",
+              "extraction_time": 16.48,
+              "server_info": {
+                "page_title": "[\ud83c\udf6c] Steal a Brainrot - chill (steal = ban) - RBXServers",
+                "server_id": "0e3914ae-5719-4594-a5c6-70ed9d0d3219"
+              },
+              "cookies_used": true
+            },
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=35262088656276182478237464796838": {
               "source_url": "https://rbxservers.xyz/servers/183b07e8-23a9-4b0a-902b-a61e547b43fe",
-              "discovered_at": "2025-07-11T19:48:07.369143",
-              "extraction_time": 15.74,
+              "discovered_at": "2025-07-11T19:54:51.411203",
+              "extraction_time": 17.03,
               "server_info": {
                 "page_title": "[\ud83c\udf6c] Steal a Brainrot - Unnamed Server 5274 - RBXServers",
                 "server_id": "183b07e8-23a9-4b0a-902b-a61e547b43fe"
@@ -26,8 +36,8 @@
             },
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=59892533253337769407724469730381": {
               "source_url": "https://rbxservers.xyz/servers/51e2115c-a65f-401b-a9a8-aabcbec72a68",
-              "discovered_at": "2025-07-11T19:48:26.162463",
-              "extraction_time": 18.79,
+              "discovered_at": "2025-07-11T19:55:07.565408",
+              "extraction_time": 16.15,
               "server_info": {
                 "page_title": "[\ud83c\udf6c] Steal a Brainrot - TOP AFK SERVER 4X LUCK - RBXServers",
                 "server_id": "51e2115c-a65f-401b-a9a8-aabcbec72a68"
@@ -36,8 +46,8 @@
             },
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=46459343194242645481010059315566": {
               "source_url": "https://rbxservers.xyz/servers/94655bb8-514d-40d2-be3c-34753cd5e2ab",
-              "discovered_at": "2025-07-11T19:48:42.401844",
-              "extraction_time": 16.24,
+              "discovered_at": "2025-07-11T19:55:25.436363",
+              "extraction_time": 17.87,
               "server_info": {
                 "page_title": "[\ud83c\udf6c] Steal a Brainrot - [RITUALS] EVENTS | JOIN NOW - RBXServers",
                 "server_id": "94655bb8-514d-40d2-be3c-34753cd5e2ab"
@@ -46,21 +56,11 @@
             },
             "https://www.roblox.com/games/109983668079237?privateServerLinkCode=95408721173933070695596419366291": {
               "source_url": "https://rbxservers.xyz/servers/75dbea82-fffa-4ed4-854a-53e079eb84f5",
-              "discovered_at": "2025-07-11T19:48:55.541669",
-              "extraction_time": 13.14,
+              "discovered_at": "2025-07-11T19:55:42.821914",
+              "extraction_time": 17.39,
               "server_info": {
                 "page_title": "[\ud83c\udf6c] Steal a Brainrot - Unnamed Server 4234 - RBXServers",
                 "server_id": "75dbea82-fffa-4ed4-854a-53e079eb84f5"
-              },
-              "cookies_used": true
-            },
-            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60833260294073792563456328119459": {
-              "source_url": "https://rbxservers.xyz/servers/c52d053a-f4b7-4706-a010-ba946061d43f",
-              "discovered_at": "2025-07-11T19:49:11.159299",
-              "extraction_time": 15.62,
-              "server_info": {
-                "page_title": "[\ud83c\udf6c] Steal a Brainrot - 4x luck no steal - RBXServers",
-                "server_id": "c52d053a-f4b7-4706-a010-ba946061d43f"
               },
               "cookies_used": true
             }
@@ -72,7 +72,114 @@
           "game_id": "109983668079237",
           "server_link": "Found 5 servers",
           "action": "scrape_complete",
-          "timestamp": "2025-07-11T19:49:14.883181",
+          "timestamp": "2025-07-11T19:55:45.075766",
+          "game_name": "[\ud83c\udf6c] Steal a Brainrot - RBXServers"
+        },
+        {
+          "game_id": "109983668079237",
+          "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=35262088656276182478237464796838",
+          "action": "navigate_next",
+          "timestamp": "2025-07-11T19:56:18.923094",
+          "game_name": "[\ud83c\udf6c] Steal a Brainrot - RBXServers"
+        },
+        {
+          "game_id": "109983668079237",
+          "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=59892533253337769407724469730381",
+          "action": "navigate_next",
+          "timestamp": "2025-07-11T19:56:44.010103",
+          "game_name": "[\ud83c\udf6c] Steal a Brainrot - RBXServers"
+        },
+        {
+          "game_id": "109983668079237",
+          "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=46459343194242645481010059315566",
+          "action": "navigate_next",
+          "timestamp": "2025-07-11T19:57:26.613180",
+          "game_name": "[\ud83c\udf6c] Steal a Brainrot - RBXServers"
+        },
+        {
+          "game_id": "109983668079237",
+          "server_link": "https://www.roblox.com/games/109983668079237?privateServerLinkCode=95408721173933070695596419366291",
+          "action": "navigate_next",
+          "timestamp": "2025-07-11T19:58:15.857992",
+          "game_name": "[\ud83c\udf6c] Steal a Brainrot - RBXServers"
+        }
+      ],
+      "favorites": [],
+      "reserved_servers": []
+    },
+    "1198736895002284103": {
+      "games": {
+        "109983668079237": {
+          "server_links": [
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=30132609262122534248783988896491",
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664",
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=35262088656276182478237464796838",
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=59892533253337769407724469730381",
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=46459343194242645481010059315566"
+          ],
+          "game_name": "[\ud83c\udf6c] Steal a Brainrot - RBXServers",
+          "game_image_url": "https://rbxservers.xyz/svgs/roblox.svg",
+          "category": "puzzle",
+          "server_details": {
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=30132609262122534248783988896491": {
+              "source_url": "https://rbxservers.xyz/servers/f7948eb0-bc87-4856-bd90-e4a0ea0d93a0",
+              "discovered_at": "2025-07-11T20:07:12.319436",
+              "extraction_time": 16.0,
+              "server_info": {
+                "page_title": "[\ud83c\udf6c] Steal a Brainrot - 4X Luck - No stealing - RBXServers",
+                "server_id": "f7948eb0-bc87-4856-bd90-e4a0ea0d93a0"
+              },
+              "cookies_used": true
+            },
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664": {
+              "source_url": "https://rbxservers.xyz/servers/0e3914ae-5719-4594-a5c6-70ed9d0d3219",
+              "discovered_at": "2025-07-11T20:07:28.181372",
+              "extraction_time": 15.86,
+              "server_info": {
+                "page_title": "[\ud83c\udf6c] Steal a Brainrot - chill (steal = ban) - RBXServers",
+                "server_id": "0e3914ae-5719-4594-a5c6-70ed9d0d3219"
+              },
+              "cookies_used": true
+            },
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=35262088656276182478237464796838": {
+              "source_url": "https://rbxservers.xyz/servers/183b07e8-23a9-4b0a-902b-a61e547b43fe",
+              "discovered_at": "2025-07-11T20:07:44.843584",
+              "extraction_time": 16.66,
+              "server_info": {
+                "page_title": "[\ud83c\udf6c] Steal a Brainrot - Unnamed Server 5274 - RBXServers",
+                "server_id": "183b07e8-23a9-4b0a-902b-a61e547b43fe"
+              },
+              "cookies_used": true
+            },
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=59892533253337769407724469730381": {
+              "source_url": "https://rbxservers.xyz/servers/51e2115c-a65f-401b-a9a8-aabcbec72a68",
+              "discovered_at": "2025-07-11T20:07:59.907880",
+              "extraction_time": 15.06,
+              "server_info": {
+                "page_title": "[\ud83c\udf6c] Steal a Brainrot - TOP AFK SERVER 4X LUCK - RBXServers",
+                "server_id": "51e2115c-a65f-401b-a9a8-aabcbec72a68"
+              },
+              "cookies_used": true
+            },
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=46459343194242645481010059315566": {
+              "source_url": "https://rbxservers.xyz/servers/94655bb8-514d-40d2-be3c-34753cd5e2ab",
+              "discovered_at": "2025-07-11T20:08:13.547655",
+              "extraction_time": 13.64,
+              "server_info": {
+                "page_title": "[\ud83c\udf6c] Steal a Brainrot - [RITUALS] EVENTS | JOIN NOW - RBXServers",
+                "server_id": "94655bb8-514d-40d2-be3c-34753cd5e2ab"
+              },
+              "cookies_used": true
+            }
+          }
+        }
+      },
+      "usage_history": [
+        {
+          "game_id": "109983668079237",
+          "server_link": "Found 5 servers",
+          "action": "scrape_complete",
+          "timestamp": "2025-07-11T20:08:13.967219",
           "game_name": "[\ud83c\udf6c] Steal a Brainrot - RBXServers"
         }
       ],
@@ -81,9 +188,9 @@
     }
   },
   "metadata": {
-    "created_at": "2025-07-11T19:49:14.883522",
-    "last_updated": "2025-07-11T19:49:14.883527",
-    "total_users": 1,
-    "total_servers": 5
+    "created_at": "2025-07-11T20:08:13.967702",
+    "last_updated": "2025-07-11T20:08:13.967706",
+    "total_users": 2,
+    "total_servers": 10
   }
 }
