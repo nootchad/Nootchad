@@ -4664,7 +4664,7 @@ async def credits_command(interaction: discord.Interaction):
         # Tecnologías utilizadas
         embed.add_field(
             name="⚙️ Tecnologías",
-            value="• **Python 3.11** - Lenguaje principal\n• **Discord.py** - API de Discord\n• **Selenium** - Web scraping\n• **Replit** - Hosting y desarrollo",
+            value="• **Python 3.11** - Lenguaje principal\n• **Discord.py** - API de Discord\n• **Selenium** - Web scraping\n• **PC DE HESIZ X)** - Hosting y desarrollo",
             inline=True
         )
         
