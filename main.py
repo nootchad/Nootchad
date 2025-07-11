@@ -4630,7 +4630,7 @@ async def credits_command(interaction: discord.Interaction):
         embed = discord.Embed(
             title="🏆 Créditos de RbxServers",
             description="**Reconocimiento especial a todas las personas que han contribuido al desarrollo y mejora de este bot.**",
-            color=0x2F3136  # Color gris oscuro/negro de Discord
+            color=0x000000  # Color negro
         )
         
         # Desarrollador principal
@@ -4664,44 +4664,56 @@ async def credits_command(interaction: discord.Interaction):
         # Tecnologías utilizadas
         embed.add_field(
             name="⚙️ Tecnologías",
-            value="• **Python 3.11** - Lenguaje principal\n• **Discord.py** - API de Discord\n• **Selenium** - Web scraping\n• **PC DE HESIZ X)** - Hosting y desarrollo",
+            value="• **Python 3.11** - Lenguaje principal\n• **Discord.py** - API de Discord\n• **Selenium** - Web scraping\n• **Replit** - Hosting y desarrollo",
             inline=True
         )
         
         # Estadísticas del bot
         embed.add_field(
             name="📊 Estadísticas",
-            value=f"• **Usuarios verificados:** {len(roblox_verification.verified_users)}\n• **Comandos disponibles:** 49+\n• **Servidores VIP:** Miles de enlaces\n• **Uptime:** 24/7",
+            value=f"• **Usuarios verificados:** {len(roblox_verification.verified_users)}\n• **Comandos disponibles:** 50+\n• **Servidores VIP:** Miles de enlaces\n• **Uptime:** 24/7",
             inline=True
         )
         
         # Información del proyecto
         embed.add_field(
             name="📝 Información del Proyecto",
-            value="**RbxServers** es un proyecto de código abierto dedicado a proporcionar acceso fácil y seguro a servidores VIP de Roblox, con funcionalidades avanzadas como verificación automática, marketplace comunitario y mucho más.",
+            value="**RbxServers** es un proyecto privado dedicado a proporcionar acceso fácil y seguro a servidores VIP de Roblox, con funcionalidades avanzadas como verificación automática, marketplace comunitario y mucho más.",
             inline=False
         )
         
         # Links importantes
         embed.add_field(
             name="🔗 Enlaces Importantes",
-            value="• [Servidor de Discord](https://discord.gg/rbxservers)\n• [GitHub Repository](https://github.com/hesiz/rbxservers)\n• [Reportar Bugs](https://discord.gg/rbxservers)",
+            value="• [Servidor de Discord](https://discord.gg/rbxservers)\n• [Reportar Bugs](https://discord.gg/rbxservers)\n• [Soporte Técnico](https://discord.gg/rbxservers)",
             inline=False
         )
         
-        # Footer con imagen
-        embed.set_footer(
-            text="Gracias por usar RbxServers • Desarrollado con ❤️ por hesiz y el equipo",
-            icon_url="https://cdn.discordapp.com/attachments/123456789/roblox_logo.png"
-        )
-        
-        # Thumbnail con logo de Discord (blanco)
-        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/123456789/discord_white_logo.png")
-        
-        # Timestamp
-        embed.timestamp = datetime.now()
-        
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+        # Adjuntar la imagen local
+        image_path = "attached_assets/file_00000000d4106230a76257f9ac820208_1752202711399.png"
+        try:
+            file = discord.File(image_path, filename="rbxservers_credits.png")
+            embed.set_image(url="attachment://rbxservers_credits.png")
+            
+            # Footer
+            embed.set_footer(
+                text="Gracias por usar RbxServers • Desarrollado con ❤️ por hesiz y el equipo"
+            )
+            
+            # Timestamp
+            embed.timestamp = datetime.now()
+            
+            await interaction.response.send_message(embed=embed, file=file, ephemeral=False)
+            
+        except FileNotFoundError:
+            logger.warning("⚠️ Imagen de créditos no encontrada en attached_assets")
+            # Footer sin imagen
+            embed.set_footer(
+                text="Gracias por usar RbxServers • Desarrollado con ❤️ por hesiz y el equipo"
+            )
+            embed.timestamp = datetime.now()
+            
+            await interaction.response.send_message(embed=embed, ephemeral=False)
         
         # Log de uso del comando
         user_id = str(interaction.user.id)
