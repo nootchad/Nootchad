@@ -1,4 +1,3 @@
-
 import discord
 from discord.ext import commands
 import json
@@ -115,7 +114,7 @@ class CodesSystem:
     def redeem_code(self, user_id: str, username: str, code: str) -> dict:
         """Canjear un código promocional"""
         code = code.upper().strip()
-        
+
         # Verificar que el código existe
         if code not in self.codes:
             return {'success': False, 'message': 'Código no válido o no existe'}
@@ -191,7 +190,7 @@ class CodesSystem:
                 code_info = data.copy()
                 code_info['usage_count'] = len(self.codes_usage.get(code, []))
                 user_codes.append(code_info)
-        
+
         # Ordenar por fecha de creación (más recientes primero)
         user_codes.sort(key=lambda x: x['created_at'], reverse=True)
         return user_codes
@@ -270,127 +269,16 @@ def setup_codes_commands(bot):
                 inline=True
             )
             embed.add_field(
-                name="👤 Creador",
-                value=result.get('creator_name', 'Desconocido'),
-                inline=True
-            )
-            embed.add_field(
-                name="📝 Descripción",
-                value=result.get('description', 'Sin descripción'),
-                inline=False
-            )
-            
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            
-        else:
-            # Error al canjear
-            embed = discord.Embed(
-                title="❌ Error al Canjear",
-                description=result['message'],
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @bot.tree.command(name="crear_codigo", description="[OWNER ONLY] Crear un nuevo código promocional")
-    async def create_code_command(interaction: discord.Interaction, 
-                                 nombre: str, 
-                                 recompensa_tipo: str, 
-                                 recompensa_cantidad: int,
-                                 descripcion: str = "Código promocional",
-                                 usos_maximos: int = 100,
-                                 duracion_horas: int = 168):
-        user_id = str(interaction.user.id)
-
-        # Verificar que solo el owner pueda usar este comando
-        from main import is_owner_or_delegated
-        if not is_owner_or_delegated(user_id):
-            embed = discord.Embed(
-                title="❌ Acceso Denegado",
-                description="Solo el owner del bot puede crear códigos promocionales.",
-                color=0xff0000
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        # Validar parámetros
-        if recompensa_tipo not in ['coins', 'premium']:
-            embed = discord.Embed(
-                title="❌ Tipo de Recompensa Inválido",
-                description="El tipo de recompensa debe ser 'coins' o 'premium'.",
-                color=0xff0000
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        if recompensa_cantidad <= 0 or recompensa_cantidad > 10000:
-            embed = discord.Embed(
-                title="❌ Cantidad Inválida",
-                description="La cantidad debe estar entre 1 y 10,000.",
-                color=0xff0000
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        await interaction.response.defer(ephemeral=True)
-
-        # Crear código
-        result = codes_system.create_code(
-            code_name=nombre,
-            creator_id=user_id,
-            creator_name=interaction.user.name,
-            reward_type=recompensa_tipo,
-            reward_amount=recompensa_cantidad,
-            description=descripcion,
-            max_uses=usos_maximos,
-            duration_hours=duracion_horas
-        )
-
-        if result['success']:
-            embed = discord.Embed(
-                title="✅ Código Creado",
-                description=f"El código **{nombre}** ha sido creado exitosamente.",
-                color=0x00ff88
-            )
-            embed.add_field(name="🎟️ Código", value=f"`{nombre}`", inline=True)
-            embed.add_field(name="🎁 Recompensa", value=f"{recompensa_cantidad} {recompensa_tipo}", inline=True)
-            embed.add_field(name="👥 Usos Máximos", value=f"{usos_maximos}", inline=True)
-            embed.add_field(name="⏰ Duración", value=f"{duracion_horas} horas", inline=True)
-            embed.add_field(name="📝 Descripción", value=descripcion, inline=False)
-            embed.add_field(
-                name="💡 Para Canjear",
-                value="Los usuarios pueden usar `/canjear " + nombre + "`",
-                inline=False
-            )
-        else:
-            embed = discord.Embed(
-                title="❌ Error al Crear Código",
-                description=result['message'],
-                color=0xff0000
-            )
-
-        await interaction.followup.send(embed=embed, ephemeral=True)
-
-    logger.info("🎟️ Comandos de códigos configurados exitosamente")
-    return codes_system
-                coins_sys.add_coins(user_id, result['reward_amount'], f"Código promocional: {codigo}")
-
-            embed = discord.Embed(
-                title="🎉 ¡Código Canjeado!",
-                description=result['message'],
-                color=0x00ff88
-            )
-            embed.add_field(
-                name="🎁 Recompensa",
-                value=f"{result['reward_amount']} {result['reward_type']}",
-                inline=True
-            )
-            embed.add_field(
                 name="🎫 Código",
                 value=codigo.upper(),
                 inline=True
             )
             embed.set_footer(text=f"Canjeado por {username}")
+
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
         else:
+            # Error al canjear
             embed = discord.Embed(
                 title="❌ Error al Canjear",
                 description=result['message'],
@@ -401,8 +289,7 @@ def setup_codes_commands(bot):
                 value=codigo.upper(),
                 inline=True
             )
-
-        await interaction.followup.send(embed=embed, ephemeral=True)
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
     @bot.tree.command(name="crear_codigo", description="[OWNER ONLY] Crear un nuevo código promocional")
     async def create_code_command(interaction: discord.Interaction, 
@@ -466,7 +353,7 @@ def setup_codes_commands(bot):
 
         if created_code:
             expires_date = datetime.now() + timedelta(hours=expira_en_horas)
-            
+
             embed = discord.Embed(
                 title="✅ Código Creado",
                 description=f"El código promocional **{created_code}** ha sido creado exitosamente.",
@@ -520,7 +407,7 @@ def setup_codes_commands(bot):
         created_date = datetime.fromisoformat(code_info['created_at'])
         expires_date = datetime.fromisoformat(code_info['expires_at'])
         is_expired = datetime.now() > expires_date
-        
+
         status = "🟢 Activo"
         if not code_info['active']:
             status = "🔴 Desactivado"
@@ -538,7 +425,7 @@ def setup_codes_commands(bot):
         embed.add_field(name="📊 Estado", value=status, inline=True)
         embed.add_field(name="🎁 Recompensa", value=f"{code_info['reward_amount']} {code_info['reward_type']}", inline=True)
         embed.add_field(name="👥 Usos", value=f"{code_info['current_uses']}/{code_info['max_uses']}", inline=True)
-        
+
         embed.add_field(name="📅 Creado", value=created_date.strftime("%Y-%m-%d %H:%M"), inline=True)
         embed.add_field(name="⏰ Expira", value=expires_date.strftime("%Y-%m-%d %H:%M"), inline=True)
         embed.add_field(name="👑 Creador", value=f"<@{code_info['creator_id']}>", inline=True)
@@ -550,7 +437,7 @@ def setup_codes_commands(bot):
             for i, usage in enumerate(usage_list[:10]):  # Mostrar máximo 10
                 used_date = datetime.fromisoformat(usage['redeemed_at'])
                 users_text.append(f"{i+1}. **{usage['username']}** - {used_date.strftime('%Y-%m-%d %H:%M')}")
-            
+
             embed.add_field(
                 name=f"📋 Usuarios que Canjearon ({len(usage_list)} total)",
                 value="\n".join(users_text) + (f"\n... y {len(usage_list) - 10} más" if len(usage_list) > 10 else ""),
@@ -615,7 +502,7 @@ def setup_codes_commands(bot):
             created_date = datetime.fromisoformat(code_data['created_at'])
             expires_date = datetime.fromisoformat(code_data['expires_at'])
             is_expired = datetime.now() > expires_date
-            
+
             status = "🟢"
             if not code_data['active']:
                 status = "🔴"
@@ -807,7 +694,7 @@ def setup_codes_commands(bot):
             popular_text = []
             for i, (code, uses, reward, reward_type) in enumerate(popular_codes[:5]):
                 popular_text.append(f"{i+1}. **{code}** - {uses} usos ({reward} {reward_type})")
-            
+
             embed.add_field(
                 name="🏆 Códigos Más Populares",
                 value="\n".join(popular_text),
@@ -825,4 +712,5 @@ def setup_codes_commands(bot):
 
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+    logger.info("🎟️ Comandos de códigos configurados exitosamente")
     return codes_system
