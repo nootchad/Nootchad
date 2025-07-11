@@ -72,6 +72,7 @@ app.get('/', (req, res) => {
         version: "1.0.0",
         description: "API para obtener información del bot RbxServers",
         endpoints: {
+            "/all": "🚀 TODOS los datos del bot (para scripts externos)",
             "/stats": "Estadísticas generales del bot",
             "/users": "Lista de usuarios verificados",
             "/users/:id": "Información específica de un usuario",
@@ -87,6 +88,179 @@ app.get('/', (req, res) => {
         created_by: "hesiz",
         bot_name: "RbxServers"
     });
+});
+
+// ENDPOINT COMPLETO - TODOS LOS DATOS (para scripts externos como Roblox)
+app.get('/all', (req, res) => {
+    try {
+        console.log('🚀 Petición para TODOS los datos recibida');
+        
+        // Cargar todos los archivos
+        const followers = readJSONFile('followers.json');
+        const coins = readJSONFile('user_coins.json');
+        const bans = readJSONFile('bans.json');
+        const warnings = readJSONFile('warnings.json');
+        const delegated = readJSONFile('delegated_owners.json');
+        const serversData = readJSONFile('users_servers.json');
+        const marketplace = readJSONFile('marketplace.json');
+        const exchanges = readJSONFile('exchanges.json');
+        const alerts = readJSONFile('user_alerts.json');
+        const startup = readJSONFile('startup_alerts.json');
+        const shopItems = readJSONFile('shop_items.json');
+        const vipLinks = readJSONFile('vip_links.json');
+        const maintenanceData = readJSONFile('maintenance_data.json');
+        const robloxCookies = readJSONFile('roblox_cookies.json');
+        
+        // Procesar usuarios verificados con información completa
+        const allUsers = Object.entries(followers.verified_users || {}).map(([discordId, userData]) => {
+            const userCoins = coins.user_coins?.[discordId] || {};
+            const userServers = serversData.users?.[discordId] || {};
+            const userBanned = !!bans.banned_users?.[discordId];
+            const userWarnings = warnings.warnings?.[discordId] || 0;
+            const userMonitored = alerts.monitored_users?.[discordId] || null;
+            
+            const totalServers = Object.values(userServers.games || {}).reduce((acc, game) => {
+                return acc + (game.server_links || []).length;
+            }, 0);
+            
+            return {
+                discord_id: discordId,
+                roblox_username: userData.roblox_username,
+                verification: {
+                    verified_at: userData.verified_at,
+                    verification_code: userData.verification_code,
+                    is_verified: true
+                },
+                status: {
+                    is_banned: userBanned,
+                    ban_time: bans.banned_users?.[discordId] || null,
+                    warning_count: userWarnings,
+                    is_monitored: !!userMonitored
+                },
+                economy: {
+                    balance: userCoins.balance || 0,
+                    total_earned: userCoins.total_earned || 0,
+                    total_transactions: (userCoins.transactions || []).length,
+                    transactions: userCoins.transactions || []
+                },
+                servers: {
+                    total_games: Object.keys(userServers.games || {}).length,
+                    total_servers: totalServers,
+                    games: userServers.games || {},
+                    usage_history: userServers.usage_history || [],
+                    favorites: userServers.favorites || [],
+                    reserved_servers: userServers.reserved_servers || []
+                },
+                monitoring: userMonitored
+            };
+        });
+        
+        // Procesar todos los servidores VIP por juego
+        const allServers = {};
+        const gameCategories = {};
+        Object.entries(serversData.users || {}).forEach(([userId, userData]) => {
+            Object.entries(userData.games || {}).forEach(([gameId, gameData]) => {
+                if (!allServers[gameId]) {
+                    allServers[gameId] = {
+                        game_id: gameId,
+                        game_name: gameData.game_name,
+                        category: gameData.category,
+                        game_image_url: gameData.game_image_url,
+                        total_servers: 0,
+                        users_with_servers: 0,
+                        all_servers: []
+                    };
+                    gameCategories[gameId] = gameData.category;
+                }
+                
+                allServers[gameId].total_servers += (gameData.server_links || []).length;
+                allServers[gameId].users_with_servers += 1;
+                
+                (gameData.server_links || []).forEach(link => {
+                    allServers[gameId].all_servers.push({
+                        user_id: userId,
+                        server_link: link,
+                        details: gameData.server_details?.[link] || null
+                    });
+                });
+            });
+        });
+        
+        // Estadísticas generales
+        const stats = getGeneralStats();
+        
+        // Respuesta completa con TODOS los datos
+        const completeData = {
+            success: true,
+            bot_info: {
+                name: "RbxServers",
+                version: "1.0.0",
+                created_by: "hesiz",
+                last_updated: new Date().toISOString(),
+                total_data_size: "All available data included"
+            },
+            statistics: stats,
+            users: {
+                total_count: allUsers.length,
+                all_users: allUsers
+            },
+            servers: {
+                by_game: allServers,
+                categories: gameCategories,
+                total_games: Object.keys(allServers).length,
+                total_servers: Object.values(allServers).reduce((acc, game) => acc + game.total_servers, 0)
+            },
+            economy: {
+                coins_system: {
+                    all_users: coins.user_coins || {},
+                    shop_items: shopItems.shop_items || {},
+                    total_circulation: Object.values(coins.user_coins || {}).reduce((acc, user) => acc + (user.balance || 0), 0)
+                },
+                marketplace: {
+                    listings: marketplace.listings || [],
+                    exchanges: exchanges.exchanges || [],
+                    total_listings: Object.keys(marketplace.listings || {}).length
+                }
+            },
+            moderation: {
+                banned_users: Object.entries(bans.banned_users || {}).map(([userId, banTime]) => ({
+                    discord_id: userId,
+                    banned_at: banTime,
+                    expires_at: banTime + (7 * 24 * 60 * 60),
+                    is_active: (Date.now() / 1000) < (banTime + (7 * 24 * 60 * 60))
+                })),
+                warnings: warnings.warnings || {},
+                delegated_owners: delegated.delegated_owners || []
+            },
+            monitoring: {
+                user_alerts: alerts.monitored_users || {},
+                user_states: alerts.user_states || {},
+                startup_subscribers: startup.subscribed_users || []
+            },
+            system: {
+                maintenance: maintenanceData || {},
+                vip_links_stats: vipLinks || {},
+                roblox_cookies_count: Object.keys(robloxCookies.cookies || {}).length
+            },
+            metadata: {
+                generated_at: new Date().toISOString(),
+                data_freshness: "Real-time",
+                api_version: "1.0.0",
+                total_endpoints_included: 12
+            }
+        };
+        
+        console.log(`✅ Enviando ${JSON.stringify(completeData).length} bytes de datos completos`);
+        res.json(completeData);
+        
+    } catch (error) {
+        console.error('❌ Error generando datos completos:', error);
+        res.status(500).json({
+            success: false,
+            error: "Error obteniendo datos completos",
+            message: error.message
+        });
+    }
 });
 
 // Estadísticas generales
