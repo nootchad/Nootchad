@@ -3209,6 +3209,10 @@ coins_system = None
 # Import images system
 images_system = None
 
+# Import web API system
+from web_api import setup_web_api
+web_api_system = None
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -3260,6 +3264,12 @@ async def on_ready():
     try:
         await remote_control.start_web_server()
         logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
+        
+        # Configurar API web para acceso externo
+        global web_api_system
+        web_api_system = setup_web_api(remote_control.app, roblox_verification, scraper, remote_control)
+        logger.info("🌐 API web configurada para acceso externo desde páginas web")
+        
     except Exception as e:
         logger.error(f"❌ Error al inicializar control remoto: {e}")
     
