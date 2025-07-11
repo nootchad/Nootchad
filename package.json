@@ -1,0 +1,23 @@
+
+{
+  "name": "rbxservers-api",
+  "version": "1.0.0",
+  "description": "API REST para el bot RbxServers",
+  "main": "api_server.js",
+  "scripts": {
+    "start": "node api_server.js",
+    "dev": "nodemon api_server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "author": "hesiz",
+  "license": "MIT"
+}
