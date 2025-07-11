@@ -1,8 +1,8 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 140,
-      "total_earned": 140,
+      "balance": 85,
+      "total_earned": 85,
       "transactions": [
         {
           "type": "earn",
@@ -87,62 +87,6 @@
           "reason": "Usar comando /scripts",
           "timestamp": "2025-07-09T00:43:32.325765",
           "balance_after": 85
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:14:33.961556",
-          "balance_after": 90
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T05:22:54.202662",
-          "balance_after": 95
-        },
-        {
-          "type": "earn",
-          "amount": 10,
-          "reason": "Usar comando /scripts",
-          "timestamp": "2025-07-09T05:23:16.680471",
-          "balance_after": 105
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T05:25:30.983821",
-          "balance_after": 110
-        },
-        {
-          "type": "earn",
-          "amount": 10,
-          "reason": "Usar comando /scripts",
-          "timestamp": "2025-07-09T05:26:05.605966",
-          "balance_after": 120
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T05:27:57.180075",
-          "balance_after": 125
-        },
-        {
-          "type": "earn",
-          "amount": 10,
-          "reason": "Usar comando /scripts",
-          "timestamp": "2025-07-09T05:28:10.524440",
-          "balance_after": 135
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-10T09:23:26.406842",
-          "balance_after": 140
         }
       ]
     },
@@ -160,8 +104,8 @@
       ]
     },
     "1322286682711654471": {
-      "balance": 15,
-      "total_earned": 15,
+      "balance": 10,
+      "total_earned": 10,
       "transactions": [
         {
           "type": "earn",
@@ -176,19 +120,12 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-09T01:06:20.103524",
           "balance_after": 10
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:10:05.849368",
-          "balance_after": 15
         }
       ]
     },
     "1333076563033460798": {
-      "balance": 40,
-      "total_earned": 40,
+      "balance": 20,
+      "total_earned": 20,
       "transactions": [
         {
           "type": "earn",
@@ -217,40 +154,12 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-09T01:00:40.767094",
           "balance_after": 20
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:18:29.385277",
-          "balance_after": 25
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:25:05.750591",
-          "balance_after": 30
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:25:57.126963",
-          "balance_after": 35
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-11T01:29:36.753273",
-          "balance_after": 40
         }
       ]
     },
     "1200251719460847619": {
-      "balance": 25,
-      "total_earned": 25,
+      "balance": 10,
+      "total_earned": 10,
       "transactions": [
         {
           "type": "earn",
@@ -265,91 +174,10 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-09T00:59:27.649539",
           "balance_after": 10
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:08:24.472143",
-          "balance_after": 15
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T17:38:55.022265",
-          "balance_after": 20
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T17:47:08.053351",
-          "balance_after": 25
-        }
-      ]
-    },
-    "1360829212373684254": {
-      "balance": 5,
-      "total_earned": 5,
-      "transactions": [
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:35:18.306419",
-          "balance_after": 5
-        }
-      ]
-    },
-    "1227266291648303136": {
-      "balance": 20,
-      "total_earned": 20,
-      "transactions": [
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:46:40.465693",
-          "balance_after": 5
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T01:49:14.272417",
-          "balance_after": 10
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T18:04:21.208202",
-          "balance_after": 15
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T18:06:33.475207",
-          "balance_after": 20
-        }
-      ]
-    },
-    "1202861936358719499": {
-      "balance": 5,
-      "total_earned": 5,
-      "transactions": [
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T05:15:28.369541",
-          "balance_after": 5
         }
       ]
     }
   },
-  "last_updated": "2025-07-11T01:29:36.753285",
-  "total_users": 8
+  "last_updated": "2025-07-09T01:06:20.103536",
+  "total_users": 5
 }
