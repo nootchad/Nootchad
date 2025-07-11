@@ -730,226 +730,39 @@ class AntiAltSystem:
         except Exception as e:
             logger.error(f"❌ Error en limpieza de datos: {e}")
 
-    def _create_user_fingerprint(self, discord_id: str) -> Dict:
-        """Crear fingerprint inicial del usuario"""
-        fingerprint = {
-            'discord_id': discord_id,
-            'created_at':```python
- datetime.now().isoformat(),
-            'trust_score': 100,
-            'risk_level': 'low',
-            'total_code_redemptions': 0,
-            'failed_attempts': 0,
-            'flags': [],
-            'first_seen': datetime.now().isoformat(),
-            'last_activity': datetime.now().isoformat(),
-            'redeemed_codes': []
-        }
-
-        # Intentar obtener la edad real de la cuenta de Discord
+    def update_account_info(self, discord_id: str):
+        """Actualizar información de la cuenta del usuario"""
         try:
-            # Calcular edad basada en el ID de Discord (Snowflake)
-            discord_epoch = 1420070400000  # Discord epoch (1 de enero 2015)
-            user_id_int = int(discord_id)
-            timestamp = ((user_id_int >> 22) + discord_epoch) / 1000
-            account_created_at = datetime.fromtimestamp(timestamp)
-
-            # Calcular edad en horas
-            account_age_hours = (datetime.now() - account_created_at).total_seconds() / 3600
-
-            fingerprint['account_created_at'] = account_created_at.isoformat()
-            fingerprint['account_age_hours'] = account_age_hours
-
-            logger.info(f"📅 Cuenta de Discord {discord_id} creada: {account_created_at.strftime('%Y-%m-%d %H:%M:%S')} ({account_age_hours:.1f}h de antigüedad)")
-
-        except Exception as e:
-            logger.warning(f"⚠️ No se pudo calcular edad de cuenta para {discord_id}: {e}")
-            fingerprint['account_created_at'] = None
-            fingerprint['account_age_hours'] = None
-
-        return fingerprint
-
-    def record_successful_redemption(self, discord_id: str, code: str):
-        """Registrar canje exitoso de código"""
-        try:
-            # Actualizar fingerprint del usuario
             if discord_id not in self.user_fingerprints:
                 self.user_fingerprints[discord_id] = self._create_user_fingerprint(discord_id)
 
-            fingerprint = self.user_fingerprints[discord_id]
-            fingerprint['total_code_redemptions'] = fingerprint.get('total_code_redemptions', 0) + 1
-            fingerprint['last_code_redemption'] = datetime.now().isoformat()
+            # Actualizar última actividad
+            self.user_fingerprints[discord_id]['last_activity'] = datetime.now().isoformat()
 
-            # Registrar el código específico canjeado
-            if 'redeemed_codes' not in fingerprint:
-                fingerprint['redeemed_codes'] = []
+            logger.info(f"✅ Información de cuenta actualizada para {discord_id}")
 
-            fingerprint['redeemed_codes'].append({
-                'code': code,
-                'timestamp': datetime.now().isoformat()
-            })
+        except Exception as e:
+            logger.error(f"❌ Error actualizando información de cuenta: {e}")
 
-            # Actualizar puntuación de confianza positivamente
+    def _calculate_risk_level(self, fingerprint: Dict) -> str:
+        """Calcular nivel de riesgo basado en el fingerprint"""
+        try:
             trust_score = fingerprint.get('trust_score', 100)
-            trust_score = min(100, trust_score + 2)  # +2 por canje exitoso
-            fingerprint['trust_score'] = trust_score
+            failed_attempts = fingerprint.get('failed_attempts', 0)
+            flags = fingerprint.get('flags', [])
 
-            # Actualizar nivel de riesgo
-            fingerprint['risk_level'] = self._calculate_risk_level(fingerprint)
-
-            # Establecer cooldown dinámico
-            self.set_cooldown(discord_id, 'code_redeem')
-
-            self.save_data()
-            logger.info(f"✅ Canje exitoso registrado para {discord_id}: {code}")
-
-        except Exception as e:
-            logger.error(f"❌ Error registrando canje exitoso: {e}")
-
-    def record_failed_attempt(self, discord_id: str, reason: str):
-        """Registrar intento fallido"""
-        try:
-            if discord_id in self.user_fingerprints:
-                self.user_fingerprints[discord_id]['failed_attempts'] += 1
-                self.user_fingerprints[discord_id]['last_activity'] = datetime.now().isoformat()
-
-                # Reducir trust score
-                current_trust = self.user_fingerprints[discord_id].get('trust_score', 100)
-                self.user_fingerprints[discord_id]['trust_score'] = max(0, current_trust - 5)
-
-            # Registrar como actividad sospechosa si hay muchos fallos
-            failed_attempts = self.user_fingerprints[discord_id].get('failed_attempts', 0)
-            if failed_attempts >= 3:
-                self.log_suspicious_activity(discord_id, 'multiple_attempts', 
-                                           f"Múltiples intentos fallidos: {failed_attempts}")
-
-            self.save_data()
-            logger.warning(f"⚠️ Intento fallido registrado para {discord_id}: {reason}")
+            if trust_score <= 20 or 'blacklisted' in flags:
+                return 'banned'
+            elif trust_score <= 40 or failed_attempts >= 5:
+                return 'high'
+            elif trust_score <= 70 or failed_attempts >= 2:
+                return 'medium'
+            else:
+                return 'low'
 
         except Exception as e:
-            logger.error(f"❌ Error registrando intento fallido: {e}")
-
-    def get_user_stats(self, discord_id: str) -> Dict:
-        """Obtener estadísticas del usuario"""
-        try:
-            fingerprint = self.user_fingerprints.get(discord_id, {})
-            suspicious_count = len(self.suspicious_activities.get(discord_id, []))
-            on_cooldown, cooldown_remaining = self.check_cooldown(discord_id, 'code_redeem')
-
-            stats = {
-                'discord_id': discord_id,
-                'trust_score': fingerprint.get('trust_score', 100),
-                'risk_level': fingerprint.get('risk_level', 'unknown'),
-                'total_redemptions': fingerprint.get('total_code_redemptions', 0),
-                'failed_attempts': fingerprint.get('failed_attempts', 0),
-                'suspicious_activities_count': suspicious_count,
-                'is_blacklisted': self.is_blacklisted(discord_id),
-                'is_whitelisted': self.is_whitelisted(discord_id),
-                'on_cooldown': on_cooldown,
-                'cooldown_remaining_seconds': cooldown_remaining,
-                'account_age_hours': fingerprint.get('account_age_hours'),
-                'flags': fingerprint.get('flags', []),
-                'first_seen': fingerprint.get('first_seen'),
-                'last_activity': fingerprint.get('last_activity'),
-                 'redeemed_codes': fingerprint.get('redeemed_codes', [])
-            }
-
-            return stats
-
-        except Exception as e:
-            logger.error(f"❌ Error obteniendo estadísticas del usuario: {e}")
-            return {}
-
-    def get_system_stats(self) -> Dict:
-        """Obtener estadísticas del sistema"""
-        try:
-            total_users = len(self.user_fingerprints)
-            blacklisted_count = len(self.blacklist)
-            whitelisted_count = len(self.whitelist)
-
-            # Contar por nivel de riesgo
-            risk_counts = {'low': 0, 'medium': 0, 'high': 0, 'banned': 0}
-            trust_scores = []
-
-            for fingerprint in self.user_fingerprints.values():
-                risk_level = fingerprint.get('risk_level', 'low')
-                risk_counts[risk_level] = risk_counts.get(risk_level, 0) + 1
-                trust_scores.append(fingerprint.get('trust_score', 100))
-
-            # Calcular estadísticas de confianza
-            avg_trust = statistics.mean(trust_scores) if trust_scores else 100
-            median_trust = statistics.median(trust_scores) if trust_scores else 100
-
-            # Contar actividades sospechosas recientes (últimas 24 horas)
-            recent_suspicious = 0
-            for activities in self.suspicious_activities.values():
-                for activity in activities:
-                    activity_time = datetime.fromisoformat(activity['timestamp'])
-                    if datetime.now() - activity_time <= timedelta(hours=24):
-                        recent_suspicious += 1
-
-            stats = {
-                'total_users': total_users,
-                'blacklisted_users': blacklisted_count,
-                'whitelisted_users': whitelisted_count,
-                'risk_distribution': risk_counts,
-                'average_trust_score': round(avg_trust, 2),
-                'median_trust_score': round(median_trust, 2),
-                'recent_suspicious_activities': recent_suspicious,
-                'cooldowns_active': len(self.cooldowns),
-                'system_config': self.config,
-                'last_updated': datetime.now().isoformat()
-            }
-
-            return stats
-
-        except Exception as e:
-            logger.error(f"❌ Error obteniendo estadísticas del sistema: {e}")
-            return {}
-
-    def cleanup_old_data(self, days: int = 30):
-        """Limpiar datos antiguos"""
-        try:
-            cutoff_date = datetime.now() - timedelta(days=days)
-            cleaned_count = 0
-
-            # Limpiar actividades sospechosas antiguas
-            for discord_id in list(self.suspicious_activities.keys()):
-                activities = self.suspicious_activities[discord_id]
-                filtered_activities = []
-
-                for activity in activities:
-                    activity_time = datetime.fromisoformat(activity['timestamp'])
-                    if activity_time >= cutoff_date:
-                        filtered_activities.append(activity)
-                    else:
-                        cleaned_count += 1
-
-                if filtered_activities:
-                    self.suspicious_activities[discord_id] = filtered_activities
-                else:
-                    del self.suspicious_activities[discord_id]
-
-            # Limpiar cooldowns expirados
-            for discord_id in list(self.cooldowns.keys()):
-                user_cooldowns = self.cooldowns[discord_id]
-                active_cooldowns = {}
-
-                for action, cooldown_data in user_cooldowns.items():
-                    expires_at = datetime.fromisoformat(cooldown_data['expires_at'])
-                    if expires_at > datetime.now():
-                        active_cooldowns[action] = cooldown_data
-
-                if active_cooldowns:
-                    self.cooldowns[discord_id] = active_cooldowns
-                else:
-                    del self.cooldowns[discord_id]
-
-            self.save_data()
-            logger.info(f"🧹 Limpieza completada: {cleaned_count} registros antiguos eliminados")
-
-        except Exception as e:
-            logger.error(f"❌ Error en limpieza de datos: {e}")
+            logger.error(f"❌ Error calculando nivel de riesgo: {e}")
+            return 'medium'
 
 # Instancia global del sistema anti-alt
 anti_alt_system = AntiAltSystem()
