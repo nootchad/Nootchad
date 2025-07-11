@@ -4,8 +4,7 @@
 ## 📋 Información General
 
 **Nombre:** RbxServers Bot API  
-**Versión:** 1.0.0  
-**Puerto:** 5000 (automáticamente mapeado a 80/443 en producción)  
+**Versión:** 1.0.0   
 **Creado por:** hesiz  
 **URL Base:** `https://3c1525f4-678e-4a8f-a0f3-6fd818f430a8-00-2l9rwpvizcpst.janeway.replit.dev:5000`
 
