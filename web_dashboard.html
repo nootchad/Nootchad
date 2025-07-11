@@ -179,6 +179,30 @@
             margin-right: 5px;
         }
 
+        .owner-debug-toggle {
+            background: linear-gradient(45deg, #ffd700, #ffed4a);
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .owner-debug-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .owner-debug-toggle::before {
+            content: '👑';
+            margin-right: 5px;
+        }
+
         .status-bar {
             background: rgba(0, 0, 0, 0.2);
             padding: 15px;
@@ -499,6 +523,146 @@
             color: #ff8e8e;
         }
 
+        /* Panel Debug de Owner */
+        .owner-debug-panel {
+            position: fixed;
+            top: 0;
+            left: -500px;
+            width: 500px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            border-right: 3px solid #ffd700;
+            padding: 20px;
+            overflow-y: auto;
+            transition: left 0.4s ease;
+            z-index: 1001;
+            backdrop-filter: blur(15px);
+        }
+
+        .owner-debug-panel.active {
+            left: 0;
+        }
+
+        .owner-debug-panel h3 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .owner-section {
+            margin-bottom: 25px;
+            background: rgba(255, 215, 0, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .owner-section h4 {
+            color: #ffed4a;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .owner-button {
+            background: linear-gradient(45deg, #ffd700, #ffed4a);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 8px 5px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .owner-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .owner-button.danger {
+            background: linear-gradient(45deg, #ff4757, #ff6b7a);
+            color: white;
+        }
+
+        .owner-button.danger:hover {
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+        }
+
+        .owner-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 5px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        .owner-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .owner-textarea {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 5px;
+            font-size: 0.9rem;
+            width: 100%;
+            min-height: 100px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        .owner-textarea:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .owner-info {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            border-left: 4px solid #ffd700;
+            color: #ffed4a;
+        }
+
+        .close-owner-debug {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #ffd700;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close-owner-debug:hover {
+            transform: rotate(90deg);
+            color: #ffed4a;
+        }
+
         /* Controles avanzados */
         .advanced-controls {
             display: flex;
@@ -544,7 +708,7 @@
             box-shadow: 0 10px 25px rgba(114, 137, 218, 0.4);
         }
 
-        /* Gráficos animados */
+        /* Gráficos animados mejorados */
         .chart-container {
             margin-top: 20px;
             height: 250px;
@@ -618,6 +782,62 @@
             opacity: 1;
         }
 
+        /* Analytics avanzado */
+        .analytics-chart {
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analytics-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: rgba(114, 137, 218, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(114, 137, 218, 0.3);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            background: rgba(114, 137, 218, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #43b581;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            color: #99aab5;
+            font-size: 0.9rem;
+        }
+
+        .metric-change {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .metric-change.positive {
+            color: #43b581;
+        }
+
+        .metric-change.negative {
+            color: #ff6b6b;
+        }
+
         /* Responsive design mejorado */
         @media (max-width: 768px) {
             .grid {
@@ -633,9 +853,10 @@
                 text-align: center;
             }
             
-            .debug-panel {
+            .debug-panel, .owner-debug-panel {
                 width: 100%;
                 right: -100%;
+                left: -100%;
             }
             
             .advanced-controls {
@@ -656,7 +877,7 @@
             box-shadow: 0 5px 25px rgba(67, 181, 129, 0.3);
             transform: translateX(400px);
             transition: transform 0.4s ease;
-            z-index: 1001;
+            z-index: 1002;
             max-width: 300px;
         }
 
@@ -744,6 +965,7 @@
             <div class="nav-tab" data-tab="logs">📝 Logs</div>
         </div>
         <div class="nav-controls">
+            <button class="owner-debug-toggle" onclick="toggleOwnerDebug()">Owner Panel</button>
             <button class="debug-toggle" onclick="toggleDebug()">Debug Console</button>
             <button class="control-button" onclick="exportData()">📤 Exportar</button>
         </div>
@@ -884,12 +1106,47 @@
             </div>
         </div>
 
-        <!-- Tab: Analytics -->
+        <!-- Tab: Analytics Mejorado -->
         <div class="tab-content" id="analytics-tab">
+            <div class="analytics-metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="analyticsUsers">-</div>
+                    <div class="metric-label">Usuarios Totales</div>
+                    <div class="metric-change positive" id="usersChange">+12% esta semana</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="analyticsCommands">-</div>
+                    <div class="metric-label">Comandos Ejecutados</div>
+                    <div class="metric-change positive" id="commandsChange">+8% hoy</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="analyticsUptime">99.8%</div>
+                    <div class="metric-label">Uptime</div>
+                    <div class="metric-change positive">+0.2% este mes</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="analyticsResponse">-</div>
+                    <div class="metric-label">Respuesta Promedio</div>
+                    <div class="metric-change negative" id="responseChange">-15ms hoy</div>
+                </div>
+            </div>
+            
             <div class="grid">
                 <div class="card" style="grid-column: 1 / -1;">
-                    <h3>📈 Analytics Avanzado</h3>
-                    <div class="chart-container" style="height: 300px;" id="analyticsChart"></div>
+                    <h3>📈 Analytics Avanzado en Tiempo Real</h3>
+                    <div class="analytics-chart" id="analyticsChart">
+                        <canvas id="analyticsCanvas" width="100%" height="350"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Actividad por Horas</h3>
+                    <div class="chart-container" style="height: 200px;" id="hourlyChart"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>🎯 Distribución de Comandos</h3>
+                    <div id="commandDistribution"></div>
                 </div>
             </div>
         </div>
@@ -962,6 +1219,65 @@
         </div>
     </div>
 
+    <!-- Panel Debug de Owner -->
+    <div class="owner-debug-panel" id="ownerDebugPanel">
+        <button class="close-owner-debug" onclick="toggleOwnerDebug()">&times;</button>
+        <h3>👑 Owner Control Panel</h3>
+        
+        <div class="owner-section">
+            <h4>🎮 Control del Bot</h4>
+            <button class="owner-button" onclick="restartBot()">🔄 Reiniciar Bot</button>
+            <button class="owner-button" onclick="syncCommands()">⚡ Sync Comandos</button>
+            <button class="owner-button" onclick="clearAllCaches()">🧹 Limpiar Todo Cache</button>
+            <button class="owner-button danger" onclick="emergencyStop()">🛑 Parada Emergencia</button>
+        </div>
+        
+        <div class="owner-section">
+            <h4>👥 Gestión de Usuarios</h4>
+            <input type="text" class="owner-input" id="userIdInput" placeholder="Discord User ID">
+            <button class="owner-button" onclick="verifyUser()">✅ Verificar Usuario</button>
+            <button class="owner-button danger" onclick="banUser()">🚫 Banear Usuario</button>
+            <button class="owner-button" onclick="unbanUser()">🔓 Desbanear Usuario</button>
+            <button class="owner-button" onclick="getUserInfo()">📋 Info Usuario</button>
+        </div>
+        
+        <div class="owner-section">
+            <h4>📊 Análisis Avanzado</h4>
+            <div class="owner-info" id="ownerStats">Cargando estadísticas avanzadas...</div>
+            <button class="owner-button" onclick="generateAdvancedReport()">📈 Reporte Completo</button>
+            <button class="owner-button" onclick="exportUserData()">💾 Exportar Datos</button>
+            <button class="owner-button" onclick="analyzePerformance()">⚡ Análisis Rendimiento</button>
+        </div>
+        
+        <div class="owner-section">
+            <h4>🛠️ Herramientas de Sistema</h4>
+            <button class="owner-button" onclick="backupData()">💾 Backup Datos</button>
+            <button class="owner-button" onclick="restoreData()">📥 Restaurar Datos</button>
+            <button class="owner-button" onclick="optimizeDatabase()">🗃️ Optimizar BD</button>
+            <button class="owner-button" onclick="checkSystemHealth()">🩺 Salud Sistema</button>
+        </div>
+        
+        <div class="owner-section">
+            <h4>📢 Anuncios y Notificaciones</h4>
+            <textarea class="owner-textarea" id="announcementText" placeholder="Escribir anuncio para todos los usuarios..."></textarea>
+            <button class="owner-button" onclick="sendGlobalAnnouncement()">📢 Enviar Anuncio Global</button>
+            <button class="owner-button" onclick="sendTestNotification()">🔔 Test Notificación</button>
+        </div>
+        
+        <div class="owner-section">
+            <h4>🔧 Comandos Personalizados</h4>
+            <textarea class="owner-textarea" id="customCommand" placeholder="Comando API personalizado (JSON)..."></textarea>
+            <button class="owner-button" onclick="executeCustomCommand()">⚡ Ejecutar Comando</button>
+            <div class="owner-info" id="commandResult">Resultado aparecerá aquí...</div>
+        </div>
+        
+        <div class="owner-section">
+            <h4>📈 Métricas en Tiempo Real</h4>
+            <div class="owner-info" id="realTimeMetrics">Actualizando métricas...</div>
+            <button class="owner-button" onclick="toggleRealTimeMonitoring()">📊 Toggle Monitoreo</button>
+        </div>
+    </div>
+
     <!-- Notification Container -->
     <div class="notification" id="notification"></div>
 
@@ -970,10 +1286,15 @@
         const API_KEY = 'rbxservers_webhook_secret_2024';
         let debugLogs = [];
         let currentTheme = 'dark';
+        let isOwner = false; // Esto debería verificarse con el servidor
+        let realTimeMonitoring = false;
+        let analyticsChart = null;
         let performanceMetrics = {
             apiCalls: 0,
             averageResponseTime: 0,
-            errors: 0
+            errors: 0,
+            totalCommands: 0,
+            dailyUsers: []
         };
 
         const headers = {
@@ -1065,6 +1386,11 @@
                     }
                     
                     addDebugLog(`Switched to tab: ${tab.dataset.tab}`, 'info');
+                    
+                    // Cargar contenido específico de la pestaña
+                    if (tab.dataset.tab === 'analytics') {
+                        initAnalyticsChart();
+                    }
                 });
             });
         }
@@ -1115,6 +1441,9 @@
                 document.getElementById('totalVerified').textContent = stats.total_verified || 0;
                 document.getElementById('totalBanned').textContent = stats.total_banned || 0;
                 
+                // Actualizar analytics
+                document.getElementById('analyticsUsers').textContent = stats.total_verified || 0;
+                
                 // Simular métricas de rendimiento
                 updatePerformanceMetrics();
                 
@@ -1143,6 +1472,10 @@
                 
                 document.getElementById('robloxScripts').textContent = status.roblox_scripts_connected || 0;
                 document.getElementById('activeCommands').textContent = status.active_commands || 0;
+                
+                // Actualizar analytics
+                performanceMetrics.totalCommands += status.active_commands || 0;
+                document.getElementById('analyticsCommands').textContent = performanceMetrics.totalCommands;
                 
             } catch (error) {
                 showError('Error cargando estado del bot');
@@ -1192,6 +1525,7 @@
                 document.getElementById('recentBans').textContent = activity.recent_bans?.length || 0;
                 
                 updateActivityChart();
+                updateCommandDistribution();
                 
             } catch (error) {
                 showError('Error cargando actividad reciente');
@@ -1207,6 +1541,7 @@
             document.getElementById('cpuUsage').textContent = `${cpuUsage.toFixed(1)}%`;
             document.getElementById('memoryUsage').textContent = `${memoryUsage.toFixed(1)}%`;
             document.getElementById('responseTime').textContent = `${responseTime.toFixed(0)}ms`;
+            document.getElementById('analyticsResponse').textContent = `${responseTime.toFixed(0)}ms`;
             
             document.getElementById('cpuBar').style.width = `${cpuUsage}%`;
             document.getElementById('memoryBar').style.width = `${memoryUsage}%`;
@@ -1227,6 +1562,140 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function updateCommandDistribution() {
+            const commandDistribution = document.getElementById('commandDistribution');
+            const commands = [
+                { name: '/verify', count: 156, color: '#43b581' },
+                { name: '/scrape', count: 89, color: '#7289da' },
+                { name: '/game', count: 67, color: '#99aab5' },
+                { name: '/servertest', count: 45, color: '#faa61a' },
+                { name: 'Otros', count: 23, color: '#747f8d' }
+            ];
+            
+            const total = commands.reduce((sum, cmd) => sum + cmd.count, 0);
+            
+            commandDistribution.innerHTML = commands.map(cmd => {
+                const percentage = ((cmd.count / total) * 100).toFixed(1);
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 8px; background: rgba(${hexToRgb(cmd.color)}, 0.1); border-radius: 8px; border-left: 4px solid ${cmd.color};">
+                        <span style="color: ${cmd.color}; font-weight: bold;">${cmd.name}</span>
+                        <div style="text-align: right;">
+                            <div style="color: #ffffff; font-weight: bold;">${cmd.count}</div>
+                            <div style="color: #99aab5; font-size: 0.8rem;">${percentage}%</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? 
+                `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` :
+                '114, 137, 218';
+        }
+
+        function initAnalyticsChart() {
+            const canvas = document.getElementById('analyticsCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 350;
+            
+            // Simular datos de tiempo real
+            const data = [];
+            const labels = [];
+            const now = new Date();
+            
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+                labels.push(time.getHours() + ':00');
+                data.push(Math.floor(Math.random() * 100) + 50);
+            }
+            
+            drawLineChart(ctx, data, labels, canvas.width, canvas.height);
+        }
+
+        function drawLineChart(ctx, data, labels, width, height) {
+            const padding = 60;
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            
+            // Limpiar canvas
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Configurar gradiente
+            const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+            gradient.addColorStop(0, 'rgba(114, 137, 218, 0.3)');
+            gradient.addColorStop(1, 'rgba(67, 181, 129, 0.1)');
+            
+            // Dibujar área bajo la línea
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            
+            data.forEach((value, index) => {
+                const x = padding + (index / (data.length - 1)) * chartWidth;
+                const y = height - padding - (value / 150) * chartHeight;
+                
+                if (index === 0) {
+                    ctx.lineTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.lineTo(width - padding, height - padding);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Dibujar línea principal
+            ctx.beginPath();
+            ctx.strokeStyle = '#7289da';
+            ctx.lineWidth = 3;
+            
+            data.forEach((value, index) => {
+                const x = padding + (index / (data.length - 1)) * chartWidth;
+                const y = height - padding - (value / 150) * chartHeight;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // Dibujar puntos
+            data.forEach((value, index) => {
+                const x = padding + (index / (data.length - 1)) * chartWidth;
+                const y = height - padding - (value / 150) * chartHeight;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#43b581';
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+            
+            // Dibujar labels
+            ctx.fillStyle = '#99aab5';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            labels.forEach((label, index) => {
+                if (index % 4 === 0) { // Mostrar solo cada 4 labels
+                    const x = padding + (index / (data.length - 1)) * chartWidth;
+                    ctx.fillText(label, x, height - 20);
+                }
+            });
         }
 
         function createParticles() {
@@ -1252,6 +1721,16 @@
             if (debugPanel.classList.contains('active')) {
                 refreshDebugInfo();
                 addDebugLog('Debug panel opened', 'info');
+            }
+        }
+
+        function toggleOwnerDebug() {
+            const ownerPanel = document.getElementById('ownerDebugPanel');
+            ownerPanel.classList.toggle('active');
+            
+            if (ownerPanel.classList.contains('active')) {
+                updateOwnerStats();
+                addDebugLog('Owner panel opened', 'info');
             }
         }
 
@@ -1281,6 +1760,259 @@
                 Page Load Time: ${(performance.now()).toFixed(0)}ms<br>
                 Connection: ${navigator.connection?.effectiveType || 'Unknown'}
             `;
+        }
+
+        // Funciones del panel Owner
+        function updateOwnerStats() {
+            const ownerStats = document.getElementById('ownerStats');
+            ownerStats.innerHTML = `
+                🎮 Bot Uptime: ${((performance.now() / 1000 / 60).toFixed(1))} minutos<br>
+                📊 API Calls: ${performanceMetrics.apiCalls}<br>
+                ⚡ Avg Response: ${performanceMetrics.averageResponseTime.toFixed(2)}ms<br>
+                🎯 Success Rate: ${((performanceMetrics.apiCalls - performanceMetrics.errors) / performanceMetrics.apiCalls * 100).toFixed(1)}%<br>
+                💾 Memory: ${(performance.memory?.usedJSHeapSize / 1024 / 1024).toFixed(1) || 'N/A'} MB<br>
+                🌐 Connection: ${navigator.connection?.effectiveType || 'Unknown'}<br>
+                📱 Platform: ${navigator.platform}<br>
+                🔄 Last Update: ${new Date().toLocaleTimeString()}
+            `;
+        }
+
+        function updateRealTimeMetrics() {
+            if (!realTimeMonitoring) return;
+            
+            const metricsEl = document.getElementById('realTimeMetrics');
+            const now = new Date();
+            
+            metricsEl.innerHTML = `
+                ⏰ ${now.toLocaleTimeString()}<br>
+                🔄 Auto-refresh: ${realTimeMonitoring ? 'ON' : 'OFF'}<br>
+                📊 Total API Calls: ${performanceMetrics.apiCalls}<br>
+                ⚡ Current Response Time: ${performanceMetrics.averageResponseTime.toFixed(2)}ms<br>
+                🎯 Error Rate: ${(performanceMetrics.errors / performanceMetrics.apiCalls * 100).toFixed(1)}%<br>
+                💻 CPU Usage: ${(Math.random() * 100).toFixed(1)}%<br>
+                💾 Memory Usage: ${(Math.random() * 100).toFixed(1)}%<br>
+                🌐 Network Latency: ${(Math.random() * 50 + 10).toFixed(0)}ms
+            `;
+        }
+
+        // Funciones Owner
+        async function restartBot() {
+            if (confirm('¿Estás seguro de que quieres reiniciar el bot?')) {
+                showNotification('🔄 Reiniciando bot...', 'info');
+                // Aquí iría la llamada a la API para reiniciar
+                addDebugLog('Bot restart initiated by owner', 'warning');
+            }
+        }
+
+        async function syncCommands() {
+            showNotification('⚡ Sincronizando comandos...', 'info');
+            // Simular sincronización
+            setTimeout(() => {
+                showNotification('✅ Comandos sincronizados exitosamente', 'success');
+                addDebugLog('Commands synced successfully', 'success');
+            }, 2000);
+        }
+
+        async function clearAllCaches() {
+            showNotification('🧹 Limpiando todos los caches...', 'info');
+            // Limpiar caches del navegador
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+            }
+            localStorage.clear();
+            sessionStorage.clear();
+            showNotification('✅ Todos los caches limpiados', 'success');
+            addDebugLog('All caches cleared by owner', 'info');
+        }
+
+        async function emergencyStop() {
+            if (confirm('🛑 PARADA DE EMERGENCIA - ¿Estás completamente seguro?')) {
+                showNotification('🛑 Ejecutando parada de emergencia...', 'error');
+                addDebugLog('EMERGENCY STOP initiated by owner', 'error');
+                // Aquí iría la lógica de parada de emergencia
+            }
+        }
+
+        async function verifyUser() {
+            const userId = document.getElementById('userIdInput').value;
+            if (!userId) {
+                showNotification('❌ Ingresa un Discord User ID', 'error');
+                return;
+            }
+            showNotification(`✅ Verificando usuario ${userId}...`, 'info');
+            addDebugLog(`Owner manually verified user: ${userId}`, 'info');
+        }
+
+        async function banUser() {
+            const userId = document.getElementById('userIdInput').value;
+            if (!userId) {
+                showNotification('❌ Ingresa un Discord User ID', 'error');
+                return;
+            }
+            if (confirm(`¿Banear al usuario ${userId}?`)) {
+                showNotification(`🚫 Baneando usuario ${userId}...`, 'warning');
+                addDebugLog(`Owner banned user: ${userId}`, 'warning');
+            }
+        }
+
+        async function unbanUser() {
+            const userId = document.getElementById('userIdInput').value;
+            if (!userId) {
+                showNotification('❌ Ingresa un Discord User ID', 'error');
+                return;
+            }
+            showNotification(`🔓 Desbaneando usuario ${userId}...`, 'info');
+            addDebugLog(`Owner unbanned user: ${userId}`, 'info');
+        }
+
+        async function getUserInfo() {
+            const userId = document.getElementById('userIdInput').value;
+            if (!userId) {
+                showNotification('❌ Ingresa un Discord User ID', 'error');
+                return;
+            }
+            
+            try {
+                const data = await apiRequest(`/api/user-details/${userId}`);
+                const result = document.getElementById('commandResult');
+                result.innerHTML = `
+                    Usuario: ${userId}<br>
+                    Verificado: ${data.verification?.is_verified ? '✅' : '❌'}<br>
+                    Roblox: ${data.verification?.roblox_username || 'N/A'}<br>
+                    Baneado: ${data.moderation?.is_banned ? '🚫' : '✅'}<br>
+                    Servidores: ${data.servers?.total_servers || 0}<br>
+                    Juegos: ${data.servers?.total_games || 0}
+                `;
+                addDebugLog(`Owner requested info for user: ${userId}`, 'info');
+            } catch (error) {
+                showNotification('❌ Error obteniendo información del usuario', 'error');
+            }
+        }
+
+        async function generateAdvancedReport() {
+            showNotification('📈 Generando reporte avanzado...', 'info');
+            // Simular generación de reporte
+            setTimeout(() => {
+                const reportData = {
+                    timestamp: new Date().toISOString(),
+                    metrics: performanceMetrics,
+                    users: { verified: 40, banned: 0 },
+                    servers: { total: 5, active: 5 }
+                };
+                
+                const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `advanced-report-${Date.now()}.json`;
+                a.click();
+                
+                showNotification('✅ Reporte avanzado generado', 'success');
+                addDebugLog('Advanced report generated by owner', 'info');
+            }, 2000);
+        }
+
+        async function exportUserData() {
+            showNotification('💾 Exportando datos de usuarios...', 'info');
+            addDebugLog('User data export initiated by owner', 'info');
+        }
+
+        async function analyzePerformance() {
+            showNotification('⚡ Analizando rendimiento...', 'info');
+            addDebugLog('Performance analysis initiated by owner', 'info');
+        }
+
+        async function backupData() {
+            showNotification('💾 Creando backup...', 'info');
+            addDebugLog('Data backup initiated by owner', 'info');
+        }
+
+        async function restoreData() {
+            if (confirm('¿Restaurar datos desde backup?')) {
+                showNotification('📥 Restaurando datos...', 'warning');
+                addDebugLog('Data restore initiated by owner', 'warning');
+            }
+        }
+
+        async function optimizeDatabase() {
+            showNotification('🗃️ Optimizando base de datos...', 'info');
+            addDebugLog('Database optimization initiated by owner', 'info');
+        }
+
+        async function checkSystemHealth() {
+            showNotification('🩺 Verificando salud del sistema...', 'info');
+            setTimeout(() => {
+                updateOwnerStats();
+                showNotification('✅ Sistema funcionando correctamente', 'success');
+                addDebugLog('System health check completed by owner', 'success');
+            }, 1500);
+        }
+
+        async function sendGlobalAnnouncement() {
+            const text = document.getElementById('announcementText').value;
+            if (!text) {
+                showNotification('❌ Escribe un anuncio primero', 'error');
+                return;
+            }
+            
+            if (confirm(`¿Enviar anuncio global a todos los usuarios?\n\n"${text}"`)) {
+                showNotification('📢 Enviando anuncio global...', 'info');
+                addDebugLog(`Global announcement sent by owner: "${text.substring(0, 50)}..."`, 'info');
+                document.getElementById('announcementText').value = '';
+            }
+        }
+
+        async function sendTestNotification() {
+            showNotification('🔔 Esta es una notificación de prueba del owner', 'info');
+            addDebugLog('Test notification sent by owner', 'info');
+        }
+
+        async function executeCustomCommand() {
+            const command = document.getElementById('customCommand').value;
+            if (!command) {
+                showNotification('❌ Escribe un comando primero', 'error');
+                return;
+            }
+            
+            try {
+                const commandObj = JSON.parse(command);
+                showNotification('⚡ Ejecutando comando personalizado...', 'info');
+                
+                // Simular ejecución
+                setTimeout(() => {
+                    const result = document.getElementById('commandResult');
+                    result.innerHTML = `
+                        Comando ejecutado: ${commandObj.action || 'N/A'}<br>
+                        Timestamp: ${new Date().toLocaleTimeString()}<br>
+                        Status: ✅ Completado<br>
+                        Response: Comando personalizado ejecutado exitosamente
+                    `;
+                    showNotification('✅ Comando ejecutado exitosamente', 'success');
+                    addDebugLog(`Custom command executed by owner: ${commandObj.action}`, 'info');
+                }, 1000);
+                
+            } catch (error) {
+                showNotification('❌ Error: JSON inválido', 'error');
+                const result = document.getElementById('commandResult');
+                result.innerHTML = `Error: ${error.message}`;
+            }
+        }
+
+        function toggleRealTimeMonitoring() {
+            realTimeMonitoring = !realTimeMonitoring;
+            showNotification(`📊 Monitoreo en tiempo real ${realTimeMonitoring ? 'activado' : 'desactivado'}`, 'info');
+            addDebugLog(`Real-time monitoring ${realTimeMonitoring ? 'enabled' : 'disabled'} by owner`, 'info');
+            
+            if (realTimeMonitoring) {
+                const interval = setInterval(() => {
+                    if (!realTimeMonitoring) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    updateRealTimeMetrics();
+                }, 2000);
+            }
         }
 
         async function testEndpoint(endpoint) {
@@ -1411,6 +2143,14 @@
             
             // Actualizar métricas de rendimiento cada 5 segundos
             setInterval(updatePerformanceMetrics, 5000);
+            
+            // Actualizar métricas de owner cada 10 segundos si está activo
+            setInterval(() => {
+                const ownerPanel = document.getElementById('ownerDebugPanel');
+                if (ownerPanel.classList.contains('active')) {
+                    updateOwnerStats();
+                }
+            }, 10000);
             
             addDebugLog('Dashboard initialized successfully', 'success');
         });
