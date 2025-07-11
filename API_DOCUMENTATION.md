@@ -7,7 +7,7 @@
 **Versión:** 1.0.0  
 **Puerto:** 5000 (automáticamente mapeado a 80/443 en producción)  
 **Creado por:** hesiz  
-**URL Base:** `http://localhost:5000` (desarrollo) | `https://tu-repl.replit.app` (producción)
+**URL Base:** `http://localhost:5000` (desarrollo) | `https://3c1525f4-678e-4a8f-a0f3-6fd818f430a8-00-2l9rwpvizcpst.janeway.replit.dev:5000` (producción)
 
 ## 🔗 Endpoints Disponibles
 
@@ -230,7 +230,7 @@ const search = await fetch('/search/roblox/hesiz').then(r => r.json());
 ```python
 import requests
 
-base_url = "https://tu-repl.replit.app"
+base_url = "https://3c1525f4-678e-4a8f-a0f3-6fd818f430a8-00-2l9rwpvizcpst.janeway.replit.dev:5000"
 
 # Obtener estadísticas
 stats = requests.get(f"{base_url}/stats").json()
@@ -242,13 +242,13 @@ user = requests.get(f"{base_url}/users/826599725150371860").json()
 #### cURL
 ```bash
 # Estadísticas generales
-curl https://tu-repl.replit.app/stats
+curl https://3c1525f4-678e-4a8f-a0f3-6fd818f430a8-00-2l9rwpvizcpst.janeway.replit.dev:5000/stats
 
 # Usuario específico
-curl https://tu-repl.replit.app/users/826599725150371860
+curl https://3c1525f4-678e-4a8f-a0f3-6fd818f430a8-00-2l9rwpvizcpst.janeway.replit.dev:5000/users/826599725150371860
 
 # Buscar por Roblox
-curl https://tu-repl.replit.app/search/roblox/hesiz
+curl https://3c1525f4-678e-4a8f-a0f3-6fd818f430a8-00-2l9rwpvizcpst.janeway.replit.dev:5000/search/roblox/hesiz
 ```
 
 ## 📝 Notas Importantes
