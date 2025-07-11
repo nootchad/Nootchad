@@ -253,6 +253,10 @@ def setup_anti_alt_commands(bot):
         
         try:
             target_id = str(usuario.id)
+            
+            # Actualizar información de cuenta antes de obtener estadísticas
+            anti_alt_system.update_account_info(target_id)
+            
             stats = anti_alt_system.get_user_stats(target_id)
             
             if not stats:
@@ -338,6 +342,14 @@ def setup_anti_alt_commands(bot):
                 age_days = stats['account_age_hours'] // 24
                 age_hours = stats['account_age_hours'] % 24
                 age_text = f"{int(age_days)}d {int(age_hours)}h"
+                
+                # Agregar fecha de creación si está disponible
+                if stats.get('account_created_at'):
+                    try:
+                        created_date = datetime.fromisoformat(stats['account_created_at'])
+                        age_text += f"\n(Creada: {created_date.strftime('%d/%m/%Y')})"
+                    except:
+                        pass
             else:
                 age_text = "Desconocida"
             
@@ -345,6 +357,21 @@ def setup_anti_alt_commands(bot):
                 name="📅 Edad de Cuenta",
                 value=age_text,
                 inline=True
+            )
+            
+            # Códigos canjeados
+            redeemed_codes = stats.get('redeemed_codes', [])
+            if redeemed_codes:
+                codes_text = ", ".join(redeemed_codes[:5])  # Mostrar máximo 5
+                if len(redeemed_codes) > 5:
+                    codes_text += f" (+{len(redeemed_codes) - 5} más)"
+            else:
+                codes_text = "Ninguno"
+            
+            embed.add_field(
+                name="🎫 Códigos Canjeados",
+                value=codes_text,
+                inline=False
             )
             
             # Flags/Banderas
