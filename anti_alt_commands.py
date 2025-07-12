@@ -501,5 +501,12 @@ def setup_anti_alt_commands(bot):
                 color=0xff0000
             )
             embed.add_field(
-                name="🐛 Error técnico:",
-                value=f"```{str(e)[:200]}
+                    name="🐛 Error técnico:",
+                    value=f"```{str(e)[:200]}```",
+                    inline=False
+                )
+
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+    logger.info("Comandos anti-alt configurados")
+    bot.anti_alt_commands_loaded = True
