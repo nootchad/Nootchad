@@ -3345,6 +3345,16 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema kxis3rr: {e}")
 
+    # Setup user profile system
+    global user_profile_system_setup
+    try:
+        from user_profile_system import setup_profile_commands
+        
+        user_profile_system_setup = setup_profile_commands(bot)
+        logger.info("👤 Sistema de perfiles de usuario configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de perfiles: {e}")
+
     # Inicializar sistema de monitoreo de usuarios
     try:
         user_monitoring.start_monitoring()
