@@ -912,11 +912,15 @@ class UserProfileSystem:
                     data = json.load(f)
                     user_servers = data.get('user_servers', {}).get(user_id, [])
                     
+                    # Detectar juego principal desde los enlaces
+                    main_game = "2753915549" if user_servers else None  # Blox Fruits por defecto
+                    
                     return {
                         'servers': user_servers,
                         'total_servers': len(user_servers),
-                        'games': {},  # Mantener compatibilidad
-                        'total_games': 1 if user_servers else 0  # Contar como 1 juego si tiene servidores
+                        'games': {main_game: {'server_links': user_servers}} if main_game else {},
+                        'total_games': 1 if user_servers else 0,
+                        'main_game': main_game
                     }
 
             # Fallback: intentar cargar desde users_servers.json (estructura antigua)
@@ -1045,9 +1049,9 @@ user_profile_system = UserProfileSystem()
 def setup_profile_commands(bot):
     """Configurar comandos de perfiles"""
 
-    @bot.tree.command(name="profile", description="Ver el perfil completo de un usuario con toda su información del bot")
+    @bot.tree.command(name="profile", description="📊 Ver perfil completo de un usuario con estadísticas, servidores y más información")
     async def profile_command(interaction: discord.Interaction, usuario: discord.User = None):
-        """Comando para ver el perfil de un usuario"""
+        """Comando para ver el perfil completo de un usuario con toda su información del bot"""
 
         # Verificar autenticación
         from main import check_verification

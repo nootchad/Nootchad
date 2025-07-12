@@ -3490,12 +3490,13 @@ async def on_ready():
     # Setup user profile system
     global user_profile_system_setup, user_profile_system
     try:
-        from user_profile_system import setup_profile_commands
+        from user_profile_system import setup_profile_commands, user_profile_system as ups
         
         user_profile_system_setup = setup_profile_commands(bot)
         # Hacer disponible globalmente para el scraper
-        user_profile_system = user_profile_system_setup
+        user_profile_system = ups
         logger.info("👤 Sistema de perfiles de usuario configurado")
+        logger.info(f"✅ Comando /profile registrado exitosamente")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de perfiles: {e}")
 
@@ -3510,6 +3511,14 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         logger.info(f"🔄 Sincronizado {len(synced)} comando(s) slash exitosamente")
+        
+        # Verificar que /profile esté incluido
+        profile_found = any(cmd.name == "profile" for cmd in synced)
+        if profile_found:
+            logger.info("✅ Comando /profile confirmado en sincronización")
+        else:
+            logger.warning("⚠️ Comando /profile NO encontrado en sincronización")
+        
         for cmd in synced:
             logger.debug(f"  ↳ Comando: /{cmd.name} - {cmd.description[:50]}...")
     except Exception as e:
