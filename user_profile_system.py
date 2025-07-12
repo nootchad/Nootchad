@@ -827,11 +827,11 @@ class UserProfileSystem:
                 'created_at': user_obj.created_at.isoformat() if user_obj else None,
                 'joined_at': None,  # Se llenará si está en un servidor
 
-                # Verificación
-                'is_verified': user_id in verified_users,
-                'verification_date': verified_users.get(user_id, {}).get('verified_at') if user_id in verified_users else None,
-                'roblox_username': verified_users.get(user_id, {}).get('roblox_username') if user_id in verified_users else None,
-                'roblox_id': verified_users.get(user_id, {}).get('roblox_id') if user_id in verified_users else None,
+                # Verificación (importar desde main.py)
+                'is_verified': False,  # Se actualizará si hay acceso al sistema de verificación
+                'verification_date': None,
+                'roblox_username': None,
+                'roblox_id': None,
 
                 # Servidores de juegos (desde user_game_servers.json - estructura simplificada)
                 'user_servers': servers_data['servers'],
@@ -843,9 +843,9 @@ class UserProfileSystem:
                 'coins': coins_data,
 
                 # Actividad y seguridad
-                'warnings': warnings_data.get(user_id, []),
-                'is_banned': user_id in bans_data,
-                'ban_info': bans_data.get(user_id, {}),
+                'warnings': [],
+                'is_banned': False,
+                'ban_info': {},
 
                 # Logros y estadísticas
                 'achievements': [],
@@ -980,26 +980,6 @@ def save_user_servers_simple(self, user_id: str, servers: list):
                 }
 
             # Limitar a máximo 5 servidores
-            servers = servers[:5] if servers else []
-            
-            # Actualizar datos del usuario
-            data['user_servers'][user_id] = servers
-            
-            # Actualizar metadata
-            data['metadata']['last_updated'] = datetime.now().isoformat()
-            data['metadata']['total_users'] = len(data['user_servers'])
-            data['metadata']['total_servers'] = sum(len(user_servers) for user_servers in data['user_servers'].values())
-
-            # Guardar archivo
-            with open(servers_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-
-            logger.info(f"✅ Servidores guardados para usuario {user_id}: {len(servers)} servidores")
-            return True
-
-        except Exception as e:
-            logger.error(f"❌ Error guardando servidores para {user_id}: {e}")
-            return Falser a máximo 5 servidores
             servers = servers[:5] if servers else []
             
             # Actualizar datos del usuario

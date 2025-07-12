@@ -2184,7 +2184,7 @@ class VIPServerScraper:
         return results[:8]  # Return top 8 results
 
     def save_servers_directly_to_new_format(self, user_id: str, servers: list):
-        """Método fallback para guardar servidores directamente en user_game_servers.json"""
+        """Método para guardar servidores directamente en user_game_servers.json"""
         try:
             import json
             from pathlib import Path
@@ -2724,8 +2724,12 @@ class VIPServerScraper:
                         
                         # GUARDADO INMEDIATO después de cada servidor encontrado
                         current_servers = self.links_by_user[self.current_user_id][game_id]['links']
-                        logger.info(f"💾 GUARDANDO INMEDIATAMENTE servidor #{new_links_count}")
-                        self.save_servers_directly_to_new_format(self.current_user_id, current_servers)
+                        logger.info(f"💾 GUARDANDO INMEDIATAMENTE servidor #{new_links_count} en user_game_servers.json")
+                        save_success = self.save_servers_directly_to_new_format(self.current_user_id, current_servers)
+                        if save_success:
+                            logger.info(f"✅ CONFIRMADO: Servidor #{new_links_count} guardado en user_game_servers.json")
+                        else:
+                            logger.error(f"❌ FALLO: No se pudo guardar servidor #{new_links_count} en user_game_servers.json")
                         
                     elif vip_link:
                         logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
@@ -2769,29 +2773,36 @@ class VIPServerScraper:
             # Guardar en formato original
             self.save_links()
             
-            # GUARDADO INMEDIATO Y FORZADO en user_game_servers.json
+            # GUARDADO FINAL OBLIGATORIO en user_game_servers.json
             if self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id]:
                 user_servers = self.links_by_user[self.current_user_id][game_id]['links']
                 
-                logger.info(f"🔄 GUARDANDO INMEDIATAMENTE {len(user_servers)} servidores para usuario {self.current_user_id}")
+                logger.info(f"🔄 GUARDADO FINAL: {len(user_servers)} servidores para usuario {self.current_user_id}")
                 
-                # GUARDADO DIRECTO Y FORZADO
+                # GUARDADO DIRECTO Y FORZADO FINAL
                 saved_successfully = self.save_servers_directly_to_new_format(self.current_user_id, user_servers)
                 
                 if saved_successfully:
-                    logger.info(f"✅ CONFIRMADO: Servidores guardados exitosamente en user_game_servers.json")
+                    logger.info(f"✅ GUARDADO FINAL EXITOSO: Servidores guardados en user_game_servers.json")
                 else:
-                    logger.error(f"❌ FALLO CRÍTICO: No se pudieron guardar los servidores")
+                    logger.error(f"❌ FALLO CRÍTICO EN GUARDADO FINAL")
                 
-                # Verificación inmediata de guardado
+                # Verificación final obligatoria
                 try:
                     import json
                     with open("user_game_servers.json", 'r', encoding='utf-8') as f:
                         verify_data = json.load(f)
                         saved_servers = verify_data.get('user_servers', {}).get(self.current_user_id, [])
-                        logger.info(f"🔍 VERIFICACIÓN: {len(saved_servers)} servidores encontrados en archivo para usuario {self.current_user_id}")
+                        logger.info(f"🔍 VERIFICACIÓN FINAL: {len(saved_servers)} servidores en user_game_servers.json para usuario {self.current_user_id}")
+                        
+                        # Comparar que todos los servidores estén guardados
+                        if len(saved_servers) == len(user_servers):
+                            logger.info(f"✅ VERIFICACIÓN EXITOSA: Todos los {len(user_servers)} servidores están guardados")
+                        else:
+                            logger.error(f"❌ VERIFICACIÓN FALLIDA: Solo {len(saved_servers)}/{len(user_servers)} servidores guardados")
+                            
                 except Exception as e:
-                    logger.error(f"❌ Error verificando guardado: {e}")
+                    logger.error(f"❌ Error en verificación final: {e}")
             
             return new_links_count
 
