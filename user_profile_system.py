@@ -1000,6 +1000,26 @@ def save_user_servers_simple(self, user_id: str, servers: list):
             logger.error(f"❌ Error guardando servidores para {user_id}: {e}")
             return False
 
+    def add_server_to_user_simple(self, user_id: str, server_link: str):
+        """Agregar un servidor a la lista del usuario en formato simplificado"""
+        try:
+            # Cargar servidores actuales
+            current_servers = self.load_user_servers_data(user_id)['servers']
+            
+            # Si el servidor ya existe, no agregarlo
+            if server_link in current_servers:
+                return False
+            
+            # Agregar nuevo servidor al inicio de la lista
+            current_servers.insert(0, server_link)
+            
+            # Guardar la lista actualizada
+            return self.save_user_servers_simple(user_id, current_servers)
+            
+        except Exception as e:
+            logger.error(f"❌ Error agregando servidor para {user_id}: {e}")
+            return False
+
     def get_all_user_servers(self):
         """Obtener todos los servidores de todos los usuarios desde la estructura simplificada"""
         try:

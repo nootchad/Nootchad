@@ -2682,7 +2682,15 @@ class VIPServerScraper:
             logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {user_game_total})")
             logger.info(f"⚡ Processing speed: {self.scraping_stats['servers_per_minute']} servers/minute")
 
+            # Guardar en formato original
             self.save_links()
+            
+            # También guardar en el nuevo formato simplificado user_game_servers.json
+            if new_links_count > 0 and self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id]:
+                user_servers = self.links_by_user[self.current_user_id][game_id]['links']
+                user_profile_system.save_user_servers_simple(self.current_user_id, user_servers)
+                logger.info(f"✅ Servidores también guardados en user_game_servers.json para usuario {self.current_user_id}")
+            
             return new_links_count
 
         except Exception as e:
@@ -3151,6 +3159,9 @@ coins_system = None
 # Import images system
 images_system = None
 
+# Import user profile system (for new server storage)
+user_profile_system = None
+
 # Import web API system
 from web_api import setup_web_api
 web_api_system = None
@@ -3346,11 +3357,13 @@ async def on_ready():
         logger.error(f"❌ Error configurando sistema kxis3rr: {e}")
 
     # Setup user profile system
-    global user_profile_system_setup
+    global user_profile_system_setup, user_profile_system
     try:
         from user_profile_system import setup_profile_commands
         
         user_profile_system_setup = setup_profile_commands(bot)
+        # Hacer disponible globalmente para el scraper
+        user_profile_system = user_profile_system_setup
         logger.info("👤 Sistema de perfiles de usuario configurado")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de perfiles: {e}")
