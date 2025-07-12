@@ -531,8 +531,21 @@
           "balance_after": 10
         }
       ]
+    },
+    "1144859335982334035": {
+      "balance": 5,
+      "total_earned": 5,
+      "transactions": [
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-12T01:46:50.976210",
+          "balance_after": 5
+        }
+      ]
     }
   },
-  "last_updated": "2025-07-12T01:41:03.036512",
-  "total_users": 14
+  "last_updated": "2025-07-12T01:46:50.976220",
+  "total_users": 15
 }
