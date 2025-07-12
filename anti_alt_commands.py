@@ -1,3 +1,4 @@
+# Applying the provided changes to update the userstats command with correct information about successful and failed redemptions.
 import discord
 from discord.ext import commands
 from anti_alt_system import anti_alt_system
@@ -427,6 +428,63 @@ def setup_anti_alt_commands(bot):
                     inline=False
                 )
 
+            # Intentos fallidos (obtener del sistema anti-alt)
+            failed_attempts = stats.get('failed_attempts', 0)
+            failed_details = []
+
+            # Obtener detalles de intentos fallidos del fingerprint
+            if target_id in anti_alt_system.data['user_fingerprints']:
+                fingerprint = anti_alt_system.data['user_fingerprints'][target_id]
+                # Buscar actividades sospechosas que incluyen intentos fallidos
+                suspicious_activities = anti_alt_system.data.get('suspicious_activities', {}).get(target_id, [])
+
+                for activity in suspicious_activities:
+                    if 'failed_attempt' in activity.get('type', '').lower() or 'código' in activity.get('reason', '').lower():
+                        try:
+                            timestamp = activity.get('timestamp', 'Fecha no disponible')
+                            if timestamp != 'Fecha no disponible':
+                                dt = datetime.fromisoformat(timestamp)
+                                fecha_formateada = f"<t:{int(dt.timestamp())}:R>"
+                            else:
+                                fecha_formateada = timestamp
+
+                            reason = activity.get('reason', 'Motivo no especificado')
+                            failed_details.append(f"• {reason} - {fecha_formateada}")
+                        except:
+                            failed_details.append(f"• {activity.get('reason', 'Error en intento')} - Fecha no disponible")
+
+            embed.add_field(
+                name=f"❌ Intentos Fallidos ({failed_attempts})",
+                value="\n".join(failed_details[:5]) + (f"\n... y {len(failed_details) - 5} más" if len(failed_details) > 5 else "") if failed_details else "Ningún intento fallido registrado",
+                inline=False
+            )
+
+            # Canjes exitosos (obtener del sistema anti-alt)
+            successful_redemptions = len(stats.get('redeemed_codes', []))
+            successful_details = []
+
+            # Obtener detalles de canjes exitosos del fingerprint
+            redeemed_codes_anti_alt = stats.get('redeemed_codes', [])
+            for redemption in redeemed_codes_anti_alt:
+                try:
+                    code = redemption.get('code', 'Código desconocido')
+                    timestamp = redemption.get('timestamp', 'Fecha no disponible')
+                    if timestamp != 'Fecha no disponible':
+                        dt = datetime.fromisoformat(timestamp)
+                        fecha_formateada = f"<t:{int(dt.timestamp())}:d>"
+                    else:
+                        fecha_formateada = timestamp
+
+                    successful_details.append(f"• **{code}** - {fecha_formateada}")
+                except:
+                    successful_details.append(f"• {redemption.get('code', 'Error')} - Fecha no disponible")
+
+            embed.add_field(
+                name=f"✅ Canjes Exitosos ({successful_redemptions})",
+                value="\n".join(successful_details[:5]) + (f"\n... y {len(successful_details) - 5} más" if len(successful_details) > 5 else "") if successful_details else "Ningún canje exitoso registrado",
+                inline=False
+            )
+
             embed.set_footer(text=f"Sistema Anti-Alt • Consultado por {interaction.user.name}")
             embed.timestamp = datetime.now()
 
@@ -444,170 +502,4 @@ def setup_anti_alt_commands(bot):
             )
             embed.add_field(
                 name="🐛 Error técnico:",
-                value=f"```{str(e)[:200]}```",
-                inline=False
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @bot.tree.command(name="systemstats", description="[OWNER ONLY] Ver estadísticas generales del sistema anti-alt")
-    async def systemstats_command(interaction: discord.Interaction):
-        """Ver estadísticas generales del sistema anti-alt"""
-        user_id = str(interaction.user.id)
-
-        # Verificar permisos de owner
-        from main import is_owner_or_delegated
-        if not is_owner_or_delegated(user_id):
-            embed = discord.Embed(
-                title="❌ Acceso Denegado",
-                description="Solo el owner del bot puede ver estadísticas del sistema.",
-                color=0xff0000
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        await interaction.response.defer(ephemeral=True)
-
-        try:
-            stats = anti_alt_system.get_system_stats()
-
-            embed = discord.Embed(
-                title="📊 Estadísticas del Sistema Anti-Alt",
-                description="Resumen completo del sistema de prevención de cuentas múltiples",
-                color=0x3366ff
-            )
-
-            # Usuarios totales
-            embed.add_field(
-                name="👥 Usuarios Totales",
-                value=f"**{stats['total_users']}** registrados",
-                inline=True
-            )
-
-            # Listas
-            embed.add_field(
-                name="🚫 Lista Negra",
-                value=f"**{stats['blacklisted_users']}** usuarios",
-                inline=True
-            )
-
-            embed.add_field(
-                name="✅ Lista Blanca",
-                value=f"**{stats['whitelisted_users']}** usuarios",
-                inline=True
-            )
-
-            # Distribución de riesgo
-            risk_dist = stats['risk_distribution']
-            risk_text = f"🟢 Bajo: **{risk_dist['low']}**\n🟡 Medio: **{risk_dist['medium']}**\n🔴 Alto: **{risk_dist['high']}**\n🚫 Baneados: **{risk_dist['banned']}**"
-
-            embed.add_field(
-                name="⚠️ Distribución de Riesgo",
-                value=risk_text,
-                inline=True
-            )
-
-            # Puntuaciones de confianza
-            embed.add_field(
-                name="🎯 Confianza Promedio",
-                value=f"**{stats['average_trust_score']}/100**\n(Mediana: {stats['median_trust_score']})",
-                inline=True
-            )
-
-            # Actividades recientes
-            embed.add_field(
-                name="🚨 Actividades Sospechosas (24h)",
-                value=f"**{stats['recent_suspicious_activities']}** registradas",
-                inline=True
-            )
-
-            # Cooldowns activos
-            embed.add_field(
-                name="⏳ Cooldowns Activos",
-                value=f"**{stats['cooldowns_active']}** usuarios",
-                inline=True
-            )
-
-            # Configuración del sistema
-            config = stats['system_config']
-            config_text = f"• **Edad mínima:** {config['min_account_age_hours']}h\n• **Similitud username:** {config['username_similarity_threshold']*100}%\n• **Códigos por día:** {config['max_codes_per_day']}\n• **Cooldown base:** {config['cooldown_base_minutes']}min"
-
-            embed.add_field(
-                name="⚙️ Configuración",
-                value=config_text,
-                inline=False
-            )
-
-            embed.set_footer(text=f"Última actualización: {stats['last_updated'][:19]}")
-            embed.timestamp = datetime.now()
-
-            await interaction.followup.send(embed=embed, ephemeral=True)
-
-        except Exception as e:
-            logger.error(f"Error en comando systemstats: {e}")
-            embed = discord.Embed(
-                title="❌ Error",
-                description="Ocurrió un error obteniendo las estadísticas del sistema.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @bot.tree.command(name="cleanup", description="[OWNER ONLY] Limpiar datos antiguos del sistema anti-alt")
-    async def cleanup_command(interaction: discord.Interaction, dias: int = 30):
-        """Limpiar datos antiguos del sistema"""
-        user_id = str(interaction.user.id)
-
-        # Verificar permisos de owner
-        from main import is_owner_or_delegated
-        if not is_owner_or_delegated(user_id):
-            embed = discord.Embed(
-                title="❌ Acceso Denegado",
-                description="Solo el owner del bot puede ejecutar limpieza del sistema.",
-                color=0xff0000
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        if dias < 1 or dias > 365:
-            embed = discord.Embed(
-                title="❌ Parámetro Inválido",
-                description="Los días deben estar entre 1 y 365.",
-                color=0xff0000
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        await interaction.response.defer(ephemeral=True)
-
-        try:
-            # Realizar limpieza
-            anti_alt_system.cleanup_old_data(dias)
-
-            embed = discord.Embed(
-                title="🧹 Limpieza Completada",
-                description=f"Se han eliminado registros antiguos de más de **{dias} días**.",
-                color=0x00ff88
-            )
-            embed.add_field(
-                name="📊 Acciones Realizadas",
-                value="• Actividades sospechosas antiguas eliminadas\n• Cooldowns expirados removidos\n• Datos optimizados",
-                inline=False
-            )
-            embed.add_field(
-                name="💡 Recomendación",
-                value="Ejecuta este comando mensualmente para mantener el sistema optimizado.",
-                inline=False
-            )
-
-            await interaction.followup.send(embed=embed, ephemeral=True)
-
-        except Exception as e:
-            logger.error(f"Error en comando cleanup: {e}")
-            embed = discord.Embed(
-                title="❌ Error",
-                description="Ocurrió un error durante la limpieza del sistema.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-
-    logger.info("🛡️ Comandos del sistema anti-alt configurados exitosamente")
-    return anti_alt_system
+                value=f"```{str(e)[:200]}
