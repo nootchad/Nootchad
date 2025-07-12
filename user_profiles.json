@@ -2,9 +2,9 @@
   "user_profiles": {
     "916070251895091241": {
       "first_seen": 1752285156.8183408,
-      "last_activity": 1752285256.151065,
-      "total_commands": 0,
-      "active_days": 0,
+      "last_activity": 1752285941.20944,
+      "total_commands": 1,
+      "active_days": 1,
       "is_verified": true,
       "roblox_username": "9011a22344",
       "coins_balance": 0,
@@ -17,9 +17,14 @@
       "is_trusted": true,
       "verified_at": 1751500970.0577545,
       "favorite_games": [],
-      "reserved_servers": []
+      "reserved_servers": [],
+      "verification_code": "rbxx10_bot",
+      "is_banned": false,
+      "ban_time": null,
+      "game_categories": {},
+      "top_games": []
     }
   },
-  "last_updated": "2025-07-12T01:54:16.151069",
+  "last_updated": "2025-07-12T02:05:41.209443",
   "total_profiles": 1
 }
