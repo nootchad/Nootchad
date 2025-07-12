@@ -208,8 +208,8 @@
       ]
     },
     "1333076563033460798": {
-      "balance": 45,
-      "total_earned": 45,
+      "balance": 50,
+      "total_earned": 50,
       "transactions": [
         {
           "type": "earn",
@@ -273,6 +273,13 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-11T06:50:46.876814",
           "balance_after": 45
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-12T01:41:03.036500",
+          "balance_after": 50
         }
       ]
     },
@@ -526,6 +533,6 @@
       ]
     }
   },
-  "last_updated": "2025-07-11T20:09:56.522090",
+  "last_updated": "2025-07-12T01:41:03.036512",
   "total_users": 14
 }
