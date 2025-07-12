@@ -815,8 +815,11 @@ class UserProfileSystem:
             # Cargar datos de monedas desde user_coins.json
             coins_data = self.load_user_coins_data(user_id)
 
-            # Cargar datos de servidores desde users_servers.json  
+            # Cargar datos de servidores desde user_game_servers.json
             servers_data = self.load_user_servers_data(user_id)
+
+            # Obtener datos de verificación desde el sistema global
+            verification_data = self.get_verification_data(user_id)
 
             # Datos básicos
             data = {
@@ -827,11 +830,11 @@ class UserProfileSystem:
                 'created_at': user_obj.created_at.isoformat() if user_obj else None,
                 'joined_at': None,  # Se llenará si está en un servidor
 
-                # Verificación (importar desde main.py)
-                'is_verified': False,  # Se actualizará si hay acceso al sistema de verificación
-                'verification_date': None,
-                'roblox_username': None,
-                'roblox_id': None,
+                # Verificación (desde sistema global)
+                'is_verified': verification_data['is_verified'],
+                'verification_date': verification_data.get('verified_at'),
+                'roblox_username': verification_data.get('roblox_username'),
+                'roblox_id': verification_data.get('roblox_id'),
 
                 # Servidores de juegos (desde user_game_servers.json - estructura simplificada)
                 'user_servers': servers_data['servers'],
@@ -843,9 +846,9 @@ class UserProfileSystem:
                 'coins': coins_data,
 
                 # Actividad y seguridad
-                'warnings': [],
-                'is_banned': False,
-                'ban_info': {},
+                'warnings': verification_data.get('warnings', 0),
+                'is_banned': verification_data.get('is_banned', False),
+                'ban_info': verification_data.get('ban_info', {}),
 
                 # Logros y estadísticas
                 'achievements': [],
@@ -853,7 +856,8 @@ class UserProfileSystem:
                 'first_command_date': None,
                 'last_activity': None
             }
-# Guardar en perfiles
+
+            # Guardar en perfiles
             self.user_profiles[user_id] = data
             self.save_profiles_data()
 
@@ -863,6 +867,38 @@ class UserProfileSystem:
         except Exception as e:
             logger.error(f"❌ Error recopilando datos del usuario {user_id}: {e}")
             return {}
+
+    def get_verification_data(self, user_id: str) -> dict:
+        """Obtener datos de verificación desde el sistema global"""
+        try:
+            # Importar aquí para evitar import circular
+            from main import roblox_verification
+            
+            is_verified = roblox_verification.is_user_verified(user_id)
+            verification_info = roblox_verification.verified_users.get(user_id, {})
+            
+            return {
+                'is_verified': is_verified,
+                'roblox_username': verification_info.get('roblox_username'),
+                'verified_at': verification_info.get('verified_at'),
+                'verification_code': verification_info.get('verification_code'),
+                'warnings': roblox_verification.get_user_warnings(user_id),
+                'is_banned': roblox_verification.is_user_banned(user_id),
+                'ban_info': {
+                    'ban_time': roblox_verification.banned_users.get(user_id),
+                    'remaining_time': None  # Se puede calcular si está baneado
+                }
+            }
+        except Exception as e:
+            logger.error(f"❌ Error obteniendo datos de verificación para {user_id}: {e}")
+            return {
+                'is_verified': False,
+                'roblox_username': None,
+                'verified_at': None,
+                'warnings': 0,
+                'is_banned': False,
+                'ban_info': {}
+            }
 
     def load_user_coins_data(self, user_id: str) -> dict:
         """Cargar datos de monedas desde user_coins.json"""
