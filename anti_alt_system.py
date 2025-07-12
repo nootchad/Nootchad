@@ -778,7 +778,7 @@ class AntiAltSystem:
             try:
                 from main import roblox_verification
                 if roblox_verification and roblox_verification.is_user_verified(discord_id):
-                    verification_data = roblox_verification.verification_db.get(discord_id)
+                    verification_data = roblox_verification.verified_users.get(discord_id)
                     if verification_data:
                         roblox_username = verification_data.get('roblox_username', 'Unknown')
             except Exception as e:
@@ -1055,7 +1055,7 @@ class AntiAltSystem:
             try:
                 from main import roblox_verification
                 if roblox_verification and roblox_verification.is_user_verified(discord_id):
-                    verification_data = roblox_verification.verification_db.get(discord_id)
+                    verification_data = roblox_verification.verified_users.get(discord_id)
                     if verification_data:
                         roblox_username = verification_data.get('roblox_username', 'Unknown')
             except Exception as e:
