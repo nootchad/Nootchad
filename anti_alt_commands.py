@@ -433,10 +433,10 @@ def setup_anti_alt_commands(bot):
             failed_details = []
 
             # Obtener detalles de intentos fallidos del fingerprint
-            if target_id in anti_alt_system.data['user_fingerprints']:
-                fingerprint = anti_alt_system.data['user_fingerprints'][target_id]
+            if target_id in anti_alt_system.user_fingerprints:
+                fingerprint = anti_alt_system.user_fingerprints[target_id]
                 # Buscar actividades sospechosas que incluyen intentos fallidos
-                suspicious_activities = anti_alt_system.data.get('suspicious_activities', {}).get(target_id, [])
+                suspicious_activities = anti_alt_system.suspicious_activities.get(target_id, [])
 
                 for activity in suspicious_activities:
                     if 'failed_attempt' in activity.get('type', '').lower() or 'código' in activity.get('reason', '').lower():
