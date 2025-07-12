@@ -789,61 +789,171 @@ class UserProfileSystem:
 
     def collect_user_data(self, user_id: str):
         """Recopilar datos de todos los sistemas del bot para un usuario"""
-        try:
-            from main import scraper, roblox_verification, coins_system
-        except ImportError:
-            logger.warning("No se pudieron importar algunos sistemas del bot")
-        
         user_id = str(user_id)
         profile_data = self.get_user_profile(user_id)
 
         try:
+            # Importar sistemas de manera segura
+            try:
+                import main
+                roblox_verification = main.roblox_verification
+                scraper = main.scraper
+                coins_system = getattr(main, 'coins_system', None)
+                user_monitoring = getattr(main, 'user_monitoring', None)
+                anti_alt_commands = getattr(main, 'anti_alt_commands', None)
+            except Exception as e:
+                logger.warning(f"Error importando sistemas del bot: {e}")
+                return profile_data
+
             # Datos de verificación
             try:
-                if hasattr(roblox_verification, 'is_user_verified') and roblox_verification.is_user_verified(user_id):
-                    verified_user = roblox_verification.verified_users.get(user_id, {})
+                if roblox_verification and hasattr(roblox_verification, 'is_user_verified'):
+                    is_verified = roblox_verification.is_user_verified(user_id)
+                    profile_data['is_verified'] = is_verified
+                    
+                    if is_verified and user_id in roblox_verification.verified_users:
+                        verified_user = roblox_verification.verified_users[user_id]
+                        profile_data.update({
+                            'roblox_username': verified_user.get('roblox_username', 'No disponible'),
+                            'verified_at': verified_user.get('verified_at'),
+                            'verification_code': verified_user.get('verification_code', 'N/A')
+                        })
+                    
+                    # Datos de advertencias y bans
                     profile_data.update({
-                        'is_verified': True,
-                        'roblox_username': verified_user.get('roblox_username'),
-                        'verified_at': verified_user.get('verified_at')
+                        'warnings': roblox_verification.warnings.get(user_id, 0),
+                        'is_banned': user_id in roblox_verification.banned_users,
+                        'ban_time': roblox_verification.banned_users.get(user_id)
                     })
+                    
+                    logger.debug(f"✅ Datos de verificación obtenidos para {user_id}: verificado={is_verified}")
             except Exception as e:
                 logger.debug(f"Error obteniendo datos de verificación: {e}")
 
             # Datos de monedas
             try:
-                if hasattr(coins_system, 'get_user_stats'):
-                    coins_stats = coins_system.get_user_stats(user_id)
-                    profile_data.update({
-                        'coins_balance': coins_stats.get('balance', 0),
-                        'total_coins_earned': coins_stats.get('total_earned', 0),
-                        'total_transactions': coins_stats.get('total_transactions', 0)
-                    })
+                if coins_system and hasattr(coins_system, 'get_balance'):
+                    balance = coins_system.get_balance(user_id)
+                    profile_data['coins_balance'] = balance
+                    
+                    # Obtener estadísticas adicionales si están disponibles
+                    if hasattr(coins_system, 'user_coins') and user_id in coins_system.user_coins:
+                        user_coin_data = coins_system.user_coins[user_id]
+                        profile_data.update({
+                            'total_coins_earned': user_coin_data.get('total_earned', 0),
+                            'total_coins_spent': user_coin_data.get('total_spent', 0),
+                            'total_transactions': len(user_coin_data.get('transaction_history', [])),
+                            'recent_transactions': user_coin_data.get('transaction_history', [])[-5:],  # Últimas 5
+                            'earning_methods': user_coin_data.get('earning_methods', {})
+                        })
+                    
+                    logger.debug(f"✅ Datos de monedas obtenidos para {user_id}: balance={balance}")
             except Exception as e:
                 logger.debug(f"Error obteniendo datos de monedas: {e}")
 
-            # Datos de servidores
+            # Datos de servidores desde scraper
             try:
-                if hasattr(scraper, 'links_by_user'):
+                if scraper and hasattr(scraper, 'links_by_user'):
                     user_games = scraper.links_by_user.get(user_id, {})
-                    total_servers = sum(len(game_data.get('links', [])) for game_data in user_games.values())
+                    total_servers = 0
+                    game_categories = {}
+                    
+                    # Calcular estadísticas de servidores
+                    for game_id, game_data in user_games.items():
+                        if isinstance(game_data, dict):
+                            links = game_data.get('links', [])
+                            total_servers += len(links)
+                            
+                            # Contar categorías
+                            category = game_data.get('category', 'other')
+                            game_categories[category] = game_categories.get(category, 0) + 1
                     
                     profile_data.update({
                         'total_games': len(user_games),
                         'total_servers': total_servers,
+                        'game_categories': game_categories,
                         'favorite_games': scraper.user_favorites.get(user_id, []) if hasattr(scraper, 'user_favorites') else [],
                         'reserved_servers': scraper.user_reserved_servers.get(user_id, []) if hasattr(scraper, 'user_reserved_servers') else []
                     })
+                    
+                    # Top juegos por cantidad de servidores
+                    top_games = []
+                    for game_id, game_data in user_games.items():
+                        if isinstance(game_data, dict):
+                            top_games.append({
+                                'game_id': game_id,
+                                'name': game_data.get('game_name', f'Game {game_id}'),
+                                'server_count': len(game_data.get('links', [])),
+                                'category': game_data.get('category', 'other')
+                            })
+                    
+                    top_games.sort(key=lambda x: x['server_count'], reverse=True)
+                    profile_data['top_games'] = top_games[:5]  # Top 5
+                    
+                    # Historial de uso de servidores
+                    if hasattr(scraper, 'usage_history') and user_id in scraper.usage_history:
+                        recent_activity = scraper.usage_history[user_id][-5:]  # Últimos 5
+                        profile_data['recent_server_activity'] = recent_activity
+                    
+                    logger.debug(f"✅ Datos de servidores obtenidos para {user_id}: {len(user_games)} juegos, {total_servers} servidores")
             except Exception as e:
                 logger.debug(f"Error obteniendo datos de servidores: {e}")
 
-            # Actualizar perfil
+            # Datos del sistema anti-alt
+            try:
+                if anti_alt_commands and hasattr(anti_alt_commands, 'anti_alt_system'):
+                    anti_alt_system = anti_alt_commands.anti_alt_system
+                    if hasattr(anti_alt_system, 'user_fingerprints') and user_id in anti_alt_system.user_fingerprints:
+                        fingerprint = anti_alt_system.user_fingerprints[user_id]
+                        profile_data.update({
+                            'risk_level': fingerprint.get('risk_level', 'bajo'),
+                            'trust_score': fingerprint.get('trust_score', 100),
+                            'is_trusted': fingerprint.get('trust_score', 100) >= 70,
+                            'fingerprint_data': {
+                                'account_age_hours': fingerprint.get('account_age_hours', 0),
+                                'suspicious_activities': fingerprint.get('flags', []),
+                                'failed_attempts': fingerprint.get('failed_attempts', 0)
+                            }
+                        })
+                        
+                        logger.debug(f"✅ Datos anti-alt obtenidos para {user_id}: risk={fingerprint.get('risk_level', 'bajo')}")
+            except Exception as e:
+                logger.debug(f"Error obteniendo datos anti-alt: {e}")
+
+            # Datos de códigos canjeados
+            try:
+                # Intentar obtener desde el sistema de códigos
+                codes_system = getattr(main, 'codes_system_setup', None)
+                if codes_system and hasattr(codes_system, 'user_redeemed_codes'):
+                    user_codes = codes_system.user_redeemed_codes.get(user_id, [])
+                    profile_data.update({
+                        'redeemed_codes': user_codes,
+                        'recent_redeemed_codes': user_codes[-5:] if user_codes else [],
+                        'code_statistics': {}
+                    })
+                    
+                    logger.debug(f"✅ Datos de códigos obtenidos para {user_id}: {len(user_codes)} códigos")
+            except Exception as e:
+                logger.debug(f"Error obteniendo datos de códigos: {e}")
+
+            # Datos de actividad general
+            profile_data.update({
+                'last_activity': time.time(),
+                'active_days': max(1, profile_data.get('active_days', 1)),
+                'total_commands': profile_data.get('total_commands', 0) + 1  # Incrementar por ver perfil
+            })
+
+            # Actualizar perfil con todos los datos
             self.update_user_profile(user_id, **profile_data)
+            
+            logger.info(f"📊 Datos recopilados para usuario {user_id}: verificado={profile_data.get('is_verified', False)}, juegos={profile_data.get('total_games', 0)}, servidores={profile_data.get('total_servers', 0)}")
             
             return profile_data
 
         except Exception as e:
             logger.error(f"Error recopilando datos para usuario {user_id}: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return profile_data
 
 # Instancia global del sistema de perfiles
