@@ -2183,6 +2183,53 @@ class VIPServerScraper:
         results.sort(key=lambda x: (-x["relevance"], x["name"]))
         return results[:8]  # Return top 8 results
 
+    def save_servers_directly_to_new_format(self, user_id: str, servers: list):
+        """Método fallback para guardar servidores directamente en user_game_servers.json"""
+        try:
+            import json
+            from pathlib import Path
+            from datetime import datetime
+
+            servers_file = Path("user_game_servers.json")
+            
+            # Cargar datos existentes
+            if servers_file.exists():
+                with open(servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            else:
+                data = {
+                    "user_servers": {},
+                    "metadata": {
+                        "created_at": datetime.now().isoformat(),
+                        "last_updated": datetime.now().isoformat(),
+                        "total_users": 0,
+                        "total_servers": 0,
+                        "description": "Estructura simplificada: user_id -> array de hasta 5 servidores"
+                    }
+                }
+
+            # Limitar a máximo 5 servidores
+            servers = servers[:5] if servers else []
+            
+            # Actualizar datos del usuario
+            data['user_servers'][user_id] = servers
+            
+            # Actualizar metadata
+            data['metadata']['last_updated'] = datetime.now().isoformat()
+            data['metadata']['total_users'] = len(data['user_servers'])
+            data['metadata']['total_servers'] = sum(len(user_servers) for user_servers in data['user_servers'].values())
+
+            # Guardar archivo
+            with open(servers_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+
+            logger.info(f"✅ Servidores guardados DIRECTAMENTE para usuario {user_id}: {len(servers)} servidores")
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Error en guardado directo para {user_id}: {e}")
+            return False
+
     def create_driver(self):
         """Create Chrome driver with Replit-compatible configuration and NopeCHA extension"""
         try:
@@ -2688,8 +2735,23 @@ class VIPServerScraper:
             # También guardar en el nuevo formato simplificado user_game_servers.json
             if new_links_count > 0 and self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id]:
                 user_servers = self.links_by_user[self.current_user_id][game_id]['links']
-                user_profile_system.save_user_servers_simple(self.current_user_id, user_servers)
-                logger.info(f"✅ Servidores también guardados en user_game_servers.json para usuario {self.current_user_id}")
+                
+                # Verificar que user_profile_system esté disponible
+                try:
+                    # Si user_profile_system no está disponible globalmente, usar el sistema local
+                    if 'user_profile_system' in globals() and user_profile_system is not None:
+                        user_profile_system.save_user_servers_simple(self.current_user_id, user_servers)
+                        logger.info(f"✅ Servidores guardados en user_game_servers.json para usuario {self.current_user_id}")
+                    else:
+                        # Crear instancia temporal del sistema de perfiles para guardar
+                        from user_profile_system import UserProfileSystem
+                        temp_profile_system = UserProfileSystem()
+                        temp_profile_system.save_user_servers_simple(self.current_user_id, user_servers)
+                        logger.info(f"✅ Servidores guardados en user_game_servers.json para usuario {self.current_user_id} (sistema temporal)")
+                except Exception as e:
+                    logger.error(f"❌ Error guardando en user_game_servers.json: {e}")
+                    # Fallback: guardar directamente
+                    self.save_servers_directly_to_new_format(self.current_user_id, user_servers)
             
             return new_links_count
 
