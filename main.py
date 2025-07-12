@@ -3335,6 +3335,16 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema anti-alt: {e}")
 
+    # Setup kxis3rr system
+    global kxis3rr_system
+    try:
+        from kxis3rr_system import setup_kxis3rr_commands
+        
+        kxis3rr_system = setup_kxis3rr_commands(bot)
+        logger.info("📚 Sistema kxis3rr configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema kxis3rr: {e}")
+
     # Inicializar sistema de monitoreo de usuarios
     try:
         user_monitoring.start_monitoring()
