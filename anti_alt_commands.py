@@ -464,20 +464,28 @@ def setup_anti_alt_commands(bot):
             successful_details = []
 
             # Obtener detalles de canjes exitosos del fingerprint
-            redeemed_codes_anti_alt = stats.get('redeemed_codes', [])
+            redeemed_codes_anti_alt = stats.get('redeemed_codes_details', [])
             for redemption in redeemed_codes_anti_alt:
                 try:
-                    code = redemption.get('code', 'Código desconocido')
-                    timestamp = redemption.get('timestamp', 'Fecha no disponible')
-                    if timestamp != 'Fecha no disponible':
-                        dt = datetime.fromisoformat(timestamp)
-                        fecha_formateada = f"<t:{int(dt.timestamp())}:d>"
+                    # Manejar tanto strings como diccionarios
+                    if isinstance(redemption, dict):
+                        code = redemption.get('code', 'Código desconocido')
+                        timestamp = redemption.get('timestamp', 'Fecha no disponible')
+                        if timestamp != 'Fecha no disponible':
+                            dt = datetime.fromisoformat(timestamp)
+                            fecha_formateada = f"<t:{int(dt.timestamp())}:d>"
+                        else:
+                            fecha_formateada = timestamp
                     else:
-                        fecha_formateada = timestamp
+                        # Si es un string simple
+                        code = str(redemption)
+                        fecha_formateada = "Fecha no disponible"
 
                     successful_details.append(f"• **{code}** - {fecha_formateada}")
-                except:
-                    successful_details.append(f"• {redemption.get('code', 'Error')} - Fecha no disponible")
+                except Exception as e:
+                    # Fallback para cualquier error
+                    code_fallback = str(redemption) if not isinstance(redemption, dict) else redemption.get('code', 'Error')
+                    successful_details.append(f"• {code_fallback} - Fecha no disponible")
 
             embed.add_field(
                 name=f"✅ Canjes Exitosos ({successful_redemptions})",
