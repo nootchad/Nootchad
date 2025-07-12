@@ -1,8 +1,8 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 200,
-      "total_earned": 200,
+      "balance": 205,
+      "total_earned": 205,
       "transactions": [
         {
           "type": "earn",
@@ -227,6 +227,13 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-12T02:57:45.907817",
           "balance_after": 200
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-12T03:04:54.822751",
+          "balance_after": 205
         }
       ]
     },
@@ -636,6 +643,6 @@
       ]
     }
   },
-  "last_updated": "2025-07-12T02:57:45.907830",
+  "last_updated": "2025-07-12T03:04:54.822760",
   "total_users": 16
 }
