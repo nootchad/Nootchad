@@ -1,6 +1,25 @@
-
 {
-  "user_profiles": {},
-  "last_updated": "2025-07-12T01:39:00.000000",
-  "total_profiles": 0
+  "user_profiles": {
+    "916070251895091241": {
+      "first_seen": 1752285156.8183408,
+      "last_activity": 1752285156.8187919,
+      "total_commands": 0,
+      "active_days": 0,
+      "is_verified": true,
+      "roblox_username": "9011a22344",
+      "coins_balance": 0,
+      "total_games": 0,
+      "total_servers": 0,
+      "redeemed_codes": [],
+      "achievements": [],
+      "warnings": 0,
+      "risk_level": "bajo",
+      "is_trusted": true,
+      "verified_at": 1751500970.0577545,
+      "favorite_games": [],
+      "reserved_servers": []
+    }
+  },
+  "last_updated": "2025-07-12T01:52:36.818794",
+  "total_profiles": 1
 }
