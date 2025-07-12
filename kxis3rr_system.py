@@ -209,7 +209,26 @@ def setup_kxis3rr_commands(bot):
                 inline=False
             )
             
-            embed.set_thumbnail(url=bot.user.avatar.url if bot.user.avatar else None)
+            # Configurar la imagen desde attached_assets como thumbnail
+            try:
+                file = discord.File("attached_assets/e8d383bc640daf87be94d8b0821eab67_1752283554405.png", filename="kxis3rr_image.png")
+                embed.set_thumbnail(url="attachment://kxis3rr_image.png")
+                
+                # Crear view con el menú desplegable
+                view = KxisView()
+                
+                await interaction.response.send_message(embed=embed, view=view, file=file, ephemeral=False)
+                
+                # Log de uso del comando
+                user_id = str(interaction.user.id)
+                username = f"{interaction.user.name}#{interaction.user.discriminator}"
+                logger.info(f"Usuario {username} (ID: {user_id}) usó comando /kxis3rr")
+                return
+                
+            except FileNotFoundError:
+                logger.warning("⚠️ Imagen kxis3rr no encontrada en attached_assets, usando avatar del bot")
+                embed.set_thumbnail(url=bot.user.avatar.url if bot.user.avatar else None)
+            
             embed.set_footer(
                 text="RbxServers • Sistema de Información",
                 icon_url=bot.user.avatar.url if bot.user.avatar else None
