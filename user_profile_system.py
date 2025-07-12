@@ -156,15 +156,37 @@ class ProfileView(discord.ui.View):
         profile = self.profile_data
 
         # Estadísticas de servidores
-        total_servers = profile.get('total_servers', 0)
+        user_servers = profile.get('user_servers', [])
+        total_servers = len(user_servers)
         total_games = profile.get('total_games', 0)
         favorite_games = len(profile.get('favorite_games', []))
 
         embed.add_field(
             name="📊 Estadísticas de Servidores",
-            value=f"**🖥️ Total servidores:** {total_servers}\n**🎯 Juegos únicos:** {total_games}\n**⭐ Favoritos:** {favorite_games}",
+            value=f"**🖥️ Servidores guardados:** {total_servers}/5\n**🎯 Juegos únicos:** {total_games}\n**⭐ Favoritos:** {favorite_games}",
             inline=True
         )
+
+        # Mostrar los servidores del usuario si los tiene
+        if user_servers:
+            servers_preview = []
+            for i, server in enumerate(user_servers[:3], 1):  # Mostrar solo los primeros 3
+                # Extraer información básica del servidor
+                if isinstance(server, str):
+                    servers_preview.append(f"**{i}.** [Servidor #{i}]({server})")
+                elif isinstance(server, dict):
+                    server_name = server.get('name', f'Servidor #{i}')
+                    server_url = server.get('url', '#')
+                    servers_preview.append(f"**{i}.** [{server_name}]({server_url})")
+            
+            if len(user_servers) > 3:
+                servers_preview.append(f"**...y {len(user_servers) - 3} más**")
+
+            embed.add_field(
+                name="🔗 Servidores Guardados",
+                value="\n".join(servers_preview) if servers_preview else "Sin servidores guardados",
+                inline=False
+            )
 
         # Juegos más populares
         popular_games = profile.get('top_games', [])[:3]
@@ -811,8 +833,9 @@ class UserProfileSystem:
                 'roblox_username': verified_users.get(user_id, {}).get('roblox_username') if user_id in verified_users else None,
                 'roblox_id': verified_users.get(user_id, {}).get('roblox_id') if user_id in verified_users else None,
 
-                # Servidores de juegos (desde users_servers.json)
-                'game_servers': servers_data['games'],
+                # Servidores de juegos (desde user_game_servers.json - estructura simplificada)
+                'user_servers': servers_data['servers'],
+                'game_servers': servers_data['games'],  # Compatibilidad con estructura antigua
                 'total_servers': servers_data['total_servers'],
                 'total_games': servers_data['total_games'],
 
@@ -877,14 +900,29 @@ class UserProfileSystem:
             }
 
     def load_user_servers_data(self, user_id: str) -> dict:
-        """Cargar datos de servidores desde users_servers.json"""
+        """Cargar datos de servidores desde user_game_servers.json con estructura simplificada"""
         try:
             import json
             from pathlib import Path
 
-            servers_file = Path("users_servers.json")
+            # Intentar cargar desde el nuevo archivo simplificado
+            servers_file = Path("user_game_servers.json")
             if servers_file.exists():
                 with open(servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    user_servers = data.get('user_servers', {}).get(user_id, [])
+                    
+                    return {
+                        'servers': user_servers,
+                        'total_servers': len(user_servers),
+                        'games': {},  # Mantener compatibilidad
+                        'total_games': 1 if user_servers else 0  # Contar como 1 juego si tiene servidores
+                    }
+
+            # Fallback: intentar cargar desde users_servers.json (estructura antigua)
+            fallback_file = Path("users_servers.json")
+            if fallback_file.exists():
+                with open(fallback_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     user_data = data.get('users', {}).get(user_id, {})
                     games = user_data.get('games', {})
@@ -897,10 +935,12 @@ class UserProfileSystem:
                     return {
                         'games': games,
                         'total_games': len(games),
-                        'total_servers': total_servers
+                        'total_servers': total_servers,
+                        'servers': []  # Nuevo campo vacío
                     }
 
             return {
+                'servers': [],
                 'games': {},
                 'total_games': 0,
                 'total_servers': 0
@@ -908,10 +948,75 @@ class UserProfileSystem:
         except Exception as e:
             logger.error(f"❌ Error cargando datos de servidores para {user_id}: {e}")
             return {
+                'servers': [],
                 'games': {},
                 'total_games': 0,
                 'total_servers': 0
             }
+
+def save_user_servers_simple(self, user_id: str, servers: list):
+        """Guardar servidores de usuario en la estructura simplificada"""
+        try:
+            import json
+            from pathlib import Path
+
+            servers_file = Path("user_game_servers.json")
+            
+            # Cargar datos existentes
+            if servers_file.exists():
+                with open(servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            else:
+                data = {
+                    "user_servers": {},
+                    "metadata": {
+                        "created_at": datetime.now().isoformat(),
+                        "last_updated": datetime.now().isoformat(),
+                        "total_users": 0,
+                        "total_servers": 0,
+                        "description": "Estructura simplificada: user_id -> array de hasta 5 servidores"
+                    }
+                }
+
+            # Limitar a máximo 5 servidores
+            servers = servers[:5] if servers else []
+            
+            # Actualizar datos del usuario
+            data['user_servers'][user_id] = servers
+            
+            # Actualizar metadata
+            data['metadata']['last_updated'] = datetime.now().isoformat()
+            data['metadata']['total_users'] = len(data['user_servers'])
+            data['metadata']['total_servers'] = sum(len(user_servers) for user_servers in data['user_servers'].values())
+
+            # Guardar archivo
+            with open(servers_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+
+            logger.info(f"✅ Servidores guardados para usuario {user_id}: {len(servers)} servidores")
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Error guardando servidores para {user_id}: {e}")
+            return False
+
+    def get_all_user_servers(self):
+        """Obtener todos los servidores de todos los usuarios desde la estructura simplificada"""
+        try:
+            import json
+            from pathlib import Path
+
+            servers_file = Path("user_game_servers.json")
+            if servers_file.exists():
+                with open(servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get('user_servers', {})
+            
+            return {}
+
+        except Exception as e:
+            logger.error(f"❌ Error obteniendo todos los servidores: {e}")
+            return {}
 
 # Instancia global del sistema de perfiles
 user_profile_system = UserProfileSystem()
