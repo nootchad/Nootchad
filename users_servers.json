@@ -4,63 +4,63 @@
       "games": {
         "2753915549": {
           "server_links": [
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=96422803807633277122471753018383",
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=29029726191185958912416842994869",
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=34280528010576263871852896810082",
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=91847828036947913274028997207313",
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=84627449119254310009928107086038"
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=58250668261593826769140881645911",
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=14672753011049525810120688451843",
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=68896473612454651606101098811193",
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=87969061340618148003013549039532",
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=33987205521122965126250277481600"
           ],
           "game_name": "Blox Fruits - RBXServers",
           "game_image_url": "https://rbxservers.xyz/svgs/roblox.svg",
           "category": "other",
           "server_details": {
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=96422803807633277122471753018383": {
-              "source_url": "https://rbxservers.xyz/servers/ffc88907-bcc5-47ef-a052-62836bcd60d5",
-              "discovered_at": "2025-07-12T02:28:21.153051",
-              "extraction_time": 16.54,
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=58250668261593826769140881645911": {
+              "source_url": "https://rbxservers.xyz/servers/a436ce6f-0936-498d-92da-18706fbdc023",
+              "discovered_at": "2025-07-12T02:33:38.838544",
+              "extraction_time": 18.24,
               "server_info": {
-                "page_title": "Blox Fruits - Unnamed Server 3592 - RBXServers",
-                "server_id": "ffc88907-bcc5-47ef-a052-62836bcd60d5"
+                "page_title": "Blox Fruits - Unnamed Server 7509 - RBXServers",
+                "server_id": "a436ce6f-0936-498d-92da-18706fbdc023"
               },
               "cookies_used": true
             },
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=29029726191185958912416842994869": {
-              "source_url": "https://rbxservers.xyz/servers/e2ea4215-7d0f-4c6c-9b6c-aa947c177cda",
-              "discovered_at": "2025-07-12T02:28:35.657509",
-              "extraction_time": 14.5,
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=14672753011049525810120688451843": {
+              "source_url": "https://rbxservers.xyz/servers/a0f19e95-0405-4cc2-843c-9952f87c454c",
+              "discovered_at": "2025-07-12T02:33:53.194808",
+              "extraction_time": 14.36,
               "server_info": {
-                "page_title": "Blox Fruits - Unnamed Server 7963 - RBXServers",
-                "server_id": "e2ea4215-7d0f-4c6c-9b6c-aa947c177cda"
+                "page_title": "Blox Fruits - Unnamed Server 1412 - RBXServers",
+                "server_id": "a0f19e95-0405-4cc2-843c-9952f87c454c"
               },
               "cookies_used": true
             },
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=34280528010576263871852896810082": {
-              "source_url": "https://rbxservers.xyz/servers/210304c2-6992-4fa6-8744-19de0f1f852a",
-              "discovered_at": "2025-07-12T02:28:51.421553",
-              "extraction_time": 15.76,
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=68896473612454651606101098811193": {
+              "source_url": "https://rbxservers.xyz/servers/a595d820-36cb-4ea4-ba5a-189c6ab85251",
+              "discovered_at": "2025-07-12T02:34:09.433783",
+              "extraction_time": 16.24,
               "server_info": {
-                "page_title": "Blox Fruits - Unnamed Server 1783 - RBXServers",
-                "server_id": "210304c2-6992-4fa6-8744-19de0f1f852a"
+                "page_title": "Blox Fruits - Unnamed Server 7470 - RBXServers",
+                "server_id": "a595d820-36cb-4ea4-ba5a-189c6ab85251"
               },
               "cookies_used": true
             },
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=91847828036947913274028997207313": {
-              "source_url": "https://rbxservers.xyz/servers/45944d67-e360-4a46-80e8-92fd163a7756",
-              "discovered_at": "2025-07-12T02:29:04.855960",
-              "extraction_time": 13.43,
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=87969061340618148003013549039532": {
+              "source_url": "https://rbxservers.xyz/servers/b3aabf47-655f-4b0f-bb3c-4c67ffb749ca",
+              "discovered_at": "2025-07-12T02:34:23.627003",
+              "extraction_time": 14.19,
               "server_info": {
-                "page_title": "Blox Fruits - Unnamed Server 3400 - RBXServers",
-                "server_id": "45944d67-e360-4a46-80e8-92fd163a7756"
+                "page_title": "Blox Fruits - Unnamed Server 8455 - RBXServers",
+                "server_id": "b3aabf47-655f-4b0f-bb3c-4c67ffb749ca"
               },
               "cookies_used": true
             },
-            "https://www.roblox.com/games/2753915549?privateServerLinkCode=84627449119254310009928107086038": {
-              "source_url": "https://rbxservers.xyz/servers/2534deaa-f297-4612-b9ac-f5842a6bfe50",
-              "discovered_at": "2025-07-12T02:29:21.711455",
-              "extraction_time": 16.86,
+            "https://www.roblox.com/games/2753915549?privateServerLinkCode=33987205521122965126250277481600": {
+              "source_url": "https://rbxservers.xyz/servers/3dfac34a-a723-4a6c-89c4-6df9b3a4681c",
+              "discovered_at": "2025-07-12T02:34:38.947669",
+              "extraction_time": 15.32,
               "server_info": {
-                "page_title": "Blox Fruits - Unnamed Server 6308 - RBXServers",
-                "server_id": "2534deaa-f297-4612-b9ac-f5842a6bfe50"
+                "page_title": "Blox Fruits - Unnamed Server 3251 - RBXServers",
+                "server_id": "3dfac34a-a723-4a6c-89c4-6df9b3a4681c"
               },
               "cookies_used": true
             }
@@ -72,7 +72,7 @@
           "game_id": "2753915549",
           "server_link": "Found 5 servers",
           "action": "scrape_complete",
-          "timestamp": "2025-07-12T02:29:26.852317",
+          "timestamp": "2025-07-12T02:34:39.259032",
           "game_name": "Blox Fruits - RBXServers"
         }
       ],
@@ -81,8 +81,8 @@
     }
   },
   "metadata": {
-    "created_at": "2025-07-12T02:29:26.852894",
-    "last_updated": "2025-07-12T02:29:26.852899",
+    "created_at": "2025-07-12T02:34:39.259856",
+    "last_updated": "2025-07-12T02:34:39.259861",
     "total_users": 1,
     "total_servers": 5
   }
