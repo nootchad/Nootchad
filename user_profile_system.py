@@ -874,8 +874,8 @@ def setup_profile_commands(bot):
         # Crear embed inicial (overview)
         embed = view.create_overview_embed()
         
-        # Enviar mensaje (NO ephemeral para que todos puedan ver)
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
+        # Como check_verification ya hizo defer, usar followup en lugar de response
+        await interaction.followup.send(embed=embed, view=view, ephemeral=False)
         
         # Log del uso del comando
         requester = f"{interaction.user.name}#{interaction.user.discriminator}"
