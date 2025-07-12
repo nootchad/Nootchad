@@ -1,4 +1,3 @@
-
 import discord
 from discord.ext import commands
 import json
@@ -73,7 +72,7 @@ class ProfileView(discord.ui.View):
     async def update_embed(self, interaction: discord.Interaction, section: str):
         """Actualizar el embed según la sección seleccionada"""
         embed = None
-        
+
         if section == "overview":
             embed = self.create_overview_embed()
         elif section == "servers":
@@ -118,7 +117,7 @@ class ProfileView(discord.ui.View):
         # Estado de verificación
         verification_status = "✅ Verificado" if profile.get('is_verified', False) else "❌ No verificado"
         roblox_name = profile.get('roblox_username', 'No disponible')
-        
+
         embed.add_field(
             name="🔐 Estado de Verificación",
             value=f"**Estado:** {verification_status}\n**Roblox:** {roblox_name}\n**Última actividad:** <t:{int(profile.get('last_activity', time.time()))}:R>",
@@ -237,7 +236,7 @@ class ProfileView(discord.ui.View):
         if is_verified:
             status_text = "✅ **VERIFICADO**"
             status_color = 0x00ff00
-            
+
             if verified_at:
                 verified_date = f"<t:{int(verified_at)}:F>"
             else:
@@ -285,7 +284,7 @@ class ProfileView(discord.ui.View):
         if is_verified and verified_at:
             expiry_time = verified_at + (30 * 24 * 60 * 60)  # 30 días
             time_remaining = expiry_time - time.time()
-            
+
             if time_remaining > 0:
                 days_remaining = int(time_remaining / (24 * 60 * 60))
                 embed.add_field(
@@ -355,7 +354,7 @@ class ProfileView(discord.ui.View):
             for trans in recent_transactions:
                 trans_type = "💰" if trans['type'] == 'earn' else "💸"
                 trans_text.append(f"{trans_type} **{trans['amount']:,}** - {trans['reason'][:30]}...")
-            
+
             embed.add_field(
                 name="⏰ Transacciones Recientes",
                 value="\n".join(trans_text),
@@ -509,7 +508,7 @@ class ProfileView(discord.ui.View):
         if fingerprint_data:
             account_age_hours = fingerprint_data.get('account_age_hours', 0)
             account_age_days = account_age_hours / 24
-            
+
             embed.add_field(
                 name="👤 Información de Cuenta",
                 value=f"**Antigüedad:** {account_age_days:.1f} días\n**Score de confianza:** {fingerprint_data.get('trust_score', 0):.2f}\n**Actividades sospechosas:** {len(fingerprint_data.get('suspicious_activities', []))}",
@@ -544,7 +543,7 @@ class ProfileView(discord.ui.View):
         if reputation:
             rep_score = reputation.get('score', 100)
             rep_status = "Excelente" if rep_score >= 90 else "Buena" if rep_score >= 70 else "Regular" if rep_score >= 50 else "Baja"
-            
+
             embed.add_field(
                 name="⭐ Reputación",
                 value=f"**Score:** {rep_score:.1f}/100\n**Status:** {rep_status}\n**Reportes:** {reputation.get('reports', 0)}",
@@ -559,7 +558,7 @@ class ProfileView(discord.ui.View):
             if risk_level != 'bajo':
                 recommendations.append("• Verificar cuenta de Roblox")
                 recommendations.append("• Mantener actividad regular")
-            
+
             if recommendations:
                 embed.add_field(
                     name="💡 Recomendaciones",
@@ -609,7 +608,7 @@ class ProfileView(discord.ui.View):
         # Logros desbloqueados
         achievements = profile.get('achievements', [])
         achievement_count = len(achievements)
-        
+
         embed.add_field(
             name="🏅 Logros Desbloqueados",
             value=f"**Total logros:** {achievement_count}\n**Progreso:** {(achievement_count / 20 * 100):.1f}% (20 total)",
@@ -663,7 +662,7 @@ class ProfileView(discord.ui.View):
         for ach in next_achievements:
             if ach['progress'] < 1:
                 progress_text.append(f"• **{ach['name']}** - {ach['progress']*100:.0f}%")
-        
+
         if progress_text:
             embed.add_field(
                 name="🎯 Próximos Logros",
@@ -680,7 +679,7 @@ class ProfileView(discord.ui.View):
         """Determinar el nivel de actividad del usuario"""
         total_commands = profile.get('total_commands', 0)
         active_days = profile.get('active_days', 0)
-        
+
         if total_commands >= 100 and active_days >= 30:
             return {"level": "🌟 Usuario Veterano", "description": "Usuario muy activo y experimentado", "progress": 100}
         elif total_commands >= 50 and active_days >= 14:
@@ -747,7 +746,7 @@ class UserProfileSystem:
     def update_user_profile(self, user_id: str, **kwargs):
         """Actualizar perfil de usuario con nueva información"""
         user_id = str(user_id)
-        
+
         if user_id not in self.user_profiles:
             self.user_profiles[user_id] = {
                 'first_seen': time.time(),
@@ -780,213 +779,171 @@ class UserProfileSystem:
     def get_user_profile(self, user_id: str) -> dict:
         """Obtener perfil completo de usuario"""
         user_id = str(user_id)
-        
+
         # Si no existe el perfil, crear uno básico
         if user_id not in self.user_profiles:
             self.update_user_profile(user_id)
-        
+
         return self.user_profiles.get(user_id, {})
 
-    def collect_user_data(self, user_id: str):
-        """Recopilar datos de todos los sistemas del bot para un usuario"""
-        user_id = str(user_id)
-        profile_data = self.get_user_profile(user_id)
-
+    
+    def collect_user_data(self, user_id: str, user_obj=None) -> dict:
+        """Recopilar todos los datos de un usuario desde diferentes sistemas"""
         try:
-            # Importar sistemas de manera segura
-            try:
-                import main
-                roblox_verification = main.roblox_verification
-                scraper = main.scraper
-                coins_system = getattr(main, 'coins_system', None)
-                user_monitoring = getattr(main, 'user_monitoring', None)
-                anti_alt_commands = getattr(main, 'anti_alt_commands', None)
-            except Exception as e:
-                logger.warning(f"Error importando sistemas del bot: {e}")
-                return profile_data
+            # Cargar datos de monedas desde user_coins.json
+            coins_data = self.load_user_coins_data(user_id)
 
-            # Datos de verificación
-            try:
-                if roblox_verification and hasattr(roblox_verification, 'is_user_verified'):
-                    is_verified = roblox_verification.is_user_verified(user_id)
-                    profile_data['is_verified'] = is_verified
-                    
-                    if is_verified and user_id in roblox_verification.verified_users:
-                        verified_user = roblox_verification.verified_users[user_id]
-                        profile_data.update({
-                            'roblox_username': verified_user.get('roblox_username', 'No disponible'),
-                            'verified_at': verified_user.get('verified_at'),
-                            'verification_code': verified_user.get('verification_code', 'N/A')
-                        })
-                    
-                    # Datos de advertencias y bans
-                    profile_data.update({
-                        'warnings': roblox_verification.warnings.get(user_id, 0),
-                        'is_banned': user_id in roblox_verification.banned_users,
-                        'ban_time': roblox_verification.banned_users.get(user_id)
-                    })
-                    
-                    logger.debug(f"✅ Datos de verificación obtenidos para {user_id}: verificado={is_verified}")
-            except Exception as e:
-                logger.debug(f"Error obteniendo datos de verificación: {e}")
+            # Cargar datos de servidores desde users_servers.json  
+            servers_data = self.load_user_servers_data(user_id)
 
-            # Datos de monedas
-            try:
-                if coins_system and hasattr(coins_system, 'get_balance'):
-                    balance = coins_system.get_balance(user_id)
-                    profile_data['coins_balance'] = balance
-                    
-                    # Obtener estadísticas adicionales si están disponibles
-                    if hasattr(coins_system, 'user_coins') and user_id in coins_system.user_coins:
-                        user_coin_data = coins_system.user_coins[user_id]
-                        profile_data.update({
-                            'total_coins_earned': user_coin_data.get('total_earned', 0),
-                            'total_coins_spent': user_coin_data.get('total_spent', 0),
-                            'total_transactions': len(user_coin_data.get('transaction_history', [])),
-                            'recent_transactions': user_coin_data.get('transaction_history', [])[-5:],  # Últimas 5
-                            'earning_methods': user_coin_data.get('earning_methods', {})
-                        })
-                    
-                    logger.debug(f"✅ Datos de monedas obtenidos para {user_id}: balance={balance}")
-            except Exception as e:
-                logger.debug(f"Error obteniendo datos de monedas: {e}")
+            # Datos básicos
+            data = {
+                'user_id': user_id,
+                'username': user_obj.name if user_obj else 'Usuario Desconocido',
+                'discriminator': user_obj.discriminator if user_obj else '0000',
+                'avatar_url': str(user_obj.avatar.url) if user_obj and user_obj.avatar else None,
+                'created_at': user_obj.created_at.isoformat() if user_obj else None,
+                'joined_at': None,  # Se llenará si está en un servidor
 
-            # Datos de servidores desde scraper
-            try:
-                if scraper and hasattr(scraper, 'links_by_user'):
-                    user_games = scraper.links_by_user.get(user_id, {})
-                    total_servers = 0
-                    game_categories = {}
-                    
-                    # Calcular estadísticas de servidores
-                    for game_id, game_data in user_games.items():
-                        if isinstance(game_data, dict):
-                            links = game_data.get('links', [])
-                            total_servers += len(links)
-                            
-                            # Contar categorías
-                            category = game_data.get('category', 'other')
-                            game_categories[category] = game_categories.get(category, 0) + 1
-                    
-                    profile_data.update({
-                        'total_games': len(user_games),
-                        'total_servers': total_servers,
-                        'game_categories': game_categories,
-                        'favorite_games': scraper.user_favorites.get(user_id, []) if hasattr(scraper, 'user_favorites') else [],
-                        'reserved_servers': scraper.user_reserved_servers.get(user_id, []) if hasattr(scraper, 'user_reserved_servers') else []
-                    })
-                    
-                    # Top juegos por cantidad de servidores
-                    top_games = []
-                    for game_id, game_data in user_games.items():
-                        if isinstance(game_data, dict):
-                            top_games.append({
-                                'game_id': game_id,
-                                'name': game_data.get('game_name', f'Game {game_id}'),
-                                'server_count': len(game_data.get('links', [])),
-                                'category': game_data.get('category', 'other')
-                            })
-                    
-                    top_games.sort(key=lambda x: x['server_count'], reverse=True)
-                    profile_data['top_games'] = top_games[:5]  # Top 5
-                    
-                    # Historial de uso de servidores
-                    if hasattr(scraper, 'usage_history') and user_id in scraper.usage_history:
-                        recent_activity = scraper.usage_history[user_id][-5:]  # Últimos 5
-                        profile_data['recent_server_activity'] = recent_activity
-                    
-                    logger.debug(f"✅ Datos de servidores obtenidos para {user_id}: {len(user_games)} juegos, {total_servers} servidores")
-            except Exception as e:
-                logger.debug(f"Error obteniendo datos de servidores: {e}")
+                # Verificación
+                'is_verified': user_id in verified_users,
+                'verification_date': verified_users.get(user_id, {}).get('verified_at') if user_id in verified_users else None,
+                'roblox_username': verified_users.get(user_id, {}).get('roblox_username') if user_id in verified_users else None,
+                'roblox_id': verified_users.get(user_id, {}).get('roblox_id') if user_id in verified_users else None,
 
-            # Datos del sistema anti-alt
-            try:
-                if anti_alt_commands and hasattr(anti_alt_commands, 'anti_alt_system'):
-                    anti_alt_system = anti_alt_commands.anti_alt_system
-                    if hasattr(anti_alt_system, 'user_fingerprints') and user_id in anti_alt_system.user_fingerprints:
-                        fingerprint = anti_alt_system.user_fingerprints[user_id]
-                        profile_data.update({
-                            'risk_level': fingerprint.get('risk_level', 'bajo'),
-                            'trust_score': fingerprint.get('trust_score', 100),
-                            'is_trusted': fingerprint.get('trust_score', 100) >= 70,
-                            'fingerprint_data': {
-                                'account_age_hours': fingerprint.get('account_age_hours', 0),
-                                'suspicious_activities': fingerprint.get('flags', []),
-                                'failed_attempts': fingerprint.get('failed_attempts', 0)
-                            }
-                        })
-                        
-                        logger.debug(f"✅ Datos anti-alt obtenidos para {user_id}: risk={fingerprint.get('risk_level', 'bajo')}")
-            except Exception as e:
-                logger.debug(f"Error obteniendo datos anti-alt: {e}")
+                # Servidores de juegos (desde users_servers.json)
+                'game_servers': servers_data['games'],
+                'total_servers': servers_data['total_servers'],
+                'total_games': servers_data['total_games'],
 
-            # Datos de códigos canjeados
-            try:
-                # Intentar obtener desde el sistema de códigos
-                codes_system = getattr(main, 'codes_system_setup', None)
-                if codes_system and hasattr(codes_system, 'user_redeemed_codes'):
-                    user_codes = codes_system.user_redeemed_codes.get(user_id, [])
-                    profile_data.update({
-                        'redeemed_codes': user_codes,
-                        'recent_redeemed_codes': user_codes[-5:] if user_codes else [],
-                        'code_statistics': {}
-                    })
-                    
-                    logger.debug(f"✅ Datos de códigos obtenidos para {user_id}: {len(user_codes)} códigos")
-            except Exception as e:
-                logger.debug(f"Error obteniendo datos de códigos: {e}")
+                # Monedas (desde user_coins.json)
+                'coins': coins_data,
 
-            # Datos de actividad general
-            profile_data.update({
-                'last_activity': time.time(),
-                'active_days': max(1, profile_data.get('active_days', 1)),
-                'total_commands': profile_data.get('total_commands', 0) + 1  # Incrementar por ver perfil
-            })
+                # Actividad y seguridad
+                'warnings': warnings_data.get(user_id, []),
+                'is_banned': user_id in bans_data,
+                'ban_info': bans_data.get(user_id, {}),
 
-            # Actualizar perfil con todos los datos
-            self.update_user_profile(user_id, **profile_data)
-            
-            logger.info(f"📊 Datos recopilados para usuario {user_id}: verificado={profile_data.get('is_verified', False)}, juegos={profile_data.get('total_games', 0)}, servidores={profile_data.get('total_servers', 0)}")
-            
-            return profile_data
+                # Logros y estadísticas
+                'achievements': [],
+                'total_commands_used': 0,
+                'first_command_date': None,
+                'last_activity': None
+            }
+# Guardar en perfiles
+            self.user_profiles[user_id] = data
+            self.save_profiles_data()
+
+            logger.info(f"📊 Datos recopilados para usuario {user_id}: verificado={data['is_verified']}, juegos={data['total_games']}, servidores={data['total_servers']}")
+            return data
 
         except Exception as e:
-            logger.error(f"Error recopilando datos para usuario {user_id}: {e}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            return profile_data
+            logger.error(f"❌ Error recopilando datos del usuario {user_id}: {e}")
+            return {}
+
+    def load_user_coins_data(self, user_id: str) -> dict:
+        """Cargar datos de monedas desde user_coins.json"""
+        try:
+            import json
+            from pathlib import Path
+
+            coins_file = Path("user_coins.json")
+            if coins_file.exists():
+                with open(coins_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    user_coins = data.get('user_coins', {}).get(user_id, {})
+
+                    transactions = user_coins.get('transactions', [])
+                    return {
+                        'balance': user_coins.get('balance', 0),
+                        'total_earned': user_coins.get('total_earned', 0),
+                        'total_transactions': len(transactions),
+                        'last_activity': transactions[-1]['timestamp'] if transactions else None
+                    }
+
+            return {
+                'balance': 0,
+                'total_earned': 0,
+                'total_transactions': 0,
+                'last_activity': None
+            }
+        except Exception as e:
+            logger.error(f"❌ Error cargando datos de monedas para {user_id}: {e}")
+            return {
+                'balance': 0,
+                'total_earned': 0,
+                'total_transactions': 0,
+                'last_activity': None
+            }
+
+    def load_user_servers_data(self, user_id: str) -> dict:
+        """Cargar datos de servidores desde users_servers.json"""
+        try:
+            import json
+            from pathlib import Path
+
+            servers_file = Path("users_servers.json")
+            if servers_file.exists():
+                with open(servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    user_data = data.get('users', {}).get(user_id, {})
+                    games = user_data.get('games', {})
+
+                    total_servers = 0
+                    for game_id, game_data in games.items():
+                        servers = game_data.get('server_links', [])
+                        total_servers += len(servers)
+
+                    return {
+                        'games': games,
+                        'total_games': len(games),
+                        'total_servers': total_servers
+                    }
+
+            return {
+                'games': {},
+                'total_games': 0,
+                'total_servers': 0
+            }
+        except Exception as e:
+            logger.error(f"❌ Error cargando datos de servidores para {user_id}: {e}")
+            return {
+                'games': {},
+                'total_games': 0,
+                'total_servers': 0
+            }
 
 # Instancia global del sistema de perfiles
 user_profile_system = UserProfileSystem()
 
 def setup_profile_commands(bot):
     """Configurar comandos de perfiles"""
-    
+
     @bot.tree.command(name="profile", description="Ver el perfil completo de un usuario con toda su información del bot")
     async def profile_command(interaction: discord.Interaction, usuario: discord.User = None):
         """Comando para ver el perfil de un usuario"""
-        
+
         # Verificar autenticación
         from main import check_verification
         if not await check_verification(interaction, defer_response=True):
             return
-        
+
         # Si no se especifica usuario, usar el que ejecuta el comando
         target_user = usuario or interaction.user
         user_id = str(target_user.id)
-        
+
         # Recopilar datos actualizados del usuario
         profile_data = user_profile_system.collect_user_data(user_id)
-        
+
         # Crear vista con menú desplegable
         view = ProfileView(str(interaction.user.id), target_user, profile_data)
-        
+
         # Crear embed inicial (overview)
         embed = view.create_overview_embed()
-        
+
         # Como check_verification ya hizo defer, usar followup en lugar de response
         await interaction.followup.send(embed=embed, view=view, ephemeral=False)
-        
+
         # Log del uso del comando
         requester = f"{interaction.user.name}#{interaction.user.discriminator}"
         target = f"{target_user.name}#{target_user.discriminator}"
