@@ -142,7 +142,7 @@ class ProfileView(discord.ui.View):
         )
 
         embed.set_thumbnail(url=self.target_user.display_avatar.url)
-        embed.set_footer(text="RbxServers • Sistema de Perfiles | Usa el menú para navegar")
+        embed.set_footer(text="RbxServers • Sistema de Perfiles | Usa el menú para navegar • Gracias por la idea kxis3rr")
 
         return embed
 
@@ -215,7 +215,7 @@ class ProfileView(discord.ui.View):
         )
 
         embed.set_thumbnail(url=self.target_user.display_avatar.url)
-        embed.set_footer(text="RbxServers • Información de Servidores")
+        embed.set_footer(text="RbxServers • Información de Servidores • Gracias por la idea kxis3rr")
 
         return embed
 
@@ -301,7 +301,7 @@ class ProfileView(discord.ui.View):
                 )
 
         embed.set_thumbnail(url=self.target_user.display_avatar.url)
-        embed.set_footer(text="RbxServers • Sistema de Verificación")
+        embed.set_footer(text="RbxServers • Sistema de Verificación • Gracias por la idea kxis3rr")
 
         return embed
 
@@ -390,7 +390,7 @@ class ProfileView(discord.ui.View):
         )
 
         embed.set_thumbnail(url=self.target_user.display_avatar.url)
-        embed.set_footer(text="RbxServers • Sistema de Monedas")
+        embed.set_footer(text="RbxServers • Sistema de Monedas • Gracias por la idea kxis3rr")
 
         return embed
 
@@ -475,7 +475,7 @@ class ProfileView(discord.ui.View):
         )
 
         embed.set_thumbnail(url=self.target_user.display_avatar.url)
-        embed.set_footer(text="RbxServers • Estadísticas de Actividad")
+        embed.set_footer(text="RbxServers • Estadísticas de Actividad • Gracias por la idea kxis3rr")
 
         return embed
 
@@ -568,7 +568,7 @@ class ProfileView(discord.ui.View):
                 )
 
         embed.set_thumbnail(url=self.target_user.display_avatar.url)
-        embed.set_footer(text="RbxServers • Sistema de Seguridad")
+        embed.set_footer(text="RbxServers • Sistema de Seguridad • Gracias por la idea kxis3rr")
 
         return embed
 
@@ -672,7 +672,7 @@ class ProfileView(discord.ui.View):
             )
 
         embed.set_thumbnail(url=self.target_user.display_avatar.url)
-        embed.set_footer(text="RbxServers • Logros y Códigos")
+        embed.set_footer(text="RbxServers • Logros y Códigos • Gracias por la idea kxis3rr")
 
         return embed
 
@@ -789,39 +789,53 @@ class UserProfileSystem:
 
     def collect_user_data(self, user_id: str):
         """Recopilar datos de todos los sistemas del bot para un usuario"""
-        from main import scraper, roblox_verification, coins_system, report_system
+        try:
+            from main import scraper, roblox_verification, coins_system
+        except ImportError:
+            logger.warning("No se pudieron importar algunos sistemas del bot")
         
         user_id = str(user_id)
         profile_data = self.get_user_profile(user_id)
 
         try:
             # Datos de verificación
-            if roblox_verification.is_user_verified(user_id):
-                verified_user = roblox_verification.verified_users.get(user_id, {})
-                profile_data.update({
-                    'is_verified': True,
-                    'roblox_username': verified_user.get('roblox_username'),
-                    'verified_at': verified_user.get('verified_at')
-                })
+            try:
+                if hasattr(roblox_verification, 'is_user_verified') and roblox_verification.is_user_verified(user_id):
+                    verified_user = roblox_verification.verified_users.get(user_id, {})
+                    profile_data.update({
+                        'is_verified': True,
+                        'roblox_username': verified_user.get('roblox_username'),
+                        'verified_at': verified_user.get('verified_at')
+                    })
+            except Exception as e:
+                logger.debug(f"Error obteniendo datos de verificación: {e}")
 
             # Datos de monedas
-            coins_stats = coins_system.get_user_stats(user_id)
-            profile_data.update({
-                'coins_balance': coins_stats['balance'],
-                'total_coins_earned': coins_stats['total_earned'],
-                'total_transactions': coins_stats['total_transactions']
-            })
+            try:
+                if hasattr(coins_system, 'get_user_stats'):
+                    coins_stats = coins_system.get_user_stats(user_id)
+                    profile_data.update({
+                        'coins_balance': coins_stats.get('balance', 0),
+                        'total_coins_earned': coins_stats.get('total_earned', 0),
+                        'total_transactions': coins_stats.get('total_transactions', 0)
+                    })
+            except Exception as e:
+                logger.debug(f"Error obteniendo datos de monedas: {e}")
 
             # Datos de servidores
-            user_games = scraper.links_by_user.get(user_id, {})
-            total_servers = sum(len(game_data.get('links', [])) for game_data in user_games.values())
-            
-            profile_data.update({
-                'total_games': len(user_games),
-                'total_servers': total_servers,
-                'favorite_games': scraper.user_favorites.get(user_id, []),
-                'reserved_servers': scraper.user_reserved_servers.get(user_id, [])
-            })
+            try:
+                if hasattr(scraper, 'links_by_user'):
+                    user_games = scraper.links_by_user.get(user_id, {})
+                    total_servers = sum(len(game_data.get('links', [])) for game_data in user_games.values())
+                    
+                    profile_data.update({
+                        'total_games': len(user_games),
+                        'total_servers': total_servers,
+                        'favorite_games': scraper.user_favorites.get(user_id, []) if hasattr(scraper, 'user_favorites') else [],
+                        'reserved_servers': scraper.user_reserved_servers.get(user_id, []) if hasattr(scraper, 'user_reserved_servers') else []
+                    })
+            except Exception as e:
+                logger.debug(f"Error obteniendo datos de servidores: {e}")
 
             # Actualizar perfil
             self.update_user_profile(user_id, **profile_data)
@@ -841,6 +855,11 @@ def setup_profile_commands(bot):
     @bot.tree.command(name="profile", description="Ver el perfil completo de un usuario con toda su información del bot")
     async def profile_command(interaction: discord.Interaction, usuario: discord.User = None):
         """Comando para ver el perfil de un usuario"""
+        
+        # Verificar autenticación
+        from main import check_verification
+        if not await check_verification(interaction, defer_response=True):
+            return
         
         # Si no se especifica usuario, usar el que ejecuta el comando
         target_user = usuario or interaction.user
