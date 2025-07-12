@@ -1780,56 +1780,77 @@ class VIPServerScraper:
         return info
 
     def save_links(self):
-        """Save user server data to users_servers.json and general data to vip_links.json"""
-        # Guardar datos de usuarios en users_servers.json
+        """Guardar SOLO en user_game_servers.json estructura simplificada y datos generales en vip_links.json"""
+        # GUARDAR EXCLUSIVAMENTE EN user_game_servers.json (estructura simplificada)
         try:
-            total_count = 0
-            user_count = len(self.links_by_user)
+            import json
+            from pathlib import Path
+            from datetime import datetime
             
-            users_data = {}
+            servers_file = Path("user_game_servers.json")
+            logger.info(f"💾 GUARDANDO EXCLUSIVAMENTE en {servers_file}")
+            
+            # Cargar datos existentes
+            if servers_file.exists():
+                try:
+                    with open(servers_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    logger.info(f"📄 Archivo existente cargado")
+                except Exception as read_error:
+                    logger.error(f"❌ Error leyendo archivo existente: {read_error}")
+                    data = {}
+            else:
+                logger.info(f"📄 Creando nuevo user_game_servers.json")
+                data = {}
+
+            # Asegurar estructura correcta
+            if 'user_servers' not in data:
+                data['user_servers'] = {}
+            if 'metadata' not in data:
+                data['metadata'] = {}
+
+            # Procesar cada usuario
+            total_servers_saved = 0
+            users_processed = 0
+            
             for user_id, user_games in self.links_by_user.items():
-                user_total = 0
-                games_data = {}
+                user_id_str = str(user_id)
+                user_all_servers = []
                 
+                # Recopilar todos los servidores del usuario de todos sus juegos
                 for game_id, game_data in user_games.items():
-                    game_links = len(game_data.get('links', []))
-                    user_total += game_links
-                    total_count += game_links
-                    
-                    games_data[game_id] = {
-                        'server_links': game_data.get('links', []),
-                        'game_name': game_data.get('game_name', f'Game {game_id}'),
-                        'game_image_url': game_data.get('game_image_url'),
-                        'category': game_data.get('category', 'other'),
-                        'server_details': game_data.get('server_details', {})
-                    }
+                    game_servers = game_data.get('links', [])
+                    user_all_servers.extend(game_servers)
                 
-                users_data[user_id] = {
-                    'games': games_data,
-                    'usage_history': self.usage_history.get(user_id, []),
-                    'favorites': self.user_favorites.get(user_id, []),
-                    'reserved_servers': self.user_reserved_servers.get(user_id, [])
-                }
+                # Limitar a máximo 5 servidores
+                user_all_servers = user_all_servers[:5]
                 
-                logger.debug(f"💾 Usuario {user_id}: {user_total} enlaces en {len(user_games)} juegos")
+                # Guardar en el formato simplificado
+                data['user_servers'][user_id_str] = user_all_servers
+                total_servers_saved += len(user_all_servers)
+                users_processed += 1
+                
+                logger.info(f"👤 Usuario {user_id_str}: {len(user_all_servers)} servidores guardados")
             
-            users_file_data = {
-                'users': users_data,
-                'metadata': {
-                    'created_at': datetime.now().isoformat(),
-                    'last_updated': datetime.now().isoformat(),
-                    'total_users': user_count,
-                    'total_servers': total_count
-                }
-            }
+            # Actualizar metadata
+            data['metadata'].update({
+                'created_at': data['metadata'].get('created_at', datetime.now().isoformat()),
+                'last_updated': datetime.now().isoformat(),
+                'total_users': len(data['user_servers']),
+                'total_servers': sum(len(user_servers) for user_servers in data['user_servers'].values()),
+                'description': "Estructura simplificada: user_id -> array de hasta 5 servidores"
+            })
+
+            # Guardar archivo
+            with open(servers_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
             
-            logger.info(f"💾 Guardando datos de usuarios: {user_count} usuarios, {total_count} enlaces totales")
-            with open(self.users_servers_file, 'w') as f:
-                json.dump(users_file_data, f, indent=2)
-            logger.info(f"✅ Datos de usuarios guardados exitosamente en {self.users_servers_file}")
+            logger.info(f"✅ GUARDADO EXITOSO en user_game_servers.json: {users_processed} usuarios, {total_servers_saved} servidores")
             
         except Exception as e:
-            logger.error(f"❌ Error guardando datos de usuarios: {e}")
+            logger.error(f"❌ ERROR CRÍTICO guardando en user_game_servers.json: {e}")
+            import traceback
+            logger.error(f"❌ Traceback: {traceback.format_exc()}")
         
         # Guardar datos generales en vip_links.json (solo stats y categorías)
         try:
@@ -1837,7 +1858,7 @@ class VIPServerScraper:
                 'scraping_stats': self.scraping_stats,
                 'game_categories': self.game_categories,
                 'last_updated': datetime.now().isoformat(),
-                'note': 'This file now only contains general stats and categories. User data is in users_servers.json'
+                'note': 'This file now only contains general stats and categories. User data is in user_game_servers.json'
             }
             
             with open(self.vip_links_file, 'w') as f:
@@ -2726,68 +2747,12 @@ class VIPServerScraper:
                         current_servers = self.links_by_user[self.current_user_id][game_id]['links']
                         logger.info(f"💾 GUARDANDO INMEDIATAMENTE servidor #{new_links_count} en user_game_servers.json")
                         
-                        # Llamar directamente al sistema de perfiles para guardar
-                        try:
-                            import json
-                            from pathlib import Path
-                            from datetime import datetime
-                            
-                            servers_file = Path("user_game_servers.json")
-                            
-                            # Cargar datos existentes
-                            if servers_file.exists():
-                                try:
-                                    with open(servers_file, 'r', encoding='utf-8') as f:
-                                        data = json.load(f)
-                                    logger.info(f"📄 user_game_servers.json existente cargado")
-                                except Exception as read_error:
-                                    logger.error(f"❌ Error leyendo user_game_servers.json: {read_error}")
-                                    data = {}
-                            else:
-                                logger.info(f"📄 Creando nuevo user_game_servers.json")
-                                data = {}
-
-                            # Asegurar estructura correcta
-                            if 'user_servers' not in data:
-                                data['user_servers'] = {}
-                            if 'metadata' not in data:
-                                data['metadata'] = {}
-
-                            # Limitar a máximo 5 servidores
-                            servers_to_save = current_servers[:5]
-                            logger.info(f"📊 Guardando {len(servers_to_save)} servidores (máximo 5)")
-                            
-                            # Actualizar datos del usuario
-                            data['user_servers'][self.current_user_id] = servers_to_save
-                            logger.info(f"👤 Usuario {self.current_user_id} actualizado con {len(servers_to_save)} servidores")
-                            
-                            # Actualizar metadata
-                            data['metadata'].update({
-                                'created_at': data['metadata'].get('created_at', datetime.now().isoformat()),
-                                'last_updated': datetime.now().isoformat(),
-                                'total_users': len(data['user_servers']),
-                                'total_servers': sum(len(user_servers) for user_servers in data['user_servers'].values()),
-                                'description': "Estructura simplificada: user_id -> array de hasta 5 servidores"
-                            })
-
-                            # Guardar archivo
-                            with open(servers_file, 'w', encoding='utf-8') as f:
-                                json.dump(data, f, indent=2, ensure_ascii=False)
-                            
-                            # Verificar que se guardó correctamente
-                            with open(servers_file, 'r', encoding='utf-8') as f:
-                                verify_data = json.load(f)
-                                saved_servers = verify_data.get('user_servers', {}).get(self.current_user_id, [])
-                                
-                            if len(saved_servers) == len(servers_to_save):
-                                logger.info(f"✅ CONFIRMADO: {len(saved_servers)} servidores guardados correctamente en user_game_servers.json")
-                            else:
-                                logger.error(f"❌ FALLO: Solo {len(saved_servers)}/{len(servers_to_save)} servidores guardados")
-                                
-                        except Exception as save_error:
-                            logger.error(f"❌ ERROR CRÍTICO guardando en user_game_servers.json: {save_error}")
-                            import traceback
-                            logger.error(f"❌ Traceback: {traceback.format_exc()}")
+                        # Usar el método especializado para guardado directo
+                        save_success = self.save_servers_directly_to_new_format(self.current_user_id, current_servers)
+                        if save_success:
+                            logger.info(f"✅ CONFIRMADO: Servidor #{new_links_count} guardado exitosamente")
+                        else:
+                            logger.error(f"❌ FALLO: No se pudo guardar servidor #{new_links_count}")
                         
                     elif vip_link:
                         logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
@@ -2828,83 +2793,34 @@ class VIPServerScraper:
             logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {user_game_total})")
             logger.info(f"⚡ Processing speed: {self.scraping_stats['servers_per_minute']} servers/minute")
 
-            # Guardar en formato original
-            self.save_links()
-            
-            # GUARDADO FINAL OBLIGATORIO en user_game_servers.json
+            # GUARDADO FINAL OBLIGATORIO EXCLUSIVO en user_game_servers.json
             if self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id]:
                 user_servers = self.links_by_user[self.current_user_id][game_id]['links']
                 
                 logger.info(f"🔄 GUARDADO FINAL OBLIGATORIO: {len(user_servers)} servidores para usuario {self.current_user_id}")
                 
-                # GUARDADO FINAL DIRECTO Y FORZADO (3 intentos)
-                for attempt in range(3):
-                    try:
-                        import json
-                        from pathlib import Path
-                        from datetime import datetime
-                        
-                        servers_file = Path("user_game_servers.json")
-                        logger.info(f"💾 Intento {attempt + 1}/3 de guardado final...")
-                        
-                        # Cargar datos existentes
-                        if servers_file.exists():
-                            try:
-                                with open(servers_file, 'r', encoding='utf-8') as f:
-                                    data = json.load(f)
-                            except Exception as read_error:
-                                logger.error(f"❌ Error leyendo archivo en intento {attempt + 1}: {read_error}")
-                                data = {}
-                        else:
-                            data = {}
-
-                        # Asegurar estructura correcta
-                        if 'user_servers' not in data:
-                            data['user_servers'] = {}
-                        if 'metadata' not in data:
-                            data['metadata'] = {}
-
-                        # Limitar a máximo 5 servidores
-                        servers_to_save = user_servers[:5]
-                        
-                        # Actualizar datos del usuario
-                        data['user_servers'][self.current_user_id] = servers_to_save
-                        
-                        # Actualizar metadata
-                        data['metadata'].update({
-                            'created_at': data['metadata'].get('created_at', datetime.now().isoformat()),
-                            'last_updated': datetime.now().isoformat(),
-                            'total_users': len(data['user_servers']),
-                            'total_servers': sum(len(user_servers_list) for user_servers_list in data['user_servers'].values()),
-                            'description': "Estructura simplificada: user_id -> array de hasta 5 servidores"
-                        })
-
-                        # Guardar archivo
-                        with open(servers_file, 'w', encoding='utf-8') as f:
-                            json.dump(data, f, indent=2, ensure_ascii=False)
-                        
-                        # Verificar inmediatamente
-                        with open(servers_file, 'r', encoding='utf-8') as f:
-                            verify_data = json.load(f)
-                            saved_servers = verify_data.get('user_servers', {}).get(self.current_user_id, [])
-                            
-                        if len(saved_servers) == len(servers_to_save):
-                            logger.info(f"✅ GUARDADO FINAL EXITOSO en intento {attempt + 1}: {len(saved_servers)} servidores confirmados")
-                            break
-                        else:
-                            logger.warning(f"⚠️ Intento {attempt + 1} incompleto: {len(saved_servers)}/{len(servers_to_save)} servidores")
-                            if attempt == 2:  # Último intento
-                                logger.error(f"❌ FALLO CRÍTICO: Todos los intentos de guardado fallaron")
-                            
-                    except Exception as e:
-                        logger.error(f"❌ Error en intento {attempt + 1} de guardado final: {e}")
-                        if attempt == 2:  # Último intento
-                            logger.error(f"❌ GUARDADO FINAL COMPLETAMENTE FALLIDO")
-                            import traceback
-                            logger.error(f"❌ Traceback final: {traceback.format_exc()}")
-                        else:
-                            import time
-                            time.sleep(1)  # Pausa antes del siguiente intento
+                # Usar método especializado para guardado final
+                save_success = self.save_servers_directly_to_new_format(self.current_user_id, user_servers)
+                if save_success:
+                    logger.info(f"✅ GUARDADO FINAL EXITOSO: {len(user_servers)} servidores confirmados en user_game_servers.json")
+                else:
+                    logger.error(f"❌ GUARDADO FINAL FALLIDO para {len(user_servers)} servidores")
+            
+            # Guardar solo datos generales (stats y categorías) en vip_links.json
+            try:
+                general_data = {
+                    'scraping_stats': self.scraping_stats,
+                    'game_categories': self.game_categories,
+                    'last_updated': datetime.now().isoformat(),
+                    'note': 'This file now only contains general stats and categories. User data is in user_game_servers.json'
+                }
+                
+                with open(self.vip_links_file, 'w') as f:
+                    json.dump(general_data, f, indent=2)
+                logger.info(f"✅ Datos generales guardados en {self.vip_links_file}")
+                
+            except Exception as e:
+                logger.error(f"❌ Error guardando datos generales: {e}")
             
             return new_links_count
 
