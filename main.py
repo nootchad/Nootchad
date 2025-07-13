@@ -1261,7 +1261,7 @@ class VIPServerScraper:
         self.report_system = None
 
     def load_existing_links(self):
-        """Load existing user server data from users_servers.json and user_game_servers.json"""
+        """Load existing user server data from user_game_servers.json and fallback to users_servers.json"""
         # Inicializar estructuras de datos
         self.links_by_user = {}
         self.usage_history = {}
@@ -1271,59 +1271,65 @@ class VIPServerScraper:
         total_links_loaded = 0
         total_users_loaded = 0
         
-        # PRIORIDAD 1: Cargar desde user_game_servers.json (estructura simplificada)
+        # PRIORIDAD ABSOLUTA: Cargar desde user_game_servers.json (estructura simplificada)
         user_game_servers_file = Path("user_game_servers.json")
         if user_game_servers_file.exists():
             try:
-                logger.info(f"🔍 Cargando datos desde user_game_servers.json...")
+                logger.info(f"🔍 Cargando datos PRIORITARIOS desde user_game_servers.json...")
                 with open(user_game_servers_file, 'r', encoding='utf-8') as f:
                     simple_data = json.load(f)
                     
                 user_servers_data = simple_data.get('user_servers', {})
+                logger.info(f"📊 Archivo contiene {len(user_servers_data)} usuarios")
                 
                 for user_id, servers_list in user_servers_data.items():
                     user_id_str = str(user_id)
                     
-                    if isinstance(servers_list, list) and servers_list:
-                        # Crear estructura compatible con el formato esperado
-                        self.links_by_user[user_id_str] = {
-                            "2753915549": {  # Usar Blox Fruits como juego por defecto
-                                'links': servers_list,
-                                'game_name': 'Blox Fruits',
-                                'game_image_url': 'https://rbxservers.xyz/svgs/roblox.svg',
-                                'category': 'rpg',
-                                'server_details': {}
+                    if isinstance(servers_list, list):
+                        if servers_list:
+                            # Usuario con servidores - crear estructura compatible
+                            self.links_by_user[user_id_str] = {
+                                "2753915549": {  # Usar Blox Fruits como juego por defecto
+                                    'links': servers_list,
+                                    'game_name': 'Blox Fruits',
+                                    'game_image_url': 'https://rbxservers.xyz/svgs/roblox.svg',
+                                    'category': 'rpg',
+                                    'server_details': {}
+                                }
                             }
-                        }
+                            total_links_loaded += len(servers_list)
+                            total_users_loaded += 1
+                            logger.info(f"✅ Usuario {user_id_str}: {len(servers_list)} servidores cargados")
+                        else:
+                            # Usuario sin servidores - inicializar vacío
+                            self.links_by_user[user_id_str] = {}
+                            logger.info(f"➖ Usuario {user_id_str}: sin servidores (inicializado vacío)")
                         
-                        # Inicializar otros datos
+                        # Inicializar otros datos del usuario
                         self.usage_history[user_id_str] = []
                         self.user_favorites[user_id_str] = []
                         self.user_reserved_servers[user_id_str] = []
                         
-                        total_links_loaded += len(servers_list)
-                        total_users_loaded += 1
-                        
-                        logger.info(f"✅ Usuario {user_id_str} cargado desde user_game_servers.json: {len(servers_list)} servidores")
-                    elif isinstance(servers_list, list) and not servers_list:
-                        # Usuario existe pero sin servidores
-                        self.links_by_user[user_id_str] = {}
-                        self.usage_history[user_id_str] = []
-                        self.user_favorites[user_id_str] = []
-                        self.user_reserved_servers[user_id_str] = []
-                        logger.info(f"✅ Usuario {user_id_str} inicializado sin servidores")
+                    else:
+                        logger.warning(f"⚠️ Usuario {user_id_str} tiene formato inválido: {type(servers_list)}")
                 
-                logger.info(f"✅ Datos cargados desde user_game_servers.json: {total_users_loaded} usuarios con servidores, {total_links_loaded} enlaces totales")
+                logger.info(f"✅ CARGA PRINCIPAL COMPLETADA desde user_game_servers.json:")
+                logger.info(f"   📊 {total_users_loaded} usuarios con servidores")
+                logger.info(f"   📊 {len(user_servers_data)} usuarios totales")
+                logger.info(f"   📊 {total_links_loaded} enlaces totales")
                 
             except Exception as e:
-                logger.error(f"❌ Error cargando user_game_servers.json: {e}")
+                logger.error(f"❌ ERROR CRÍTICO cargando user_game_servers.json: {e}")
                 import traceback
-                logger.error(f"❌ Traceback: {traceback.format_exc()}")
+                logger.error(f"❌ Traceback completo: {traceback.format_exc()}")
+                # Continuar con fallback
+        else:
+            logger.warning(f"⚠️ Archivo principal user_game_servers.json NO EXISTE")
         
-        # PRIORIDAD 2: Cargar desde users_servers.json (estructura compleja) si no hay datos
+        # FALLBACK: Solo si no se cargó nada desde el archivo principal
         if total_users_loaded == 0 and Path(self.users_servers_file).exists():
             try:
-                logger.info(f"🔍 Cargando datos desde users_servers.json como respaldo...")
+                logger.info(f"🔄 FALLBACK: Cargando desde users_servers.json...")
                 with open(self.users_servers_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     
@@ -1358,46 +1364,38 @@ class VIPServerScraper:
                     if self.links_by_user[user_id_str]:  # Solo contar si tiene datos
                         total_users_loaded += 1
                 
-                logger.info(f"✅ Datos de respaldo cargados desde users_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
+                logger.info(f"✅ FALLBACK completado desde users_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
                 
             except Exception as e:
-                logger.error(f"❌ Error cargando users_servers.json: {e}")
+                logger.error(f"❌ Error en fallback desde users_servers.json: {e}")
                 import traceback
                 logger.error(f"❌ Traceback: {traceback.format_exc()}")
         
-        # Si no hay datos, inicializar estructuras vacías
+        # Verificación final
         if total_users_loaded == 0:
-            logger.warning(f"⚠️ No se encontraron datos de usuarios en ningún archivo")
+            logger.error(f"❌ NO SE PUDIERON CARGAR DATOS DE NINGÚN ARCHIVO")
+            logger.error(f"   🔍 Verificar que user_game_servers.json exista y tenga datos válidos")
             self.links_by_user = {}
             self.usage_history = {}
             self.user_favorites = {}
             self.user_reserved_servers = {}
         
-        # Log final de resumen
-        logger.info(f"📊 RESUMEN FINAL: {total_users_loaded} usuarios cargados con {total_links_loaded} enlaces totales")
-        
-        # Debug detallado de usuarios cargados
-        for user_id, user_games in self.links_by_user.items():
-            if isinstance(user_games, dict):
-                user_total_links = sum(len(game_data.get('links', [])) for game_data in user_games.values() if isinstance(game_data, dict))
-                logger.debug(f"📊 Usuario {user_id}: {len(user_games)} juegos, {user_total_links} enlaces")
-            else:
-                logger.warning(f"⚠️ Usuario {user_id} tiene estructura de datos inválida: {type(user_games)}")
+        # Log de resumen ejecutivo
+        logger.info(f"🎯 RESUMEN EJECUTIVO DE CARGA:")
+        logger.info(f"   👥 Usuarios cargados: {total_users_loaded}")
+        logger.info(f"   🔗 Enlaces totales: {total_links_loaded}")
+        logger.info(f"   📁 Fuente principal: user_game_servers.json")
         
         # Cargar datos generales desde vip_links.json (solo stats y categorías)
         try:
             if Path(self.vip_links_file).exists():
                 with open(self.vip_links_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    
-                    # Solo cargar estadísticas y categorías generales
                     self.scraping_stats = data.get('scraping_stats', self.scraping_stats)
                     self.game_categories = data.get('game_categories', {})
-                    
-                    logger.info(f"Loaded general data from {self.vip_links_file}")
-                    
+                    logger.info(f"✅ Datos generales cargados desde {self.vip_links_file}")
             else:
-                logger.info(f"⚠️ VIP links file {self.vip_links_file} not found")
+                logger.info(f"⚠️ Archivo de datos generales {self.vip_links_file} no encontrado")
                 self.scraping_stats = {
                     'total_scraped': 0,
                     'successful_extractions': 0,
@@ -1407,9 +1405,8 @@ class VIPServerScraper:
                     'servers_per_minute': 0
                 }
                 self.game_categories = {}
-                
         except Exception as e:
-            logger.error(f"❌ Error loading general data: {e}")
+            logger.error(f"❌ Error cargando datos generales: {e}")
             self.scraping_stats = {
                 'total_scraped': 0,
                 'successful_extractions': 0,
@@ -1420,7 +1417,7 @@ class VIPServerScraper:
             }
             self.game_categories = {}
         
-        # Initialize available_links and cooldowns
+        # Inicializar otras estructuras
         self.available_links = {}
         self.user_cooldowns = {}
 
@@ -2500,6 +2497,168 @@ class VIPServerScraper:
                     break
 
             driver = webdriver.Chrome(options=chrome_options)
+
+
+@bot.tree.command(name="servertest", description="Ver servidores VIP disponibles para tu usuario")
+async def servertest_command(interaction: discord.Interaction):
+    """Comando que muestra los servidores disponibles para el usuario autenticado"""
+    user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    # Verificar autenticación
+    if not await check_verification(interaction, defer_response=True):
+        return
+    
+    try:
+        user_logger.info(f"🔍 Usuario {username} (ID: {user_id}) ejecutó /servertest")
+        
+        # Cargar servidores del usuario DIRECTAMENTE desde user_game_servers.json
+        user_servers = []
+        try:
+            servers_file = Path("user_game_servers.json")
+            if servers_file.exists():
+                with open(servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    user_servers = data.get('user_servers', {}).get(user_id, [])
+                    logger.info(f"📊 Cargados {len(user_servers)} servidores para usuario {user_id} desde user_game_servers.json")
+            else:
+                logger.error(f"❌ Archivo user_game_servers.json no existe")
+        except Exception as e:
+            logger.error(f"❌ Error cargando desde user_game_servers.json: {e}")
+            user_servers = []
+        
+        # Si no hay servidores en el archivo principal, intentar desde scraper como fallback
+        if not user_servers:
+            user_servers = scraper.get_all_links(user_id=user_id)
+            logger.info(f"🔄 Fallback: Cargados {len(user_servers)} servidores desde scraper para usuario {user_id}")
+        
+        if not user_servers:
+            # Sin servidores disponibles
+            embed = discord.Embed(
+                title="📭 Sin Servidores Disponibles",
+                description="No tienes servidores VIP guardados en tu cuenta.",
+                color=0xffaa00
+            )
+            embed.add_field(
+                name="🔍 Para obtener servidores:",
+                value="• Usa `/scrape [game_id]` para buscar servidores\n• Ejemplo: `/scrape 2753915549` (Blox Fruits)\n• Usa `/game [nombre]` para buscar por nombre",
+                inline=False
+            )
+            embed.add_field(
+                name="💡 Juegos populares:",
+                value="• **2753915549** - Blox Fruits\n• **6284583030** - Pet Simulator X\n• **4616652839** - Shindo Life",
+                inline=False
+            )
+            embed.add_field(
+                name="📁 Archivo de datos:",
+                value=f"`user_game_servers.json` - Usuario ID: `{user_id}`",
+                inline=False
+            )
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Filtrar servidores válidos (que no estén en blacklist)
+        clean_servers = report_system.filter_blacklisted_servers(user_servers)
+        blacklisted_count = len(user_servers) - len(clean_servers)
+        
+        # Crear embed con los servidores disponibles
+        embed = discord.Embed(
+            title="🎮 Tus Servidores VIP Disponibles",
+            description=f"Mostrando servidores cargados desde **user_game_servers.json**",
+            color=0x00ff88
+        )
+        
+        # Información del usuario
+        embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+        embed.add_field(name="🆔 User ID", value=f"`{user_id}`", inline=True)
+        embed.add_field(name="📁 Fuente", value="user_game_servers.json", inline=True)
+        
+        # Estadísticas de servidores
+        embed.add_field(name="🔗 Total Servidores", value=f"{len(user_servers)}", inline=True)
+        embed.add_field(name="✅ Servidores Válidos", value=f"{len(clean_servers)}", inline=True)
+        
+        if blacklisted_count > 0:
+            embed.add_field(name="🚫 Filtrados", value=f"{blacklisted_count}", inline=True)
+        else:
+            embed.add_field(name="🚫 Filtrados", value="0", inline=True)
+        
+        # Mostrar hasta 5 servidores
+        if clean_servers:
+            servers_to_show = clean_servers[:5]
+            servers_text = ""
+            
+            for i, server_link in enumerate(servers_to_show, 1):
+                # Extraer código del servidor
+                if "privateServerLinkCode=" in server_link:
+                    code = server_link.split("privateServerLinkCode=")[1][:20]
+                    servers_text += f"**{i}.** `{code}...`\n"
+                else:
+                    servers_text += f"**{i}.** `{server_link[-20:]}...`\n"
+            
+            embed.add_field(
+                name=f"🔗 Servidores (mostrando {len(servers_to_show)}/{len(clean_servers)}):",
+                value=servers_text,
+                inline=False
+            )
+            
+            if len(clean_servers) > 5:
+                embed.add_field(
+                    name="📋 Total:",
+                    value=f"Y {len(clean_servers) - 5} servidores más disponibles...",
+                    inline=False
+                )
+        
+        # Información adicional
+        embed.add_field(
+            name="🎯 Comandos útiles:",
+            value="• `/join` - Unirse a un servidor aleatorio\n• `/scrape` - Buscar más servidores\n• `/game` - Buscar por nombre de juego",
+            inline=False
+        )
+        
+        # Debug info (solo para el owner)
+        if user_id == DISCORD_OWNER_ID:
+            embed.add_field(
+                name="🔧 Debug Info (Owner Only):",
+                value=f"• Raw servers count: {len(user_servers)}\n• Clean servers count: {len(clean_servers)}\n• File: user_game_servers.json\n• Loaded from: Direct file read",
+                inline=False
+            )
+        
+        embed.set_footer(text=f"Última actualización: {datetime.now().strftime('%H:%M:%S')}")
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+        # Dar monedas por usar el comando
+        try:
+            if coins_system:
+                coins_system.add_coins(user_id, 5, "Usar comando /servertest")
+        except Exception as e:
+            logger.debug(f"Error agregando monedas: {e}")
+        
+        logger.info(f"✅ Usuario {username} vio {len(clean_servers)} servidores disponibles")
+        
+    except Exception as e:
+        logger.error(f"❌ Error en comando /servertest para {username}: {e}")
+        
+        error_embed = discord.Embed(
+            title="❌ Error",
+            description="Ocurrió un error al cargar tus servidores.",
+            color=0xff0000
+        )
+        error_embed.add_field(
+            name="🔧 Detalles técnicos:",
+            value=f"```{str(e)[:200]}```",
+            inline=False
+        )
+        error_embed.add_field(
+            name="💡 Sugerencias:",
+            value="• Verifica que tengas servidores guardados\n• Usa `/scrape` para obtener nuevos servidores\n• Contacta al soporte si persiste el error",
+            inline=False
+        )
+        
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+
             logger.info("✅ Chrome driver created with minimal configuration")
             return driver
         except Exception as e:
@@ -2893,65 +3052,55 @@ class VIPServerScraper:
 
     def get_all_links(self, game_id=None, user_id=None):
         """Get all VIP links, optionally for a specific game and user"""
-        if user_id and game_id:
-            # Primero intentar desde links_by_user cargado en memoria
-            if user_id in self.links_by_user and game_id in self.links_by_user[user_id]:
-                return self.links_by_user[user_id][game_id].get('links', [])
+        # SIEMPRE cargar desde user_game_servers.json para garantizar consistencia
+        try:
+            servers_file = Path("user_game_servers.json")
+            if not servers_file.exists():
+                logger.warning(f"⚠️ Archivo {servers_file} no existe")
+                return []
+                
+            with open(servers_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                all_user_servers = data.get('user_servers', {})
+                
+            if user_id:
+                # Obtener servidores de un usuario específico
+                user_servers = all_user_servers.get(user_id, [])
+                logger.debug(f"📊 Usuario {user_id}: {len(user_servers)} servidores cargados desde user_game_servers.json")
+                return user_servers
+            else:
+                # Obtener todos los servidores de todos los usuarios
+                all_links = []
+                for uid, user_servers in all_user_servers.items():
+                    if isinstance(user_servers, list):
+                        all_links.extend(user_servers)
+                    else:
+                        logger.warning(f"⚠️ Usuario {uid} tiene formato inválido: {type(user_servers)}")
+                
+                logger.debug(f"📊 Total servidores cargados desde user_game_servers.json: {len(all_links)}")
+                return all_links
+                
+        except Exception as e:
+            logger.error(f"❌ Error cargando desde user_game_servers.json: {e}")
             
-            # Si no está en memoria, cargar directamente desde user_game_servers.json
-            try:
-                servers_file = Path("user_game_servers.json")
-                if servers_file.exists():
-                    with open(servers_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        user_servers = data.get('user_servers', {}).get(user_id, [])
-                        logger.info(f"🔄 Cargado directamente desde user_game_servers.json para usuario {user_id}: {len(user_servers)} servidores")
-                        return user_servers
-            except Exception as e:
-                logger.error(f"❌ Error cargando desde user_game_servers.json: {e}")
-            
-            return []
-        elif user_id:
-            # Cargar todos los servidores del usuario desde user_game_servers.json
-            try:
-                servers_file = Path("user_game_servers.json")
-                if servers_file.exists():
-                    with open(servers_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        user_servers = data.get('user_servers', {}).get(user_id, [])
-                        logger.info(f"🔄 Cargado directamente desde user_game_servers.json para usuario {user_id}: {len(user_servers)} servidores")
-                        return user_servers
-            except Exception as e:
-                logger.error(f"❌ Error cargando desde user_game_servers.json: {e}")
-            
-            # Fallback a memoria si existe
-            user_games = self.links_by_user.get(user_id, {})
-            all_links = []
-            for game_data in user_games.values():
-                all_links.extend(game_data.get('links', []))
-            return all_links
-        else:
-            # Cargar todos los servidores de todos los usuarios
-            try:
-                servers_file = Path("user_game_servers.json")
-                if servers_file.exists():
-                    with open(servers_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        all_user_servers = data.get('user_servers', {})
-                        all_links = []
-                        for user_servers in all_user_servers.values():
-                            all_links.extend(user_servers)
-                        logger.info(f"🔄 Cargados todos los servidores desde user_game_servers.json: {len(all_links)} total")
-                        return all_links
-            except Exception as e:
-                logger.error(f"❌ Error cargando todos los servidores: {e}")
-            
-            # Fallback a memoria
-            all_links = []
-            for user_games in self.links_by_user.values():
+            # Fallback a memoria solo si falla el archivo
+            if user_id:
+                user_games = self.links_by_user.get(user_id, {})
+                all_links = []
                 for game_data in user_games.values():
-                    all_links.extend(game_data.get('links', []))
-            return all_links
+                    if isinstance(game_data, dict):
+                        all_links.extend(game_data.get('links', []))
+                logger.warning(f"⚠️ Usando datos de memoria para usuario {user_id}: {len(all_links)} servidores")
+                return all_links
+            else:
+                all_links = []
+                for user_games in self.links_by_user.values():
+                    if isinstance(user_games, dict):
+                        for game_data in user_games.values():
+                            if isinstance(game_data, dict):
+                                all_links.extend(game_data.get('links', []))
+                logger.warning(f"⚠️ Usando datos de memoria total: {len(all_links)} servidores")
+                return all_links
 
 # Discord Bot
 intents = discord.Intents.default()
