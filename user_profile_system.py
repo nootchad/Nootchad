@@ -995,34 +995,52 @@ class UserProfileSystem:
             }
 
 def save_user_servers_simple(self, user_id: str, servers: list):
-    """Guardar servidores de usuario en la estructura simplificada"""
-    try:
-        import json
-        from pathlib import Path
-        from datetime import datetime
+        """Guardar servidores de usuario en la estructura simplificada"""
+        try:
+            import json
+            from pathlib import Path
+            from datetime import datetime
 
-        servers_file = Path("user_game_servers.json")
-        
-        # Cargar datos existentes
-        if servers_file.exists():
-            with open(servers_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        else:
-            data = {
-                "user_servers": {},
-                "metadata": {
-                    "created_at": datetime.now().isoformat(),
-                    "last_updated": datetime.now().isoformat(),
-                    "total_users": 0,
-                    "total_servers": 0,
-                    "description": "Estructura simplificada: user_id -> array de hasta 5 servidores"
+            servers_file = Path("user_game_servers.json")
+            
+            # Cargar datos existentes
+            if servers_file.exists():
+                with open(servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            else:
+                data = {
+                    "user_servers": {},
+                    "metadata": {
+                        "created_at": datetime.now().isoformat(),
+                        "last_updated": datetime.now().isoformat(),
+                        "total_users": 0,
+                        "total_servers": 0,
+                        "description": "Estructura simplificada: user_id -> array de hasta 5 servidores"
+                    }
                 }
-            }
 
-        # Limitar a máximo 5 servidores
-        servers = servers[:5] if servers else []
-        
-        # Actualizar datos del usuario
+            # Limitar a máximo 5 servidores
+            servers = servers[:5] if servers else []
+            
+            # Actualizar datos del usuario
+            data['user_servers'][user_id] = servers
+            
+            # Actualizar metadata
+            data['metadata'].update({
+                'last_updated': datetime.now().isoformat(),
+                'total_users': len(data['user_servers']),
+                'total_servers': sum(len(user_servers) for user_servers in data['user_servers'].values())
+            })
+
+            # Guardar archivo
+            with open(servers_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error guardando servidores para {user_id}: {e}")
+            return Falsetos del usuario
         data['user_servers'][user_id] = servers
         
         # Actualizar metadata
@@ -1066,6 +1084,17 @@ def save_user_servers_simple(self, user_id: str, servers: list):
         try:
             import json
             from pathlib import Path
+
+            servers_file = Path("user_game_servers.json")
+            if servers_file.exists():
+                with open(servers_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get('user_servers', {})
+            return {}
+            
+        except Exception as e:
+            logger.error(f"❌ Error obteniendo todos los servidores: {e}")
+            return {}h
 
             servers_file = Path("user_game_servers.json")
             if servers_file.exists():
