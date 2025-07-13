@@ -1261,41 +1261,76 @@ class VIPServerScraper:
         self.report_system = None
 
     def load_existing_links(self):
-        """Load existing user server data from users_servers.json and load general links from vip_links.json"""
-        # Cargar datos de usuarios desde users_servers.json
-        try:
-            if Path(self.users_servers_file).exists():
+        """Load existing user server data from users_servers.json and user_game_servers.json"""
+        # Inicializar estructuras de datos
+        self.links_by_user = {}
+        self.usage_history = {}
+        self.user_favorites = {}
+        self.user_reserved_servers = {}
+        
+        total_links_loaded = 0
+        total_users_loaded = 0
+        
+        # PRIORIDAD 1: Cargar desde user_game_servers.json (estructura simplificada)
+        user_game_servers_file = Path("user_game_servers.json")
+        if user_game_servers_file.exists():
+            try:
+                logger.info(f"🔍 Cargando datos desde user_game_servers.json...")
+                with open(user_game_servers_file, 'r', encoding='utf-8') as f:
+                    simple_data = json.load(f)
+                    
+                user_servers_data = simple_data.get('user_servers', {})
+                
+                for user_id, servers_list in user_servers_data.items():
+                    user_id_str = str(user_id)
+                    
+                    if isinstance(servers_list, list) and servers_list:
+                        # Crear estructura compatible con el formato esperado
+                        self.links_by_user[user_id_str] = {
+                            "2753915549": {  # Usar Blox Fruits como juego por defecto
+                                'links': servers_list,
+                                'game_name': 'Blox Fruits',
+                                'game_image_url': 'https://rbxservers.xyz/svgs/roblox.svg',
+                                'category': 'rpg',
+                                'server_details': {}
+                            }
+                        }
+                        
+                        # Inicializar otros datos
+                        self.usage_history[user_id_str] = []
+                        self.user_favorites[user_id_str] = []
+                        self.user_reserved_servers[user_id_str] = []
+                        
+                        total_links_loaded += len(servers_list)
+                        total_users_loaded += 1
+                        
+                        logger.info(f"✅ Usuario {user_id_str} cargado: {len(servers_list)} servidores")
+                
+                logger.info(f"✅ Datos cargados desde user_game_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
+                
+            except Exception as e:
+                logger.error(f"❌ Error cargando user_game_servers.json: {e}")
+        
+        # PRIORIDAD 2: Cargar desde users_servers.json (estructura compleja) si no hay datos
+        if total_users_loaded == 0 and Path(self.users_servers_file).exists():
+            try:
+                logger.info(f"🔍 Cargando datos desde users_servers.json como respaldo...")
                 with open(self.users_servers_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     
-                    # Cargar datos de usuarios
-                    users_data = data.get('users', {})
+                users_data = data.get('users', {})
+                
+                for user_id, user_info in users_data.items():
+                    user_id_str = str(user_id)
+                    self.links_by_user[user_id_str] = {}
                     
-                    # Inicializar estructuras de datos
-                    self.links_by_user = {}
-                    self.usage_history = {}
-                    self.user_favorites = {}
-                    self.user_reserved_servers = {}
+                    user_games = user_info.get('games', {})
                     
-                    total_links_loaded = 0
-                    total_games_loaded = 0
-                    
-                    for user_id, user_info in users_data.items():
-                        # Asegurar que user_id sea string
-                        user_id_str = str(user_id)
-                        self.links_by_user[user_id_str] = {}
+                    for game_id, game_data in user_games.items():
+                        game_id_str = str(game_id)
                         
-                        user_games = user_info.get('games', {})
-                        logger.debug(f"🔍 Procesando usuario {user_id_str}: {len(user_games)} juegos")
-                        
-                        for game_id, game_data in user_games.items():
-                            # Asegurar que game_id sea string
-                            game_id_str = str(game_id)
+                        if isinstance(game_data, dict):
                             server_links = game_data.get('server_links', [])
-                            
-                            if not isinstance(game_data, dict):
-                                logger.warning(f"⚠️ Datos de juego inválidos para {user_id_str}/{game_id_str}: {type(game_data)}")
-                                continue
                             
                             self.links_by_user[user_id_str][game_id_str] = {
                                 'links': server_links,
@@ -1305,58 +1340,40 @@ class VIPServerScraper:
                                 'server_details': game_data.get('server_details', {})
                             }
                             total_links_loaded += len(server_links)
-                            total_games_loaded += 1
-                            logger.debug(f"✅ Cargado juego {game_id_str} para usuario {user_id_str}: {len(server_links)} enlaces")
-                        
-                        # Cargar otros datos de usuario
-                        self.usage_history[user_id_str] = user_info.get('usage_history', [])
-                        self.user_favorites[user_id_str] = user_info.get('favorites', [])
-                        self.user_reserved_servers[user_id_str] = user_info.get('reserved_servers', [])
                     
-                    total_users = len(users_data)
+                    # Cargar otros datos de usuario
+                    self.usage_history[user_id_str] = user_info.get('usage_history', [])
+                    self.user_favorites[user_id_str] = user_info.get('favorites', [])
+                    self.user_reserved_servers[user_id_str] = user_info.get('reserved_servers', [])
                     
-                    logger.info(f"✅ Loaded user data for {total_users} users with {total_games_loaded} total games and {total_links_loaded} total links from {self.users_servers_file}.")
-                    
-                    # Log detallado para debug
-                    for user_id, user_games in self.links_by_user.items():
-                        if isinstance(user_games, dict):
-                            user_total_links = sum(len(game_data.get('links', [])) for game_data in user_games.values() if isinstance(game_data, dict))
-                            logger.info(f"📊 Usuario {user_id}: {len(user_games)} juegos, {user_total_links} enlaces")
-                        else:
-                            logger.warning(f"⚠️ Usuario {user_id} tiene estructura de datos inválida: {type(user_games)}")
-                    
-                    # Verificar que los datos se cargaron correctamente
-                    if total_links_loaded == 0 and total_users > 0:
-                        logger.error(f"❌ ERROR: Se cargaron {total_users} usuarios pero 0 enlaces - posible problema de estructura de datos")
-                        logger.error(f"❌ Estructura del primer usuario: {list(users_data.values())[0] if users_data else 'N/A'}")
-                    
-            else:
-                logger.info(f"⚠️ Users servers file {self.users_servers_file} not found, initializing empty structure")
-                self.links_by_user = {}
-                self.usage_history = {}
-                self.user_favorites = {}
-                self.user_reserved_servers = {}
+                    if self.links_by_user[user_id_str]:  # Solo contar si tiene datos
+                        total_users_loaded += 1
                 
-        except Exception as e:
-            logger.error(f"❌ Error loading user server data: {e}")
-            logger.error(f"❌ Exception details: {type(e).__name__}: {str(e)}")
-            import traceback
-            logger.error(f"❌ Full traceback: {traceback.format_exc()}")
-            
-            # Intentar cargar datos parciales si es posible
-            try:
-                with open(self.users_servers_file, 'r', encoding='utf-8') as f:
-                    debug_data = json.load(f)
-                    logger.error(f"❌ Estructura del archivo: {list(debug_data.keys())}")
-                    if 'users' in debug_data:
-                        logger.error(f"❌ Usuarios en archivo: {list(debug_data['users'].keys())}")
-            except Exception as debug_e:
-                logger.error(f"❌ No se pudo leer archivo para debug: {debug_e}")
-            
+                logger.info(f"✅ Datos de respaldo cargados desde users_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
+                
+            except Exception as e:
+                logger.error(f"❌ Error cargando users_servers.json: {e}")
+                import traceback
+                logger.error(f"❌ Traceback: {traceback.format_exc()}")
+        
+        # Si no hay datos, inicializar estructuras vacías
+        if total_users_loaded == 0:
+            logger.warning(f"⚠️ No se encontraron datos de usuarios en ningún archivo")
             self.links_by_user = {}
             self.usage_history = {}
             self.user_favorites = {}
             self.user_reserved_servers = {}
+        
+        # Log final de resumen
+        logger.info(f"📊 RESUMEN FINAL: {total_users_loaded} usuarios cargados con {total_links_loaded} enlaces totales")
+        
+        # Debug detallado de usuarios cargados
+        for user_id, user_games in self.links_by_user.items():
+            if isinstance(user_games, dict):
+                user_total_links = sum(len(game_data.get('links', [])) for game_data in user_games.values() if isinstance(game_data, dict))
+                logger.debug(f"📊 Usuario {user_id}: {len(user_games)} juegos, {user_total_links} enlaces")
+            else:
+                logger.warning(f"⚠️ Usuario {user_id} tiene estructura de datos inválida: {type(user_games)}")
         
         # Cargar datos generales desde vip_links.json (solo stats y categorías)
         try:
