@@ -2658,7 +2658,6 @@ async def servertest_command(interaction: discord.Interaction):
         
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-
             logger.info("✅ Chrome driver created with minimal configuration")
             return driver
         except Exception as e:
