@@ -1040,10 +1040,7 @@ def save_user_servers_simple(self, user_id: str, servers: list):
             
         except Exception as e:
             logger.error(f"❌ Error guardando servidores para {user_id}: {e}")
-            return Falsetos del usuario
-        data['user_servers'][user_id] = servers
-        
-        # Actualizar metadata
+            return False
         data['metadata']['last_updated'] = datetime.now().isoformat()
         data['metadata']['total_users'] = len(data['user_servers'])
         data['metadata']['total_servers'] = sum(len(user_servers) for user_servers in data['user_servers'].values())
@@ -1094,18 +1091,6 @@ def save_user_servers_simple(self, user_id: str, servers: list):
             
         except Exception as e:
             logger.error(f"❌ Error obteniendo todos los servidores: {e}")
-            return {}h
-
-            servers_file = Path("user_game_servers.json")
-            if servers_file.exists():
-                with open(servers_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    return data.get('user_servers', {})
-            
-            return {}
-
-        except Exception as e:
-            logger.error(f"❌ Error obteniendo todos los servidores: {e}")
             return {}
 
 # Instancia global del sistema de perfiles
@@ -1115,7 +1100,7 @@ def setup_profile_commands(bot):
     """Configurar comandos de perfiles"""
 
     @bot.tree.command(name="profile", description="📊 Ver perfil completo de un usuario con estadísticas, servidores y más información")
-async def profile_command(interaction: discord.Interaction, usuario: discord.User = None):
+    async def profile_command(interaction: discord.Interaction, usuario: discord.User = None):
         """Comando para ver el perfil completo de un usuario con toda su información del bot"""
 
         # Verificar autenticación

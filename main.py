@@ -3811,20 +3811,18 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
     
     user_logger.info(f"🔍 Verificando autenticación para usuario {username} (ID: {user_id})")
     
-    # Dar monedas por usar comandos del bot (si está autenticado)
     try:
-        if coins_system and roblox_verification.is_user_verified(user_id):
-            coins_system.add_coins(user_id, 5, "Usar comando del bot")
-    except Exception as e:
-        logger.debug(f"Error agregando monedas automáticas: {e}")
-    
-    try:
+        # Verificar primero si la interacción es válida y no ha expirado
+        if not interaction.id or not interaction.token:
+            user_logger.error(f"❌ Interacción inválida para {username}")
+            return False
+            
         # Verificar si la interacción ya fue respondida o está expirada
         if interaction.response.is_done():
             user_logger.warning(f"⚠️ Interacción ya respondida para {username} (ID: {user_id})")
             return False
             
-        # Defer la respuesta temprano para evitar timeouts
+        # Defer la respuesta temprano para evitar timeouts con manejo de errores mejorado
         if defer_response:
             try:
                 await interaction.response.defer(ephemeral=True)
@@ -3832,8 +3830,18 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
                 user_logger.warning(f"⚠️ Interacción ya fue respondida para {username}")
                 return False
             except discord.errors.NotFound as e:
-                user_logger.error(f"❌ Interacción no encontrada para {username}: {e}")
+                user_logger.error(f"❌ Interacción no encontrada/expirada para {username}: {e}")
                 return False
+            except discord.HTTPException as e:
+                user_logger.error(f"❌ Error HTTP en interacción para {username}: {e}")
+                return False
+        
+        # Dar monedas por usar comandos del bot (después de defer exitoso)
+        try:
+            if coins_system and roblox_verification.is_user_verified(user_id):
+                coins_system.add_coins(user_id, 5, "Usar comando del bot")
+        except Exception as e:
+            logger.debug(f"Error agregando monedas automáticas: {e}")
         
         # Verificar si está baneado
         if roblox_verification.is_user_banned(user_id):
