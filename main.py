@@ -3360,6 +3360,20 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error al inicializar control remoto: {e}")
     
+    # Inicializar servidor keep-alive para cron-job.org
+    try:
+        from keepalive_server import keepalive_server
+        await keepalive_server.start_server()
+        logger.info("🟢 Servidor keep-alive iniciado para cron-job.org en puerto 5000")
+        
+        # Obtener la URL pública del Repl para el keep-alive
+        repl_url = f"https://{os.getenv('REPL_SLUG', 'workspace')}-{os.getenv('REPL_OWNER', 'paysencharlee')}.replit.dev"
+        keepalive_url = f"{repl_url}:5000/"
+        logger.info(f"🔗 URL para cron-job.org: {keepalive_url}")
+        
+    except Exception as e:
+        logger.error(f"❌ Error al inicializar servidor keep-alive: {e}")
+    
     # Log estadísticas detalladas
     total_links = 0
     total_users = len(scraper.links_by_user)
