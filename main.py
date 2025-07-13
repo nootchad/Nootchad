@@ -3347,15 +3347,16 @@ async def on_ready():
         logger.warning("⚠️ API key de CAPTCHA (CAPTCHA2) no encontrada en variables de entorno")
         logger.warning("⚠️ Los CAPTCHAs no podrán resolverse automáticamente")
     
-    # Inicializar servidor web para control remoto
+    # Inicializar servidor web para control remoto - DESACTIVADO TEMPORALMENTE
     try:
         # Configurar API web ANTES de iniciar el servidor
-        global web_api_system
-        web_api_system = setup_web_api(remote_control.app, roblox_verification, scraper, remote_control)
-        logger.info("🌐 API web configurada para acceso externo desde páginas web")
+        # global web_api_system
+        # web_api_system = setup_web_api(remote_control.app, roblox_verification, scraper, remote_control)
+        # logger.info("🌐 API web configurada para acceso externo desde páginas web")
         
-        await remote_control.start_web_server()
-        logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
+        # await remote_control.start_web_server()
+        # logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
+        logger.info("⚠️ Servidor web principal (puerto 8080) DESACTIVADO temporalmente")
         
     except Exception as e:
         logger.error(f"❌ Error al inicializar control remoto: {e}")
