@@ -2497,7 +2497,11 @@ class VIPServerScraper:
                     break
 
             driver = webdriver.Chrome(options=chrome_options)
-
+            logger.info("✅ Chrome driver created with minimal configuration")
+            return driver
+        except Exception as e:
+            logger.error(f"Minimal fallback also failed: {e}")
+            raise
 
 @bot.tree.command(name="servertest", description="Ver servidores VIP disponibles para tu usuario")
 async def servertest_command(interaction: discord.Interaction):
