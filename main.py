@@ -1304,12 +1304,21 @@ class VIPServerScraper:
                         total_links_loaded += len(servers_list)
                         total_users_loaded += 1
                         
-                        logger.info(f"✅ Usuario {user_id_str} cargado: {len(servers_list)} servidores")
+                        logger.info(f"✅ Usuario {user_id_str} cargado desde user_game_servers.json: {len(servers_list)} servidores")
+                    elif isinstance(servers_list, list) and not servers_list:
+                        # Usuario existe pero sin servidores
+                        self.links_by_user[user_id_str] = {}
+                        self.usage_history[user_id_str] = []
+                        self.user_favorites[user_id_str] = []
+                        self.user_reserved_servers[user_id_str] = []
+                        logger.info(f"✅ Usuario {user_id_str} inicializado sin servidores")
                 
-                logger.info(f"✅ Datos cargados desde user_game_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
+                logger.info(f"✅ Datos cargados desde user_game_servers.json: {total_users_loaded} usuarios con servidores, {total_links_loaded} enlaces totales")
                 
             except Exception as e:
                 logger.error(f"❌ Error cargando user_game_servers.json: {e}")
+                import traceback
+                logger.error(f"❌ Traceback: {traceback.format_exc()}")
         
         # PRIORIDAD 2: Cargar desde users_servers.json (estructura compleja) si no hay datos
         if total_users_loaded == 0 and Path(self.users_servers_file).exists():
@@ -2850,12 +2859,11 @@ class VIPServerScraper:
 
     def get_random_link(self, game_id, user_id):
         """Get a random VIP link for a specific game and user with its details"""
-        if (user_id not in self.links_by_user or 
-            game_id not in self.links_by_user[user_id] or 
-            not self.links_by_user[user_id][game_id]['links']):
+        # Obtener enlaces del usuario usando el método actualizado
+        links = self.get_all_links(game_id, user_id)
+        
+        if not links:
             return None, None
-
-        links = self.links_by_user[user_id][game_id]['links']
         
         # Filter out blacklisted servers
         clean_links = report_system.filter_blacklisted_servers(links)
@@ -2863,26 +2871,82 @@ class VIPServerScraper:
         if not clean_links:
             return None, None
         
-        # Update links if some were filtered
+        # Si algunos enlaces fueron filtrados, actualizar la estructura
         if len(clean_links) != len(links):
-            self.links_by_user[user_id][game_id]['links'] = clean_links
-            self.save_links()
+            # Actualizar tanto en memoria como en archivo
+            if user_id in self.links_by_user and game_id in self.links_by_user[user_id]:
+                self.links_by_user[user_id][game_id]['links'] = clean_links
+            
+            # Guardar directamente en user_game_servers.json
+            self.save_servers_directly_to_new_format(user_id, clean_links)
         
         link = random.choice(clean_links)
-        details = self.links_by_user[user_id][game_id]['server_details'].get(link, {})
+        
+        # Obtener detalles del servidor si están disponibles en memoria
+        details = {}
+        if (user_id in self.links_by_user and 
+            game_id in self.links_by_user[user_id] and 
+            'server_details' in self.links_by_user[user_id][game_id]):
+            details = self.links_by_user[user_id][game_id]['server_details'].get(link, {})
+        
         return link, details
 
     def get_all_links(self, game_id=None, user_id=None):
         """Get all VIP links, optionally for a specific game and user"""
         if user_id and game_id:
-            return self.links_by_user.get(user_id, {}).get(game_id, {}).get('links', [])
+            # Primero intentar desde links_by_user cargado en memoria
+            if user_id in self.links_by_user and game_id in self.links_by_user[user_id]:
+                return self.links_by_user[user_id][game_id].get('links', [])
+            
+            # Si no está en memoria, cargar directamente desde user_game_servers.json
+            try:
+                servers_file = Path("user_game_servers.json")
+                if servers_file.exists():
+                    with open(servers_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        user_servers = data.get('user_servers', {}).get(user_id, [])
+                        logger.info(f"🔄 Cargado directamente desde user_game_servers.json para usuario {user_id}: {len(user_servers)} servidores")
+                        return user_servers
+            except Exception as e:
+                logger.error(f"❌ Error cargando desde user_game_servers.json: {e}")
+            
+            return []
         elif user_id:
-            all_links = []
+            # Cargar todos los servidores del usuario desde user_game_servers.json
+            try:
+                servers_file = Path("user_game_servers.json")
+                if servers_file.exists():
+                    with open(servers_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        user_servers = data.get('user_servers', {}).get(user_id, [])
+                        logger.info(f"🔄 Cargado directamente desde user_game_servers.json para usuario {user_id}: {len(user_servers)} servidores")
+                        return user_servers
+            except Exception as e:
+                logger.error(f"❌ Error cargando desde user_game_servers.json: {e}")
+            
+            # Fallback a memoria si existe
             user_games = self.links_by_user.get(user_id, {})
+            all_links = []
             for game_data in user_games.values():
                 all_links.extend(game_data.get('links', []))
             return all_links
         else:
+            # Cargar todos los servidores de todos los usuarios
+            try:
+                servers_file = Path("user_game_servers.json")
+                if servers_file.exists():
+                    with open(servers_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        all_user_servers = data.get('user_servers', {})
+                        all_links = []
+                        for user_servers in all_user_servers.values():
+                            all_links.extend(user_servers)
+                        logger.info(f"🔄 Cargados todos los servidores desde user_game_servers.json: {len(all_links)} total")
+                        return all_links
+            except Exception as e:
+                logger.error(f"❌ Error cargando todos los servidores: {e}")
+            
+            # Fallback a memoria
             all_links = []
             for user_games in self.links_by_user.values():
                 for game_data in user_games.values():
