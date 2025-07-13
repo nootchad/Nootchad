@@ -1036,25 +1036,12 @@ def save_user_servers_simple(self, user_id: str, servers: list):
             with open(servers_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             
+            logger.info(f"✅ Servidores guardados para usuario {user_id}: {len(servers)} servidores")
             return True
             
         except Exception as e:
             logger.error(f"❌ Error guardando servidores para {user_id}: {e}")
             return False
-        data['metadata']['last_updated'] = datetime.now().isoformat()
-        data['metadata']['total_users'] = len(data['user_servers'])
-        data['metadata']['total_servers'] = sum(len(user_servers) for user_servers in data['user_servers'].values())
-
-        # Guardar archivo
-        with open(servers_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-
-        logger.info(f"✅ Servidores guardados para usuario {user_id}: {len(servers)} servidores")
-        return True
-
-    except Exception as e:
-        logger.error(f"❌ Error guardando servidores para {user_id}: {e}")
-        return False
 
     def add_server_to_user_simple(self, user_id: str, server_link: str):
         """Agregar un servidor a la lista del usuario en formato simplificado"""
