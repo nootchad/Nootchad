@@ -22,10 +22,10 @@
       "roblox_username": null,
       "account_creation_date": null,
       "first_seen": "2025-07-11T20:34:18.929725",
-      "last_activity": "2025-07-12T04:54:56.936920",
+      "last_activity": "2025-07-11T20:34:18.929853",
       "total_code_redemptions": 1,
-      "failed_attempts": 1,
-      "trust_score": 95,
+      "failed_attempts": 0,
+      "trust_score": 100,
       "risk_level": "low",
       "flags": [],
       "redeemed_codes": [
@@ -45,9 +45,16 @@
         "duration_minutes": 12,
         "set_at": "2025-07-11T20:24:52.436540"
       }
+    },
+    "1374194847786729472": {
+      "code_redeem": {
+        "expires_at": "2025-07-11T20:46:18.929967",
+        "duration_minutes": 12,
+        "set_at": "2025-07-11T20:34:18.929977"
+      }
     }
   },
-  "last_updated": "2025-07-12T04:54:56.936928",
+  "last_updated": "2025-07-11T20:34:18.930134",
   "config": {
     "min_account_age_hours": 24,
     "username_similarity_threshold": 0.8,

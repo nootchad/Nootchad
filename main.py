@@ -3347,33 +3347,18 @@ async def on_ready():
         logger.warning("⚠️ API key de CAPTCHA (CAPTCHA2) no encontrada en variables de entorno")
         logger.warning("⚠️ Los CAPTCHAs no podrán resolverse automáticamente")
     
-    # Inicializar servidor web para control remoto - DESACTIVADO TEMPORALMENTE
+    # Inicializar servidor web para control remoto
     try:
         # Configurar API web ANTES de iniciar el servidor
-        # global web_api_system
-        # web_api_system = setup_web_api(remote_control.app, roblox_verification, scraper, remote_control)
-        # logger.info("🌐 API web configurada para acceso externo desde páginas web")
+        global web_api_system
+        web_api_system = setup_web_api(remote_control.app, roblox_verification, scraper, remote_control)
+        logger.info("🌐 API web configurada para acceso externo desde páginas web")
         
-        # await remote_control.start_web_server()
-        # logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
-        logger.info("⚠️ Servidor web principal (puerto 8080) DESACTIVADO temporalmente")
+        await remote_control.start_web_server()
+        logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
         
     except Exception as e:
         logger.error(f"❌ Error al inicializar control remoto: {e}")
-    
-    # Inicializar servidor keep-alive para cron-job.org
-    try:
-        from keepalive_server import keepalive_server
-        await keepalive_server.start_server()
-        logger.info("🟢 Servidor keep-alive iniciado para cron-job.org en puerto 5000")
-        
-        # Obtener la URL pública del Repl para el keep-alive
-        repl_url = f"https://{os.getenv('REPL_SLUG', 'workspace')}-{os.getenv('REPL_OWNER', 'paysencharlee')}.replit.dev"
-        keepalive_url = f"{repl_url}:5000/"
-        logger.info(f"🔗 URL para cron-job.org: {keepalive_url}")
-        
-    except Exception as e:
-        logger.error(f"❌ Error al inicializar servidor keep-alive: {e}")
     
     # Log estadísticas detalladas
     total_links = 0
