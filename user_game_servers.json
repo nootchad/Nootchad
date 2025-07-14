@@ -1,3 +1,4 @@
+
 {
   "user_servers": {
     "916070251895091241": [
@@ -5,14 +6,19 @@
       "https://www.roblox.com/games/2753915549?privateServerLinkCode=55684575099493588489179804709216",
       "https://www.roblox.com/games/2753915549?privateServerLinkCode=28067636652508322581794312932529",
       "https://www.roblox.com/games/2753915549?privateServerLinkCode=34985630520678943939799083289529",
-      "https://www.roblox.com/games/2753915549?privateServerLinkCode=11082930743644259373169790845554"
+      "https://www.roblox.com/games/2753915549?privateServerLinkCode=11082930743644259373169790845554",
+      "https://www.roblox.com/games/2753915549?privateServerLinkCode=36350427885683250693686075880518",
+      "https://www.roblox.com/games/2753915549?privateServerLinkCode=89504976610917006213418738017673",
+      "https://www.roblox.com/games/2753915549?privateServerLinkCode=46633454893439457964835653107823",
+      "https://www.roblox.com/games/2753915549?privateServerLinkCode=02471511861359786897934183400489",
+      "https://www.roblox.com/games/2753915549?privateServerLinkCode=08110056846499436184414047872687"
     ]
   },
   "metadata": {
     "created_at": "2025-01-12T00:00:00",
-    "last_updated": "2025-07-12T02:55:21.657313",
+    "last_updated": "2025-07-14T05:43:13.000000",
     "total_users": 1,
-    "total_servers": 5,
-    "description": "Estructura sin límite: user_id -> array de servidores ilimitados"
+    "total_servers": 10,
+    "description": "Estructura unificada: datos persistentes después del reinicio del bot"
   }
 }
