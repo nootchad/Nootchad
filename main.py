@@ -5030,9 +5030,6 @@ async def on_message(message):
                 await message.reply(f"❌ La descripción es muy larga ({len(descripcion)} caracteres). El límite es 500 caracteres.", mention_author=False)
                 return
             
-            # Importar sistema de imágenes
-            from images_system import ImagesSystem
-            
             # Crear mensaje de cargando
             loading_embed = discord.Embed(
                 title="🎨 RbxServers-v1 x Pollinations Generando Imagen...",
@@ -5047,8 +5044,10 @@ async def on_message(message):
             # Enviar mensaje de cargando
             loading_message = await message.reply(embed=loading_embed, mention_author=False)
             
-            # Crear instancia del sistema de imágenes
-            images_system_instance = ImagesSystem(bot)
+            # Usar la instancia global del sistema de imágenes en lugar de crear una nueva
+            if not images_system:
+                await message.reply("❌ Sistema de imágenes no disponible.", mention_author=False)
+                return
             
             # Mejorar el prompt para generar mejores imágenes
             enhanced_prompt = f"""Crea una imagen detallada y de alta calidad basada en esta descripción: {descripcion}
@@ -5065,7 +5064,7 @@ Descripción de la imagen deseada: {descripcion}
 Genera una imagen que sea visualmente impactante y que capture perfectamente la esencia de lo solicitado."""
             
             # Usar servicio de generación de imágenes
-            image_file = await images_system_instance.generate_image_with_pollinations(descripcion, enhanced_prompt)
+            image_file = await images_system.generate_image_with_pollinations(descripcion, enhanced_prompt)
             
             if image_file:
                 # Crear embed con la imagen generada como archivo adjunto
@@ -5097,7 +5096,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                     
             else:
                 # Si falla la generación, usar imagen de respaldo
-                await images_system_instance.generate_fallback_image(loading_message, descripcion, username)
+                await images_system.generate_fallback_image(loading_message, descripcion, username)
             
             # Log del uso del comando
             logger.info(f"Usuario {username} (ID: {user_id}) usó !images: {descripcion[:50]}{'...' if len(descripcion) > 50 else ''}")
