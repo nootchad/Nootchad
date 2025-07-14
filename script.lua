@@ -28,7 +28,7 @@ local function httpRequest(method, url, data)
         Method = method,
         Headers = headers
     }
-    
+
     -- Solo agregar Body si no es GET o HEAD
     if method ~= "GET" and method ~= "HEAD" and body ~= "" then
         requestData.Body = body
@@ -53,12 +53,12 @@ local function httpRequest(method, url, data)
         print("📡 Resultado HTTP recibido:")
         print("  - Success:", tostring(result.Success))
         print("  - StatusCode:", tostring(result.StatusCode))
-        
+
         if result.Success then
             local responseBody = result.Body or ""
             print("  - Body length:", tostring(#responseBody))
             print("  - Body preview:", tostring(responseBody):sub(1, 100))
-            
+
             if responseBody ~= "" then
                 local decodeSuccess, responseData = pcall(function()
                     return HttpService:JSONDecode(responseBody)
@@ -173,7 +173,7 @@ local function checkCommands()
     if response then
         print("📥 RESPUESTA RECIBIDA DEL SERVIDOR:")
         print("📋 Tipo de respuesta:", type(response))
-        
+
         -- Debug: mostrar la respuesta completa
         if type(response) == "table" then
             print("📊 Campos en respuesta:")
@@ -184,11 +184,11 @@ local function checkCommands()
                 end
             end
         end
-        
+
         -- Manejo mejorado de la respuesta
         if type(response) == "table" then
             local commands = response.commands
-            
+
             if type(commands) == "table" then
                 if #commands > 0 then
                     print("✅ Comandos recibidos:", #commands)
@@ -206,11 +206,11 @@ local function checkCommands()
             else
                 print("⚠️ Campo 'commands' no es una tabla válida")
             end
-            
+
             if response.status then
                 print("📊 Status del servidor:", response.status)
             end
-            
+
             if response.message then
                 print("💬 Mensaje del servidor:", response.message)
             end
