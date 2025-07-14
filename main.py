@@ -4841,6 +4841,83 @@ async def sync_command(interaction: discord.Interaction):
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+@bot.tree.command(name="say", description="Hacer que el bot envíe un mensaje")
+async def say_command(interaction: discord.Interaction, mensaje: str):
+    """Comando que hace que el bot envíe un mensaje sin formato embed"""
+    user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    try:
+        # Verificar que el mensaje no esté vacío
+        if not mensaje.strip():
+            embed = discord.Embed(
+                title="❌ Mensaje Vacío",
+                description="Debes proporcionar un mensaje para que el bot envíe.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar longitud del mensaje (límite de Discord: 2000 caracteres)
+        if len(mensaje) > 2000:
+            embed = discord.Embed(
+                title="❌ Mensaje Muy Largo",
+                description=f"El mensaje es muy largo ({len(mensaje)} caracteres). El límite es 2000 caracteres.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        # Filtrar contenido inapropiado básico
+        forbidden_words = ["@everyone", "@here", "discord.gg/", "https://discord.gg/"]
+        mensaje_lower = mensaje.lower()
+        
+        for word in forbidden_words:
+            if word in mensaje_lower:
+                embed = discord.Embed(
+                    title="❌ Contenido No Permitido",
+                    description="El mensaje contiene contenido no permitido (menciones masivas o invitaciones de Discord).",
+                    color=0xff0000
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+        
+        # Responder primero con confirmación
+        await interaction.response.send_message("✅ Mensaje enviado exitosamente.", ephemeral=True)
+        
+        # Enviar el mensaje del usuario en el mismo canal
+        await interaction.followup.send(mensaje, ephemeral=False)
+        
+        # Log del uso del comando
+        logger.info(f"Usuario {username} (ID: {user_id}) usó /say: {mensaje[:50]}{'...' if len(mensaje) > 50 else ''}")
+        
+        # Dar monedas por usar el comando (si el sistema está disponible)
+        try:
+            if coins_system:
+                coins_system.add_coins(user_id, 2, "Usar comando /say")
+        except Exception as e:
+            logger.debug(f"Error agregando monedas: {e}")
+        
+    except Exception as e:
+        logger.error(f"Error en comando /say: {e}")
+        
+        # Si no se ha respondido aún
+        if not interaction.response.is_done():
+            embed = discord.Embed(
+                title="❌ Error",
+                description="Ocurrió un error al enviar el mensaje.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        else:
+            # Si ya se respondió, usar followup
+            embed = discord.Embed(
+                title="❌ Error",
+                description="Ocurrió un error al enviar el mensaje.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
 @bot.tree.command(name="credits", description="Ver los créditos y reconocimientos del bot RbxServers")
 async def credits_command(interaction: discord.Interaction):
     """Comando que muestra los créditos del bot con diseño negro y blanco"""
