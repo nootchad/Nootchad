@@ -359,13 +359,19 @@ class MusicCallbackServer:
             self.runner = web.AppRunner(self.app)
             await self.runner.setup()
             
+            # Usar 0.0.0.0 para que sea accesible externamente
             self.site = web.TCPSite(self.runner, '0.0.0.0', 5001)
             await self.site.start()
             
-            # Obtener la URL pública del callback
+            # Obtener la URL pública del callback usando las variables de entorno de Replit
             repl_slug = os.getenv('REPL_SLUG', 'workspace')
-            repl_owner = os.getenv('REPL_OWNER', 'paysencharlee')
-            callback_url = f"https://{repl_slug}-{repl_owner}.replit.dev:5001"
+            repl_owner = os.getenv('REPL_OWNER', 'emerlyngarima')
+            
+            # Construir URL sin puerto específico ya que Replit maneja el routing automáticamente
+            if repl_slug and repl_owner:
+                callback_url = f"https://{repl_slug}-{repl_owner}.replit.dev"
+            else:
+                callback_url = "http://localhost:5001"
             
             logger.info(f"🎵 Music callback server started on 0.0.0.0:5001")
             logger.info(f"🔗 Callback URL: {callback_url}")

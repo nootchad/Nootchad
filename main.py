@@ -3544,14 +3544,31 @@ async def on_ready():
     try:
         from music_callback_server import start_music_callback_server
         
+        # Intentar iniciar el servidor de callback
         callback_server, callback_url = await start_music_callback_server()
         if callback_url:
             logger.info(f"🎵 Servidor de callback de música iniciado: {callback_url}")
             logger.info(f"🔗 Endpoint de callback: {callback_url}/api/music-callback")
+            logger.info(f"📊 Status endpoint: {callback_url}/api/status")
+            
+            # Verificar que el servidor esté realmente funcionando
+            try:
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    test_url = f"{callback_url}/api/status"
+                    async with session.get(test_url, timeout=5) as response:
+                        if response.status == 200:
+                            logger.info("✅ Servidor de callback de música verificado y funcionando")
+                        else:
+                            logger.warning(f"⚠️ Servidor de callback responde pero con status {response.status}")
+            except Exception as test_error:
+                logger.warning(f"⚠️ No se pudo verificar el servidor de callback: {test_error}")
         else:
             logger.error("❌ No se pudo iniciar el servidor de callback de música")
     except Exception as e:
         logger.error(f"❌ Error iniciando servidor de callback de música: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
 
     # Inicializar sistema de monitoreo de usuarios
     try:
