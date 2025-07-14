@@ -1227,161 +1227,34 @@ user_profile_system = UserProfileSystem()
 def setup_profile_commands(bot):
     """Configurar comandos de perfiles"""
 
-    @bot.tree.command(name="leaderboard", description="🏆 Ver ranking de usuarios con más servidores VIP")
-    async def leaderboard_command(interaction: discord.Interaction):
-        """Comando para ver el ranking de usuarios con más servidores VIP"""
+    @bot.tree.command(name="profile", description="📊 Ver perfil completo de un usuario con estadísticas, servidores y más información")
+async def profile_command(interaction: discord.Interaction, usuario: discord.User = None):
+        """Comando para ver el perfil completo de un usuario con toda su información del bot"""
 
         # Verificar autenticación
         from main import check_verification
         if not await check_verification(interaction, defer_response=True):
             return
 
-        try:
-            # Cargar datos desde user_game_servers.json
-            import json
-            from pathlib import Path
-            
-            servers_file = Path("user_game_servers.json")
-            
-            if not servers_file.exists():
-                embed = discord.Embed(
-                    title="❌ No hay datos",
-                    description="No se encontró información de servidores.",
-                    color=0xff0000
-                )
-                await interaction.followup.send(embed=embed, ephemeral=True)
-                return
-            
-            with open(servers_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            user_servers_data = data.get('user_servers', {})
-            
-            if not user_servers_data:
-                embed = discord.Embed(
-                    title="📭 Sin datos",
-                    description="No hay usuarios con servidores registrados aún.",
-                    color=0xffaa00
-                )
-                await interaction.followup.send(embed=embed, ephemeral=True)
-                return
-            
-            # Crear ranking basado en cantidad de servidores
-            ranking = []
-            for user_id, servers in user_servers_data.items():
-                server_count = len(servers) if isinstance(servers, list) else 0
-                if server_count > 0:
-                    try:
-                        # Intentar obtener el usuario de Discord
-                        discord_user = bot.get_user(int(user_id))
-                        if not discord_user:
-                            discord_user = await bot.fetch_user(int(user_id))
-                        
-                        username = discord_user.name if discord_user else f"Usuario {user_id[:8]}"
-                        
-                        ranking.append({
-                            'user_id': user_id,
-                            'username': username,
-                            'server_count': server_count,
-                            'discord_user': discord_user
-                        })
-                    except Exception as e:
-                        logger.debug(f"Error obteniendo usuario {user_id}: {e}")
-                        ranking.append({
-                            'user_id': user_id,
-                            'username': f"Usuario {user_id[:8]}",
-                            'server_count': server_count,
-                            'discord_user': None
-                        })
-            
-            # Ordenar por cantidad de servidores (descendente)
-            ranking.sort(key=lambda x: x['server_count'], reverse=True)
-            
-            # Crear embed del leaderboard
-            embed = discord.Embed(
-                title="🏆 Leaderboard de Servidores VIP",
-                description="Ranking de usuarios con más servidores VIP acumulados",
-                color=0xffd700
-            )
-            
-            # Mostrar top 10
-            top_users = ranking[:10]
-            
-            leaderboard_text = []
-            for i, user_data in enumerate(top_users, 1):
-                # Emojis para posiciones
-                if i == 1:
-                    position_emoji = "🥇"
-                elif i == 2:
-                    position_emoji = "🥈"
-                elif i == 3:
-                    position_emoji = "🥉"
-                else:
-                    position_emoji = f"{i}."
-                
-                username = user_data['username']
-                server_count = user_data['server_count']
-                
-                leaderboard_text.append(f"{position_emoji} **{username}** - {server_count:,} servidores")
-            
-            if leaderboard_text:
-                embed.add_field(
-                    name="🏆 Top 10 Usuarios",
-                    value="\n".join(leaderboard_text),
-                    inline=False
-                )
-            
-            # Estadísticas generales
-            total_users = len(ranking)
-            total_servers = sum(user['server_count'] for user in ranking)
-            avg_servers = total_servers / total_users if total_users > 0 else 0
-            
-            embed.add_field(
-                name="📊 Estadísticas Generales",
-                value=f"**Usuarios activos:** {total_users:,}\n**Total servidores:** {total_servers:,}\n**Promedio por usuario:** {avg_servers:.1f}",
-                inline=True
-            )
-            
-            # Información del usuario que ejecuta el comando
-            user_id = str(interaction.user.id)
-            user_ranking = next((i + 1 for i, user in enumerate(ranking) if user['user_id'] == user_id), None)
-            user_servers = len(user_servers_data.get(user_id, []))
-            
-            if user_ranking:
-                embed.add_field(
-                    name="📍 Tu Posición",
-                    value=f"**Puesto #{user_ranking}**\n{user_servers:,} servidores",
-                    inline=True
-                )
-            else:
-                embed.add_field(
-                    name="📍 Tu Posición",
-                    value=f"Sin servidores aún\nUsa `/servertest` para empezar",
-                    inline=True
-                )
-            
-            embed.add_field(
-                name="🚀 Sistema Sin Límite",
-                value="• Sin límite máximo de servidores\n• Los servidores se acumulan automáticamente\n• Usa `/servertest` para conseguir más",
-                inline=False
-            )
-            
-            embed.set_footer(text="RbxServers • Leaderboard de Servidores • Sistema sin límite")
-            embed.timestamp = datetime.now()
-            
-            await interaction.followup.send(embed=embed, ephemeral=False)
-            
-            # Log del uso del comando
-            username = f"{interaction.user.name}#{interaction.user.discriminator}"
-            logger.info(f"🏆 {username} (ID: {user_id}) usó comando /leaderboard")
-            
-        except Exception as e:
-            logger.error(f"Error en comando leaderboard: {e}")
-            embed = discord.Embed(
-                title="❌ Error",
-                description="Ocurrió un error al generar el leaderboard.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
+        # Si no se especifica usuario, usar el que ejecuta el comando
+        target_user = usuario or interaction.user
+        user_id = str(target_user.id)
+
+        # Recopilar datos actualizados del usuario
+        profile_data = user_profile_system.collect_user_data(user_id)
+
+        # Crear vista con menú desplegable
+        view = ProfileView(str(interaction.user.id), target_user, profile_data)
+
+        # Crear embed inicial (overview)
+        embed = view.create_overview_embed()
+
+        # Como check_verification ya hizo defer, usar followup en lugar de response
+        await interaction.followup.send(embed=embed, view=view, ephemeral=False)
+
+        # Log del uso del comando
+        requester = f"{interaction.user.name}#{interaction.user.discriminator}"
+        target = f"{target_user.name}#{target_user.discriminator}"
+        logger.info(f"👤 {requester} vio el perfil de {target}")
 
     return user_profile_system
