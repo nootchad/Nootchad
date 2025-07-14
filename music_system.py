@@ -142,7 +142,7 @@ class MusicSystem:
                 "customMode": False,        # Usar modo automático por defecto
                 "instrumental": False,      # Permitir voz si es apropiado
                 "model": "V4",              # Usar el modelo más reciente
-                "callBackUrl": "https://fed026fa-c0a1-4b34-9acb-2c6e0d26bc19-00-3paoybh069clr.worf.replit.dev/api/music-callback"  # Endpoint del bot
+                "callBackUrl": f"{os.getenv('REPL_SLUG', 'workspace')}-{os.getenv('REPL_OWNER', 'paysencharlee')}.replit.dev:5001/api/music-callback"  # Endpoint del bot
             }
             
             headers = {
