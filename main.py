@@ -3513,7 +3513,7 @@ async def on_ready():
         # Hacer disponible globalmente para el scraper
         user_profile_system = ups
         logger.info("👤 Sistema de perfiles de usuario configurado")
-        logger.info(f"✅ Comando /profile registrado exitosamente")
+        logger.info(f"✅ Comando /leaderboard registrado exitosamente")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de perfiles: {e}")
 
@@ -3529,12 +3529,12 @@ async def on_ready():
         synced = await bot.tree.sync()
         logger.info(f"🔄 Sincronizado {len(synced)} comando(s) slash exitosamente")
         
-        # Verificar que /profile esté incluido
-        profile_found = any(cmd.name == "profile" for cmd in synced)
-        if profile_found:
-            logger.info("✅ Comando /profile confirmado en sincronización")
+        # Verificar que /leaderboard esté incluido
+        leaderboard_found = any(cmd.name == "leaderboard" for cmd in synced)
+        if leaderboard_found:
+            logger.info("✅ Comando /leaderboard confirmado en sincronización")
         else:
-            logger.warning("⚠️ Comando /profile NO encontrado en sincronización")
+            logger.warning("⚠️ Comando /leaderboard NO encontrado en sincronización")
         
         for cmd in synced:
             logger.debug(f"  ↳ Comando: /{cmd.name} - {cmd.description[:50]}...")
