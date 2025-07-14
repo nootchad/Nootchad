@@ -1,8 +1,8 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 217,
-      "total_earned": 237,
+      "balance": 237,
+      "total_earned": 257,
       "transactions": [
         {
           "type": "earn",
@@ -332,6 +332,20 @@
           "reason": "Usar comando /say",
           "timestamp": "2025-07-14T19:40:19.883213",
           "balance_after": 217
+        },
+        {
+          "type": "earn",
+          "amount": 10,
+          "reason": "Usar comando !images",
+          "timestamp": "2025-07-14T22:05:07.972835",
+          "balance_after": 227
+        },
+        {
+          "type": "earn",
+          "amount": 10,
+          "reason": "Usar comando !images",
+          "timestamp": "2025-07-14T22:05:22.640769",
+          "balance_after": 237
         }
       ]
     },
@@ -568,8 +582,8 @@
       ]
     },
     "1202861936358719499": {
-      "balance": 5,
-      "total_earned": 5,
+      "balance": 15,
+      "total_earned": 15,
       "transactions": [
         {
           "type": "earn",
@@ -577,6 +591,20 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-09T05:15:28.369541",
           "balance_after": 5
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-14T22:05:53.913664",
+          "balance_after": 10
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-14T22:09:40.422865",
+          "balance_after": 15
         }
       ]
     },
@@ -843,6 +871,6 @@
       ]
     }
   },
-  "last_updated": "2025-07-14T19:46:01.973157",
+  "last_updated": "2025-07-14T22:09:40.422876",
   "total_users": 19
 }

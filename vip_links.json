@@ -1,23 +1,15 @@
-
 {
-  "user_servers": {},
-  "metadata": {
-    "created_at": "2025-07-12T02:55:21.656098",
-    "last_updated": "2025-07-12T02:55:21.657878",
-    "total_users": 0,
-    "total_servers": 0,
-    "description": "Estructura simplificada compatible con user_game_servers.json"
-  },
   "scraping_stats": {
-    "total_scraped": 791,
-    "successful_extractions": 651,
+    "total_scraped": 796,
+    "successful_extractions": 656,
     "failed_extractions": 140,
-    "last_scrape_time": "2025-07-12T02:55:21.656098",
-    "scrape_duration": 120.99,
-    "servers_per_minute": 2.5
+    "last_scrape_time": "2025-07-14T22:08:06.510490",
+    "scrape_duration": 132.27,
+    "servers_per_minute": 2.3
   },
   "game_categories": {
-    "2753915549": "other"
+    "109983668079237": "puzzle"
   },
-  "note": "Estructura actualizada para compatibilidad con user_game_servers.json"
+  "last_updated": "2025-07-14T22:08:06.512127",
+  "note": "This file now only contains general stats and categories. User data is in user_game_servers.json"
 }
