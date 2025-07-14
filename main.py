@@ -3734,9 +3734,19 @@ async def on_ready():
         from ia_system import setup_ia_commands
         
         ia_system = setup_ia_commands(bot)
-        logger.info("🤖 Sistema de comando !IA configurado")
+        
+        # Verificar comandos registrados
+        all_commands = list(bot.commands)
+        ia_commands = [cmd for cmd in all_commands if cmd.name in ["IA"] or "ia" in str(cmd.aliases).lower()]
+        
+        logger.info(f"🤖 Sistema de comando !IA configurado - Comandos encontrados: {len(ia_commands)}")
+        for cmd in ia_commands:
+            logger.info(f"  ↳ Comando: {cmd.name} (aliases: {cmd.aliases})")
+            
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de IA: {e}")
+        import traceback
+        logger.error(f"❌ Traceback completo: {traceback.format_exc()}")
 
     # Inicializar servidor de callback de música
     try:

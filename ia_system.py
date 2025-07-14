@@ -23,6 +23,8 @@ class IASystem:
             username = f"{ctx.author.name}#{ctx.author.discriminator}"
             
             logger.info(f"🤖 Comando !IA ejecutado por {username} (ID: {user_id})")
+            logger.info(f"🔍 Comando invocado como: {ctx.invoked_with}")
+            logger.info(f"📝 Petición recibida: {peticion[:50] if peticion else 'None'}...")
 
             # Verificar autenticación
             from main import roblox_verification
@@ -274,6 +276,20 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
 
 def setup_ia_commands(bot):
     """Configurar comandos de IA en el bot principal"""
-    ia_system = IASystem(bot)
-    logger.info("🤖 Sistema de comando !IA configurado exitosamente")
-    return ia_system
+    try:
+        ia_system = IASystem(bot)
+        
+        # Verificar que el comando se registró correctamente
+        ia_command = bot.get_command("IA")
+        if ia_command:
+            logger.info(f"🤖 Comando !IA registrado exitosamente con aliases: {ia_command.aliases}")
+        else:
+            logger.error("❌ ERROR: Comando !IA no se registró correctamente")
+            
+        logger.info("🤖 Sistema de comando !IA configurado exitosamente")
+        return ia_system
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de IA: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
+        raise
