@@ -1,8 +1,8 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 209,
-      "total_earned": 229,
+      "balance": 217,
+      "total_earned": 237,
       "transactions": [
         {
           "type": "earn",
@@ -304,6 +304,34 @@
           "reason": "Compra r\u00e1pida: izan",
           "timestamp": "2025-07-14T09:38:12.212480",
           "balance_after": 209
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T10:06:44.509476",
+          "balance_after": 211
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:36:50.277013",
+          "balance_after": 213
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:37:54.334963",
+          "balance_after": 215
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando /say",
+          "timestamp": "2025-07-14T19:40:19.883213",
+          "balance_after": 217
         }
       ]
     },
@@ -566,8 +594,8 @@
       ]
     },
     "1267882722534363269": {
-      "balance": 5,
-      "total_earned": 5,
+      "balance": 7,
+      "total_earned": 7,
       "transactions": [
         {
           "type": "earn",
@@ -575,6 +603,13 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-11T02:39:43.208954",
           "balance_after": 5
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:37:16.539465",
+          "balance_after": 7
         }
       ]
     },
@@ -711,8 +746,96 @@
           "balance_after": 5
         }
       ]
+    },
+    "1305778754018218017": {
+      "balance": 12,
+      "total_earned": 12,
+      "transactions": [
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:37:22.107500",
+          "balance_after": 2
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:38:14.634727",
+          "balance_after": 4
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:38:36.305812",
+          "balance_after": 6
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:39:06.570830",
+          "balance_after": 8
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando /say",
+          "timestamp": "2025-07-14T19:40:57.490113",
+          "balance_after": 10
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando /say",
+          "timestamp": "2025-07-14T19:41:14.412594",
+          "balance_after": 12
+        }
+      ]
+    },
+    "1327086245515624546": {
+      "balance": 4,
+      "total_earned": 4,
+      "transactions": [
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:38:44.639483",
+          "balance_after": 2
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:39:44.704931",
+          "balance_after": 4
+        }
+      ]
+    },
+    "1309277732663988244": {
+      "balance": 4,
+      "total_earned": 4,
+      "transactions": [
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:39:17.954883",
+          "balance_after": 2
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T19:39:53.646270",
+          "balance_after": 4
+        }
+      ]
     }
   },
-  "last_updated": "2025-07-14T09:38:12.212494",
-  "total_users": 16
+  "last_updated": "2025-07-14T19:41:14.412603",
+  "total_users": 19
 }
