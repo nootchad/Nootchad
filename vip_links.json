@@ -1,4 +1,13 @@
+
 {
+  "user_servers": {},
+  "metadata": {
+    "created_at": "2025-07-12T02:55:21.656098",
+    "last_updated": "2025-07-12T02:55:21.657878",
+    "total_users": 0,
+    "total_servers": 0,
+    "description": "Estructura simplificada compatible con user_game_servers.json"
+  },
   "scraping_stats": {
     "total_scraped": 791,
     "successful_extractions": 651,
@@ -10,6 +19,5 @@
   "game_categories": {
     "2753915549": "other"
   },
-  "last_updated": "2025-07-12T02:55:21.657878",
-  "note": "This file now only contains general stats and categories. User data is in user_game_servers.json"
+  "note": "Estructura actualizada para compatibilidad con user_game_servers.json"
 }
