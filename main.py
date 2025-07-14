@@ -3540,6 +3540,19 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de música: {e}")
 
+    # Inicializar servidor de callback de música
+    try:
+        from music_callback_server import start_music_callback_server
+        
+        callback_server, callback_url = await start_music_callback_server()
+        if callback_url:
+            logger.info(f"🎵 Servidor de callback de música iniciado: {callback_url}")
+            logger.info(f"🔗 Endpoint de callback: {callback_url}/api/music-callback")
+        else:
+            logger.error("❌ No se pudo iniciar el servidor de callback de música")
+    except Exception as e:
+        logger.error(f"❌ Error iniciando servidor de callback de música: {e}")
+
     # Inicializar sistema de monitoreo de usuarios
     try:
         user_monitoring.start_monitoring()
