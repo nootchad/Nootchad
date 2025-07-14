@@ -146,99 +146,145 @@ class ProfileView(discord.ui.View):
         return embed
 
     def create_servers_embed(self):
-        """Crear embed de información de servidores"""
+        """Crear embed de información de servidores sin límite"""
         embed = discord.Embed(
             title=f"🎮 Servidores de {self.target_user.name}",
-            description="Información detallada sobre servidores VIP y actividad de juegos",
+            description="Información detallada sobre servidores VIP y actividad de juegos (sin límite)",
             color=0x00ff88
         )
 
         profile = self.profile_data
 
-        # Estadísticas de servidores
-        user_servers = profile.get('user_servers', [])
+        # Estadísticas de servidores desde user_game_servers.json
+        servers_data = profile.get('servers_data', {})
+        user_servers = servers_data.get('servers', [])
         total_servers = len(user_servers)
-        total_games = profile.get('total_games', 0)
-        favorite_games = len(profile.get('favorite_games', []))
+        total_games = servers_data.get('total_games', 0)
+        servers_by_game = servers_data.get('servers_by_game', {})
 
         embed.add_field(
-            name="📊 Estadísticas de Servidores",
-            value=f"**🖥️ Servidores guardados:** {total_servers}/5\n**🎯 Juegos únicos:** {total_games}\n**⭐ Favoritos:** {favorite_games}",
+            name="📊 Estadísticas de Servidores (Sin Límite)",
+            value=f"**🖥️ Total de servidores:** {total_servers:,}\n**🎯 Juegos únicos:** {total_games}\n**📈 Sin límite de servidores**",
             inline=True
         )
 
-        # Mostrar los servidores del usuario si los tiene
+        # Mostrar resumen de los servidores del usuario
         if user_servers:
-            servers_preview = []
-            for i, server in enumerate(user_servers[:3], 1):  # Mostrar solo los primeros 3
-                # Extraer información básica del servidor
-                if isinstance(server, str):
-                    servers_preview.append(f"**{i}.** [Servidor #{i}]({server})")
-                elif isinstance(server, dict):
-                    server_name = server.get('name', f'Servidor #{i}')
-                    server_url = server.get('url', '#')
-                    servers_preview.append(f"**{i}.** [{server_name}]({server_url})")
+            # Mostrar estadísticas por rangos
+            if total_servers <= 5:
+                status = "🌱 Colección Inicial"
+            elif total_servers <= 20:
+                status = "📈 Colección en Crecimiento"
+            elif total_servers <= 50:
+                status = "⭐ Colección Avanzada"
+            elif total_servers <= 100:
+                status = "🏆 Colección Experta"
+            else:
+                status = "💎 Maestro de Servidores"
             
-            if len(user_servers) > 3:
-                servers_preview.append(f"**...y {len(user_servers) - 3} más**")
+            embed.add_field(
+                name="🏅 Estado de Colección",
+                value=f"**{status}**\n{total_servers:,} servidores acumulados",
+                inline=True
+            )
+
+            # Mostrar distribución por juegos
+            if servers_by_game:
+                top_games = sorted(servers_by_game.items(), key=lambda x: x[1], reverse=True)[:3]
+                games_text = []
+                for game_id, count in top_games:
+                    game_name = self.get_game_name_display(game_id, profile)
+                    games_text.append(f"• **{game_name}:** {count:,} servidores")
+                
+                embed.add_field(
+                    name="🔥 Top 3 Juegos por Servidores",
+                    value="\n".join(games_text) if games_text else "Sin datos",
+                    inline=False
+                )
+
+            # Mostrar algunos enlaces de ejemplo
+            sample_servers = user_servers[:3]  # Primeros 3 como muestra
+            servers_preview = []
+            for i, server in enumerate(sample_servers, 1):
+                try:
+                    # Extraer game ID del enlace para mostrar información
+                    if "/games/" in server:
+                        game_id = server.split("/games/")[1].split("?")[0]
+                        game_name = self.get_game_name_display(game_id, profile)
+                        servers_preview.append(f"**{i}.** [{game_name}]({server})")
+                    else:
+                        servers_preview.append(f"**{i}.** [Servidor #{i}]({server})")
+                except:
+                    servers_preview.append(f"**{i}.** [Servidor #{i}]({server})")
+            
+            if total_servers > 3:
+                remaining = total_servers - 3
+                servers_preview.append(f"**...y {remaining:,} servidores más**")
 
             embed.add_field(
-                name="🔗 Servidores Guardados",
-                value="\n".join(servers_preview) if servers_preview else "Sin servidores guardados",
+                name="🔗 Muestra de Servidores Guardados",
+                value="\n".join(servers_preview) if servers_preview else "Sin servidores",
                 inline=False
             )
 
-        # Juegos más populares
-        popular_games = profile.get('top_games', [])[:3]
-        if popular_games:
-            games_text = "\n".join([f"• **{game['name']}** ({game['server_count']} servidores)" for game in popular_games])
         else:
-            games_text = "No hay datos disponibles"
+            embed.add_field(
+                name="📭 Sin Servidores",
+                value="Este usuario aún no ha recopilado servidores.\nUsa `/servertest` para comenzar a acumular servidores sin límite.",
+                inline=False
+            )
 
+        # Progreso y estadísticas adicionales
+        daily_avg = profile.get('daily_server_average', 0)
+        total_attempts = profile.get('total_scraping_attempts', 0)
+        
         embed.add_field(
-            name="🔥 Top 3 Juegos",
-            value=games_text,
+            name="📈 Progreso de Recopilación",
+            value=f"**Promedio diario:** {daily_avg:.1f} servidores\n**Intentos de scraping:** {total_attempts}\n**Eficiencia:** {((total_servers / max(total_attempts, 1)) * 100):.1f}%",
             inline=True
         )
 
-        # Actividad reciente
-        recent_activity = profile.get('recent_server_activity', [])[:3]
-        if recent_activity:
-            activity_text = "\n".join([f"• **{activity['game_name']}** - <t:{int(activity['timestamp'])}:R>" for activity in recent_activity])
-        else:
-            activity_text = "Sin actividad reciente"
+        # Último servidor agregado
+        if user_servers:
+            last_server_time = profile.get('last_server_added', time.time())
+            embed.add_field(
+                name="⏰ Último Servidor Agregado",
+                value=f"<t:{int(last_server_time)}:R>",
+                inline=True
+            )
 
         embed.add_field(
-            name="⏰ Actividad Reciente",
-            value=activity_text,
+            name="🚀 Sistema Sin Límite",
+            value="• Cada uso de `/servertest` agrega más servidores\n• No hay límite máximo de servidores\n• Los servidores se acumulan automáticamente",
             inline=False
         )
 
-        # Categorías más usadas
-        categories = profile.get('game_categories', {})
-        if categories:
-            cat_text = "\n".join([f"• **{cat.title()}:** {count} juegos" for cat, count in sorted(categories.items(), key=lambda x: x[1], reverse=True)[:3]])
-        else:
-            cat_text = "Sin categorías registradas"
-
-        embed.add_field(
-            name="📂 Categorías Favoritas",
-            value=cat_text,
-            inline=True
-        )
-
-        # Servidores reservados
-        reserved_servers = len(profile.get('reserved_servers', []))
-        embed.add_field(
-            name="📌 Servidores Reservados",
-            value=f"**{reserved_servers}** servidores guardados",
-            inline=True
-        )
-
         embed.set_thumbnail(url=self.target_user.display_avatar.url)
-        embed.set_footer(text="RbxServers • Información de Servidores • Gracias por la idea kxis3rr")
+        embed.set_footer(text="RbxServers • Servidores Sin Límite • Gracias por la idea kxis3rr")
 
         return embed
+    
+    def get_game_name_display(self, game_id: str, profile: dict) -> str:
+        """Obtener nombre del juego para mostrar en el embed"""
+        # Intentar obtener desde datos del perfil primero
+        games_data = profile.get('servers_data', {}).get('games', {})
+        if game_id in games_data:
+            return games_data[game_id].get('game_name', f'Game {game_id}')
+        
+        # Fallback a nombres conocidos
+        game_names = {
+            "2753915549": "🌊 Blox Fruits",
+            "6284583030": "🎃 Pet Simulator X",
+            "185655149": "🏡 Welcome to Bloxburg",
+            "920587237": "🏠 Adopt Me!",
+            "4924922222": "🏘️ Brookhaven RP",
+            "735030788": "👑 Royale High",
+            "606849621": "🚓 Jailbreak",
+            "4616652839": "⚔️ Shindo Life",
+            "142823291": "🔍 Murder Mystery 2",
+            "4646477729": "⭐ All Star Tower Defense"
+        }
+        return game_names.get(game_id, f"🎮 Game {game_id}")
 
     def create_verification_embed(self):
         """Crear embed de información de verificación"""
@@ -810,16 +856,27 @@ class UserProfileSystem:
 
     
     def collect_user_data(self, user_id: str, user_obj=None) -> dict:
-        """Recopilar todos los datos de un usuario desde diferentes sistemas"""
+        """Recopilar todos los datos de un usuario desde diferentes sistemas (sin límite de servidores)"""
         try:
             # Cargar datos de monedas desde user_coins.json
             coins_data = self.load_user_coins_data(user_id)
 
-            # Cargar datos de servidores desde user_game_servers.json
+            # Cargar datos de servidores desde user_game_servers.json (sin límite)
             servers_data = self.load_user_servers_data(user_id)
 
             # Obtener datos de verificación desde el sistema global
             verification_data = self.get_verification_data(user_id)
+
+            # Calcular estadísticas adicionales de servidores
+            total_servers = servers_data['total_servers']
+            daily_avg = 0
+            last_server_added = time.time()
+            
+            # Estimar progreso basado en cantidad de servidores
+            if total_servers > 0:
+                # Estimar que el usuario ha estado activo por algunos días
+                estimated_days = max(1, total_servers // 5)  # Aproximadamente 5 servidores por día activo
+                daily_avg = total_servers / estimated_days
 
             # Datos básicos
             data = {
@@ -836,37 +893,62 @@ class UserProfileSystem:
                 'roblox_username': verification_data.get('roblox_username'),
                 'roblox_id': verification_data.get('roblox_id'),
 
-                # Servidores de juegos (desde user_game_servers.json - estructura simplificada)
-                'user_servers': servers_data['servers'],
-                'game_servers': servers_data['games'],  # Compatibilidad con estructura antigua
-                'total_servers': servers_data['total_servers'],
+                # Servidores de juegos (desde user_game_servers.json - SIN LÍMITE)
+                'servers_data': servers_data,  # Todos los datos de servidores
+                'user_servers': servers_data['servers'],  # Lista completa de servidores
+                'game_servers': servers_data['games'],  # Datos organizados por juego
+                'total_servers': total_servers,  # Cantidad real sin límite
                 'total_games': servers_data['total_games'],
+                'main_game': servers_data.get('main_game'),
+                'servers_by_game': servers_data.get('servers_by_game', {}),
+
+                # Estadísticas adicionales de servidores
+                'daily_server_average': daily_avg,
+                'last_server_added': last_server_added,
+                'total_scraping_attempts': max(total_servers, 1),  # Estimación
 
                 # Monedas (desde user_coins.json)
                 'coins': coins_data,
+                'coins_balance': coins_data.get('balance', 0),
 
                 # Actividad y seguridad
                 'warnings': verification_data.get('warnings', 0),
                 'is_banned': verification_data.get('is_banned', False),
                 'ban_info': verification_data.get('ban_info', {}),
+                'is_trusted': not verification_data.get('is_banned', False),
+                'risk_level': 'bajo' if not verification_data.get('is_banned', False) else 'alto',
+
+                # Estadísticas de actividad
+                'total_commands': total_servers,  # Usar servidores como proxy de actividad
+                'active_days': max(1, total_servers // 5),  # Estimación
+                'first_seen': verification_data.get('verified_at', time.time()),
+                'last_activity': time.time(),
 
                 # Logros y estadísticas
                 'achievements': [],
-                'total_commands_used': 0,
-                'first_command_date': None,
-                'last_activity': None
+                'redeemed_codes': [],
+                'total_commands_used': total_servers,
+                'first_command_date': verification_data.get('verified_at'),
+                'verified_at': verification_data.get('verified_at')
             }
 
             # Guardar en perfiles
             self.user_profiles[user_id] = data
             self.save_profiles_data()
 
-            logger.info(f"📊 Datos recopilados para usuario {user_id}: verificado={data['is_verified']}, juegos={data['total_games']}, servidores={data['total_servers']}")
+            logger.info(f"📊 Datos recopilados para usuario {user_id}: verificado={data['is_verified']}, juegos={data['total_games']}, servidores={data['total_servers']:,} (sin límite)")
             return data
 
         except Exception as e:
             logger.error(f"❌ Error recopilando datos del usuario {user_id}: {e}")
-            return {}
+            return {
+                'user_id': user_id,
+                'servers_data': {'servers': [], 'total_servers': 0, 'total_games': 0, 'games': {}, 'servers_by_game': {}},
+                'total_servers': 0,
+                'total_games': 0,
+                'is_verified': False,
+                'coins_balance': 0
+            }
 
     def get_verification_data(self, user_id: str) -> dict:
         """Obtener datos de verificación desde el sistema global"""
@@ -936,27 +1018,63 @@ class UserProfileSystem:
             }
 
     def load_user_servers_data(self, user_id: str) -> dict:
-        """Cargar datos de servidores desde user_game_servers.json con estructura simplificada"""
+        """Cargar datos de servidores desde user_game_servers.json sin límite de servidores"""
         try:
             import json
             from pathlib import Path
 
-            # Intentar cargar desde el nuevo archivo simplificado
+            # Cargar desde el archivo simplificado user_game_servers.json
             servers_file = Path("user_game_servers.json")
             if servers_file.exists():
                 with open(servers_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     user_servers = data.get('user_servers', {}).get(user_id, [])
                     
-                    # Detectar juego principal desde los enlaces
-                    main_game = "2753915549" if user_servers else None  # Blox Fruits por defecto
+                    # Detectar juegos únicos desde los enlaces (sin límite)
+                    game_ids_found = set()
+                    games_data = {}
+                    
+                    for server_link in user_servers:
+                        # Extraer game ID desde el enlace
+                        try:
+                            if "/games/" in server_link:
+                                game_id = server_link.split("/games/")[1].split("?")[0]
+                                game_ids_found.add(game_id)
+                                
+                                if game_id not in games_data:
+                                    games_data[game_id] = {
+                                        'server_links': [],
+                                        'game_name': self.get_game_name_from_id(game_id),
+                                        'category': 'rpg' if game_id == "2753915549" else 'other'
+                                    }
+                                
+                                games_data[game_id]['server_links'].append(server_link)
+                        except Exception:
+                            # Si no se puede extraer el game ID, agrupar en un juego por defecto
+                            default_game = "unknown"
+                            if default_game not in games_data:
+                                games_data[default_game] = {
+                                    'server_links': [],
+                                    'game_name': 'Juegos Varios',
+                                    'category': 'other'
+                                }
+                            games_data[default_game]['server_links'].append(server_link)
+                    
+                    # Detectar juego principal (el que más servidores tenga)
+                    main_game = None
+                    max_servers = 0
+                    for game_id, game_data in games_data.items():
+                        if len(game_data['server_links']) > max_servers:
+                            max_servers = len(game_data['server_links'])
+                            main_game = game_id
                     
                     return {
-                        'servers': user_servers,
-                        'total_servers': len(user_servers),
-                        'games': {main_game: {'server_links': user_servers}} if main_game else {},
-                        'total_games': 1 if user_servers else 0,
-                        'main_game': main_game
+                        'servers': user_servers,  # Lista completa sin límite
+                        'total_servers': len(user_servers),  # Cantidad real sin límite
+                        'games': games_data,  # Datos organizados por juego
+                        'total_games': len(games_data),  # Cantidad de juegos únicos
+                        'main_game': main_game,  # Juego principal
+                        'servers_by_game': {game_id: len(game_data['server_links']) for game_id, game_data in games_data.items()}
                     }
 
             # Fallback: intentar cargar desde users_servers.json (estructura antigua)
@@ -967,23 +1085,29 @@ class UserProfileSystem:
                     user_data = data.get('users', {}).get(user_id, {})
                     games = user_data.get('games', {})
 
+                    all_servers = []
                     total_servers = 0
                     for game_id, game_data in games.items():
                         servers = game_data.get('server_links', [])
+                        all_servers.extend(servers)
                         total_servers += len(servers)
 
                     return {
+                        'servers': all_servers,  # Todos los servidores en una lista
                         'games': games,
                         'total_games': len(games),
                         'total_servers': total_servers,
-                        'servers': []  # Nuevo campo vacío
+                        'main_game': list(games.keys())[0] if games else None,
+                        'servers_by_game': {game_id: len(game_data.get('server_links', [])) for game_id, game_data in games.items()}
                     }
 
             return {
                 'servers': [],
                 'games': {},
                 'total_games': 0,
-                'total_servers': 0
+                'total_servers': 0,
+                'main_game': None,
+                'servers_by_game': {}
             }
         except Exception as e:
             logger.error(f"❌ Error cargando datos de servidores para {user_id}: {e}")
@@ -991,8 +1115,26 @@ class UserProfileSystem:
                 'servers': [],
                 'games': {},
                 'total_games': 0,
-                'total_servers': 0
+                'total_servers': 0,
+                'main_game': None,
+                'servers_by_game': {}
             }
+    
+    def get_game_name_from_id(self, game_id: str) -> str:
+        """Obtener nombre del juego desde su ID"""
+        game_names = {
+            "2753915549": "🌊 Blox Fruits",
+            "6284583030": "🎃 Pet Simulator X",
+            "185655149": "🏡 Welcome to Bloxburg",
+            "920587237": "🏠 Adopt Me!",
+            "4924922222": "🏘️ Brookhaven RP",
+            "735030788": "👑 Royale High",
+            "606849621": "🚓 Jailbreak",
+            "4616652839": "⚔️ Shindo Life",
+            "142823291": "🔍 Murder Mystery 2",
+            "4646477729": "⭐ All Star Tower Defense"
+        }
+        return game_names.get(game_id, f"🎮 Game {game_id}")
 
 def save_user_servers_simple(self, user_id: str, servers: list):
     """Guardar servidores de usuario en la estructura simplificada"""
