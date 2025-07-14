@@ -142,7 +142,7 @@ class MusicSystem:
                 "customMode": False,        # Usar modo automático por defecto
                 "instrumental": False,      # Permitir voz si es apropiado
                 "model": "V4",              # Usar el modelo más reciente
-                "callBackUrl": ""           # Campo requerido por la API (puede estar vacío)
+                "callBackUrl": "https://fed026fa-c0a1-4b34-9acb-2c6e0d26bc19-00-3paoybh069clr.worf.replit.dev/api/music-callback"  # Endpoint del bot
             }
             
             headers = {
