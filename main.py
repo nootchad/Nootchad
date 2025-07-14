@@ -3317,6 +3317,9 @@ web_api_system = None
 # Anti-alt system commands
 anti_alt_commands = None
 
+# Music system
+music_system = None
+
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     """Manejo global de errores para comandos slash"""
@@ -3526,6 +3529,16 @@ async def on_ready():
         logger.info(f"⚠️ Comando /profile removido del sistema")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de perfiles: {e}")
+
+    # Setup music system
+    global music_system
+    try:
+        from music_system import setup_music_commands
+        
+        music_system = setup_music_commands(bot)
+        logger.info("🎵 Sistema de generación de música configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de música: {e}")
 
     # Inicializar sistema de monitoreo de usuarios
     try:
