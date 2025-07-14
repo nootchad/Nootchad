@@ -141,7 +141,8 @@ class MusicSystem:
                 "prompt": descripcion,
                 "customMode": False,        # Usar modo automático por defecto
                 "instrumental": False,      # Permitir voz si es apropiado
-                "model": "V4"               # Usar el modelo más reciente
+                "model": "V4",              # Usar el modelo más reciente
+                "callBackUrl": ""           # Campo requerido por la API (puede estar vacío)
             }
             
             headers = {
