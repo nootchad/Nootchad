@@ -447,6 +447,37 @@ class AntiAltSystem:
         except Exception as e:
             logger.error(f"❌ Error agregando a blacklist: {e}")
 
+    def create_ban_embed(self, reason: str, additional_info: str = None) -> tuple:
+        """Crear embed de ban con imagen"""
+        try:
+            import discord
+            
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description=f"Has sido baneado del sistema.\n\n**Razón:** {reason}",
+                color=0xff0000
+            )
+            
+            if additional_info:
+                embed.add_field(
+                    name="💡 Información Adicional",
+                    value=additional_info,
+                    inline=False
+                )
+            
+            # Intentar cargar imagen de ban
+            try:
+                banned_file = discord.File("./attached_assets/banned.png", filename="banned.png")
+                embed.set_thumbnail(url="attachment://banned.png")
+                return embed, banned_file
+            except:
+                # Fallback sin imagen
+                return embed, None
+                
+        except Exception as e:
+            logger.error(f"❌ Error creando embed de ban: {e}")
+            return None, None
+
     def add_to_whitelist(self, discord_id: str, reason: str):
         """Agregar usuario a whitelist"""
         try:

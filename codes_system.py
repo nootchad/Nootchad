@@ -310,6 +310,30 @@ def setup_codes_commands(bot):
         # Intentar canjear código
         result = codes_system.redeem_code(user_id, username, codigo)
 
+        # Verificar si el usuario está baneado
+        from anti_alt_system import anti_alt_system
+        if anti_alt_system.is_blacklisted(user_id):
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description="No puedes canjear códigos porque estás en la lista negra del sistema anti-alt.",
+                color=0xff0000
+            )
+            embed.add_field(
+                name="💡 Información",
+                value="Si crees que esto es un error, contacta a un administrador.",
+                inline=False
+            )
+
+            # Agregar imagen de ban como thumbnail
+            try:
+                banned_file = discord.File("./attached_assets/banned.png", filename="banned.png")
+                embed.set_thumbnail(url="attachment://banned.png")
+                await interaction.followup.send(embed=embed, file=banned_file, ephemeral=True)
+            except:
+                # Fallback sin imagen si hay error
+                await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+
         if result['success']:
             # Dar recompensa al usuario
             if result['reward_type'] == 'coins':
@@ -780,6 +804,7 @@ def setup_codes_commands(bot):
         user_id = str(interaction.user.id)
 
         # Verificar que solo el owner pueda usar este comando
+```python
         from main import is_owner_or_delegated
         if not is_owner_or_delegated(user_id):
             embed = discord.Embed(
