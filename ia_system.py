@@ -16,7 +16,7 @@ class IASystem:
     def setup_commands(self):
         """Configurar el comando !IA"""
 
-        @self.bot.command(name="IA", aliases=["ia", "ai"])
+        @self.bot.command(name="IA", aliases=["rbxia", "inteligencia"])
         async def ia_command(ctx, *, peticion: str = None):
             """Comando que usa Gemini API para responder preguntas"""
             user_id = str(ctx.author.id)
