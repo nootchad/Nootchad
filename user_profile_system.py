@@ -1225,36 +1225,6 @@ def save_user_servers_simple(self, user_id: str, servers: list):
 user_profile_system = UserProfileSystem()
 
 def setup_profile_commands(bot):
-    """Configurar comandos de perfiles"""
-
-    @bot.tree.command(name="profile", description="📊 Ver perfil completo de un usuario con estadísticas, servidores y más información")
-async def profile_command(interaction: discord.Interaction, usuario: discord.User = None):
-        """Comando para ver el perfil completo de un usuario con toda su información del bot"""
-
-        # Verificar autenticación
-        from main import check_verification
-        if not await check_verification(interaction, defer_response=True):
-            return
-
-        # Si no se especifica usuario, usar el que ejecuta el comando
-        target_user = usuario or interaction.user
-        user_id = str(target_user.id)
-
-        # Recopilar datos actualizados del usuario
-        profile_data = user_profile_system.collect_user_data(user_id)
-
-        # Crear vista con menú desplegable
-        view = ProfileView(str(interaction.user.id), target_user, profile_data)
-
-        # Crear embed inicial (overview)
-        embed = view.create_overview_embed()
-
-        # Como check_verification ya hizo defer, usar followup en lugar de response
-        await interaction.followup.send(embed=embed, view=view, ephemeral=False)
-
-        # Log del uso del comando
-        requester = f"{interaction.user.name}#{interaction.user.discriminator}"
-        target = f"{target_user.name}#{target_user.discriminator}"
-        logger.info(f"👤 {requester} vio el perfil de {target}")
-
+    """Configurar comandos de perfiles - comando /profile removido"""
+    # El comando /profile ha sido eliminado
     return user_profile_system
