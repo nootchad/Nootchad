@@ -3494,6 +3494,16 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema anti-alt: {e}")
 
+    # Setup leaderboard system
+    global leaderboard_system_setup
+    try:
+        from leaderboard_system import setup_leaderboard_commands
+        
+        leaderboard_system_setup = setup_leaderboard_commands(bot)
+        logger.info("🏆 Sistema de leaderboard configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de leaderboard: {e}")
+
     # Setup kxis3rr system
     global kxis3rr_system
     try:
