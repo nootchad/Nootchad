@@ -242,7 +242,7 @@ def setup_leaderboard_commands(bot):
             # Crear embed principal
             embed = discord.Embed(
                 title=f"🏆 Leaderboard {display_type} - Top 10 Servidores",
-                description="Ranking de usuarios con más servidores VIP acumulados",
+                description="Ranking de usuarios con más servidores VIP acumulados\n\n🎁 **PREMIOS SEMANALES:**\n🥇 **1er lugar:** 10,000 monedas + Cuenta Crunchyroll\n🥈 **2do lugar:** 7,500 monedas + Cuenta Crunchyroll\n🥉 **3er lugar:** 5,000 monedas + Cuenta Crunchyroll",
                 color=0x00ff88
             )
 
@@ -298,6 +298,13 @@ def setup_leaderboard_commands(bot):
                 except Exception as e:
                     logger.error(f"Error procesando usuario {uid}: {e}")
                     ranking_text.append(f"**{i}.** Usuario {uid[:8]} - {server_count:,} servidores")
+
+            # Agregar sección de premios
+            embed.add_field(
+                name="🎁 Premios del Leaderboard Semanal",
+                value="🥇 **1er Lugar:** 10,000 monedas + Cuenta Crunchyroll Premium\n🥈 **2do Lugar:** 7,500 monedas + Cuenta Crunchyroll Premium\n🥉 **3er Lugar:** 5,000 monedas + Cuenta Crunchyroll Premium\n\n*Los premios se entregan cada lunes al finalizar la semana*",
+                inline=False
+            )
 
             # Agregar ranking al embed
             embed.add_field(
