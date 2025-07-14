@@ -126,7 +126,7 @@ class MusicSystem:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
     
     async def generate_music_with_api(self, descripcion: str, duracion: int) -> str:
-        """Generar música usando la API de música"""
+        """Generar música usando la API de kie.ai"""
         try:
             # Obtener API key de los secretos
             music_api_key = os.getenv("MUSIC_API")
@@ -136,92 +136,105 @@ class MusicSystem:
             
             logger.info(f"🎵 Generando música para: {descripcion[:50]}... (Duración: {duracion}s)")
             
-            # Preparar datos para la API
+            # Preparar datos para la API de kie.ai con el formato correcto
             payload = {
                 "prompt": descripcion,
-                "duration": duracion,
-                "format": "mp3",
-                "quality": "high"
+                "style": "Instrumental",  # Estilo por defecto
+                "title": f"RbxServers Music - {descripcion[:30]}...",
+                "customMode": True,
+                "instrumental": True,
+                "model": "V3_5",
+                "callBackUrl": "",  # Opcional
+                "negativeTags": ""  # Opcional
             }
             
             headers = {
-                "Authorization": f"Bearer {music_api_key}",
                 "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {music_api_key}",
                 "User-Agent": "RbxServers-v1-MusicBot/1.0"
             }
             
-            # URL de la API (ajusta según tu proveedor de API)
-            # Aquí uso un ejemplo genérico - reemplaza con la URL correcta de tu API
-            api_url = "https://api.kie.com/v1/generate-music"  # Reemplaza con la URL real
+            # URL correcta de la API de kie.ai
+            api_url = "https://api.kie.ai/api/v1/generate"
             
             async with aiohttp.ClientSession() as session:
                 # Hacer petición POST para generar música
-                async with session.post(api_url, json=payload, headers=headers, timeout=120) as response:
+                async with session.post(api_url, json=payload, headers=headers, timeout=180) as response:
                     if response.status == 200:
-                        # Verificar si la respuesta es JSON o directamente audio
-                        content_type = response.headers.get('content-type', '')
+                        result = await response.json()
+                        logger.info(f"✅ Respuesta de kie.ai: {result}")
                         
-                        if 'application/json' in content_type:
-                            # La API devuelve JSON con URL o datos
-                            result = await response.json()
-                            
-                            # Buscar URL de descarga en la respuesta
-                            download_url = None
-                            for key in ['url', 'download_url', 'audio_url', 'file_url', 'result']:
-                                if key in result:
-                                    download_url = result[key]
+                        # La API de kie.ai puede devolver diferentes formatos
+                        # Buscar el enlace de descarga o archivo de audio
+                        download_url = None
+                        
+                        # Posibles campos donde puede estar la URL del audio
+                        possible_fields = ['audio_url', 'download_url', 'url', 'file_url', 'result', 'data', 'audio', 'track_url']
+                        
+                        for field in possible_fields:
+                            if field in result and result[field]:
+                                download_url = result[field]
+                                logger.info(f"🔗 URL encontrada en campo '{field}': {download_url}")
+                                break
+                        
+                        # Si no se encuentra directamente, buscar en objetos anidados
+                        if not download_url and 'data' in result and isinstance(result['data'], dict):
+                            for field in possible_fields:
+                                if field in result['data'] and result['data'][field]:
+                                    download_url = result['data'][field]
+                                    logger.info(f"🔗 URL encontrada en data.{field}: {download_url}")
                                     break
-                            
-                            if download_url:
-                                # Descargar el archivo de música
+                        
+                        if download_url:
+                            # Descargar el archivo de música
+                            try:
                                 async with session.get(download_url) as audio_response:
                                     if audio_response.status == 200:
                                         audio_data = await audio_response.read()
+                                        
+                                        # Guardar archivo temporal
+                                        temp_filename = f"kie_music_{uuid.uuid4().hex[:8]}.mp3"
+                                        temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
+                                        
+                                        with open(temp_path, 'wb') as f:
+                                            f.write(audio_data)
+                                        
+                                        logger.info(f"✅ Música de kie.ai generada y guardada: {temp_path}")
+                                        logger.info(f"📊 Tamaño de archivo: {len(audio_data)} bytes")
+                                        
+                                        return temp_path
                                     else:
-                                        logger.error(f"❌ Error descargando música: {audio_response.status}")
+                                        logger.error(f"❌ Error descargando música desde {download_url}: {audio_response.status}")
                                         return None
-                            else:
-                                logger.error("❌ No se encontró URL de descarga en la respuesta JSON")
+                            except Exception as download_error:
+                                logger.error(f"❌ Error durante la descarga: {download_error}")
                                 return None
-                        
-                        elif 'audio' in content_type:
-                            # La respuesta es directamente el archivo de audio
-                            audio_data = await response.read()
-                        
                         else:
-                            logger.error(f"❌ Tipo de contenido inesperado: {content_type}")
+                            logger.error("❌ No se encontró URL de descarga en la respuesta de kie.ai")
+                            logger.error(f"📋 Respuesta completa: {result}")
                             return None
-                        
-                        # Guardar archivo temporal
-                        temp_filename = f"music_{uuid.uuid4().hex[:8]}.mp3"
-                        temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
-                        
-                        with open(temp_path, 'wb') as f:
-                            f.write(audio_data)
-                        
-                        logger.info(f"✅ Música generada y guardada: {temp_path}")
-                        logger.info(f"📊 Tamaño de archivo: {len(audio_data)} bytes")
-                        
-                        return temp_path
                     
                     elif response.status == 401:
-                        logger.error("❌ API key inválida o expirada")
+                        logger.error("❌ API key inválida o expirada para kie.ai")
                         return None
                     
                     elif response.status == 429:
-                        logger.error("❌ Rate limit excedido en la API")
+                        logger.error("❌ Rate limit excedido en la API de kie.ai")
                         return None
                     
                     else:
                         error_text = await response.text()
-                        logger.error(f"❌ Error en API de música: {response.status} - {error_text}")
+                        logger.error(f"❌ Error en API de kie.ai: {response.status} - {error_text}")
                         return None
         
         except asyncio.TimeoutError:
-            logger.error("⏰ Timeout generando música")
+            logger.error("⏰ Timeout generando música con kie.ai (180s)")
             return None
         except Exception as e:
-            logger.error(f"❌ Error generando música: {e}")
+            logger.error(f"❌ Error generando música con kie.ai: {e}")
+            import traceback
+            logger.error(f"❌ Traceback: {traceback.format_exc()}")
             return None
     
     async def generate_fallback_response(self, message, descripcion, username):
