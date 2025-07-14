@@ -4918,6 +4918,70 @@ async def say_command(interaction: discord.Interaction, mensaje: str):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
+@bot.event
+async def on_message(message):
+    """Manejar mensajes de texto para comandos con prefijo"""
+    # Ignorar mensajes del bot
+    if message.author == bot.user:
+        return
+    
+    # Verificar si el mensaje comienza con .say
+    if message.content.startswith('.say '):
+        user_id = str(message.author.id)
+        username = f"{message.author.name}#{message.author.discriminator}"
+        
+        try:
+            # Extraer el mensaje después de ".say "
+            mensaje = message.content[5:].strip()  # Remover ".say " del inicio
+            
+            # Verificar que el mensaje no esté vacío
+            if not mensaje:
+                await message.reply("❌ Debes proporcionar un mensaje después de `.say`\n**Ejemplo:** `.say Hola mundo`", mention_author=False)
+                return
+            
+            # Verificar longitud del mensaje (límite de Discord: 2000 caracteres)
+            if len(mensaje) > 2000:
+                await message.reply(f"❌ El mensaje es muy largo ({len(mensaje)} caracteres). El límite es 2000 caracteres.", mention_author=False)
+                return
+            
+            # Filtrar contenido inapropiado básico
+            forbidden_words = ["@everyone", "@here", "discord.gg/", "https://discord.gg/"]
+            mensaje_lower = mensaje.lower()
+            
+            for word in forbidden_words:
+                if word in mensaje_lower:
+                    await message.reply("❌ El mensaje contiene contenido no permitido (menciones masivas o invitaciones de Discord).", mention_author=False)
+                    return
+            
+            # Eliminar el mensaje original del usuario
+            try:
+                await message.delete()
+            except discord.errors.NotFound:
+                pass  # El mensaje ya fue eliminado
+            except discord.errors.Forbidden:
+                # No tenemos permisos para eliminar mensajes
+                pass
+            
+            # Enviar el mensaje del usuario
+            await message.channel.send(mensaje)
+            
+            # Log del uso del comando
+            logger.info(f"Usuario {username} (ID: {user_id}) usó .say: {mensaje[:50]}{'...' if len(mensaje) > 50 else ''}")
+            
+            # Dar monedas por usar el comando (si el sistema está disponible)
+            try:
+                if coins_system:
+                    coins_system.add_coins(user_id, 2, "Usar comando .say")
+            except Exception as e:
+                logger.debug(f"Error agregando monedas: {e}")
+        
+        except Exception as e:
+            logger.error(f"Error en comando .say: {e}")
+            try:
+                await message.reply("❌ Ocurrió un error al procesar el comando.", mention_author=False)
+            except:
+                pass
+
 @bot.tree.command(name="credits", description="Ver los créditos y reconocimientos del bot RbxServers")
 async def credits_command(interaction: discord.Interaction):
     """Comando que muestra los créditos del bot con diseño negro y blanco"""
