@@ -61,7 +61,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                 async with ctx.typing():
                     # Hacer petición a la API de Gemini
                     async with aiohttp.ClientSession() as session:
-                        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={gemini_api_key}"
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
 
                         payload = {
                             "contents": [
@@ -80,15 +80,26 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                         }
 
                         try:
-                            async with session.post(url, json=payload, headers=headers) as response:
+                            timeout = aiohttp.ClientTimeout(total=60, connect=10)
+                            async with session.post(url, json=payload, headers=headers, timeout=timeout) as response:
                                 if response.status == 200:
-                                    data = await response.json()
+                                    try:
+                                        data = await response.json()
+                                        logger.info(f"Respuesta exitosa de Gemini para {username}")
+                                    except Exception as json_error:
+                                        logger.error(f"Error parseando JSON: {json_error}")
+                                        await ctx.reply("❌ Error: Respuesta inválida del servidor")
+                                        return
 
                                     # Extraer la respuesta de Gemini
                                     if "candidates" in data and len(data["candidates"]) > 0:
                                         candidate = data["candidates"][0]
-                                        if "content" in candidate and "parts" in candidate["content"]:
-                                            gemini_response = candidate["content"]["parts"][0]["text"]
+                                        if "content" in candidate and "parts" in candidate["content"] and len(candidate["content"]["parts"]) > 0:
+                                            if "text" in candidate["content"]["parts"][0]:
+                                                gemini_response = candidate["content"]["parts"][0]["text"]
+                                            else:
+                                                await ctx.reply("❌ Error: La respuesta no contiene texto válido")
+                                                return
 
                                             # Dividir la respuesta si es muy larga (límite de Discord: 2000 caracteres)
                                             if len(gemini_response) > 1900:
@@ -123,12 +134,21 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                                         await ctx.send("❌ Error: No se recibió respuesta válida de la API")
 
                                 elif response.status == 400:
+                                    error_text = await response.text()
+                                    logger.error(f"API Error 400: {error_text}")
                                     await ctx.reply("❌ Error: La petición fue rechazada por la API (contenido inapropiado o muy largo)")
 
                                 elif response.status == 403:
+                                    error_text = await response.text()
+                                    logger.error(f"API Error 403: {error_text}")
                                     await ctx.reply("❌ Error: La API key no es válida o ha expirado")
 
+                                elif response.status == 429:
+                                    await ctx.reply("❌ Error: Límite de solicitudes excedido, intenta más tarde")
+
                                 else:
+                                    error_text = await response.text()
+                                    logger.error(f"API Error {response.status}: {error_text}")
                                     await ctx.reply(f"❌ Error del servidor: HTTP {response.status}")
 
                         except asyncio.TimeoutError:

@@ -4868,7 +4868,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
         
         # Hacer petición a la API de Gemini
         async with aiohttp.ClientSession() as session:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={gemini_api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
             
             payload = {
                 "contents": [
