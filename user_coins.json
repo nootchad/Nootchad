@@ -783,8 +783,8 @@
       ]
     },
     "1305778754018218017": {
-      "balance": 18,
-      "total_earned": 18,
+      "balance": 20,
+      "total_earned": 20,
       "transactions": [
         {
           "type": "earn",
@@ -848,6 +848,13 @@
           "reason": "Usar comando .say",
           "timestamp": "2025-07-14T22:48:24.784454",
           "balance_after": 18
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando .say",
+          "timestamp": "2025-07-14T22:48:42.522962",
+          "balance_after": 20
         }
       ]
     },
@@ -892,6 +899,6 @@
       ]
     }
   },
-  "last_updated": "2025-07-14T22:48:24.784468",
+  "last_updated": "2025-07-14T22:48:42.522974",
   "total_users": 19
 }
