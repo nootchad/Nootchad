@@ -4981,6 +4981,146 @@ async def on_message(message):
                 await message.reply("❌ Ocurrió un error al procesar el comando.", mention_author=False)
             except:
                 pass
+    
+    # Verificar si el mensaje comienza con !images
+    elif message.content.startswith('!images '):
+        user_id = str(message.author.id)
+        username = f"{message.author.name}#{message.author.discriminator}"
+        
+        # Verificar autenticación
+        if roblox_verification.is_user_banned(user_id):
+            ban_time = roblox_verification.banned_users[user_id]
+            remaining_time = BAN_DURATION - (time.time() - ban_time)
+            days_remaining = int(remaining_time / (24 * 60 * 60))
+            hours_remaining = int((remaining_time % (24 * 60 * 60)) / 3600)
+            
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description=f"Estás baneado por intentar usar información falsa.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
+                color=0xff0000
+            )
+            await message.reply(embed=embed, mention_author=False)
+            return
+        
+        if not roblox_verification.is_user_verified(user_id):
+            embed = discord.Embed(
+                title="🔒 Verificación Requerida",
+                description="Debes verificar que sigues a **hesiz** en Roblox para usar este comando.",
+                color=0xffaa00
+            )
+            embed.add_field(
+                name="📝 Cómo verificarse:",
+                value="1. Usa `/verify [tu_nombre_de_usuario]`\n2. Copia el código generado a tu descripción de Roblox\n3. Haz clic en el botón de confirmación",
+                inline=False
+            )
+            await message.reply(embed=embed, mention_author=False)
+            return
+        
+        try:
+            # Extraer la descripción después de "!images "
+            descripcion = message.content[8:].strip()  # Remover "!images " del inicio
+            
+            # Verificar que la descripción no esté vacía
+            if not descripcion:
+                await message.reply("❌ Debes proporcionar una descripción para generar la imagen.\n**Ejemplo:** `!images un gato jugando con una pelota`", mention_author=False)
+                return
+            
+            # Verificar longitud de la descripción
+            if len(descripcion) > 500:
+                await message.reply(f"❌ La descripción es muy larga ({len(descripcion)} caracteres). El límite es 500 caracteres.", mention_author=False)
+                return
+            
+            # Importar sistema de imágenes
+            from images_system import ImagesSystem
+            
+            # Crear mensaje de cargando
+            loading_embed = discord.Embed(
+                title="🎨 RbxServers-v1 x Pollinations Generando Imagen...",
+                description=f"Creando imagen: `{descripcion[:100]}{'...' if len(descripcion) > 100 else ''}`",
+                color=0xffaa00
+            )
+            loading_embed.add_field(name="⏳ Estado", value="Conectando con Pollinations AI...", inline=True)
+            loading_embed.add_field(name="🤖 Modelo", value="RbxServers-v1 x Pollinations", inline=True)
+            loading_embed.add_field(name="🎨 Tipo", value="Generación de Imagen", inline=True)
+            loading_embed.set_footer(text=f"Solicitado por {username}")
+            
+            # Enviar mensaje de cargando
+            loading_message = await message.reply(embed=loading_embed, mention_author=False)
+            
+            # Crear instancia del sistema de imágenes
+            images_system_instance = ImagesSystem(bot)
+            
+            # Mejorar el prompt para generar mejores imágenes
+            enhanced_prompt = f"""Crea una imagen detallada y de alta calidad basada en esta descripción: {descripcion}
+
+Especificaciones técnicas:
+- Estilo artístico profesional
+- Alta resolución y calidad
+- Colores vibrantes y bien balanceados
+- Composición atractiva
+- Iluminación dramática si es apropiado
+
+Descripción de la imagen deseada: {descripcion}
+
+Genera una imagen que sea visualmente impactante y que capture perfectamente la esencia de lo solicitado."""
+            
+            # Usar servicio de generación de imágenes
+            image_file = await images_system_instance.generate_image_with_pollinations(descripcion, enhanced_prompt)
+            
+            if image_file:
+                # Crear embed con la imagen generada como archivo adjunto
+                result_embed = discord.Embed(
+                    title="🎨 Imagen Generada por RbxServers-v1 x Pollinations",
+                    description=f"**Descripción:** {descripcion}",
+                    color=0x00ff88
+                )
+                
+                result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+                result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1 x Pollinations", inline=True)
+                result_embed.add_field(name="⏰ Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
+                
+                result_embed.set_footer(text="🎨 RbxServers-v1 x Pollinations • Generador de Imágenes IA")
+                result_embed.timestamp = datetime.now()
+                
+                # Adjuntar la imagen como archivo
+                file = discord.File(image_file, filename="generated_image.png")
+                result_embed.set_image(url="attachment://generated_image.png")
+                
+                await loading_message.edit(embed=result_embed, attachments=[file])
+                
+                # Limpiar archivo temporal
+                try:
+                    import os
+                    os.remove(image_file)
+                except:
+                    pass
+                    
+            else:
+                # Si falla la generación, usar imagen de respaldo
+                await images_system_instance.generate_fallback_image(loading_message, descripcion, username)
+            
+            # Log del uso del comando
+            logger.info(f"Usuario {username} (ID: {user_id}) usó !images: {descripcion[:50]}{'...' if len(descripcion) > 50 else ''}")
+            
+            # Dar monedas por usar el comando
+            try:
+                if coins_system:
+                    coins_system.add_coins(user_id, 10, "Usar comando !images")
+            except Exception as e:
+                logger.debug(f"Error agregando monedas: {e}")
+        
+        except Exception as e:
+            logger.error(f"Error en comando !images: {e}")
+            try:
+                error_embed = discord.Embed(
+                    title="❌ Error",
+                    description="Ocurrió un error procesando tu solicitud de imagen.",
+                    color=0xff0000
+                )
+                error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:200]}```", inline=False)
+                await message.reply(embed=error_embed, mention_author=False)
+            except:
+                pass
 
 @bot.tree.command(name="credits", description="Ver los créditos y reconocimientos del bot RbxServers")
 async def credits_command(interaction: discord.Interaction):
