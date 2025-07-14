@@ -110,6 +110,11 @@ class RobloxRemoteControl:
         # Rutas para Discord (owner)
         self.app.router.add_post('/discord/send_command', self.handle_discord_command)
         
+        # Rutas para callbacks de música
+        self.app.router.add_post('/api/music-callback', self.handle_music_callback)
+        self.app.router.add_get('/api/music-callback', self.handle_music_callback_get)
+        self.app.router.add_get('/api/music-status', self.handle_music_status)
+        
         try:
             self.runner = web.AppRunner(self.app)
             await self.runner.setup()
@@ -122,6 +127,8 @@ class RobloxRemoteControl:
             logger.info(f"🔗 Server accessible at: {repl_url}")
             logger.info(f"🌐 API endpoints available at: {repl_url}/api/")
             logger.info(f"🔑 Use API key: {WEBHOOK_SECRET}")
+            logger.info(f"🎵 Music callback URL (port 8080): {repl_url}/api/music-callback")
+            logger.info(f"🎵 Music status URL (port 8080): {repl_url}/api/music-status")
         except Exception as e:
             logger.error(f"❌ Failed to start remote control server: {e}")
     
@@ -489,6 +496,187 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
     def get_command_status(self, command_id):
         """Obtener estado de comando"""
         return self.active_commands.get(command_id)
+    
+    async def handle_music_callback(self, request):
+        """Manejar callback de música desde APIs externas"""
+        try:
+            # Obtener datos del callback
+            if request.method == 'POST':
+                try:
+                    data = await request.json()
+                except:
+                    # Si no es JSON, intentar obtener como texto
+                    data = await request.text()
+                    try:
+                        data = json.loads(data)
+                    except:
+                        data = {'raw_data': data}
+            else:
+                # GET request - obtener parámetros de query
+                data = dict(request.query)
+            
+            # Log del callback recibido
+            logger.info(f"🎵 Music callback received on port 8080: {data}")
+            
+            # Procesar diferentes tipos de callbacks
+            callback_result = await self.process_music_callback(data)
+            
+            # Guardar en archivo para referencia
+            await self.save_callback_data(data)
+            
+            return web.json_response({
+                'status': 'success',
+                'message': 'Callback processed successfully',
+                'timestamp': datetime.now().isoformat(),
+                'processed': callback_result,
+                'received_data': data,
+                'port': 8080
+            })
+            
+        except Exception as e:
+            logger.error(f"❌ Error processing music callback on port 8080: {e}")
+            return web.json_response({
+                'status': 'error',
+                'message': str(e),
+                'timestamp': datetime.now().isoformat(),
+                'port': 8080
+            }, status=500)
+    
+    async def handle_music_callback_get(self, request):
+        """Manejar callbacks GET (algunos servicios usan GET)"""
+        return await self.handle_music_callback(request)
+    
+    async def process_music_callback(self, data):
+        """Procesar los datos del callback de música"""
+        try:
+            processed_info = {
+                'callback_type': 'unknown',
+                'audio_url': None,
+                'status': 'unknown',
+                'task_id': None,
+                'progress': None,
+                'processed_on_port': 8080
+            }
+            
+            # Procesar callback de kie.ai
+            if 'audio_url' in data:
+                processed_info['callback_type'] = 'kie_ai'
+                processed_info['audio_url'] = data['audio_url']
+                processed_info['status'] = data.get('status', 'completed')
+                processed_info['task_id'] = data.get('task_id', data.get('id'))
+                logger.info(f"✅ Kie.ai callback processed on port 8080: {data['audio_url']}")
+            
+            # Procesar callback de Suno AI
+            elif 'url' in data and 'id' in data:
+                processed_info['callback_type'] = 'suno_ai'
+                processed_info['audio_url'] = data['url']
+                processed_info['status'] = data.get('status', 'completed')
+                processed_info['task_id'] = data['id']
+                logger.info(f"✅ Suno AI callback processed on port 8080: {data['url']}")
+            
+            # Procesar callback de ElevenLabs
+            elif 'audio' in data:
+                processed_info['callback_type'] = 'elevenlabs'
+                processed_info['audio_url'] = data['audio']
+                processed_info['status'] = 'completed'
+                processed_info['task_id'] = data.get('request_id')
+                logger.info(f"✅ ElevenLabs callback processed on port 8080")
+            
+            # Procesar otros formatos
+            elif 'download_url' in data:
+                processed_info['callback_type'] = 'generic'
+                processed_info['audio_url'] = data['download_url']
+                processed_info['status'] = data.get('status', 'completed')
+                processed_info['task_id'] = data.get('id', data.get('task_id'))
+            
+            # Procesar progreso/estado
+            if 'progress' in data:
+                processed_info['progress'] = data['progress']
+            
+            if 'state' in data:
+                processed_info['status'] = data['state']
+            
+            return processed_info
+            
+        except Exception as e:
+            logger.error(f"❌ Error processing callback data on port 8080: {e}")
+            return {'error': str(e), 'processed_on_port': 8080}
+    
+    async def save_callback_data(self, data):
+        """Guardar datos del callback para referencia"""
+        try:
+            callback_file = 'music_callbacks.json'
+            
+            # Cargar callbacks existentes
+            if os.path.exists(callback_file):
+                with open(callback_file, 'r', encoding='utf-8') as f:
+                    callbacks = json.load(f)
+            else:
+                callbacks = {'callbacks': []}
+            
+            # Agregar nuevo callback
+            callback_entry = {
+                'timestamp': datetime.now().isoformat(),
+                'data': data,
+                'processed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'received_on_port': 8080
+            }
+            
+            callbacks['callbacks'].append(callback_entry)
+            
+            # Mantener solo los últimos 100 callbacks
+            if len(callbacks['callbacks']) > 100:
+                callbacks['callbacks'] = callbacks['callbacks'][-100:]
+            
+            # Guardar archivo
+            with open(callback_file, 'w', encoding='utf-8') as f:
+                json.dump(callbacks, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"💾 Callback data saved to {callback_file} (port 8080)")
+            
+        except Exception as e:
+            logger.error(f"❌ Error saving callback data on port 8080: {e}")
+    
+    async def handle_music_status(self, request):
+        """Endpoint de estado del servidor de música en puerto 8080"""
+        try:
+            # Leer estadísticas de callbacks
+            callback_file = 'music_callbacks.json'
+            callback_count = 0
+            last_callback = None
+            
+            if os.path.exists(callback_file):
+                with open(callback_file, 'r', encoding='utf-8') as f:
+                    callbacks = json.load(f)
+                    callback_count = len(callbacks.get('callbacks', []))
+                    if callbacks.get('callbacks'):
+                        last_callback = callbacks['callbacks'][-1]['timestamp']
+            
+            status_data = {
+                'status': 'online',
+                'server_name': 'RbxServers Music Callback Server (Port 8080)',
+                'port': 8080,
+                'uptime': 'Running',
+                'callbacks_received': callback_count,
+                'last_callback': last_callback,
+                'endpoints': [
+                    'POST /api/music-callback',
+                    'GET /api/music-callback', 
+                    'GET /api/music-status'
+                ],
+                'timestamp': datetime.now().isoformat(),
+                'integration': 'Main web server port 8080'
+            }
+            
+            return web.json_response(status_data)
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting music status on port 8080: {e}")
+            return web.json_response({
+                'status': 'error',
+                'message': str(e),
+                'port': 8080
+            }, status=500)
 
 class RobloxVerificationSystem:
     def __init__(self):
