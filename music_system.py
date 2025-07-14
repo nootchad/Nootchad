@@ -139,20 +139,14 @@ class MusicSystem:
             # Preparar datos para la API de kie.ai con el formato correcto
             payload = {
                 "prompt": descripcion,
-                "style": "Instrumental",  # Estilo por defecto
-                "title": f"RbxServers Music - {descripcion[:30]}...",
-                "customMode": True,
-                "instrumental": True,
-                "model": "V3_5",
-                "callBackUrl": "",  # Opcional
-                "negativeTags": ""  # Opcional
+                "customMode": False,        # Usar modo automático por defecto
+                "instrumental": False,      # Permitir voz si es apropiado
+                "model": "V4"               # Usar el modelo más reciente
             }
             
             headers = {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
                 "Authorization": f"Bearer {music_api_key}",
-                "User-Agent": "RbxServers-v1-MusicBot/1.0"
+                "Content-Type": "application/json"
             }
             
             # URL correcta de la API de kie.ai
@@ -165,26 +159,28 @@ class MusicSystem:
                         result = await response.json()
                         logger.info(f"✅ Respuesta de kie.ai: {result}")
                         
-                        # La API de kie.ai puede devolver diferentes formatos
-                        # Buscar el enlace de descarga o archivo de audio
+                        # La API de kie.ai devuelve principalmente 'audio_url'
                         download_url = None
                         
-                        # Posibles campos donde puede estar la URL del audio
-                        possible_fields = ['audio_url', 'download_url', 'url', 'file_url', 'result', 'data', 'audio', 'track_url']
+                        # Primero buscar 'audio_url' que es el campo principal
+                        if 'audio_url' in result and result['audio_url']:
+                            download_url = result['audio_url']
+                            logger.info(f"🔗 URL de audio encontrada: {download_url}")
                         
-                        for field in possible_fields:
-                            if field in result and result[field]:
-                                download_url = result[field]
-                                logger.info(f"🔗 URL encontrada en campo '{field}': {download_url}")
-                                break
-                        
-                        # Si no se encuentra directamente, buscar en objetos anidados
-                        if not download_url and 'data' in result and isinstance(result['data'], dict):
+                        # Si no se encuentra, buscar en otros campos posibles
+                        elif isinstance(result, dict):
+                            possible_fields = ['url', 'file_url', 'download_url', 'data', 'audio', 'track_url']
+                            
                             for field in possible_fields:
-                                if field in result['data'] and result['data'][field]:
-                                    download_url = result['data'][field]
-                                    logger.info(f"🔗 URL encontrada en data.{field}: {download_url}")
-                                    break
+                                if field in result and result[field]:
+                                    if isinstance(result[field], str):
+                                        download_url = result[field]
+                                        logger.info(f"🔗 URL encontrada en campo '{field}': {download_url}")
+                                        break
+                                    elif isinstance(result[field], dict) and 'audio_url' in result[field]:
+                                        download_url = result[field]['audio_url']
+                                        logger.info(f"🔗 URL encontrada en {field}.audio_url: {download_url}")
+                                        break
                         
                         if download_url:
                             # Descargar el archivo de música
