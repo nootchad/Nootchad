@@ -3728,6 +3728,16 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de música: {e}")
 
+    # Setup IA system
+    global ia_system
+    try:
+        from ia_system import setup_ia_commands
+        
+        ia_system = setup_ia_commands(bot)
+        logger.info("🤖 Sistema de comando !IA configurado")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de IA: {e}")
+
     # Inicializar servidor de callback de música
     try:
         from music_callback_server import start_music_callback_server
