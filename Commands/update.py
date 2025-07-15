@@ -122,7 +122,7 @@ def setup_commands(bot):
             
             # Footer con información adicional
             embed.set_footer(
-                text="RbxServers v3.0.0 • Desarrollado por Hesiz • Powered by Hesiz",
+                text="RbxServers v3.0.0 • Desarrollado por Hesiz / 991hz y Zenn / 991hz • Powered by Hesiz & Zenn",
                 icon_url="https://rbxservers.xyz/svgs/roblox.svg"
             )
             
