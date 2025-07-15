@@ -27,7 +27,7 @@ def setup_commands(bot):
             # Versión actual
             embed.add_field(
                 name="📱 Versión Actual",
-                value="**v3.0.0** - Enero 2025",
+                value="**v3.0.0** - Julio 2025",
                 inline=True
             )
             
@@ -163,7 +163,7 @@ def setup_commands(bot):
             
             # Footer con información adicional
             embed.set_footer(
-                text="RbxServers v3.0.0 • Desarrollado por Hesiz • Powered by Replit & IA",
+                text="RbxServers v3.0.0 • Desarrollado por Hesiz • Powered by Hesiz",
                 icon_url="https://rbxservers.xyz/svgs/roblox.svg"
             )
             
