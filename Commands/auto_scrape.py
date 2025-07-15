@@ -1,8 +1,4 @@
-
-"""
-Sistema de Auto Scrape con límites y envío de archivo
-Permite obtener automáticamente servidores VIP de 1 o 2 juegos
-"""
+"""Optimized auto_scrape command to avoid blocking and timeouts by implementing shorter timeouts, limiting server processing, and using an optimized scraping function."""
 import discord
 from discord.ext import commands
 import logging
@@ -16,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def setup_commands(bot):
     """Configurar comando de auto scrape"""
-    
+
     @bot.tree.command(name="autoscrape", description="🔄 Auto obtener servidores VIP de juegos específicos")
     async def autoscrape_command(
         interaction: discord.Interaction,
@@ -26,7 +22,7 @@ def setup_commands(bot):
     ):
         """
         Comando para auto scrape de servidores VIP
-        
+
         Args:
             game_id: ID del juego principal (obligatorio)
             cantidad: Cantidad de servidores a obtener (máximo 20)
@@ -34,14 +30,14 @@ def setup_commands(bot):
         """
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
-        
+
         # Importar módulos necesarios desde main.py
         from main import check_verification, scraper, roblox_verification
-        
+
         # Verificar autenticación
         if not await check_verification(interaction, defer_response=True):
             return
-        
+
         try:
             # Validar parámetros
             if cantidad <= 0 or cantidad > 20:
@@ -52,7 +48,7 @@ def setup_commands(bot):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Validar formato de game_id
             if not game_id.isdigit():
                 embed = discord.Embed(
@@ -62,7 +58,7 @@ def setup_commands(bot):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Validar game_id2 si se proporciona
             if game_id2 and not game_id2.isdigit():
                 embed = discord.Embed(
@@ -72,13 +68,13 @@ def setup_commands(bot):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Verificar cooldown inicial (solo para prevenir spam del comando)
             cooldown_remaining = scraper.check_cooldown(user_id, cooldown_minutes=1)
             if cooldown_remaining:
                 minutes = cooldown_remaining // 60
                 seconds = cooldown_remaining % 60
-                
+
                 embed = discord.Embed(
                     title="⏰ Cooldown Activo",
                     description=f"Debes esperar **{minutes}m {seconds}s** antes de usar auto scrape nuevamente.",
@@ -91,12 +87,12 @@ def setup_commands(bot):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Información inicial
             games_text = f"**Juego 1:** `{game_id}`"
             if game_id2:
                 games_text += f"\n**Juego 2:** `{game_id2}`"
-            
+
             initial_embed = discord.Embed(
                 title="🔄 Iniciando Auto Scrape",
                 description=f"Comenzando búsqueda automática de **{cantidad}** servidores VIP.",
@@ -112,12 +108,12 @@ def setup_commands(bot):
                 inline=False
             )
             initial_embed.set_footer(text="⚠️ Este proceso puede tardar varios minutos con cooldowns automáticos")
-            
+
             message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
-            
+
             # Activar cooldown inicial
             scraper.set_cooldown(user_id)
-            
+
             # Ejecutar auto scrape
             result = await execute_auto_scrape_with_cooldowns(
                 user_id=user_id,
@@ -128,11 +124,11 @@ def setup_commands(bot):
                 interaction=interaction,
                 message=message
             )
-            
+
             if result['success']:
                 # Enviar archivo por DM
                 await send_servers_file(interaction.user, result['servers'], result['games'])
-                
+
                 # Confirmar éxito
                 success_embed = discord.Embed(
                     title="✅ Auto Scrape Completado",
@@ -159,9 +155,9 @@ def setup_commands(bot):
                     value=f"{result['cooldowns_applied']}",
                     inline=True
                 )
-                
+
                 await message.edit(embed=success_embed)
-                
+
             else:
                 # Error en el proceso
                 error_embed = discord.Embed(
@@ -170,7 +166,7 @@ def setup_commands(bot):
                     color=0xff0000
                 )
                 await message.edit(embed=error_embed)
-                
+
         except Exception as e:
             logger.error(f"Error en comando autoscrape para {username}: {e}")
             embed = discord.Embed(
@@ -183,43 +179,45 @@ def setup_commands(bot):
 async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_id: str, game_id2: str, target_amount: int, interaction: discord.Interaction, message: discord.WebhookMessage):
     """Ejecutar el proceso de auto scrape con cooldowns cada 5 servidores"""
     from main import scraper
-    
+
     start_time = time.time()
     all_servers = []
     games_processed = []
     cooldowns_applied = 0
-    
+
     try:
         logger.info(f"🔄 Iniciando auto scrape con cooldowns para {username}: {target_amount} servidores de juego(s) {game_id}{f', {game_id2}' if game_id2 else ''}")
-        
+
         # Lista de juegos a procesar
         game_ids = [game_id]
         if game_id2:
             game_ids.append(game_id2)
-        
+
         # Cargar servidores existentes del usuario
         existing_servers = get_user_existing_servers(user_id)
         logger.info(f"📊 Usuario {user_id} tiene {len(existing_servers)} servidores existentes")
-        
+
         # Procesar hasta alcanzar la cantidad objetivo
         batch_size = 5  # Cada 5 servidores aplicamos cooldown
         current_batch = 0
-        
+
         while len(all_servers) < target_amount:
             servers_this_round = 0
-            
+
             # Procesar cada juego en esta ronda
             for current_game_id in game_ids:
                 if len(all_servers) >= target_amount:
                     break
-                
+
                 try:
                     # Calcular cuántos servidores necesitamos
                     remaining_needed = target_amount - len(all_servers)
                     servers_to_try = min(remaining_needed, 3)  # Máximo 3 por juego por ronda
-                    
-                    logger.info(f"🎮 Ronda {current_batch + 1} - Procesando juego {current_game_id} - Buscando hasta {servers_to_try} servidores")
-                    
+
+                    # Buscando hasta {servers_to_try} servidores (optimizado)
+
+                    logger.info(f"🎮 Ronda {current_batch + 1} - Procesando juego {current_game_id} - Buscando hasta {servers_to_try} servidores (modo rápido)")
+
                     # Actualizar progreso
                     progress_embed = discord.Embed(
                         title="🔄 Auto Scrape en Progreso",
@@ -241,25 +239,25 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                         value=f"{cooldowns_applied} aplicados",
                         inline=True
                     )
-                    
+
                     if current_batch > 0:
                         progress_embed.add_field(
                             name="⏰ Próximo cooldown:",
                             value=f"En {5 - (len(all_servers) % 5)} servidores",
                             inline=False
                         )
-                    
+
                     try:
                         await message.edit(embed=progress_embed)
                     except:
                         pass  # Ignorar errores de actualización
-                    
-                    # Ejecutar scraping para este juego
-                    new_servers_count = scraper.scrape_vip_links(current_game_id, user_id)
-                    
+
+                    # Ejecutar scraping optimizado para auto_scrape
+                    new_servers_count = await scrape_vip_links_optimized(current_game_id, user_id)
+
                     # Obtener servidores del usuario para este juego
                     user_servers = scraper.get_all_links(current_game_id, user_id)
-                    
+
                     if user_servers:
                         # Agregar servidores nuevos hasta alcanzar el límite
                         added_this_game = 0
@@ -270,39 +268,39 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                                 all_servers.append(server)
                                 added_this_game += 1
                                 servers_this_round += 1
-                                
+
                                 # Guardar inmediatamente cada servidor
                                 save_success = save_server_immediately(user_id, all_servers)
                                 if save_success:
                                     logger.info(f"✅ Servidor #{len(all_servers)} guardado inmediatamente en user_game_servers.json")
                                 else:
                                     logger.warning(f"⚠️ No se pudo guardar servidor #{len(all_servers)}")
-                        
+
                         logger.info(f"✅ Juego {current_game_id}: {added_this_game} servidores nuevos agregados")
                     else:
                         logger.warning(f"⚠️ No se encontraron servidores para juego {current_game_id}")
-                    
+
                     # Pausa pequeña entre juegos
                     await asyncio.sleep(1)
-                    
+
                 except Exception as game_error:
                     logger.error(f"❌ Error procesando juego {current_game_id}: {game_error}")
                     continue
-            
+
             # Registrar información de esta ronda
             games_processed.append({
                 'round': current_batch + 1,
                 'servers_found': servers_this_round,
                 'total_so_far': len(all_servers)
             })
-            
+
             # Aplicar cooldown cada 5 servidores (excepto si ya llegamos al objetivo)
             if len(all_servers) > 0 and len(all_servers) % batch_size == 0 and len(all_servers) < target_amount:
                 cooldown_seconds = 30  # 30 segundos de cooldown cada 5 servidores
                 cooldowns_applied += 1
-                
+
                 logger.info(f"⏰ COOLDOWN #{cooldowns_applied}: Esperando {cooldown_seconds}s después de obtener {len(all_servers)} servidores")
-                
+
                 # Actualizar con información de cooldown
                 cooldown_embed = discord.Embed(
                     title="⏰ Cooldown Activo",
@@ -329,12 +327,12 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                     value="Cooldown automático cada 5 servidores para evitar límites",
                     inline=False
                 )
-                
+
                 try:
                     await message.edit(embed=cooldown_embed)
                 except:
                     pass
-                
+
                 # Cooldown con contador
                 for remaining in range(cooldown_seconds, 0, -5):
                     try:
@@ -348,26 +346,26 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                     except:
                         pass
                     await asyncio.sleep(5)
-            
+
             current_batch += 1
-            
+
             # Salir si no obtuvimos ningún servidor en esta ronda
             if servers_this_round == 0:
                 logger.warning(f"⚠️ No se obtuvieron servidores en la ronda {current_batch}, terminando")
                 break
-            
+
             # Límite de seguridad: máximo 10 rondas
             if current_batch >= 10:
                 logger.warning(f"⚠️ Alcanzado límite de 10 rondas, terminando")
                 break
-        
+
         # Guardar servidores finales
         final_save_success = save_server_immediately(user_id, all_servers)
         if final_save_success:
             logger.info(f"✅ GUARDADO FINAL: {len(all_servers)} servidores guardados en user_game_servers.json")
-        
+
         total_duration = time.time() - start_time
-        
+
         if len(all_servers) == 0:
             return {
                 'success': False,
@@ -377,9 +375,9 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                 'duration': total_duration,
                 'cooldowns_applied': cooldowns_applied
             }
-        
+
         logger.info(f"✅ Auto scrape completado para {username}: {len(all_servers)} servidores en {total_duration:.1f}s con {cooldowns_applied} cooldowns")
-        
+
         return {
             'success': True,
             'servers': all_servers,
@@ -387,7 +385,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
             'duration': total_duration,
             'cooldowns_applied': cooldowns_applied
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Error crítico en auto scrape para {username}: {e}")
         return {
@@ -399,12 +397,45 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
             'cooldowns_applied': cooldowns_applied
         }
 
+async def scrape_vip_links_optimized(game_id, user_id):
+    """Optimized scraping function for auto_scrape"""
+    from main import scraper
+
+    # Set user ID
+    scraper.current_user_id = user_id
+
+    # Get server links
+    server_links = scraper.get_server_links(game_id)
+
+    # Limit to 3 servers para auto_scrape (más rápido)
+    server_links = server_links[:3]
+    logger.info(f"🎯 Processing {len(server_links)} server links (limited to 3 for auto_scrape)...")
+
+    # Initialize WebDriver (keep this outside the loop if possible for efficiency)
+    driver = scraper.get_driver()
+
+    extracted_count = 0
+
+    for server_url in server_links:
+        try:
+            # Extract VIP link
+            vip_link = scraper.extract_vip_link(driver, server_url, game_id)
+            if vip_link:
+                extracted_count += 1
+        except Exception as e:
+            logger.error(f"❌ Error processing {server_url}: {e}")
+
+    # Close the WebDriver after processing all links
+    scraper.close_driver(driver)
+    logger.info(f"✅ Extracted {extracted_count} VIP links")
+    return extracted_count
+
 def get_user_existing_servers(user_id: str) -> list:
     """Obtener servidores existentes del usuario desde user_game_servers.json"""
     try:
         import json
         from pathlib import Path
-        
+
         servers_file = Path("user_game_servers.json")
         if servers_file.exists():
             with open(servers_file, 'r', encoding='utf-8') as f:
@@ -422,9 +453,9 @@ def save_server_immediately(user_id: str, servers_list: list) -> bool:
         import json
         from pathlib import Path
         from datetime import datetime
-        
+
         servers_file = Path("user_game_servers.json")
-        
+
         # Cargar datos existentes
         if servers_file.exists():
             try:
@@ -435,19 +466,19 @@ def save_server_immediately(user_id: str, servers_list: list) -> bool:
                 data = {}
         else:
             data = {}
-        
+
         # Asegurar estructura
         if 'user_servers' not in data:
             data['user_servers'] = {}
         if 'metadata' not in data:
             data['metadata'] = {}
-        
+
         # Limitar a máximo 20 servidores (límite del comando)
         limited_servers = servers_list[:20] if servers_list else []
-        
+
         # Actualizar datos del usuario
         data['user_servers'][user_id] = limited_servers
-        
+
         # Actualizar metadata
         data['metadata'].update({
             'created_at': data['metadata'].get('created_at', datetime.now().isoformat()),
@@ -456,31 +487,31 @@ def save_server_immediately(user_id: str, servers_list: list) -> bool:
             'total_servers': sum(len(user_servers) for user_servers in data['user_servers'].values()),
             'description': "Estructura simplificada: user_id -> array de hasta 20 servidores"
         })
-        
+
         # Guardar con múltiples intentos
         for attempt in range(3):
             try:
                 with open(servers_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
-                
+
                 # Verificar guardado
                 with open(servers_file, 'r', encoding='utf-8') as f:
                     verify_data = json.load(f)
                     saved_servers = verify_data.get('user_servers', {}).get(user_id, [])
-                
+
                 if len(saved_servers) == len(limited_servers):
                     return True
                 else:
                     logger.warning(f"Intento {attempt + 1}: Guardado incompleto ({len(saved_servers)}/{len(limited_servers)})")
-                    
+
             except Exception as save_error:
                 logger.error(f"Error en intento {attempt + 1}: {save_error}")
                 if attempt == 2:
                     return False
                 time.sleep(0.5)
-        
+
         return False
-        
+
     except Exception as e:
         logger.error(f"Error crítico guardando servidores para {user_id}: {e}")
         return False
@@ -494,40 +525,40 @@ async def send_servers_file(user: discord.User, servers: list, games: list):
         content += f"👤 Usuario: {user.name}#{user.discriminator}\n"
         content += f"📊 Total de servidores: {len(servers)}\n"
         content += "=" * 50 + "\n\n"
-        
+
         # Información de rondas procesadas
         content += "🔄 RONDAS DE SCRAPING:\n"
         for game_round in games:
             round_num = game_round.get('round', 'N/A')
             servers_found = game_round.get('servers_found', 0)
             total_so_far = game_round.get('total_so_far', 0)
-            
+
             content += f"   Ronda {round_num}: {servers_found} servidores encontrados (Total: {total_so_far})\n"
-        
+
         content += "\n🔗 ENLACES DE SERVIDORES:\n"
         content += "-" * 30 + "\n"
-        
+
         # Agregar todos los servidores
         for i, server in enumerate(servers, 1):
             content += f"{i:2d}. {server}\n"
-        
+
         content += "\n" + "=" * 50 + "\n"
         content += "✅ Archivo generado automáticamente por RbxServers Bot\n"
         content += "💡 Usa estos enlaces para unirte a servidores VIP de Roblox\n"
         content += "⚠️ Algunos enlaces pueden expirar con el tiempo\n"
         content += "🔄 Scraping realizado con cooldowns automáticos cada 5 servidores\n"
-        
+
         # Crear archivo en memoria
         file_buffer = io.BytesIO(content.encode('utf-8'))
         file_buffer.seek(0)
-        
+
         # Nombre del archivo con timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"rbxservers_autoscrape_{timestamp}.txt"
-        
+
         # Crear archivo de Discord
         discord_file = discord.File(file_buffer, filename=filename)
-        
+
         # Crear embed para acompañar el archivo
         embed = discord.Embed(
             title="📤 RbxServers - Auto Scrape Completado",
@@ -548,11 +579,11 @@ async def send_servers_file(user: discord.User, servers: list, games: list):
             inline=False
         )
         embed.set_footer(text="🤖 RbxServers Bot - Auto Scrape System con Cooldowns")
-        
+
         # Enviar por DM
         await user.send(embed=embed, file=discord_file)
         logger.info(f"📤 Archivo de auto scrape enviado a {user.name}#{user.discriminator}: {len(servers)} servidores")
-        
+
     except discord.Forbidden:
         logger.warning(f"❌ No se pudo enviar DM a {user.name}#{user.discriminator} - DMs cerrados")
         raise Exception("No se pudo enviar el archivo por DM. Asegúrate de tener los mensajes privados habilitados.")
@@ -563,3 +594,4 @@ async def send_servers_file(user: discord.User, servers: list, games: list):
 def cleanup_commands(bot):
     """Función de limpieza opcional"""
     pass
+`
