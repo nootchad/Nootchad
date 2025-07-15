@@ -38,13 +38,6 @@ def setup_commands(bot):
                 inline=True
             )
             
-            # Espacio vacío para mejor formato
-            embed.add_field(
-                name="\u200b",
-                value="\u200b",
-                inline=True
-            )
-            
             # Comando /autoscrape
             embed.add_field(
                 name="🔄 Nuevo: Comando `/autoscrape`",
@@ -63,6 +56,13 @@ def setup_commands(bot):
             embed.add_field(
                 name="🏆 Nuevo: Comando `/leaderboard`",
                 value="**Sistema de Ranking Competitivo**\n• Ranking semanal e histórico de usuarios\n• Basado en servidores VIP acumulados (sin límites)\n• Reinicio automático cada lunes\n• **Recompensas Semanales:**\n  🥇 **1er lugar:** 400 monedas + Cuenta Crunchyroll Premium\n  🥈 **2do lugar:** 250 monedas + Cuenta Crunchyroll Premium\n  🥉 **3er lugar:** 150 monedas + Cuenta Crunchyroll Premium\n\n**Uso:** `/leaderboard tipo:semanal` o `/leaderboard tipo:historico`",
+                inline=False
+            )
+            
+            # Comando /say & !say
+            embed.add_field(
+                name="💬 Nuevo: Comando `/say` & `!say`",
+                value="**Mensaje de Anuncio del Bot**\n• Hace que el bot envíe un mensaje personalizado\n• Disponible tanto como comando slash como comando de texto\n• Útil para anuncios y comunicaciones importantes\n• Solo disponible para administradores y usuarios autorizados\n• El bot enviará exactamente el texto que especifiques\n\n**Uso:** `/say mensaje:\"Tu mensaje aquí\"` o `!say Tu mensaje aquí`",
                 inline=False
             )
             
