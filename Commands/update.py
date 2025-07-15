@@ -108,19 +108,6 @@ def setup_commands(bot):
                 inline=False
             )
             
-            # Enlaces útiles
-            embed.add_field(
-                name="🔗 Enlaces y Recursos",
-                value="""
-                • [📚 Documentación API](https://workspace-paysencharlee.replit.dev/api/)
-                • [🌐 Dashboard Web](https://workspace-paysencharlee.replit.dev/)
-                • [📊 Estado del Servidor](https://workspace-paysencharlee.replit.dev/api/status)
-                • [🎯 Reportar Bugs](https://discord.com/) 
-                • [💎 Obtener Premium](https://discord.com/)
-                """,
-                inline=False
-            )
-            
             # Agradecimientos especiales
             embed.add_field(
                 name="🙏 Agradecimientos Especiales",
