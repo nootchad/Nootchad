@@ -261,20 +261,24 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                     if user_servers:
                         # Agregar servidores nuevos hasta alcanzar el límite
                         added_this_game = 0
+                        new_servers_this_game = []
+                        
                         for server in user_servers:
                             if (server not in all_servers and 
                                 server not in existing_servers and 
                                 len(all_servers) < target_amount):
                                 all_servers.append(server)
+                                new_servers_this_game.append(server)
                                 added_this_game += 1
                                 servers_this_round += 1
 
-                                # Guardar inmediatamente cada servidor
-                                save_success = save_server_immediately(user_id, all_servers)
-                                if save_success:
-                                    logger.info(f"✅ Servidor #{len(all_servers)} guardado inmediatamente en user_game_servers.json")
-                                else:
-                                    logger.warning(f"⚠️ No se pudo guardar servidor #{len(all_servers)}")
+                        # Guardar todos los servidores nuevos de esta partida
+                        if new_servers_this_game:
+                            save_success = save_server_immediately(user_id, new_servers_this_game)
+                            if save_success:
+                                logger.info(f"✅ {len(new_servers_this_game)} servidores nuevos de juego {current_game_id} guardados en user_game_servers.json")
+                            else:
+                                logger.warning(f"⚠️ No se pudieron guardar {len(new_servers_this_game)} servidores nuevos")
 
                         logger.info(f"✅ Juego {current_game_id}: {added_this_game} servidores nuevos agregados")
                     else:
@@ -359,10 +363,8 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                 logger.warning(f"⚠️ Alcanzado límite de 10 rondas, terminando")
                 break
 
-        # Guardar servidores finales
-        final_save_success = save_server_immediately(user_id, all_servers)
-        if final_save_success:
-            logger.info(f"✅ GUARDADO FINAL: {len(all_servers)} servidores guardados en user_game_servers.json")
+        # Verificar guardado final (ya se guardaron durante el proceso)
+        logger.info(f"✅ PROCESO COMPLETADO: {len(all_servers)} servidores procesados en total")
 
         total_duration = time.time() - start_time
 
@@ -447,8 +449,8 @@ def get_user_existing_servers(user_id: str) -> list:
         logger.error(f"Error cargando servidores existentes para {user_id}: {e}")
         return []
 
-def save_server_immediately(user_id: str, servers_list: list) -> bool:
-    """Guardar servidores inmediatamente en user_game_servers.json"""
+def save_server_immediately(user_id: str, new_servers_list: list) -> bool:
+    """Guardar servidores inmediatamente en user_game_servers.json, agregando a los existentes"""
     try:
         import json
         from pathlib import Path
@@ -473,11 +475,22 @@ def save_server_immediately(user_id: str, servers_list: list) -> bool:
         if 'metadata' not in data:
             data['metadata'] = {}
 
+        # Obtener servidores existentes del usuario
+        existing_servers = data['user_servers'].get(user_id, [])
+        
+        # Combinar servidores existentes con nuevos (evitando duplicados)
+        all_servers = existing_servers.copy()
+        for server in new_servers_list:
+            if server not in all_servers:
+                all_servers.append(server)
+        
         # Limitar a máximo 20 servidores (límite del comando)
-        limited_servers = servers_list[:20] if servers_list else []
+        limited_servers = all_servers[:20] if all_servers else []
 
         # Actualizar datos del usuario
         data['user_servers'][user_id] = limited_servers
+        
+        logger.info(f"💾 Usuario {user_id}: {len(existing_servers)} servidores existentes + {len([s for s in new_servers_list if s not in existing_servers])} nuevos = {len(limited_servers)} total")
 
         # Actualizar metadata
         data['metadata'].update({
