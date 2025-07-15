@@ -1088,6 +1088,134 @@ def is_owner_or_delegated(user_id: str) -> bool:
     """Verificar si un usuario es owner original o tiene acceso delegado"""
     return user_id == DISCORD_OWNER_ID or user_id in delegated_owners
 
+async def load_commands_from_folder(bot):
+    """Cargar comandos dinámicamente desde la carpeta Commands"""
+    try:
+        import importlib
+        import sys
+        from pathlib import Path
+        
+        commands_folder = Path("Commands")
+        
+        # Crear la carpeta Commands si no existe
+        if not commands_folder.exists():
+            commands_folder.mkdir(exist_ok=True)
+            logger.info("📁 Carpeta Commands creada")
+            
+            # Crear archivo de ejemplo
+            example_file = commands_folder / "example_command.py"
+            example_content = '''"""
+Ejemplo de comando dinámico para RbxServers
+Estructura requerida para que el sistema de carga automática funcione
+"""
+import discord
+from discord.ext import commands
+import logging
+
+logger = logging.getLogger(__name__)
+
+def setup_commands(bot):
+    """
+    Función requerida para configurar comandos
+    Esta función será llamada automáticamente por el sistema de carga
+    """
+    
+    @bot.tree.command(name="ejemplo", description="Comando de ejemplo cargado dinámicamente")
+    async def ejemplo_command(interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="✅ Comando de Ejemplo",
+            description="Este comando fue cargado dinámicamente desde la carpeta Commands",
+            color=0x00ff88
+        )
+        embed.add_field(
+            name="📁 Ubicación",
+            value="Commands/example_command.py",
+            inline=True
+        )
+        embed.add_field(
+            name="🔄 Carga",
+            value="Automática al iniciar el bot",
+            inline=True
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=False)
+    
+    logger.info("✅ Comando de ejemplo configurado")
+    return True
+
+# Opcional: función de limpieza cuando se recarga el módulo
+def cleanup_commands(bot):
+    """Función opcional para limpiar comandos al recargar"""
+    pass
+'''
+            with open(example_file, 'w', encoding='utf-8') as f:
+                f.write(example_content)
+            logger.info("📝 Archivo de ejemplo creado: Commands/example_command.py")
+        
+        # Buscar archivos .py en la carpeta Commands
+        command_files = list(commands_folder.glob("*.py"))
+        
+        if not command_files:
+            logger.info("📁 Carpeta Commands está vacía, no hay comandos para cargar")
+            return
+        
+        loaded_commands = 0
+        failed_commands = 0
+        
+        for command_file in command_files:
+            try:
+                # Obtener nombre del módulo sin extensión
+                module_name = command_file.stem
+                module_path = f"Commands.{module_name}"
+                
+                logger.info(f"🔄 Cargando comando desde: {command_file.name}")
+                
+                # Importar el módulo
+                if module_path in sys.modules:
+                    # Si ya está cargado, recargarlo
+                    importlib.reload(sys.modules[module_path])
+                    logger.info(f"🔄 Módulo {module_name} recargado")
+                else:
+                    # Importar por primera vez
+                    importlib.import_module(module_path)
+                    logger.info(f"📥 Módulo {module_name} importado")
+                
+                # Obtener el módulo
+                module = sys.modules[module_path]
+                
+                # Verificar que tiene la función setup_commands
+                if hasattr(module, 'setup_commands'):
+                    setup_function = getattr(module, 'setup_commands')
+                    
+                    # Llamar a la función de configuración
+                    result = setup_function(bot)
+                    
+                    if result is not False:  # Considerar exitoso si no retorna False explícitamente
+                        loaded_commands += 1
+                        logger.info(f"✅ Comandos cargados exitosamente desde: {module_name}")
+                    else:
+                        failed_commands += 1
+                        logger.warning(f"⚠️ La función setup_commands de {module_name} retornó False")
+                else:
+                    failed_commands += 1
+                    logger.warning(f"⚠️ {command_file.name} no tiene función 'setup_commands'")
+                    
+            except Exception as e:
+                failed_commands += 1
+                logger.error(f"❌ Error cargando comando desde {command_file.name}: {e}")
+                import traceback
+                logger.debug(f"❌ Traceback: {traceback.format_exc()}")
+        
+        # Resumen de carga
+        if loaded_commands > 0:
+            logger.info(f"🎉 Sistema de comandos dinámicos: {loaded_commands} cargados exitosamente, {failed_commands} fallaron")
+        else:
+            logger.info(f"📁 Sistema de comandos dinámicos: No se cargaron comandos ({failed_commands} archivos fallaron)")
+            
+    except Exception as e:
+        logger.error(f"❌ Error crítico en sistema de carga de comandos: {e}")
+        import traceback
+        logger.error(f"❌ Traceback completo: {traceback.format_exc()}")
+
 def add_delegated_owner(user_id: str) -> bool:
     """Agregar usuario a la lista de owners delegados"""
     global delegated_owners
@@ -3727,6 +3855,9 @@ async def on_ready():
         logger.info("🎵 Sistema de generación de música configurado")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de música: {e}")
+
+    # Load dynamic commands from Commands folder
+    await load_commands_from_folder(bot)
 
     # Inicializar servidor de callback de música
     try:
