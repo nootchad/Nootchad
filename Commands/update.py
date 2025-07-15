@@ -62,7 +62,7 @@ def setup_commands(bot):
             # Comando /say & !say
             embed.add_field(
                 name="💬 Nuevo: Comando `/say` & `!say`",
-                value="**Mensaje de Anuncio del Bot**\n• Hace que el bot envíe un mensaje personalizado\n• Disponible tanto como comando slash como comando de texto\n• Útil para anuncios y comunicaciones importantes\n• Solo disponible para administradores y usuarios autorizados\n• El bot enviará exactamente el texto que especifiques\n\n**Uso:** `/say mensaje:\"Tu mensaje aquí\"` o `!say Tu mensaje aquí`",
+                value="**Mensaje de Anuncio del Bot**\n• Hace que el bot envíe un mensaje personalizado\n• Disponible tanto como comando slash como comando de texto\n• Útil para anuncios y comunicaciones importantes\n• disponible para usuarios verificados\n• El bot enviará exactamente el texto que especifiques\n\n**Uso:** `/say mensaje:\"Tu mensaje aquí\"` o `!say Tu mensaje aquí`",
                 inline=False
             )
             
