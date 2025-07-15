@@ -95,20 +95,6 @@ def setup_commands(bot):
                 inline=False
             )
             
-            # Mejoras técnicas
-            embed.add_field(
-                name="⚙️ Mejoras Técnicas Importantes",
-                value="""
-                • **Sistema de Comandos Dinámicos** - Carga automática desde carpeta Commands/
-                • **Optimización de Scraping** - 60% más rápido con cookies automáticas
-                • **API Web Expandida** - Nuevos endpoints para desarrolladores
-                • **Sistema Anti-Alt Avanzado** - Detección mejorada de cuentas falsas
-                • **Manejo de Errores Robusto** - Menos timeouts y errores inesperados
-                • **Base de Datos Simplificada** - Estructura más eficiente en user_game_servers.json
-                """,
-                inline=False
-            )
-            
             # Funciones premium
             embed.add_field(
                 name="⭐ Funciones Premium Destacadas",
@@ -118,20 +104,6 @@ def setup_commands(bot):
                 • **Prioridad en Comandos** - Procesamiento más rápido
                 • **Acceso Anticipado** - Nuevas funciones antes que otros usuarios
                 • **Soporte Premium** - Atención prioritaria
-                """,
-                inline=False
-            )
-            
-            # Próximas actualizaciones
-            embed.add_field(
-                name="🚀 Próximamente en v3.1.0",
-                value="""
-                • **Sistema de Guilds** - Clanes y grupos de usuarios
-                • **Modo Competitivo** - Torneos y eventos especiales
-                • **Dashboard Web Completo** - Panel de control total
-                • **Sistema de Notificaciones Push** - Alertas en tiempo real
-                • **Integración con Spotify** - Exporta tu música generada
-                • **Marketplace Expandido** - Intercambio de servidores entre usuarios
                 """,
                 inline=False
             )
