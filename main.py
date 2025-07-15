@@ -3728,26 +3728,6 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de música: {e}")
 
-    # Setup IA system
-    global ia_system
-    try:
-        from ia_system import setup_ia_commands
-        
-        ia_system = setup_ia_commands(bot)
-        
-        # Verificar comandos registrados
-        all_commands = list(bot.commands)
-        ia_commands = [cmd for cmd in all_commands if cmd.name in ["IA"] or "ia" in str(cmd.aliases).lower()]
-        
-        logger.info(f"🤖 Sistema de comando !IA configurado - Comandos encontrados: {len(ia_commands)}")
-        for cmd in ia_commands:
-            logger.info(f"  ↳ Comando: {cmd.name} (aliases: {cmd.aliases})")
-            
-    except Exception as e:
-        logger.error(f"❌ Error configurando sistema de IA: {e}")
-        import traceback
-        logger.error(f"❌ Traceback completo: {traceback.format_exc()}")
-
     # Inicializar servidor de callback de música
     try:
         from music_callback_server import start_music_callback_server
@@ -4878,7 +4858,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
         
         # Hacer petición a la API de Gemini
         async with aiohttp.ClientSession() as session:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={gemini_api_key}"
             
             payload = {
                 "contents": [
