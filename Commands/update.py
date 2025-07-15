@@ -82,7 +82,7 @@ def setup_commands(bot):
             
             # Footer con información adicional
             embed.set_footer(
-                text="RbxServers v3.0.0 • Desarrollado por Hesiz / 991hz y Zenn / 991hz • Powered by Hesiz & Zenn"
+                text="RbxServers v3.0.0 • Desarrollado por Hesiz / 991hz & Zenn / 991hz • Powered by Hesiz & Zenn"
             )
             
             # Responder con el embed
