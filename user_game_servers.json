@@ -20,7 +20,7 @@
   },
   "metadata": {
     "created_at": "2025-01-12T00:00:00",
-    "last_updated": "2025-07-15T08:39:27.976801",
+    "last_updated": "2025-07-15T08:39:28.977874",
     "total_users": 3,
     "total_servers": 11,
     "description": "Estructura simplificada: user_id -> array de hasta 20 servidores"
