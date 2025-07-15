@@ -20,7 +20,7 @@ def setup_commands(bot):
             embed = discord.Embed(
                 title="🚀 RbxServers - Nueva Actualización Disponible",
                 description="¡Conoce todas las nuevas funcionalidades que hemos añadido al bot!",
-                color=0x00ff88,
+                color=0x2f3136,
                 timestamp=datetime.now()
             )
             
@@ -111,7 +111,7 @@ def setup_commands(bot):
             error_embed = discord.Embed(
                 title="❌ Error",
                 description="Ocurrió un error al cargar las actualizaciones.",
-                color=0xff0000
+                color=0x36393f
             )
             error_embed.add_field(
                 name="🔧 Solución",
