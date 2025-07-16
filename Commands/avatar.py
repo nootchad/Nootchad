@@ -89,7 +89,7 @@ def setup_commands(bot):
             
             embed.add_field(
                 name="📅 Información de la Cuenta",
-                value=f"**Creada:** {created_formatted}\n**Verificado:** {'✅' if user_info.get('hasVerifiedBadge') else '❌'}\n**Descripción:** {user_info.get('description', 'Sin descripción')[:100]}{'...' if len(user_info.get('description', '')) > 100 else ''}",
+                value=f"**Creada:** {created_formatted}\n**Descripción:** {user_info.get('description', 'Sin descripción')[:100]}{'...' if len(user_info.get('description', '')) > 100 else ''}",
                 inline=True
             )
             
