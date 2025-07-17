@@ -34,12 +34,12 @@ def setup_commands(bot):
             if not user_info:
                 embed = discord.Embed(
                     title="Usuario No Encontrado",
-                    description=f"No se pudo encontrar el usuario de Roblox: ```{roblox_username}```",
+                    description=f"No se pudo encontrar el usuario de Roblox: **{roblox_username}**",
                     color=0x5c5c5c
                 )
                 embed.add_field(
                     name="Sugerencias",
-                    value="```\n• Verifica que el nombre de usuario esté escrito correctamente\n• Asegúrate de que el usuario existe en Roblox\n• Intenta con el nombre exacto (mayúsculas y minúsculas importan)\n```",
+                    value="• Verifica que el nombre de usuario esté escrito correctamente\n• Asegúrate de que el usuario existe en Roblox\n• Intenta con el nombre exacto (mayúsculas y minúsculas importan)",
                     inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -52,7 +52,7 @@ def setup_commands(bot):
             if not avatar_info:
                 embed = discord.Embed(
                     title="Error de Avatar",
-                    description=f"No se pudo obtener la información del avatar de ```{roblox_username}```",
+                    description=f"No se pudo obtener la información del avatar de **{roblox_username}**",
                     color=0x5c5c5c
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -61,7 +61,7 @@ def setup_commands(bot):
             # Crear embed principal con información del avatar
             embed = discord.Embed(
                 title=f"Avatar de {user_info['displayName']}",
-                description=f"```\nNombre de usuario: {user_info['name']}\nID de usuario: {user_info['id']}\n```",
+                description=f"**Nombre de usuario:** {user_info['name']}\n**ID de usuario:** {user_info['id']}",
                 color=0x6c6c6c
             )
             
@@ -72,7 +72,7 @@ def setup_commands(bot):
             # Información básica del usuario
             embed.add_field(
                 name="Información del Usuario",
-                value=f"```\nNombre: {user_info['name']}\nNombre mostrado: {user_info['displayName']}\n```\n[Ver perfil en Roblox](https://www.roblox.com/users/{user_info['id']}/profile)",
+                value=f"**Nombre:** {user_info['name']}\n**Nombre mostrado:** {user_info['displayName']}\n\n[Ver perfil en Roblox](https://www.roblox.com/users/{user_info['id']}/profile)",
                 inline=True
             )
             
@@ -94,7 +94,7 @@ def setup_commands(bot):
             
             embed.add_field(
                 name="Información de la Cuenta",
-                value=f"```\nCreada: {created_formatted}\nDescripción: {description_text}\n```",
+                value=f"**Creada:** {created_formatted}\n**Descripción:** {description_text}",
                 inline=True
             )
             
@@ -102,13 +102,13 @@ def setup_commands(bot):
             if user_rap is not None:
                 embed.add_field(
                     name="RAP (Recent Average Price)",
-                    value=f"```\nRAP Total: {user_rap:,} Robux\nInventario: {'Público' if user_rap > 0 else 'Privado o sin items'}\n```",
+                    value=f"**RAP Total:** {user_rap:,} Robux\n**Inventario:** {'Público' if user_rap > 0 else 'Privado o sin items'}",
                     inline=True
                 )
             else:
                 embed.add_field(
                     name="RAP (Recent Average Price)",
-                    value="```\nRAP: No disponible\nInventario: Privado o error de acceso\n```",
+                    value="**RAP:** No disponible\n**Inventario:** Privado o error de acceso",
                     inline=True
                 )
             
@@ -144,7 +144,7 @@ def setup_commands(bot):
                 items_display = "\n".join(items_text) if items_text else "No se encontraron objetos"
                 embed.add_field(
                     name="Objetos del Avatar",
-                    value=f"```\n{items_display}\n```",
+                    value=items_display,
                     inline=False
                 )
                 
@@ -152,20 +152,20 @@ def setup_commands(bot):
                 paid_items = len([item for item in avatar_items if item.get('price', 0) > 0])
                 embed.add_field(
                     name="Resumen de Precios",
-                    value=f"```\nTotal estimado: {total_robux:,} Robux\nObjetos encontrados: {len(avatar_items)}\nObjetos de pago: {paid_items}\n```",
+                    value=f"**Total estimado:** {total_robux:,} Robux\n**Objetos encontrados:** {len(avatar_items)}\n**Objetos de pago:** {paid_items}",
                     inline=True
                 )
             else:
                 embed.add_field(
                     name="Objetos del Avatar",
-                    value="```\nNo se pudieron obtener los objetos del avatar\n```",
+                    value="No se pudieron obtener los objetos del avatar",
                     inline=False
                 )
             
             # Estadísticas adicionales
             embed.add_field(
                 name="Estadísticas del Avatar",
-                value=f"```\nTipo de avatar: {avatar_info.get('avatar_type', 'R15')}\nEscalas: {avatar_info.get('scales', 'Normales')}\nColores del cuerpo: {avatar_info.get('body_colors', 'Predeterminados')}\n```",
+                value=f"**Tipo de avatar:** {avatar_info.get('avatar_type', 'R15')}\n**Escalas:** {avatar_info.get('scales', 'Normales')}\n**Colores del cuerpo:** {avatar_info.get('body_colors', 'Predeterminados')}",
                 inline=True
             )
             
@@ -201,12 +201,12 @@ def setup_commands(bot):
             )
             embed.add_field(
                 name="Posibles causas",
-                value="```\n• Error de conexión con la API de Roblox\n• Usuario no encontrado\n• Problema temporal del servidor\n• Avatar privado o restringido\n```",
+                value="• Error de conexión con la API de Roblox\n• Usuario no encontrado\n• Problema temporal del servidor\n• Avatar privado o restringido",
                 inline=False
             )
             embed.add_field(
                 name="Solución",
-                value="```\nInténtalo nuevamente en unos segundos o verifica el nombre de usuario.\n```",
+                value="Inténtalo nuevamente en unos segundos o verifica el nombre de usuario.",
                 inline=False
             )
             
