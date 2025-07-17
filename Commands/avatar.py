@@ -1,6 +1,6 @@
 
 """
-Comando /avatar para mostrar avatares de Roblox con información de objetos y precios
+Comando /avatar para mostrar avatares de Roblox con información de objetos y precios incluyendo RAP
 """
 import discord
 from discord.ext import commands
@@ -26,32 +26,33 @@ def setup_commands(bot):
             username = f"{interaction.user.name}#{interaction.user.discriminator}"
             user_id = str(interaction.user.id)
             
-            logger.info(f"🎭 Usuario {username} (ID: {user_id}) solicitó avatar de: {roblox_username}")
+            logger.info(f"Usuario {username} (ID: {user_id}) solicitó avatar de: {roblox_username}")
             
             # Obtener información del usuario de Roblox
             user_info = await get_roblox_user_info(roblox_username)
             
             if not user_info:
                 embed = discord.Embed(
-                    title="❌ Usuario No Encontrado",
-                    description=f"No se pudo encontrar el usuario de Roblox: **{roblox_username}**",
+                    title="Usuario No Encontrado",
+                    description=f"No se pudo encontrar el usuario de Roblox: ```{roblox_username}```",
                     color=0x5c5c5c
                 )
                 embed.add_field(
-                    name="💡 Sugerencia",
-                    value="• Verifica que el nombre de usuario esté escrito correctamente\n• Asegúrate de que el usuario existe en Roblox\n• Intenta con el nombre exacto (mayúsculas y minúsculas importan)",
+                    name="Sugerencias",
+                    value="```\n• Verifica que el nombre de usuario esté escrito correctamente\n• Asegúrate de que el usuario existe en Roblox\n• Intenta con el nombre exacto (mayúsculas y minúsculas importan)\n```",
                     inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            # Obtener información del avatar
+            # Obtener información del avatar y RAP
             avatar_info = await get_avatar_info(user_info['id'])
+            user_rap = await get_user_rap(user_info['id'])
             
             if not avatar_info:
                 embed = discord.Embed(
-                    title="❌ Error de Avatar",
-                    description=f"No se pudo obtener la información del avatar de **{roblox_username}**",
+                    title="Error de Avatar",
+                    description=f"No se pudo obtener la información del avatar de ```{roblox_username}```",
                     color=0x5c5c5c
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -59,8 +60,8 @@ def setup_commands(bot):
             
             # Crear embed principal con información del avatar
             embed = discord.Embed(
-                title=f"🎭 Avatar de {user_info['displayName']}",
-                description=f"**Nombre de usuario:** {user_info['name']}\n**ID de usuario:** {user_info['id']}",
+                title=f"Avatar de {user_info['displayName']}",
+                description=f"```\nNombre de usuario: {user_info['name']}\nID de usuario: {user_info['id']}\n```",
                 color=0x6c6c6c
             )
             
@@ -70,8 +71,8 @@ def setup_commands(bot):
             
             # Información básica del usuario
             embed.add_field(
-                name="👤 Información del Usuario",
-                value=f"**Nombre:** {user_info['name']}\n**Nombre mostrado:** {user_info['displayName']}\n**Perfil:** [Ver en Roblox](https://www.roblox.com/users/{user_info['id']}/profile)",
+                name="Información del Usuario",
+                value=f"```\nNombre: {user_info['name']}\nNombre mostrado: {user_info['displayName']}\n```\n[Ver perfil en Roblox](https://www.roblox.com/users/{user_info['id']}/profile)",
                 inline=True
             )
             
@@ -87,11 +88,29 @@ def setup_commands(bot):
             else:
                 created_formatted = created_date
             
+            description_text = user_info.get('description', 'Sin descripción')
+            if len(description_text) > 100:
+                description_text = description_text[:100] + '...'
+            
             embed.add_field(
-                name="📅 Información de la Cuenta",
-                value=f"**Creada:** {created_formatted}\n**Descripción:** {user_info.get('description', 'Sin descripción')[:100]}{'...' if len(user_info.get('description', '')) > 100 else ''}",
+                name="Información de la Cuenta",
+                value=f"```\nCreada: {created_formatted}\nDescripción: {description_text}\n```",
                 inline=True
             )
+            
+            # RAP (Recent Average Price) si está disponible
+            if user_rap is not None:
+                embed.add_field(
+                    name="RAP (Recent Average Price)",
+                    value=f"```\nRAP Total: {user_rap:,} Robux\nInventario: {'Público' if user_rap > 0 else 'Privado o sin items'}\n```",
+                    inline=True
+                )
+            else:
+                embed.add_field(
+                    name="RAP (Recent Average Price)",
+                    value="```\nRAP: No disponible\nInventario: Privado o error de acceso\n```",
+                    inline=True
+                )
             
             # Objetos del avatar y precios
             avatar_items = avatar_info.get('items', [])
@@ -104,47 +123,49 @@ def setup_commands(bot):
                     item_price = item.get('price', 0)
                     item_type = item.get('type', 'Accesorio')
                     
-                    # Emoji según el tipo de objeto
-                    type_emoji = {
-                        'Hat': '🎩',
-                        'Shirt': '👕',
-                        'Pants': '👖',
-                        'Accessory': '🎭',
-                        'Gear': '⚒️',
-                        'Face': '😊',
-                        'Hair': '💇',
-                        'Package': '📦'
-                    }.get(item_type, '🎯')
+                    # Prefijo según el tipo de objeto
+                    type_prefix = {
+                        'Hat': '[Sombrero]',
+                        'Shirt': '[Camisa]',
+                        'Pants': '[Pantalón]',
+                        'Accessory': '[Accesorio]',
+                        'Gear': '[Equipo]',
+                        'Face': '[Cara]',
+                        'Hair': '[Cabello]',
+                        'Package': '[Paquete]'
+                    }.get(item_type, '[Item]')
                     
                     if item_price > 0:
-                        items_text.append(f"{type_emoji} **{item_name}** - {item_price:,} R$")
+                        items_text.append(f"{type_prefix} {item_name} - {item_price:,} R$")
                         total_robux += item_price
                     else:
-                        items_text.append(f"{type_emoji} **{item_name}** - Gratis")
+                        items_text.append(f"{type_prefix} {item_name} - Gratis")
                 
+                items_display = "\n".join(items_text) if items_text else "No se encontraron objetos"
                 embed.add_field(
-                    name="🎯 Objetos del Avatar",
-                    value="\n".join(items_text) if items_text else "No se encontraron objetos",
+                    name="Objetos del Avatar",
+                    value=f"```\n{items_display}\n```",
                     inline=False
                 )
                 
                 # Resumen de precios
+                paid_items = len([item for item in avatar_items if item.get('price', 0) > 0])
                 embed.add_field(
-                    name="💰 Resumen de Precios",
-                    value=f"**Total estimado:** {total_robux:,} Robux\n**Objetos encontrados:** {len(avatar_items)}\n**Objetos de pago:** {len([item for item in avatar_items if item.get('price', 0) > 0])}",
+                    name="Resumen de Precios",
+                    value=f"```\nTotal estimado: {total_robux:,} Robux\nObjetos encontrados: {len(avatar_items)}\nObjetos de pago: {paid_items}\n```",
                     inline=True
                 )
             else:
                 embed.add_field(
-                    name="🎯 Objetos del Avatar",
-                    value="No se pudieron obtener los objetos del avatar",
+                    name="Objetos del Avatar",
+                    value="```\nNo se pudieron obtener los objetos del avatar\n```",
                     inline=False
                 )
             
             # Estadísticas adicionales
             embed.add_field(
-                name="📊 Estadísticas del Avatar",
-                value=f"**Tipo de avatar:** {avatar_info.get('avatar_type', 'R15')}\n**Escalas:** {avatar_info.get('scales', 'Normales')}\n**Colores del cuerpo:** {avatar_info.get('body_colors', 'Predeterminados')}",
+                name="Estadísticas del Avatar",
+                value=f"```\nTipo de avatar: {avatar_info.get('avatar_type', 'R15')}\nEscalas: {avatar_info.get('scales', 'Normales')}\nColores del cuerpo: {avatar_info.get('body_colors', 'Predeterminados')}\n```",
                 inline=True
             )
             
@@ -158,7 +179,7 @@ def setup_commands(bot):
             await interaction.followup.send(embed=embed, ephemeral=False)
             
             # Log del uso exitoso
-            logger.info(f"✅ Avatar de {roblox_username} mostrado exitosamente para {username}")
+            logger.info(f"Avatar de {roblox_username} mostrado exitosamente para {username}")
             
             # Agregar monedas por usar el comando
             try:
@@ -169,23 +190,23 @@ def setup_commands(bot):
                 logger.debug(f"Error agregando monedas: {e}")
                 
         except Exception as e:
-            logger.error(f"❌ Error en comando /avatar: {e}")
+            logger.error(f"Error en comando /avatar: {e}")
             import traceback
-            logger.error(f"❌ Traceback: {traceback.format_exc()}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             
             embed = discord.Embed(
-                title="❌ Error Interno",
+                title="Error Interno",
                 description="Ocurrió un error al obtener la información del avatar.",
                 color=0x5c5c5c
             )
             embed.add_field(
-                name="🔧 Posibles causas:",
-                value="• Error de conexión con la API de Roblox\n• Usuario no encontrado\n• Problema temporal del servidor\n• Avatar privado o restringido",
+                name="Posibles causas",
+                value="```\n• Error de conexión con la API de Roblox\n• Usuario no encontrado\n• Problema temporal del servidor\n• Avatar privado o restringido\n```",
                 inline=False
             )
             embed.add_field(
-                name="💡 Solución:",
-                value="Inténtalo nuevamente en unos segundos o verifica el nombre de usuario.",
+                name="Solución",
+                value="```\nInténtalo nuevamente en unos segundos o verifica el nombre de usuario.\n```",
                 inline=False
             )
             
@@ -311,6 +332,62 @@ async def get_item_price(session: aiohttp.ClientSession, asset_id: int):
     except Exception as e:
         logger.debug(f"Error obteniendo precio para asset {asset_id}: {e}")
         return 0
+
+async def get_user_rap(user_id: int):
+    """Obtener RAP (Recent Average Price) del usuario"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+            
+            # Intentar obtener RAP desde la API de inventario
+            inventory_url = f"https://inventory.roblox.com/v1/users/{user_id}/assets/collectibles"
+            params = {
+                "sortOrder": "Asc",
+                "limit": 100
+            }
+            
+            total_rap = 0
+            cursor = ""
+            items_checked = 0
+            max_items = 500  # Limitar para evitar timeout
+            
+            while items_checked < max_items:
+                if cursor:
+                    params["cursor"] = cursor
+                
+                async with session.get(inventory_url, headers=headers, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        if not data.get("data"):
+                            break
+                            
+                        for item in data["data"]:
+                            recent_average_price = item.get("recentAveragePrice")
+                            if recent_average_price and recent_average_price > 0:
+                                total_rap += recent_average_price
+                            items_checked += 1
+                            
+                            if items_checked >= max_items:
+                                break
+                        
+                        # Verificar si hay más páginas
+                        next_cursor = data.get("nextPageCursor")
+                        if not next_cursor:
+                            break
+                        cursor = next_cursor
+                    else:
+                        # Si la API devuelve error, probablemente el inventario es privado
+                        logger.debug(f"Error accediendo al inventario del usuario {user_id}: Status {response.status}")
+                        return None
+            
+            return total_rap if total_rap > 0 else 0
+            
+    except Exception as e:
+        logger.debug(f"Error obteniendo RAP para usuario {user_id}: {e}")
+        return None
 
 def cleanup_commands(bot):
     """Función opcional para limpiar comandos al recargar"""
