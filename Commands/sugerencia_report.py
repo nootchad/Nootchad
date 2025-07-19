@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 # ID del servidor específico donde funcionan los comandos
 ALLOWED_GUILD_ID = 1062854351350132797  # ID del servidor https://discord.gg/DtFDSjn2
-REPORT_CHANNEL_NAME = "revisar reportes"
+REPORT_CHANNEL_NAME = "╭📋・revisar・reportes"
 
 def setup_commands(bot):
     """Función requerida para configurar comandos"""
@@ -43,7 +43,7 @@ def setup_commands(bot):
             # Buscar el canal de reportes
             report_channel = None
             for channel in interaction.guild.text_channels:
-                if channel.name.lower() == REPORT_CHANNEL_NAME.lower():
+                if channel.name == REPORT_CHANNEL_NAME:
                     report_channel = channel
                     break
             
@@ -116,9 +116,9 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=error_embed, ephemeral=True)
     
-    @bot.tree.command(name="report", description="Reporta un problema, bug o comportamiento inapropiado")
+    @bot.tree.command(name="report", description="Reporta cualquier problema, bug o comportamiento inapropiado")
     async def report_command(interaction: discord.Interaction, que_reportas: str, imagen: discord.Attachment = None):
-        """Comando para enviar reportes con imagen opcional y texto personalizable"""
+        """Comando para enviar reportes - SOLO se envía al canal, NO se guarda en archivos"""
         try:
             # Verificar que el comando se use en el servidor correcto
             if not interaction.guild or interaction.guild.id != ALLOWED_GUILD_ID:
@@ -140,10 +140,10 @@ def setup_commands(bot):
             
             logger.info(f"Reporte de {username} (ID: {user.id}): {que_reportas[:100]}...")
             
-            # Buscar el canal de reportes
+            # Buscar el canal de reportes exacto
             report_channel = None
             for channel in interaction.guild.text_channels:
-                if channel.name.lower() == REPORT_CHANNEL_NAME.lower():
+                if channel.name == REPORT_CHANNEL_NAME:
                     report_channel = channel
                     break
             
@@ -231,7 +231,7 @@ def setup_commands(bot):
             report_embed.set_thumbnail(url=user.display_avatar.url)
             report_embed.set_footer(text="Sistema de Reportes RbxServers", icon_url=bot.user.display_avatar.url)
             
-            # ENVIAR AL CANAL DE REPORTES (STAFF)
+            # ENVIAR AL CANAL DE REPORTES (STAFF) - NO GUARDAR EN ARCHIVOS
             try:
                 await report_channel.send(embed=report_embed)
                 logger.info(f"✅ Reporte enviado exitosamente al canal {report_channel.name}")
@@ -269,7 +269,7 @@ def setup_commands(bot):
             )
             confirmation_embed.add_field(
                 name="Canal de Destino",
-                value=f"#{REPORT_CHANNEL_NAME} (Solo Staff)",
+                value=f"{REPORT_CHANNEL_NAME} (Solo Staff)",
                 inline=False
             )
             
