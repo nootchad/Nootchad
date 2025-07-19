@@ -95,10 +95,32 @@ class MDSelectView(discord.ui.View):
 
                 # Si el contenido es muy largo (más de 4000 caracteres), dividirlo
                 if len(content) > 4000:
+                    # Función para encontrar un buen punto de corte
+                    def find_good_cut_point(text, max_length):
+                        if len(text) <= max_length:
+                            return len(text)
+                        
+                        # Buscar el último salto de línea antes del límite
+                        cut_point = text.rfind('\n', 0, max_length)
+                        if cut_point > max_length - 200:  # Si está muy cerca del límite
+                            return cut_point
+                        
+                        # Si no hay salto de línea cerca, buscar el último espacio
+                        cut_point = text.rfind(' ', 0, max_length)
+                        if cut_point > max_length - 100:  # Si está cerca del límite
+                            return cut_point
+                        
+                        # Como último recurso, cortar en el límite
+                        return max_length
+
+                    # Encontrar punto de corte seguro para la primera parte
+                    first_cut = find_good_cut_point(content, 3900)
+                    first_part = content[:first_cut]
+                    
                     # Crear embed inicial
                     main_embed = discord.Embed(
                         title=f"📄 {file_name}",
-                        description=content[:3900] + "\n\n*[Contenido truncado - mensaje muy largo]*",
+                        description=first_part + "\n\n*[Continúa en el siguiente mensaje...]*",
                         color=0x00ff88
                     )
 
@@ -113,17 +135,25 @@ class MDSelectView(discord.ui.View):
 
                     await interaction.response.send_message(embed=main_embed, ephemeral=False)
 
-                    # Enviar el resto del contenido en mensajes adicionales si es necesario
-                    remaining_content = content[3900:]
-                    chunks = [remaining_content[i:i+4000] for i in range(0, len(remaining_content), 4000)]
-
-                    for i, chunk in enumerate(chunks[:3]):  # Máximo 3 chunks adicionales
-                        continuation_embed = discord.Embed(
-                            title=f"📄 {file_name} (Continuación {i+1})",
-                            description=chunk,
-                            color=0x00ff88
-                        )
-                        await interaction.followup.send(embed=continuation_embed, ephemeral=False)
+                    # Dividir el resto del contenido en chunks inteligentes
+                    remaining_content = content[first_cut:].strip()
+                    
+                    chunk_count = 1
+                    while remaining_content and chunk_count <= 3:  # Máximo 3 chunks adicionales
+                        # Encontrar punto de corte para este chunk
+                        chunk_cut = find_good_cut_point(remaining_content, 4000)
+                        chunk = remaining_content[:chunk_cut].strip()
+                        
+                        if chunk:
+                            continuation_embed = discord.Embed(
+                                title=f"📄 {file_name} (Parte {chunk_count + 1})",
+                                description=chunk,
+                                color=0x00ff88
+                            )
+                            await interaction.followup.send(embed=continuation_embed, ephemeral=False)
+                        
+                        remaining_content = remaining_content[chunk_cut:].strip()
+                        chunk_count += 1
 
                 else:
                     # Contenido normal, crear embed único
