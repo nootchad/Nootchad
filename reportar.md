@@ -1,36 +1,36 @@
 
-# 🚨 SISTEMA DE REPORTES - RbxServers
+# SISTEMA DE REPORTES - RbxServers
 
-## 📋 **¿QUÉ PUEDES REPORTAR?**
+## ¿QUÉ PUEDES REPORTAR?
 
-### 🤖 **Problemas del Bot**
+### **Problemas del Bot**
 - Errores en comandos o funcionalidades
 - Comandos que no responden correctamente
 - Problemas de verificación
 - Bugs en el sistema de scraping
 - Fallos en el sistema VIP
 
-### 👥 **Usuarios Problemáticos**
+### <:1000182614:1396049500375875646> **Usuarios Problemáticos**
 - Usuarios usando cuentas alternativas (alts)
 - Comportamiento tóxico o acoso
 - Spam de comandos
 - Intento de evadir verificación
 - Uso indebido de beneficios VIP
 
-### 🎮 **Servidores VIP**
+### **Servidores VIP**
 - Servidores que no funcionan
 - Enlaces rotos o expirados
 - Servidores con contenido inapropiado
 - Servidores con lag extremo
 - Problemas de acceso
 
-### 🔗 **Problemas de Scraping**
+### **Problemas de Scraping**
 - Páginas que no cargan correctamente
 - Errores en la obtención de enlaces
 - Problemas con cooldowns
 - Fallos en el sistema automático
 
-## 💬 **CÓMO REPORTAR**
+## CÓMO REPORTAR
 
 ### **Comando Principal**
 ```
@@ -42,7 +42,7 @@
 - `servidor_link:` - Enlace del servidor VIP problemático
 - `evidencia:` - Captura de pantalla o archivo de prueba
 
-## 📝 **EJEMPLOS DE REPORTES**
+## <:1000182584:1396049547838492672> **EJEMPLOS DE REPORTES**
 
 ### **Reporte de Error del Bot**
 ```
@@ -59,7 +59,7 @@
 /reportes tipo:Servidor Roto descripcion:Este servidor siempre está lleno y nunca puedo entrar servidor_link:https://www.roblox.com/games/123456789
 ```
 
-## ⏱️ **PROCESO DE REVISIÓN**
+## <:1000182657:1396060091366637669> **PROCESO DE REVISIÓN**
 
 ### **1. Envío del Reporte**
 - Tu reporte es enviado automáticamente al owner
@@ -81,24 +81,24 @@
 - Se aplican sanciones si es necesario
 - Se notifica al reportero del resultado
 
-## 🎯 **TIPOS DE RESPUESTA**
+## TIPOS DE RESPUESTA
 
-### ✅ **Resuelto**
+### <:verify:1396087763388072006> **Resuelto**
 - El problema fue solucionado
 - Se tomaron las medidas necesarias
 - El reporte está cerrado
 
-### 📝 **Necesita Más Información**
+### <:1000182584:1396049547838492672> **Necesita Más Información**
 - Se requieren más detalles
 - El staff te contactará para aclarar
 - El reporte permanece abierto
 
-### 🚫 **Rechazado**
+### **Rechazado**
 - El reporte no es válido
 - No se encontró evidencia suficiente
 - No requiere acción
 
-## 🏆 **RECOMPENSAS POR REPORTAR**
+## RECOMPENSAS POR REPORTAR
 
 ### **Reportes Válidos**
 - **25 monedas** por bug de bot reportado
@@ -111,7 +111,7 @@
 - **75 monedas** por problema crítico del sistema
 - **Reconocimiento especial** en el canal de anuncios
 
-## ⚠️ **REPORTES FALSOS**
+## REPORTES FALSOS
 
 ### **Consecuencias**
 - **1era vez**: Advertencia formal
@@ -125,15 +125,15 @@
 - No uses el sistema para quejas personales
 - No reportes comportamiento normal
 
-## 📊 **ESTADÍSTICAS DE REPORTES**
+## ESTADÍSTICAS DE REPORTES
 
 El sistema registra:
 - Número de reportes enviados por usuario
 - Tasa de reportes válidos vs. inválidos
-- Tiempo promedio de resolución
+- <:1000182657:1396060091366637669> Tiempo promedio de resolución
 - Tipos de problemas más comunes
 
-## 💡 **CONSEJOS PARA REPORTES EFECTIVOS**
+## CONSEJOS PARA REPORTES EFECTIVOS
 
 ### **Sé Específico**
 - Describe exactamente qué pasó
@@ -150,11 +150,11 @@ El sistema registra:
 - No envíes reportes duplicados
 - Espera la respuesta del staff
 
-## 📞 **REPORTES URGENTES**
+## REPORTES URGENTES
 
 Para problemas críticos que requieren atención inmediata:
 - Crea un ticket en #soporte
-- Menciona a @Staff en el canal
+- Menciona a <:1000182637:1396049292879200256> Staff en el canal
 - Explica por qué es urgente
 - Proporciona toda la información posible
 
@@ -162,5 +162,4 @@ Para problemas críticos que requieren atención inmediata:
 
 **Recuerda:** El sistema de reportes ayuda a mantener RbxServers funcionando correctamente. Tu participación es valiosa para toda la comunidad.
 
-**Sistema desarrollado por:** RbxServers Team  
-**Última actualización:** Enero 2025
+**Sistema desarrollado por:** RbxServers Team

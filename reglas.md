@@ -1,7 +1,7 @@
 
-# 📋 REGLAS DEL SERVIDOR - RbxServers
+# REGLAS DEL SERVIDOR - RbxServers
 
-## 🎯 **REGLAS GENERALES**
+## REGLAS GENERALES
 
 ### 1. **Respeto y Civismo**
 - Trata a todos los miembros con respeto y cordialidad
@@ -21,7 +21,7 @@
 - No repitas el mismo mensaje múltiples veces
 - Respeta los cooldowns de los comandos del bot
 
-## 🤖 **REGLAS DEL BOT**
+## REGLAS DEL BOT
 
 ### 4. **Uso Correcto de Comandos**
 - Usa los comandos solo en los canales designados
@@ -41,7 +41,7 @@
 - Reporta servidores que no funcionen
 - Respeta los límites de scraping automático
 
-## 🏆 **REGLAS VIP**
+## REGLAS VIP
 
 ### 7. **Beneficios VIP**
 - Los usuarios VIP tienen acceso a comandos premium
@@ -55,7 +55,7 @@
 - Reporta problemas de forma constructiva
 - Mantén un nivel de participación activa
 
-## ⚠️ **SISTEMA DE SANCIONES**
+## SISTEMA DE SANCIONES
 
 ### **Advertencias** (1era - 2da infracción)
 - Advertencia automática registrada
@@ -77,7 +77,7 @@
 - Blacklist del sistema de verificación
 - Sin posibilidad de apelación
 
-## 🎫 **APELACIONES**
+## APELACIONES
 
 Si consideras que una sanción fue injusta:
 1. Crea un ticket en #soporte
@@ -85,19 +85,14 @@ Si consideras que una sanción fue injusta:
 3. Proporciona evidencia si es necesario
 4. Espera la revisión del staff (24-48 horas)
 
-## 📞 **CONTACTO STAFF**
+## CONTACTO STAFF
 
 - **Tickets de Soporte**: #soporte
 - **Reportes**: Comando `/reportes`
-- **Emergencias**: Menciona a @Staff
-- **Owner**: .pesopluma
-
-## 🔄 **ACTUALIZACIONES**
-
-Estas reglas pueden ser actualizadas sin previo aviso. Los usuarios son responsables de mantenerse informados sobre los cambios.
+- **Emergencias**: Menciona a <@&ROLE_STAFF>
+- **Owner**: <:1000182644:1396049313481625611> .pesopluma
 
 ---
 
-**Última actualización:** Enero 2025  
 **Versión:** 2.0  
 **Válido para:** Servidor Oficial RbxServers

@@ -1,44 +1,44 @@
 
-# 💡 SISTEMA DE SUGERENCIAS - RbxServers
+# SISTEMA DE SUGERENCIAS - RbxServers
 
-## 🎯 **¿QUÉ PUEDES SUGERIR?**
+## ¿QUÉ PUEDES SUGERIR?
 
-### 🤖 **Mejoras del Bot**
+### **Mejoras del Bot**
 - Nuevos comandos o funcionalidades
 - Mejoras en comandos existentes
 - Optimizaciones de rendimiento
 - Nuevas integraciones con Roblox
 - Funciones de automatización
 
-### 🎮 **Funciones de Scraping**
+### **Funciones de Scraping**
 - Soporte para nuevos sitios web
 - Filtros adicionales para juegos
 - Sistemas de categorización
 - Mejoras en la velocidad de scraping
 - Nuevos tipos de servidores a buscar
 
-### 🏆 **Sistema VIP**
+### **Sistema VIP**
 - Nuevos beneficios VIP
 - Tiers adicionales
 - Sistemas de recompensas
 - Programas de fidelidad
 - Funciones exclusivas VIP
 
-### 🌐 **Interfaz y Experiencia**
+### **Interfaz y Experiencia**
 - Mejoras en embeds y mensajes
 - Nueva interfaz web
 - Sistema de notificaciones
 - Personalización de perfil
 - Temas visuales
 
-### 👥 **Funciones Comunitarias**
+### <:1000182614:1396049500375875646> **Funciones Comunitarias**
 - Eventos y competencias
 - Sistemas de ranking
 - Funciones sociales
 - Herramientas de moderación
 - Programas de incentivos
 
-## 📝 **CÓMO ENVIAR SUGERENCIAS**
+## <:1000182584:1396049547838492672> **CÓMO ENVIAR SUGERENCIAS**
 
 ### **Formato Recomendado**
 Al enviar tu sugerencia, incluye:
@@ -65,7 +65,7 @@ Al enviar tu sugerencia, incluye:
 - Categorización automática
 - Sistema de votación integrado
 
-## 🏆 **SISTEMA DE EVALUACIÓN**
+## SISTEMA DE EVALUACIÓN
 
 ### **Proceso de Revisión**
 
@@ -96,7 +96,7 @@ Al enviar tu sugerencia, incluye:
 - **Impacto**: ¿Mejorará significativamente la experiencia?
 - **Originalidad**: ¿Es una idea innovadora?
 
-## 🎉 **RECOMPENSAS POR SUGERENCIAS**
+## RECOMPENSAS POR SUGERENCIAS
 
 ### **Sugerencias Implementadas**
 - **500 monedas** - Sugerencia menor implementada
@@ -115,96 +115,96 @@ Al enviar tu sugerencia, incluye:
 - **50 monedas** - Por comentarios constructivos
 - **Badge especial** - "Active Suggester" tras 10 sugerencias
 
-## 📊 **EJEMPLOS DE SUGERENCIAS EXITOSAS**
+## <:1000182584:1396049547838492672> **EJEMPLOS DE SUGERENCIAS EXITOSAS**
 
 ### **Sugerencia Implementada: Auto-Scrape**
 ```
-💡 Título: Sistema de Auto-Scraping para Usuarios VIP
+Título: Sistema de Auto-Scraping para Usuarios VIP
 
-📝 Descripción: Permitir que usuarios VIP configuren scraping 
+Descripción: Permitir que usuarios VIP configuren scraping 
 automático para juegos específicos, enviando resultados por DM.
 
-🎯 Beneficio: Los usuarios VIP no tendrían que estar activamente 
+Beneficio: Los usuarios VIP no tendrían que estar activamente 
 usando comandos para obtener servidores de sus juegos favoritos.
 
-⚡ Implementación: Comando /auto-scrape con opciones de juego, 
+Implementación: Comando /auto-scrape con opciones de juego, 
 cantidad y frecuencia.
 
-✅ Estado: IMPLEMENTADO - Enero 2025
+Estado: IMPLEMENTADO
 ```
 
 ### **Sugerencia en Desarrollo: Sistema de Favoritos**
 ```
-💡 Título: Lista de Juegos Favoritos
+Título: Lista de Juegos Favoritos
 
-📝 Descripción: Permitir a usuarios marcar juegos como favoritos 
+Descripción: Permitir a usuarios marcar juegos como favoritos 
 y recibir notificaciones cuando se encuentren nuevos servidores.
 
-🎯 Beneficio: Experiencia más personalizada y menos spam de 
+Beneficio: Experiencia más personalizada y menos spam de 
 juegos que no interesan al usuario.
 
-⚡ Implementación: Comandos /favorites add/remove/list y sistema 
+Implementación: Comandos /favorites add/remove/list y sistema 
 de notificaciones inteligentes.
 
-🔄 Estado: EN DESARROLLO - ETA Febrero 2025
+Estado: EN DESARROLLO - ETA Febrero 2025
 ```
 
-## 💭 **TIPOS DE SUGERENCIAS MÁS VALORADAS**
+## TIPOS DE SUGERENCIAS MÁS VALORADAS
 
-### **🔥 Alta Prioridad**
+### **Alta Prioridad**
 - Mejoras de rendimiento y estabilidad
 - Nuevas funcionalidades core del bot
 - Soluciones a problemas comunes de usuarios
 - Integraciones útiles con Roblox
 - Funciones que aumenten la retención de usuarios
 
-### **⭐ Media Prioridad**
+### **Media Prioridad**
 - Funciones de conveniencia
 - Mejoras visuales y de interfaz
 - Nuevos sistemas de recompensas
 - Herramientas adicionales para VIP
 - Funciones experimentales
 
-### **💫 Baja Prioridad**
+### **Baja Prioridad**
 - Funciones muy específicas o nicho
 - Cambios puramente cosméticos
 - Funcionalidades que requieren recursos excesivos
 - Ideas que ya están en desarrollo
 - Sugerencias que van contra la filosofía del bot
 
-## 🚀 **SUGERENCIAS EN DESARROLLO**
+## SUGERENCIAS EN DESARROLLO
 
 ### **Q1 2025 (Enero - Marzo)**
-- ✅ Sistema de reportes mejorado
-- 🔄 Lista de juegos favoritos
-- 🔄 Notificaciones push inteligentes
-- ⏳ API pública para desarrolladores
-- ⏳ Interfaz web mejorada
+- <:verify:1396087763388072006> Sistema de reportes mejorado
+- Sistema en desarrollo: Lista de juegos favoritos
+- Sistema en desarrollo: Notificaciones push inteligentes
+- Pendiente: API pública para desarrolladores
+- Pendiente: Interfaz web mejorada
 
 ### **Q2 2025 (Abril - Junio)**
-- ⏳ Aplicación móvil dedicada
-- ⏳ Sistema de trading de servidores
-- ⏳ Marketplace comunitario avanzado
-- ⏳ Integración con Discord Activities
-- ⏳ Sistema de clanes y equipos
+- Pendiente: Aplicación móvil dedicada
+- Pendiente: Sistema de trading de servidores
+- Pendiente: Marketplace comunitario avanzado
+- Pendiente: Integración con Discord Activities
+- Pendiente: Sistema de clanes y equipos
 
-## 📈 **ESTADÍSTICAS DE SUGERENCIAS**
+## ESTADÍSTICAS DE SUGERENCIAS
 
 ### **Métricas Actuales**
 - **Total recibidas**: 847 sugerencias
 - **Implementadas**: 23 (2.7%)
 - **En desarrollo**: 8 (0.9%)
-- **Tiempo promedio**: 12 días desde sugerencia hasta decisión
+- **<:1000182657:1396060091366637669> Tiempo promedio**: 12 días desde sugerencia hasta decisión
 - **Sugerencias más populares**: Funciones VIP y mejoras de scraping
 
 ### **Top Sugirentes**
-- **@UserExample1**: 15 sugerencias implementadas
-- **@UserExample2**: 12 sugerencias implementadas
-- **@UserExample3**: 8 sugerencias implementadas
+- **<:1000182614:1396049500375875646> UserExample1**: 15 sugerencias implementadas
+- **<:1000182614:1396049500375875646> UserExample2**: 12 sugerencias implementadas
+- **<:1000182614:1396049500375875646> UserExample3**: 8 sugerencias implementadas
 
-## 💡 **CONSEJOS PARA SUGERENCIAS EXITOSAS**
+## CONSEJOS PARA SUGERENCIAS EXITOSAS
 
-### **✅ Haz esto:**
+### **<:verify:1396087763388072006> Haz esto:**
 - Investiga si ya existe o está en desarrollo
 - Sé específico en tu descripción
 - Explica claramente el beneficio
@@ -212,7 +212,7 @@ de notificaciones inteligentes.
 - Considera la factibilidad técnica
 - Participa en la discusión comunitaria
 
-### **❌ Evita esto:**
+### **Evita esto:**
 - Sugerencias vagas o genéricas
 - Funciones que benefician solo a ti
 - Ideas copiadas de otros bots
@@ -220,32 +220,30 @@ de notificaciones inteligentes.
 - Spam de la misma sugerencia
 - Exigir implementación inmediata
 
-## 🌟 **HALL OF FAME - MEJORES SUGERENCIAS**
+## HALL OF FAME - MEJORES SUGERENCIAS
 
-### **🏆 Sugerencia del Año 2024**
-**Sistema Anti-Alt Inteligente** - Propuesto por @ContributorUser
+### **Sugerencia del Año 2024**
+**Sistema Anti-Alt Inteligente** - Propuesto por <:1000182614:1396049500375875646> ContributorUser
 *Revolucionó la seguridad del bot y redujo el abuso en un 90%*
 
-### **🥇 Más Impactante**
-**Auto-Scraping VIP** - Propuesto por @VIPUser
+### **Más Impactante**
+**Auto-Scraping VIP** - Propuesto por <:1000182614:1396049500375875646> VIPUser
 *Incrementó la satisfacción VIP en un 300% y las suscripciones en 150%*
 
-### **🥈 Más Innovadora**
-**Sistema de Monedas Integrado** - Propuesto por @CommunityMember
+### **Más Innovadora**
+**Sistema de Monedas Integrado** - Propuesto por <:1000182614:1396049500375875646> CommunityMember
 *Creó una economía interna que aumentó la participación comunitaria*
 
-### **🥉 Más Útil**
-**Comando /profile Mejorado** - Propuesto por @ActiveUser
+### **Más Útil**
+**Comando /profile Mejorado** - Propuesto por <:1000182614:1396049500375875646> ActiveUser
 *Mejoró la experiencia del usuario y redujo tickets de soporte*
 
 ---
 
 **¿Tienes una idea brillante?** ¡No dudes en compartirla! La próxima gran función de RbxServers podría venir de ti.
 
-**Recuerda:** Las mejores sugerencias vienen de usuarios activos que entienden las necesidades de la comunidad.
+**Recuerda:** Las mejores sugerencias vienen de <:1000182614:1396049500375875646> usuarios activos que entienden las necesidades de la comunidad.
 
 ---
 
-**Desarrollado con ❤️ por:** RbxServers Team  
-**Sistema de sugerencias activo desde:** Marzo 2024  
-**Última actualización:** Enero 2025
+**Desarrollado por:** RbxServers Team

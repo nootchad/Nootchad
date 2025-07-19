@@ -1,9 +1,9 @@
 
-# 📰 ARTÍCULOS Y GUÍAS - RbxServers
+# ARTÍCULOS Y GUÍAS - RbxServers
 
-## 🤖 **GUÍAS DEL BOT**
+## GUÍAS DEL BOT
 
-### **🔰 Guía para Nuevos Usuarios**
+### **Guía para Nuevos Usuarios**
 
 #### **Paso 1: Verificación**
 La verificación es **obligatoria** para usar el bot. Sigue estos pasos:
@@ -11,7 +11,7 @@ La verificación es **obligatoria** para usar el bot. Sigue estos pasos:
 2. El bot te dará instrucciones específicas
 3. Ve a tu perfil de Roblox y actualiza tu descripción
 4. Regresa a Discord y confirma la verificación
-5. ¡Listo! Ya puedes usar todos los comandos
+5. <:verify:1396087763388072006> ¡Listo! Ya puedes usar todos los comandos
 
 #### **Paso 2: Primeros Comandos**
 Una vez verificado, prueba estos comandos básicos:
@@ -29,10 +29,10 @@ Gana monedas usando el bot regularmente:
 
 ---
 
-### **🎮 Cómo Funciona el Scraping de Servidores VIP**
+### **Cómo Funciona el Scraping de Servidores VIP**
 
 #### **¿Qué son los Servidores VIP?**
-Los servidores VIP de Roblox son servidores privados creados por usuarios que solo permiten el acceso mediante enlaces especiales. Estos servidores suelen tener:
+Los servidores VIP de Roblox son servidores privados creados por <:1000182614:1396049500375875646> usuarios que solo permiten el acceso mediante enlaces especiales. Estos servidores suelen tener:
 - Menos jugadores (más exclusivos)
 - Mejor rendimiento
 - Experiencias más personalizadas
@@ -55,30 +55,30 @@ Para mantener la estabilidad del sistema:
 
 ---
 
-### **💎 Sistema VIP Explicado**
+### **Sistema VIP Explicado**
 
 #### **Tiers VIP Disponibles**
 
-##### **🥉 VIP Bronze**
+##### **VIP Bronze**
 - 50 servidores por auto-scrape
 - Cooldown reducido (20 segundos)
 - Acceso a comandos básicos premium
 - Soporte prioritario básico
 
-##### **🥈 VIP Silver**
+##### **VIP Silver**
 - 100 servidores por auto-scrape
 - Cooldown de 15 segundos
 - Comandos premium avanzados
 - Acceso a canales VIP exclusivos
 
-##### **🥇 VIP Gold**
+##### **VIP Gold**
 - 200 servidores por auto-scrape
 - Cooldown de 10 segundos
 - Todos los comandos premium
 - Soporte VIP prioritario
 - Beta access a nuevas funciones
 
-##### **💎 VIP Diamond**
+##### **VIP Diamond**
 - Servidores ilimitados
 - Sin cooldowns
 - Acceso completo a todas las funciones
@@ -93,15 +93,15 @@ Para mantener la estabilidad del sistema:
 
 ---
 
-## 🔧 **ARTÍCULOS TÉCNICOS**
+## ARTÍCULOS TÉCNICOS
 
-### **🛠️ Solución de Problemas Comunes**
+### **Solución de Problemas Comunes**
 
 #### **"El Bot No Responde"**
 **Posibles causas y soluciones:**
-- **Verificación expirada**: Vuelve a verificarte con `/verify`
+- **<:verify:1396087763388072006> Verificación expirada**: Vuelve a verificarte con `/verify`
 - **Mantenimiento**: Revisa #anuncios para actualizaciones
-- **Cooldown activo**: Espera el tiempo indicado
+- **<:1000182657:1396060091366637669> Cooldown activo**: Espera el tiempo indicado
 - **Permisos**: Asegúrate de estar en el canal correcto
 
 #### **"No Puedo Verificarme"**
@@ -114,21 +114,21 @@ Para mantener la estabilidad del sistema:
 
 #### **"Los Servidores No Funcionan"**
 **Razones comunes:**
-- **Enlaces expirados**: Los servidores VIP tienen duración limitada
+- **<:1000182657:1396060091366637669> Enlaces expirados**: Los servidores VIP tienen duración limitada
 - **Servidor lleno**: Algunos servidores se llenan rápidamente
 - **Región**: Algunos servidores solo funcionan en ciertas regiones
 - **Juego actualizado**: Actualizaciones pueden invalidar servidores
 
 ---
 
-### **📊 Sistema de Estadísticas**
+### **Sistema de Estadísticas**
 
 #### **Métricas del Usuario**
 El bot rastrea tu actividad para personalizar la experiencia:
 - **Comandos utilizados**: Frecuencia y tipos de comandos
 - **Servidores obtenidos**: Cantidad total de servidores VIP
 - **Juegos favoritos**: Juegos que más scrapeás
-- **Tiempo activo**: Actividad diaria y semanal
+- **<:1000182657:1396060091366637669> Tiempo activo**: Actividad diaria y semanal
 - **Contribuciones**: Reportes válidos y sugerencias aceptadas
 
 #### **Cómo Usar las Estadísticas**
@@ -139,9 +139,9 @@ El bot rastrea tu actividad para personalizar la experiencia:
 
 ---
 
-## 🎯 **CONSEJOS Y TRUCOS**
+## CONSEJOS Y TRUCOS
 
-### **🚀 Maximiza tu Experiencia con RbxServers**
+### **Maximiza tu Experiencia con RbxServers**
 
 #### **Para Obtener Mejores Servidores**
 1. **Usa filtros específicos**: `/game` con nombres exactos
@@ -163,7 +163,7 @@ El bot rastrea tu actividad para personalizar la experiencia:
 
 ---
 
-## 📈 **ACTUALIZACIONES Y NOVEDADES**
+## ACTUALIZACIONES Y NOVEDADES
 
 ### **Próximas Funciones**
 - **Sistema de favoritos**: Guarda tus servidores preferidos
@@ -173,11 +173,11 @@ El bot rastrea tu actividad para personalizar la experiencia:
 - **API pública**: Para desarrolladores de terceros
 
 ### **Mejoras Recientes**
-- ✅ Sistema de reportes completamente renovado
-- ✅ Auto-scraping con cooldowns inteligentes
-- ✅ Interfaz web para estadísticas
-- ✅ Sistema anti-alt mejorado
-- ✅ Soporte para más juegos de Roblox
+- <:verify:1396087763388072006> Sistema de reportes completamente renovado
+- <:verify:1396087763388072006> Auto-scraping con cooldowns inteligentes
+- <:verify:1396087763388072006> Interfaz web para estadísticas
+- <:verify:1396087763388072006> Sistema anti-alt mejorado
+- <:verify:1396087763388072006> Soporte para más juegos de Roblox
 
 ---
 
@@ -187,6 +187,4 @@ El bot rastrea tu actividad para personalizar la experiencia:
 
 ---
 
-**Creado por:** RbxServers Team  
-**Última actualización:** Enero 2025  
-**Versión de los artículos:** 3.0
+**Creado por:** RbxServers Team
