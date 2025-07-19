@@ -117,8 +117,8 @@ def setup_commands(bot):
             await interaction.response.send_message(embed=error_embed, ephemeral=True)
     
     @bot.tree.command(name="report", description="Reporta un problema, bug o comportamiento inapropiado")
-    async def report_command(interaction: discord.Interaction, reporte: str, imagen: discord.Attachment = None):
-        """Comando para enviar reportes con imagen opcional"""
+    async def report_command(interaction: discord.Interaction, que_reportas: str, imagen: discord.Attachment = None):
+        """Comando para enviar reportes con imagen opcional y texto personalizable"""
         try:
             # Verificar que el comando se use en el servidor correcto
             if not interaction.guild or interaction.guild.id != ALLOWED_GUILD_ID:
@@ -138,7 +138,7 @@ def setup_commands(bot):
             user = interaction.user
             username = f"{user.name}#{user.discriminator}" if user.discriminator != "0" else user.name
             
-            logger.info(f"Reporte de {username} (ID: {user.id}): {reporte[:100]}...")
+            logger.info(f"Reporte de {username} (ID: {user.id}): {que_reportas[:100]}...")
             
             # Buscar el canal de reportes
             report_channel = None
@@ -181,11 +181,11 @@ def setup_commands(bot):
                     await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
             
-            # Crear embed de reporte
+            # Crear embed de reporte para enviar al canal del staff
             report_embed = discord.Embed(
-                title="Nuevo Reporte",
-                description=reporte,
-                color=0xff4444,
+                title="Nuevo Reporte Recibido",
+                description=que_reportas,
+                color=0x5c5c5c,
                 timestamp=datetime.now()
             )
             
@@ -202,8 +202,20 @@ def setup_commands(bot):
             )
             
             report_embed.add_field(
-                name="Canal",
+                name="Canal de Origen",
                 value=f"{interaction.channel.mention}",
+                inline=True
+            )
+            
+            report_embed.add_field(
+                name="Servidor",
+                value=f"{interaction.guild.name}",
+                inline=True
+            )
+            
+            report_embed.add_field(
+                name="Fecha y Hora",
+                value=f"<t:{int(datetime.now().timestamp())}:F>",
                 inline=True
             )
             
@@ -211,26 +223,37 @@ def setup_commands(bot):
             if image_url:
                 report_embed.set_image(url=image_url)
                 report_embed.add_field(
-                    name="Evidencia",
-                    value="Imagen adjunta abajo",
+                    name="Evidencia Adjunta",
+                    value="Imagen incluida abajo",
                     inline=False
                 )
             
             report_embed.set_thumbnail(url=user.display_avatar.url)
             report_embed.set_footer(text="Sistema de Reportes RbxServers", icon_url=bot.user.display_avatar.url)
             
-            # Enviar al canal de reportes
-            await report_channel.send(embed=report_embed)
+            # ENVIAR AL CANAL DE REPORTES (STAFF)
+            try:
+                await report_channel.send(embed=report_embed)
+                logger.info(f"✅ Reporte enviado exitosamente al canal {report_channel.name}")
+            except Exception as channel_error:
+                logger.error(f"❌ Error enviando al canal {report_channel.name}: {channel_error}")
+                embed = discord.Embed(
+                    title="Error Enviando Reporte",
+                    description="No se pudo enviar el reporte al canal del staff. Contacta a un administrador.",
+                    color=0xff0000
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
             
-            # Confirmar al usuario
+            # Confirmar al usuario (respuesta privada)
             confirmation_embed = discord.Embed(
-                title="Reporte Enviado",
-                description="Tu reporte ha sido enviado al equipo de staff exitosamente.",
+                title="Reporte Enviado Exitosamente",
+                description="Tu reporte ha sido enviado al equipo de staff del servidor.",
                 color=0x00ff88
             )
             confirmation_embed.add_field(
                 name="Tu reporte",
-                value=f"```{reporte[:1000]}{'...' if len(reporte) > 1000 else ''}```",
+                value=f"```{que_reportas[:1000]}{'...' if len(que_reportas) > 1000 else ''}```",
                 inline=False
             )
             if imagen:
@@ -240,24 +263,35 @@ def setup_commands(bot):
                     inline=True
                 )
             confirmation_embed.add_field(
-                name="¿Qué pasa ahora?",
+                name="¿Qué sigue?",
                 value="El equipo de staff revisará tu reporte y tomará las medidas necesarias.",
+                inline=False
+            )
+            confirmation_embed.add_field(
+                name="Canal de Destino",
+                value=f"#{REPORT_CHANNEL_NAME} (Solo Staff)",
                 inline=False
             )
             
             await interaction.response.send_message(embed=confirmation_embed, ephemeral=True)
             
         except Exception as e:
-            logger.error(f"Error en comando /report: {e}")
+            logger.error(f"❌ Error en comando /report: {e}")
+            import traceback
+            logger.error(f"❌ Traceback: {traceback.format_exc()}")
+            
             error_embed = discord.Embed(
-                title="Error",
+                title="Error Procesando Reporte",
                 description="Ocurrió un error al procesar tu reporte. Inténtalo nuevamente.",
                 color=0xff0000
             )
             try:
-                await interaction.response.send_message(embed=error_embed, ephemeral=True)
-            except:
-                await interaction.followup.send(embed=error_embed, ephemeral=True)
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(embed=error_embed, ephemeral=True)
+                else:
+                    await interaction.followup.send(embed=error_embed, ephemeral=True)
+            except Exception as response_error:
+                logger.error(f"❌ Error enviando respuesta de error: {response_error}")
     
     logger.info("✅ Comandos /sugerencia y /report configurados")
     return True
