@@ -3967,7 +3967,7 @@ class VerificationConfirmButton(discord.ui.Button):
             # Verificar si ya está verificado
             if roblox_verification.is_user_verified(user_id):
                 embed = discord.Embed(
-                    title="<:1000182634:1396049424932798565> Ya Verificado",
+                    title="✅ Ya Verificado",
                     description="Ya estás verificado y puedes usar todos los comandos del bot.",
                     color=0x00ff88
                 )
@@ -4060,7 +4060,7 @@ class VerificationConfirmButton(discord.ui.Button):
             
             # Verificación completada exitosamente
             success_embed = discord.Embed(
-                title="<:1000182634:1396049424932798565> Verificación Completada Automáticamente",
+                title="✅ Verificación Completada Automáticamente",
                 description=f"¡Excelente **{roblox_username}**! El código fue encontrado en tu descripción y la verificación se completó exitosamente.",
                 color=0x00ff88
             )
@@ -4075,7 +4075,7 @@ class VerificationConfirmButton(discord.ui.Button):
                 inline=True
             )
             success_embed.add_field(
-                name="<:1000182614:1396049500375875646> Usuario de Roblox:",
+                name="👤 Usuario de Roblox:",
                 value=f"`{roblox_username}`",
                 inline=True
             )
@@ -8700,7 +8700,7 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
             
             embed = discord.Embed(
                 title="🚫 Usuario Baneado",
-                description=f"Estás baneado por intentar usar información falsa<:1000182636:1396049273782665246>.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
+                description=f"Estás baneado por intentar usar información falsa.\n\n**Tiempo restante:** {days_remaining}d {hours_remaining}h",
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -8762,7 +8762,7 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
         
         # Instrucciones de verificación
         embed = discord.Embed(
-            title="<:1000182656:1396059543951118416> Verificación por Descripción",
+            title="🔐 Verificación por Descripción",
             description=f"Para verificar tu cuenta **{roblox_username}**, sigue estos pasos:",
             color=0xffaa00
         )
@@ -8792,13 +8792,13 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
         )
         
         embed.add_field(
-            name="<:1000182657:1396060091366637669> Tiempo límite:",
+            name="⏰ Tiempo límite:",
             value="Tienes **10 minutos** para completar la verificación",
             inline=True
         )
         
         embed.add_field(
-            name="<:1000182614:1396049500375875646> Usuario de Roblox:",
+            name="👤 Usuario de Roblox:",
             value=f"`{roblox_username}`",
             inline=True
         )
@@ -13136,12 +13136,12 @@ async def ping_command(interaction: discord.Interaction):
         )
         
         embed.add_field(name="📡 Latencia", value=f"{latency}ms", inline=True)
-        embed.add_field(name="🤖 Estado", value="<:1000182634:1396049424932798565> Online", inline=True)
+        embed.add_field(name="🤖 Estado", value="✅ Online", inline=True)
         embed.add_field(name="🔗 Servidores", value=f"{len(bot.guilds)}", inline=True)
         
         embed.add_field(name="👥 Usuarios Totales", value=f"{len(bot.users)}", inline=True)
         embed.add_field(name="📊 Enlaces VIP", value=f"{sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())}", inline=True)
-        embed.add_field(name="<:1000182634:1396049424932798565> Verificados", value=f"{len(roblox_verification.verified_users)}", inline=True)
+        embed.add_field(name="✅ Verificados", value=f"{len(roblox_verification.verified_users)}", inline=True)
         
         embed.set_footer(text="RbxServers Bot por hesiz")
         
