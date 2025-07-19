@@ -228,8 +228,8 @@ async def check_user_has_gamepass(user_id: str, gamepass_id: str):
         logger.error(f"Error verificando gamepass: {e}")
         return None
 
-logger.info("✅ Comando /donacion configurado exitosamente")
-return True
+    logger.info("✅ Comando /donacion configurado exitosamente")
+    return True
 
 def cleanup_commands(bot):
     """Función opcional para limpiar comandos al recargar"""
