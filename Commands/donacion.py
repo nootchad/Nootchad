@@ -69,13 +69,30 @@ def setup_commands(bot):
             has_gamepass = await check_user_has_gamepass(roblox_user_id, DONATION_GAMEPASS_ID)
             
             if has_gamepass is None:
-                # Error al verificar gamepass
+                # Error al verificar gamepass - proporcionar más información
                 embed = discord.Embed(
-                    title="Error de Verificación",
-                    description="No se pudo verificar tu estado de donación en este momento. Intenta nuevamente más tarde.",
-                    color=0x5c5c5c
+                    title="⚠️ Error de Verificación",
+                    description="No se pudo verificar tu estado de donación debido a problemas con la API de Roblox.",
+                    color=0xff9900
+                )
+                embed.add_field(
+                    name="🔍 Información Técnica",
+                    value=f"• Usuario Roblox: {roblox_username}\n• ID Usuario: {roblox_user_id}\n• Gamepass ID: {DONATION_GAMEPASS_ID}",
+                    inline=False
+                )
+                embed.add_field(
+                    name="🔄 Posibles Soluciones",
+                    value="• Intenta nuevamente en 1-2 minutos\n• Verifica que tu perfil de Roblox no sea privado\n• Contacta soporte si el problema persiste",
+                    inline=False
+                )
+                embed.add_field(
+                    name="🛠️ Estado de APIs",
+                    value="Las APIs de Roblox pueden estar experimentando problemas temporales",
+                    inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
+                
+                logger.warning(f"Error de API verificando donación para usuario {username} (Roblox: {roblox_username}, ID: {roblox_user_id})")
                 return
             
             if has_gamepass:
@@ -126,19 +143,34 @@ def setup_commands(bot):
             else:
                 # Usuario no tiene el gamepass
                 embed = discord.Embed(
-                    title="Donación No Detectada",
-                    description=f"No se detectó el gamepass de donación en la cuenta {roblox_username}.",
+                    title="💝 Donación No Detectada",
+                    description=f"No se detectó el gamepass de donación en la cuenta **{roblox_username}**.",
                     color=0x5c5c5c
                 )
                 embed.add_field(
-                    name="Como Donar",
-                    value=f"Puedes donar adquiriendo el gamepass con ID: {DONATION_GAMEPASS_ID}",
+                    name="🎁 Como Donar",
+                    value=f"Puedes apoyar el proyecto adquiriendo el gamepass de donación.\n\n**Gamepass ID:** `{DONATION_GAMEPASS_ID}`",
                     inline=False
                 )
                 embed.add_field(
-                    name="Información",
-                    value="Una vez que adquieras el gamepass, podrás usar este comando nuevamente para recibir el reconocimiento.",
+                    name="🎯 Beneficios",
+                    value="• Reconocimiento público como donador\n• Bonus de 500 monedas\n• Apoyas el desarrollo continuo del bot",
                     inline=False
+                )
+                embed.add_field(
+                    name="🔄 Después de Donar",
+                    value="Una vez que adquieras el gamepass, usa este comando nuevamente para recibir el reconocimiento y bonus.",
+                    inline=False
+                )
+                embed.add_field(
+                    name="👤 Usuario Verificado",
+                    value=f"[{roblox_username}](https://www.roblox.com/users/{roblox_user_id}/profile)",
+                    inline=True
+                )
+                embed.add_field(
+                    name="🆔 Tu ID de Roblox",
+                    value=f"`{roblox_user_id}`",
+                    inline=True
                 )
                 
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -187,45 +219,89 @@ async def get_roblox_user_id(username: str):
         return None
 
 async def check_user_has_gamepass(user_id: str, gamepass_id: str):
-    """Verificar si un usuario tiene un gamepass específico"""
+    """Verificar si un usuario tiene un gamepass específico usando múltiples métodos"""
     try:
         async with aiohttp.ClientSession() as session:
-            url = f"https://inventory.roblox.com/v1/users/{user_id}/items/GamePass/0"
+            # Método 1: API de catálogo más nueva
+            url1 = f"https://catalog.roblox.com/v1/search/items"
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.9"
             }
             
-            params = {
-                "limit": 100,  # Obtener hasta 100 gamepasses
-                "sortOrder": "Desc"
+            # Primero verificar si el gamepass existe
+            params1 = {
+                "category": "GamePass",
+                "keyword": "",
+                "limit": 1
             }
             
-            async with session.get(url, headers=headers, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    gamepasses = data.get("data", [])
+            try:
+                # Método alternativo: usar API de ownership
+                ownership_url = f"https://apis.roblox.com/ownership-api/v1/user/{user_id}/owns-asset?assetType=GamePass&assetId={gamepass_id}"
+                
+                logger.info(f"Verificando ownership para usuario {user_id} y gamepass {gamepass_id}")
+                
+                async with session.get(ownership_url, headers=headers, timeout=10) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        owns = data.get("owns", False)
+                        logger.info(f"Usuario {user_id} {'TIENE' if owns else 'NO tiene'} gamepass {gamepass_id} (API ownership)")
+                        return owns
+                    else:
+                        logger.warning(f"API ownership falló con status {response.status}")
+            except Exception as ownership_error:
+                logger.debug(f"Error con API ownership: {ownership_error}")
+            
+            # Método 2: API de inventario con mejor manejo
+            try:
+                inventory_url = f"https://inventory.roblox.com/v1/users/{user_id}/items/GamePass/{gamepass_id}"
+                
+                async with session.get(inventory_url, headers=headers, timeout=10) as response:
+                    logger.info(f"API inventario respuesta: {response.status} para usuario {user_id}")
                     
-                    # Buscar el gamepass específico
-                    for gamepass in gamepasses:
-                        asset_id = str(gamepass.get("assetId", ""))
-                        if asset_id == gamepass_id:
-                            logger.info(f"Usuario {user_id} TIENE gamepass {gamepass_id}")
+                    if response.status == 200:
+                        data = await response.json()
+                        has_gamepass = data.get("data", [])
+                        if has_gamepass:
+                            logger.info(f"Usuario {user_id} TIENE gamepass {gamepass_id} (API inventario)")
                             return True
-                    
-                    logger.info(f"Usuario {user_id} NO tiene gamepass {gamepass_id}")
-                    return False
+                        else:
+                            logger.info(f"Usuario {user_id} NO tiene gamepass {gamepass_id} (API inventario)")
+                            return False
+                    elif response.status == 404:
+                        logger.info(f"Usuario {user_id} NO tiene gamepass {gamepass_id} (404)")
+                        return False
+                    else:
+                        logger.warning(f"API inventario falló: {response.status}")
+            except Exception as inventory_error:
+                logger.debug(f"Error con API inventario: {inventory_error}")
+            
+            # Método 3: API de collectibles (más genérica)
+            try:
+                collectibles_url = f"https://inventory.roblox.com/v1/users/{user_id}/items/0/{gamepass_id}"
                 
-                elif response.status == 404:
-                    # Usuario no encontrado o sin gamepasses
-                    logger.info(f"Usuario {user_id} no encontrado o sin gamepasses")
-                    return False
-                
-                else:
-                    logger.warning(f"Error verificando gamepass para usuario {user_id}: status {response.status}")
-                    return None
+                async with session.get(collectibles_url, headers=headers, timeout=10) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("data"):
+                            logger.info(f"Usuario {user_id} TIENE gamepass {gamepass_id} (API collectibles)")
+                            return True
+                        else:
+                            logger.info(f"Usuario {user_id} NO tiene gamepass {gamepass_id} (API collectibles)")
+                            return False
+                    elif response.status == 404:
+                        return False
+            except Exception as collectibles_error:
+                logger.debug(f"Error con API collectibles: {collectibles_error}")
+            
+            # Si todos los métodos fallan, retornar None (error)
+            logger.error(f"Todos los métodos de verificación fallaron para usuario {user_id}")
+            return None
     
     except Exception as e:
-        logger.error(f"Error verificando gamepass: {e}")
+        logger.error(f"Error crítico verificando gamepass: {e}")
         return None
 
     logger.info("✅ Comando /donacion configurado exitosamente")
