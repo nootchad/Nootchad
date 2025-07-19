@@ -116,8 +116,8 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=error_embed, ephemeral=True)
     
-    @bot.tree.command(name="report", description="Reporta cualquier problema, bug o comportamiento inapropiado")
-    async def report_command(interaction: discord.Interaction, que_reportas: str, imagen: discord.Attachment = None):
+    @bot.tree.command(name="reportar", description="Reporta cualquier problema, bug o comportamiento inapropiado")
+    async def reportar_command(interaction: discord.Interaction, que_reportas: str, imagen: discord.Attachment = None):
         """Comando para enviar reportes - SOLO se envía al canal, NO se guarda en archivos"""
         try:
             # Verificar que el comando se use en el servidor correcto
@@ -233,22 +233,33 @@ def setup_commands(bot):
             
             # ENVIAR AL CANAL DE REPORTES (STAFF) - NO GUARDAR EN ARCHIVOS
             try:
+                # Verificar que el bot tenga permisos para enviar mensajes en el canal
+                if not report_channel.permissions_for(interaction.guild.me).send_messages:
+                    raise Exception("Sin permisos para enviar mensajes en el canal")
+                
+                # Enviar el reporte al canal
                 await report_channel.send(embed=report_embed)
                 logger.info(f"✅ Reporte enviado exitosamente al canal {report_channel.name}")
+                
             except Exception as channel_error:
                 logger.error(f"❌ Error enviando al canal {report_channel.name}: {channel_error}")
                 embed = discord.Embed(
-                    title="Error Enviando Reporte",
-                    description="No se pudo enviar el reporte al canal del staff. Contacta a un administrador.",
+                    title="❌ Error Enviando Reporte",
+                    description=f"No se pudo enviar el reporte al canal del staff. Error: {str(channel_error)[:100]}",
                     color=0xff0000
+                )
+                embed.add_field(
+                    name="💡 Posibles causas:",
+                    value="• El canal no existe\n• El bot no tiene permisos\n• Problema de conexión",
+                    inline=False
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
             
             # Confirmar al usuario (respuesta privada)
             confirmation_embed = discord.Embed(
-                title="Reporte Enviado Exitosamente",
-                description="Tu reporte ha sido enviado al equipo de staff del servidor.",
+                title="✅ Reporte Enviado Exitosamente",
+                description=f"Tu reporte ha sido enviado al canal {REPORT_CHANNEL_NAME} para revisión del staff.",
                 color=0x00ff88
             )
             confirmation_embed.add_field(
@@ -293,7 +304,7 @@ def setup_commands(bot):
             except Exception as response_error:
                 logger.error(f"❌ Error enviando respuesta de error: {response_error}")
     
-    logger.info("✅ Comandos /sugerencia y /report configurados")
+    logger.info("✅ Comandos /sugerencia y /reportar configurados")
     return True
 
 def cleanup_commands(bot):
