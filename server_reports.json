@@ -17,20 +17,40 @@
       ],
       "investigated_at": null,
       "resolved_at": null
+    },
+    "report_1752922531_916070251895091241": {
+      "report_id": "report_1752922531_916070251895091241",
+      "reporter_id": "916070251895091241",
+      "server_link": "https://www.roblox.com/games/142823291?privateServerLinkCode=58507395240009091137636715781175",
+      "game_id": "142823291",
+      "private_code": "58507395240009091137636715781175",
+      "issue_type": "otro",
+      "description": "error",
+      "additional_info": {},
+      "reported_at": 1752922531.427472,
+      "status": "pending",
+      "confirmations": 1,
+      "confirming_users": [
+        "916070251895091241"
+      ],
+      "investigated_at": null,
+      "resolved_at": null
     }
   },
-  "last_updated": "2025-07-19T10:51:03.043499",
-  "total_reports": 1,
+  "last_updated": "2025-07-19T10:55:31.428291",
+  "total_reports": 2,
   "stats": {
-    "total_reports": 1,
-    "pending_reports": 1,
+    "total_reports": 2,
+    "pending_reports": 2,
     "resolved_reports": 0,
     "blacklisted_servers": 0,
     "top_issue_types": {
-      "enlace_roto": 1
+      "enlace_roto": 1,
+      "otro": 1
     },
     "top_reported_games": {
-      "537413528": 1
+      "537413528": 1,
+      "142823291": 1
     }
   }
 }
