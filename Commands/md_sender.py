@@ -121,17 +121,8 @@ class MDSelectView(discord.ui.View):
                     main_embed = discord.Embed(
                         title=f"📄 {file_name}",
                         description=first_part + "\n\n*[Continúa en el siguiente mensaje...]*",
-                        color=0x00ff88
+                        color=0x808080
                     )
-
-                    main_embed.add_field(
-                        name="📊 Información",
-                        value=f"• **Archivo:** `{selected_file}`\n• **Tamaño:** {len(content)} caracteres\n• **Enviado por:** {interaction.user.mention}",
-                        inline=False
-                    )
-
-                    main_embed.set_footer(text=f"RbxServers • Contenido de {selected_file}")
-                    main_embed.timestamp = datetime.now()
 
                     await interaction.response.send_message(embed=main_embed, ephemeral=False)
 
@@ -148,7 +139,7 @@ class MDSelectView(discord.ui.View):
                             continuation_embed = discord.Embed(
                                 title=f"📄 {file_name} (Parte {chunk_count + 1})",
                                 description=chunk,
-                                color=0x00ff88
+                                color=0x808080
                             )
                             await interaction.followup.send(embed=continuation_embed, ephemeral=False)
                         
@@ -160,17 +151,8 @@ class MDSelectView(discord.ui.View):
                     embed = discord.Embed(
                         title=f"📄 {file_name}",
                         description=content,
-                        color=0x00ff88
+                        color=0x808080
                     )
-
-                    embed.add_field(
-                        name="📊 Información",
-                        value=f"• **Archivo:** `{selected_file}`\n• **Tamaño:** {len(content)} caracteres\n• **Enviado por:** {interaction.user.mention}",
-                        inline=False
-                    )
-
-                    embed.set_footer(text=f"RbxServers • Contenido de {selected_file}")
-                    embed.timestamp = datetime.now()
 
                     await interaction.response.send_message(embed=embed, ephemeral=False)
 
