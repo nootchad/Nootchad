@@ -453,7 +453,7 @@ class AntiAltSystem:
             import discord
             
             embed = discord.Embed(
-                title="🚫 Usuario Baneado",
+                title="<:1000182636:1396049273782665246> Usuario Baneado",
                 description=f"Has sido baneado del sistema.\n\n**Razón:** {reason}",
                 color=0xff0000
             )
