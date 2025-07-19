@@ -101,7 +101,7 @@ Al enviar tu sugerencia, incluye:
 ### **Sugerencias Implementadas**
 - **500 monedas** - Sugerencia menor implementada
 - **1,000 monedas** - Sugerencia mayor implementada
-- **2,500 monedas** - Función revolucionaria
+- **1200 robux** - Función revolucionaria
 - **Rol especial** - "Contributor" en Discord
 - **Reconocimiento** - Mención en changelog
 
