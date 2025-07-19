@@ -1,23 +1,9 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 287,
-      "total_earned": 307,
+      "balance": 297,
+      "total_earned": 317,
       "transactions": [
-        {
-          "type": "earn",
-          "amount": 10,
-          "reason": "Usar comando /scripts",
-          "timestamp": "2025-07-09T00:40:58.423395",
-          "balance_after": 70
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T00:43:13.894861",
-          "balance_after": 75
-        },
         {
           "type": "earn",
           "amount": 10,
@@ -353,6 +339,20 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-19T10:55:31.253426",
           "balance_after": 287
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-19T11:00:20.383116",
+          "balance_after": 292
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-19T11:00:45.589836",
+          "balance_after": 297
         }
       ]
     },
@@ -913,6 +913,6 @@
       ]
     }
   },
-  "last_updated": "2025-07-19T10:55:31.253447",
+  "last_updated": "2025-07-19T11:00:45.589852",
   "total_users": 19
 }
