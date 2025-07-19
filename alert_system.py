@@ -83,7 +83,7 @@ class BotStartupAlertSystem:
         )
         
         startup_embed.add_field(
-            name="✅ Estado",
+            name="<:1000182634:1396049424932798565> Estado",
             value="**Conectado y funcionando**",
             inline=True
         )
