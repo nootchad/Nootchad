@@ -1,0 +1,36 @@
+{
+  "reports": {
+    "report_1752922263_916070251895091241": {
+      "report_id": "report_1752922263_916070251895091241",
+      "reporter_id": "916070251895091241",
+      "server_link": "https://www.roblox.com/games/537413528?privateServerLinkCode=_A_EdvICnPAbeoSEloV73_RERu1UEdGX",
+      "game_id": "537413528",
+      "private_code": "_A_EdvICnPAbeoSEloV73_RERu1UEdGX",
+      "issue_type": "enlace_roto",
+      "description": "test",
+      "additional_info": {},
+      "reported_at": 1752922263.0426126,
+      "status": "pending",
+      "confirmations": 1,
+      "confirming_users": [
+        "916070251895091241"
+      ],
+      "investigated_at": null,
+      "resolved_at": null
+    }
+  },
+  "last_updated": "2025-07-19T10:51:03.043499",
+  "total_reports": 1,
+  "stats": {
+    "total_reports": 1,
+    "pending_reports": 1,
+    "resolved_reports": 0,
+    "blacklisted_servers": 0,
+    "top_issue_types": {
+      "enlace_roto": 1
+    },
+    "top_reported_games": {
+      "537413528": 1
+    }
+  }
+}

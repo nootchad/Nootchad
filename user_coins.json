@@ -1,37 +1,9 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 257,
-      "total_earned": 277,
+      "balance": 277,
+      "total_earned": 297,
       "transactions": [
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T00:37:03.533794",
-          "balance_after": 25
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T00:38:51.880043",
-          "balance_after": 30
-        },
-        {
-          "type": "earn",
-          "amount": 10,
-          "reason": "Usar comando /scripts",
-          "timestamp": "2025-07-09T00:39:02.614783",
-          "balance_after": 40
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T00:39:20.685851",
-          "balance_after": 45
-        },
         {
           "type": "earn",
           "amount": 10,
@@ -353,6 +325,34 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-19T00:24:56.548295",
           "balance_after": 257
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-19T10:49:45.846644",
+          "balance_after": 262
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-19T10:50:21.747047",
+          "balance_after": 267
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-19T10:51:02.856807",
+          "balance_after": 272
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-19T10:51:31.540680",
+          "balance_after": 277
         }
       ]
     },
@@ -913,6 +913,6 @@
       ]
     }
   },
-  "last_updated": "2025-07-19T07:37:01.115668",
+  "last_updated": "2025-07-19T10:51:31.540700",
   "total_users": 19
 }
