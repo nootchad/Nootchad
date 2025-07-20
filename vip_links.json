@@ -1,15 +1,15 @@
 {
   "scraping_stats": {
-    "total_scraped": 836,
-    "successful_extractions": 696,
+    "total_scraped": 851,
+    "successful_extractions": 711,
     "failed_extractions": 140,
-    "last_scrape_time": "2025-07-20T21:13:31.230396",
-    "scrape_duration": 137.61,
-    "servers_per_minute": 2.2
+    "last_scrape_time": "2025-07-20T22:13:49.675373",
+    "scrape_duration": 126.83,
+    "servers_per_minute": 2.4
   },
   "game_categories": {
-    "920587237": "other"
+    "109983668079237": "puzzle"
   },
-  "last_updated": "2025-07-20T21:13:31.237582",
+  "last_updated": "2025-07-20T22:13:49.678422",
   "note": "This file now only contains general stats and categories. User data is in user_game_servers.json"
 }

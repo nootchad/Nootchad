@@ -979,8 +979,8 @@
       ]
     },
     "1385909533905387581": {
-      "balance": 5,
-      "total_earned": 5,
+      "balance": 10,
+      "total_earned": 10,
       "transactions": [
         {
           "type": "earn",
@@ -988,10 +988,37 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-20T21:11:13.368643",
           "balance_after": 5
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-20T21:19:07.507872",
+          "balance_after": 10
+        }
+      ]
+    },
+    "1345807924538249289": {
+      "balance": 10,
+      "total_earned": 10,
+      "transactions": [
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-20T21:45:09.200189",
+          "balance_after": 5
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-20T22:11:42.599584",
+          "balance_after": 10
         }
       ]
     }
   },
-  "last_updated": "2025-07-20T21:11:13.368661",
-  "total_users": 24
+  "last_updated": "2025-07-20T22:11:42.599598",
+  "total_users": 25
 }

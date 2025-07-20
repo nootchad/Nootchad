@@ -50,18 +50,25 @@
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=85249195808552348025227659949467"
     ],
     "1385909533905387581": [
-      "https://www.roblox.com/games/920587237?privateServerLinkCode=90732075289506337721684375582401",
-      "https://www.roblox.com/games/920587237?privateServerLinkCode=92785011454969612698763170497155",
-      "https://www.roblox.com/games/920587237?privateServerLinkCode=40783405718858033306846906420778",
-      "https://www.roblox.com/games/920587237?privateServerLinkCode=89608850901007424325417894427930",
-      "https://www.roblox.com/games/920587237?privateServerLinkCode=61454137185152312334718536052312"
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=41087944765785431068924310242081",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=77532822842315836258679842685036",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=45007146928114033729725773208522",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=12708745791384275169305150034834",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=08804890131327069783916772247398"
+    ],
+    "1345807924538249289": [
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60833260294073792563456328119459",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=86718879409772814922488971298193",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=52327861749399401834677443438873",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=41087944765785431068924310242081",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=77532822842315836258679842685036"
     ]
   },
   "metadata": {
     "created_at": "2025-01-12T00:00:00",
-    "last_updated": "2025-07-20T21:13:31.232173",
-    "total_users": 8,
-    "total_servers": 40,
+    "last_updated": "2025-07-20T22:13:49.677894",
+    "total_users": 9,
+    "total_servers": 45,
     "description": "Estructura simplificada: user_id -> array de hasta 5 servidores"
   }
 }
