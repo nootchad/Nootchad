@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def setup_commands(bot):
     """Función requerida para configurar comandos de gestión de servidores"""
     
-    @bot.tree.command(name="serverhistory", description="<:1000182750:1396420537227411587> Ver historial de servidores que has usado recientemente")
+    @bot.tree.command(name="serverhistory", description="Ver historial de servidores que has usado recientemente")
     async def serverhistory_command(interaction: discord.Interaction):
         """Ver historial de servidores del usuario con opción de acceso rápido"""
         try:
@@ -99,7 +99,7 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @bot.tree.command(name="serverstats", description="<:1000182584:1396049547838492672> Estadísticas detalladas de tus servidores guardados")
+    @bot.tree.command(name="serverstats", description="Estadísticas detalladas de tus servidores guardados")
     async def serverstats_command(interaction: discord.Interaction):
         """Ver estadísticas detalladas de los servidores del usuario"""
         try:
@@ -194,7 +194,7 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @bot.tree.command(name="scheduler", description="<:1000182657:1396060091366637669> Programar scraping automático a horas específicas")
+    @bot.tree.command(name="scheduler", description="Programar scraping automático a horas específicas")
     async def scheduler_command(
         interaction: discord.Interaction, 
         game_id: str,
