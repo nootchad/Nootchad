@@ -2492,6 +2492,11 @@ class VIPServerScraper:
             "lumber tycoon 2": {"id": "58775777", "name": "🌲 Lumber Tycoon 2", "category": "simulator"},
             "youtuber tycoon": {"id": "1345139196", "name": "📺 YouTuber Tycoon", "category": "simulator"},
             "mega mansion tycoon": {"id": "1060666313", "name": "🏠 Mega Mansion Tycoon", "category": "simulator"},
+            
+            # Otros juegos populares
+            "steal a brainrot": {"id": "109983668079237", "name": "🧠 Steal A Brainrot", "category": "other"},
+            "brainrot": {"id": "109983668079237", "name": "🧠 Steal A Brainrot", "category": "other"},
+            "steal brainrot": {"id": "109983668079237", "name": "🧠 Steal A Brainrot", "category": "other"},
         }
         
         search_lower = game_name.lower().strip()
