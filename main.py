@@ -4185,7 +4185,7 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
             )
             embed.add_field(
                 name="⚠️ Importante:",
-                value="• No uses nombres de usuario falsos\n• Debes agregar el código a tu descripción\n• La verificación dura 24 horas",
+                value="• No uses nombres de usuario falsos\n• Debes agregar el código a tu descripción\n• La verificación dura 30 dias",
                 inline=False
             )
             
@@ -11638,7 +11638,7 @@ async def admin_command(interaction: discord.Interaction,
                         value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
                         inline=False
                     )
-                    dm_embed.add_field(name="⏰ Duración:", value="24 horas", inline=True)
+                    dm_embed.add_field(name="⏰ Duración:", value="30 dias", inline=True)
                     dm_embed.add_field(name="👤 Usuario de Roblox:", value=f"`{roblox_username}`", inline=True)
                     
                     await user.send(embed=dm_embed)
