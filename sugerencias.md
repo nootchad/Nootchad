@@ -50,17 +50,17 @@ Al enviar tu sugerencia, incluye:
 
 ### **Métodos de Envío**
 
-#### **Canal #sugerencias**
+ **Canal #sugerencias**
 - Publica tu sugerencia usando el formato establecido
 - La comunidad puede reaccionar y comentar
 - Las mejores sugerencias son destacadas por el staff
 
-#### **Tickets de Soporte**
+ **Tickets de Soporte**
 - Para sugerencias más complejas o privadas
 - Permite discusión directa con el equipo
 - Ideal para propuestas técnicas detalladas
 
-#### **Formulario Web** (Próximamente)
+ **Formulario Web** (Próximamente)
 - Interfaz dedicada para sugerencias
 - Categorización automática
 - Sistema de votación integrado
@@ -69,22 +69,22 @@ Al enviar tu sugerencia, incluye:
 
 ### **Proceso de Revisión**
 
-#### **1. Recepción (0-24 horas)**
+ **1. Recepción (0-24 horas)**
 - Tu sugerencia es registrada en el sistema
 - Se asigna un ID único para seguimiento
 - Se categoriza por tipo y prioridad
 
-#### **2. Evaluación Inicial (1-3 días)**
+ **2. Evaluación Inicial (1-3 días)**
 - El equipo técnico revisa la factibilidad
 - Se evalúa el impacto en el sistema actual
 - Se estima el tiempo de desarrollo necesario
 
-#### **3. Votación Comunitaria (3-7 días)**
+ **3. Votación Comunitaria (3-7 días)**
 - La comunidad vota en las sugerencias públicas
 - Se consideran los comentarios y feedback
 - Las sugerencias populares reciben prioridad
 
-#### **4. Decisión Final (7-14 días)**
+ **4. Decisión Final (7-14 días)**
 - El equipo toma la decisión final
 - Se comunica el resultado al sugirente
 - Las sugerencias aprobadas entran en desarrollo
