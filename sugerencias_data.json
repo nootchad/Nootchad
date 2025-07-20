@@ -12,22 +12,11 @@
       "votos_negativos": 0,
       "estado": "pendiente",
       "comentarios_staff": null
-    },
-    {
-      "id": 2,
-      "user_id": "916070251895091241",
-      "username": ".pesopluma",
-      "titulo": "TESTXDDJDJSIQIQIWK",
-      "descripcion": "AKQOOQOWLSKSKQKQOWOIWKSKQKQK",
-      "categoria": "general",
-      "fecha": "2025-07-20T09:09:39.705245",
-      "estado": "pendiente",
-      "comentarios_owner": null
     }
   ],
   "estadisticas": {
-    "total_sugerencias": 2,
+    "total_sugerencias": 1,
     "usuarios_activos": 1,
-    "ultima_sugerencia": "2025-07-20T09:09:39.705256"
+    "ultima_sugerencia": "2025-07-20T09:05:30.252765"
   }
 }
