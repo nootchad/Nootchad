@@ -1,7 +1,7 @@
 
 """
 Sistema de Sugerencias para RbxServers
-Permite a los usuarios enviar sugerencias que se publican en el canal actual
+Permite a los usuarios enviar sugerencias que se envían al DM del owner para revisión
 """
 import discord
 from discord.ext import commands
@@ -12,6 +12,9 @@ from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# ID del owner para recibir sugerencias
+OWNER_ID = "916070251895091241"
 
 class SugerenciasSystem:
     def __init__(self):
@@ -62,10 +65,8 @@ class SugerenciasSystem:
                 'descripcion': descripcion,
                 'categoria': categoria,
                 'fecha': datetime.now().isoformat(),
-                'votos_positivos': 0,
-                'votos_negativos': 0,
                 'estado': 'pendiente',  # pendiente, aprobada, rechazada, implementada
-                'comentarios_staff': None
+                'comentarios_owner': None
             }
             
             self.sugerencias_data['sugerencias'].append(nueva_sugerencia)
@@ -100,7 +101,7 @@ def setup_commands(bot):
         descripcion: str,
         categoria: str = "general"
     ):
-        """Comando para enviar sugerencias que se publican en el canal actual"""
+        """Comando para enviar sugerencias al DM del owner para revisión"""
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}"
         
@@ -133,7 +134,6 @@ def setup_commands(bot):
             if categoria.lower() not in categorias_validas:
                 categoria = "general"
             
-            # Confirmar que se va a enviar
             await interaction.response.defer(ephemeral=True)
             
             # Agregar sugerencia al sistema
@@ -150,87 +150,95 @@ def setup_commands(bot):
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
                 return
             
-            # Crear embed para la sugerencia pública
-            sugerencia_embed = discord.Embed(
-                title="💡 Nueva Sugerencia para RbxServers",
-                description=f"**{titulo}**",
-                color=0x7289da
-            )
-            
-            # Mapeo de categorías a emojis
-            categoria_emojis = {
-                "general": "<:1000182584:1396049547838492672>",
-                "bot": "🤖",
-                "comandos": "⚡",
-                "scraping": "🔍",
-                "vip": "⭐",
-                "interfaz": "🎨",
-                "seguridad": "🛡️",
-                "comunidad": "<:1000182614:1396049500375875646>",
-                "eventos": "🎉",
-                "otro": "📝"
-            }
-            
-            emoji_categoria = categoria_emojis.get(categoria.lower(), "📝")
-            
-            sugerencia_embed.add_field(
-                name="📝 Descripción",
-                value=descripcion,
-                inline=False
-            )
-            
-            sugerencia_embed.add_field(
-                name="📂 Categoría",
-                value=f"{emoji_categoria} {categoria.title()}",
-                inline=True
-            )
-            
-            sugerencia_embed.add_field(
-                name="👤 Sugerido por",
-                value=f"<:1000182614:1396049500375875646> {username}",
-                inline=True
-            )
-            
-            sugerencia_embed.add_field(
-                name="🆔 ID Sugerencia",
-                value=f"`#{sugerencia_id}`",
-                inline=True
-            )
-            
-            sugerencia_embed.add_field(
-                name="⏰ Fecha",
-                value=f"<t:{int(datetime.now().timestamp())}:F>",
-                inline=False
-            )
-            
-            sugerencia_embed.add_field(
-                name="🎯 Cómo Ayudar",
-                value="• Reacciona con ✅ si te gusta la idea\n• Reacciona con ❌ si no te convence\n• Comenta con mejoras o feedback constructivo",
-                inline=False
-            )
-            
-            sugerencia_embed.set_footer(
-                text="RbxServers • Sistema de Sugerencias | El staff revisará todas las sugerencias",
-                icon_url=interaction.user.display_avatar.url if interaction.user.display_avatar else None
-            )
-            
-            sugerencia_embed.timestamp = datetime.now()
-            
-            # Enviar sugerencia al canal actual
-            sugerencia_message = await interaction.followup.send(embed=sugerencia_embed, ephemeral=False)
-            
-            # Agregar reacciones automáticas para votación
+            # Intentar enviar la sugerencia al owner por DM
             try:
-                await sugerencia_message.add_reaction("✅")
-                await sugerencia_message.add_reaction("❌")
-                await sugerencia_message.add_reaction("💡")  # Para ideas adicionales
+                owner = bot.get_user(int(OWNER_ID))
+                if not owner:
+                    owner = await bot.fetch_user(int(OWNER_ID))
+                
+                if owner:
+                    # Mapeo de categorías a emojis
+                    categoria_emojis = {
+                        "general": "<:1000182584:1396049547838492672>",
+                        "bot": "🤖",
+                        "comandos": "⚡",
+                        "scraping": "🔍",
+                        "vip": "⭐",
+                        "interfaz": "🎨",
+                        "seguridad": "🛡️",
+                        "comunidad": "<:1000182614:1396049500375875646>",
+                        "eventos": "🎉",
+                        "otro": "📝"
+                    }
+                    
+                    emoji_categoria = categoria_emojis.get(categoria.lower(), "📝")
+                    
+                    # Crear embed para el owner
+                    owner_embed = discord.Embed(
+                        title="📋 Nueva Sugerencia Recibida",
+                        description=f"**{titulo}**",
+                        color=0x7289da
+                    )
+                    
+                    owner_embed.add_field(
+                        name="📝 Descripción",
+                        value=descripcion,
+                        inline=False
+                    )
+                    
+                    owner_embed.add_field(
+                        name="📂 Categoría",
+                        value=f"{emoji_categoria} {categoria.title()}",
+                        inline=True
+                    )
+                    
+                    owner_embed.add_field(
+                        name="👤 Usuario",
+                        value=f"<:1000182614:1396049500375875646> {username} (`{user_id}`)",
+                        inline=True
+                    )
+                    
+                    owner_embed.add_field(
+                        name="🆔 ID Sugerencia",
+                        value=f"`#{sugerencia_id}`",
+                        inline=True
+                    )
+                    
+                    owner_embed.add_field(
+                        name="⏰ Fecha",
+                        value=f"<t:{int(datetime.now().timestamp())}:F>",
+                        inline=False
+                    )
+                    
+                    owner_embed.add_field(
+                        name="🛠️ Acciones del Owner",
+                        value="• Puedes aprobar/rechazar usando comandos específicos\n• La sugerencia se guardó automáticamente en el sistema\n• Revisa `/stats_sugerencias` para ver todas las sugerencias pendientes",
+                        inline=False
+                    )
+                    
+                    owner_embed.set_footer(
+                        text="RbxServers • Sistema de Sugerencias | Acción requerida",
+                        icon_url=interaction.user.display_avatar.url if interaction.user.display_avatar else None
+                    )
+                    
+                    owner_embed.timestamp = datetime.now()
+                    
+                    # Enviar DM al owner
+                    await owner.send(embed=owner_embed)
+                    logger.info(f"📨 Sugerencia #{sugerencia_id} enviada al owner por DM")
+                    
+                else:
+                    logger.error(f"❌ No se pudo encontrar al owner con ID {OWNER_ID}")
+                    
+            except discord.Forbidden:
+                logger.error(f"❌ No se puede enviar DM al owner - DMs bloqueados")
             except Exception as e:
-                logger.warning(f"No se pudieron agregar reacciones: {e}")
+                logger.error(f"❌ Error enviando DM al owner: {e}")
             
-            # Confirmación privada al usuario
+            # Confirmación al usuario
             confirmacion_embed = discord.Embed(
                 title="✅ Sugerencia Enviada",
-                description=f"Tu sugerencia **#{sugerencia_id}** ha sido publicada exitosamente en este canal.",
+                description=f"Tu sugerencia **#{sugerencia_id}** ha sido enviada al owner para revisión.",
                 color=0x00ff88
             )
             
@@ -242,7 +250,13 @@ def setup_commands(bot):
             
             confirmacion_embed.add_field(
                 name="🔄 Proceso de Revisión",
-                value="1. La comunidad votará con reacciones\n2. El staff revisará todas las sugerencias\n3. Recibirás actualizaciones sobre el estado\n4. Las mejores ideas pueden ser implementadas",
+                value="1. El owner <:1000182644:1396049313481625611> revisará tu sugerencia personalmente\n2. Recibirás una respuesta sobre el estado de tu sugerencia\n3. Las sugerencias aprobadas pueden ser implementadas\n4. Tu sugerencia queda guardada con ID único para seguimiento",
+                inline=False
+            )
+            
+            confirmacion_embed.add_field(
+                name="⏰ Tiempo de Respuesta",
+                value="El owner revisará tu sugerencia lo antes posible. Ten paciencia mientras evalúa tu propuesta.",
                 inline=False
             )
             
@@ -278,7 +292,7 @@ def setup_commands(bot):
             )
             error_embed.add_field(
                 name="💡 Sugerencia",
-                value="Si el problema persiste, contacta al staff usando `/reportes`",
+                value="Si el problema persiste, contacta al owner usando `/reportes`",
                 inline=False
             )
             
@@ -287,17 +301,16 @@ def setup_commands(bot):
             else:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
     
-    @bot.tree.command(name="stats_sugerencias", description="[STAFF] Ver estadísticas del sistema de sugerencias")
+    @bot.tree.command(name="stats_sugerencias", description="[OWNER] Ver estadísticas del sistema de sugerencias")
     async def stats_sugerencias_command(interaction: discord.Interaction):
-        """Comando para ver estadísticas de sugerencias (solo staff)"""
+        """Comando para ver estadísticas de sugerencias (solo owner)"""
         user_id = str(interaction.user.id)
         
-        # Verificar permisos de staff/admin
-        if not (interaction.user.guild_permissions.administrator or 
-                any(role.name.lower() in ['staff', 'admin', 'moderator'] for role in interaction.user.roles)):
+        # Verificar que solo el owner pueda usar este comando
+        if user_id != OWNER_ID:
             embed = discord.Embed(
                 title="❌ Acceso Denegado",
-                description="Este comando solo puede ser usado por el staff.",
+                description="Este comando solo puede ser usado por el owner del bot.",
                 color=0xff0000
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -309,7 +322,7 @@ def setup_commands(bot):
             
             stats_embed = discord.Embed(
                 title="📊 Estadísticas del Sistema de Sugerencias",
-                description="Resumen completo de la actividad de sugerencias",
+                description="Panel de control para el owner",
                 color=0x7289da
             )
             
@@ -349,23 +362,29 @@ def setup_commands(bot):
                 inline=True
             )
             
-            # Sugerencias recientes
-            sugerencias_recientes = sorted(sugerencias, key=lambda x: x.get('fecha', ''), reverse=True)[:3]
-            recientes_text = ""
-            for sug in sugerencias_recientes:
+            # Sugerencias pendientes (las más importantes para el owner)
+            sugerencias_pendientes = [sug for sug in sugerencias if sug.get('estado') == 'pendiente']
+            pendientes_text = ""
+            for sug in sugerencias_pendientes[-5:]:  # Últimas 5 pendientes
                 fecha = sug.get('fecha', '')[:10] if sug.get('fecha') else 'Sin fecha'
-                recientes_text += f"**#{sug.get('id', 'N/A')}** - {sug.get('titulo', 'Sin título')[:30]}...\n*{fecha} por {sug.get('username', 'Usuario desconocido')}*\n\n"
+                pendientes_text += f"**#{sug.get('id', 'N/A')}** - {sug.get('titulo', 'Sin título')[:30]}...\n*{fecha} por {sug.get('username', 'Usuario desconocido')}*\n\n"
             
-            if not recientes_text:
-                recientes_text = "No hay sugerencias recientes"
+            if not pendientes_text:
+                pendientes_text = "No hay sugerencias pendientes"
             
             stats_embed.add_field(
-                name="🕒 Sugerencias Recientes",
-                value=recientes_text,
+                name="⏳ Sugerencias Pendientes de Revisión",
+                value=pendientes_text,
                 inline=False
             )
             
-            stats_embed.set_footer(text="RbxServers • Panel de Staff")
+            stats_embed.add_field(
+                name="🛠️ Panel de Owner",
+                value="• Todas las nuevas sugerencias llegan a tu DM\n• Revisa cada sugerencia individualmente\n• Usa comandos específicos para aprobar/rechazar\n• Los usuarios reciben feedback automático",
+                inline=False
+            )
+            
+            stats_embed.set_footer(text="RbxServers • Panel de Owner")
             stats_embed.timestamp = datetime.now()
             
             await interaction.response.send_message(embed=stats_embed, ephemeral=True)
