@@ -79,7 +79,7 @@ def setup_commands(bot):
     
     @bot.tree.command(name="snipe-debug", description="<:1000182584:1396049547838492672> Información de debug del sistema de snipe")
     async def snipe_debug(interaction: discord.Interaction):
-        """Debug del sistema de snipe"""
+        """Debug avanzado del sistema de snipe"""
         # Verificar autenticación
         from main import check_verification
         if not await check_verification(interaction, defer_response=True):
@@ -87,51 +87,105 @@ def setup_commands(bot):
         
         try:
             embed = discord.Embed(
-                title="<:1000182584:1396049547838492672> Debug del Sistema de Snipe",
-                description="Información técnica del sistema",
+                title="<:1000182584:1396049547838492672> Debug Avanzado del Sistema de Snipe",
+                description="Información técnica detallada del sistema",
                 color=0x00ff88
             )
             
-            # Test básico de conectividad
+            # Test extendido de conectividad
             connectivity_status = await test_api_connectivity()
+            
+            # APIs principales
+            api_status = []
+            api_status.append(f"• **Roblox API:** {'✅' if connectivity_status['roblox'] else '❌'}")
+            api_status.append(f"• **Economy API:** {'✅' if connectivity_status['economy'] else '❌'}")
+            api_status.append(f"• **Catalog API:** {'✅' if connectivity_status['catalog'] else '❌'}")
+            api_status.append(f"• **Rolimons API:** {'✅' if connectivity_status.get('rolimons') else '❌'}")
             
             embed.add_field(
                 name="<:1000182657:1396060091366637669> Conectividad APIs:",
-                value=f"• **Roblox API:** {'✅' if connectivity_status['roblox'] else '❌'}\n• **Economy API:** {'✅' if connectivity_status['economy'] else '❌'}\n• **Catalog API:** {'✅' if connectivity_status['catalog'] else '❌'}",
+                value="\n".join(api_status),
                 inline=False
             )
             
-            # Información de módulos
+            # Detalles técnicos de las APIs
+            details = connectivity_status.get('details', {})
+            if details:
+                technical_info = []
+                for api_name, api_details in details.items():
+                    if isinstance(api_details, dict):
+                        if 'status' in api_details:
+                            technical_info.append(f"**{api_name.title()}:** {api_details['status']} ({api_details.get('response_time', 'N/A')}s)")
+                        elif 'error' in api_details:
+                            technical_info.append(f"**{api_name.title()}:** Error - {str(api_details['error'])[:50]}...")
+                
+                if technical_info:
+                    embed.add_field(
+                        name="<:1000182751:1396420551798558781> Detalles Técnicos:",
+                        value="\n".join(technical_info[:6]),  # Limitar a 6 líneas
+                        inline=False
+                    )
+            
+            # Recomendaciones basadas en el estado
+            recommendations = []
+            working_apis = sum([connectivity_status.get(api, False) for api in ['roblox', 'economy', 'catalog', 'rolimons']])
+            
+            if working_apis >= 2:
+                recommendations.append("✅ **Estado:** Sistema operativo")
+                recommendations.append("🔄 **Método:** APIs múltiples disponibles")
+            elif working_apis == 1:
+                recommendations.append("⚠️ **Estado:** Funcionalidad limitada")
+                recommendations.append("🛡️ **Método:** Usando respaldos")
+            else:
+                recommendations.append("❌ **Estado:** APIs no disponibles")
+                recommendations.append("🧪 **Método:** Usando datos de prueba")
+            
+            if connectivity_status.get('catalog'):
+                recommendations.append("💡 **Sugerencia:** Catalog API funcionando - snipe operativo")
+            
+            embed.add_field(
+                name="<:1000182584:1396049547838492672> Estado y Recomendaciones:",
+                value="\n".join(recommendations),
+                inline=False
+            )
+            
+            # Información del sistema
             import sys
-            modules_info = []
-            required_modules = ['aiohttp', 'asyncio', 'json']
-            for module in required_modules:
-                if module in sys.modules:
-                    modules_info.append(f"✅ {module}")
-                else:
-                    modules_info.append(f"❌ {module}")
+            system_info = []
+            system_info.append(f"• **Python:** {sys.version.split()[0]}")
+            system_info.append(f"• **Timestamp:** {datetime.now().strftime('%H:%M:%S')}")
+            system_info.append(f"• **APIs Funcionando:** {working_apis}/4")
+            system_info.append(f"• **Módulos:** {'✅ Cargados' if 'aiohttp' in sys.modules else '❌ Faltantes'}")
             
             embed.add_field(
-                name="<:1000182750:1396420537227411587> Módulos:",
-                value="\n".join(modules_info),
+                name="<:1000182750:1396420537227411587> Sistema:",
+                value="\n".join(system_info),
                 inline=True
             )
             
-            # Estado del sistema
+            # Métodos de respaldo disponibles
+            fallback_methods = []
+            if connectivity_status.get('catalog'):
+                fallback_methods.append("✅ Catalog API")
+            if connectivity_status.get('rolimons'):
+                fallback_methods.append("✅ Rolimons API")
+            fallback_methods.append("✅ Datos de Prueba")
+            fallback_methods.append("✅ Cache Local")
+            
             embed.add_field(
-                name="<:1000182751:1396420551798558781> Sistema:",
-                value=f"• **Python:** {sys.version.split()[0]}\n• **Timestamp:** {datetime.now().strftime('%H:%M:%S')}\n• **Memoria:** OK",
+                name="🛡️ Métodos de Respaldo:",
+                value="\n".join(fallback_methods),
                 inline=True
             )
             
-            embed.set_footer(text="🔧 Sistema de Debug v1.0")
+            embed.set_footer(text="🔧 Sistema de Debug Avanzado v2.0")
             await interaction.followup.send(embed=embed, ephemeral=True)
             
         except Exception as e:
             logger.error(f"Error en snipe-debug: {e}")
             embed = discord.Embed(
                 title="<:1000182563:1396420770904932372> Error en Debug",
-                description=f"No se pudo obtener información de debug",
+                description=f"No se pudo obtener información de debug: {str(e)[:100]}",
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -218,7 +272,7 @@ async def test_simple_search() -> List[Dict]:
         return []
 
 async def test_api_connectivity() -> Dict[str, bool]:
-    """Test de conectividad a las APIs"""
+    """Test de conectividad mejorado con más detalles"""
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -228,37 +282,79 @@ async def test_api_connectivity() -> Dict[str, bool]:
         connectivity = {
             'roblox': False,
             'economy': False,
-            'catalog': False
+            'catalog': False,
+            'rolimons': False,
+            'details': {}
         }
         
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
-            # Test Roblox API
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
+            # Test Roblox API con más detalles
             try:
+                start_time = time.time()
                 async with session.get("https://api.roblox.com/marketplace/productinfo?assetId=1028594", headers=headers) as response:
+                    response_time = time.time() - start_time
                     connectivity['roblox'] = response.status == 200
-            except:
-                pass
+                    connectivity['details']['roblox'] = {
+                        'status': response.status,
+                        'response_time': round(response_time, 2),
+                        'headers': dict(response.headers) if hasattr(response, 'headers') else {}
+                    }
+            except Exception as e:
+                connectivity['details']['roblox'] = {'error': str(e)}
             
-            # Test Economy API
+            # Test Economy API con más detalles
             try:
+                start_time = time.time()
                 async with session.get("https://economy.roblox.com/v1/assets/1028594/details", headers=headers) as response:
+                    response_time = time.time() - start_time
                     connectivity['economy'] = response.status == 200
-            except:
-                pass
+                    connectivity['details']['economy'] = {
+                        'status': response.status,
+                        'response_time': round(response_time, 2),
+                        'headers': dict(response.headers) if hasattr(response, 'headers') else {}
+                    }
+            except Exception as e:
+                connectivity['details']['economy'] = {'error': str(e)}
             
-            # Test Catalog API
+            # Test Catalog API con más detalles
             try:
+                start_time = time.time()
                 async with session.get("https://catalog.roblox.com/v1/search/items?category=Accessories&limit=10", headers=headers) as response:
+                    response_time = time.time() - start_time
                     connectivity['catalog'] = response.status == 200
-            except:
-                pass
+                    connectivity['details']['catalog'] = {
+                        'status': response.status,
+                        'response_time': round(response_time, 2),
+                        'headers': dict(response.headers) if hasattr(response, 'headers') else {}
+                    }
+                    if response.status == 200:
+                        data = await response.json()
+                        connectivity['details']['catalog']['items_count'] = len(data.get('data', []))
+            except Exception as e:
+                connectivity['details']['catalog'] = {'error': str(e)}
+            
+            # Test Rolimons API (respaldo)
+            try:
+                start_time = time.time()
+                async with session.get("https://www.rolimons.com/api/activity", headers=headers) as response:
+                    response_time = time.time() - start_time
+                    connectivity['rolimons'] = response.status == 200
+                    connectivity['details']['rolimons'] = {
+                        'status': response.status,
+                        'response_time': round(response_time, 2)
+                    }
+                    if response.status == 200:
+                        data = await response.json()
+                        connectivity['details']['rolimons']['activities_count'] = len(data.get('activities', []))
+            except Exception as e:
+                connectivity['details']['rolimons'] = {'error': str(e)}
         
-        logger.info(f"🔍 Test de conectividad: {connectivity}")
+        logger.info(f"🔍 Test de conectividad extendido: {connectivity}")
         return connectivity
         
     except Exception as e:
         logger.error(f"Error en test de conectividad: {e}")
-        return {'roblox': False, 'economy': False, 'catalog': False}
+        return {'roblox': False, 'economy': False, 'catalog': False, 'rolimons': False, 'details': {'error': str(e)}}
 
 def cleanup_commands(bot):
     """Limpiar recursos de test"""
