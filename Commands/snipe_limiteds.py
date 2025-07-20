@@ -213,6 +213,94 @@ def setup_commands(bot):
         except Exception as e:
             logger.error(f"Error en snipe-status: {e}")
     
+    @bot.tree.command(name="snipe-test", description="<:1000182751:1396420551798558781> Probar conectividad del sistema de snipe")
+    async def snipe_test(interaction: discord.Interaction):
+        """Probar si el sistema de snipe puede conectarse a la API"""
+        # Verificar autenticación
+        from main import check_verification
+        if not await check_verification(interaction, defer_response=True):
+            return
+        
+        try:
+            embed = discord.Embed(
+                title="<:1000182657:1396060091366637669> Probando Sistema...",
+                description="Verificando conectividad con la API de Roblox",
+                color=0xffaa00
+            )
+            message = await interaction.followup.send(embed=embed, ephemeral=True)
+            
+            # Probar conexión con múltiples endpoints
+            test_results = []
+            
+            import aiohttp
+            import time
+            
+            test_urls = [
+                ("API Principal", "https://catalog.roblox.com/v1/search/items?category=Accessories&limit=10"),
+                ("API Limiteds", "https://catalog.roblox.com/v1/search/items?category=All&limit=10&salesTypeFilter=1"),
+                ("API UGC", "https://catalog.roblox.com/v1/search/items?category=Accessories&limit=10&creatorType=User")
+            ]
+            
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept": "application/json"
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                for name, url in test_urls:
+                    try:
+                        start_time = time.time()
+                        async with session.get(url, headers=headers, timeout=10) as response:
+                            response_time = round((time.time() - start_time) * 1000)
+                            
+                            if response.status == 200:
+                                data = await response.json()
+                                items_count = len(data.get('data', []))
+                                test_results.append(f"<:verify:1396087763388072006> **{name}:** {response.status} - {items_count} items ({response_time}ms)")
+                            else:
+                                test_results.append(f"<:1000182563:1396420770904932372> **{name}:** Error {response.status} ({response_time}ms)")
+                    except Exception as e:
+                        test_results.append(f"<:1000182563:1396420770904932372> **{name}:** Error - {str(e)[:50]}")
+            
+            # Verificar estado del monitoreo
+            user_id = str(interaction.user.id)
+            monitor_status = "Activo" if user_id in snipe_alerts and snipe_alerts[user_id].get('active', False) else "Inactivo"
+            
+            embed = discord.Embed(
+                title="<:1000182584:1396049547838492672> Resultados de Prueba",
+                description="Estado del sistema de snipe",
+                color=0x00ff88
+            )
+            
+            embed.add_field(
+                name="<:1000182751:1396420551798558781> Conectividad API:",
+                value="\n".join(test_results),
+                inline=False
+            )
+            
+            embed.add_field(
+                name="<:1000182657:1396060091366637669> Monitor Personal:",
+                value=f"Estado: **{monitor_status}**\nÚltima verificación: {last_check_time.get('global', 'Nunca')}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="<:1000182584:1396049547838492672> Sistema General:",
+                value=f"Items en cache: {len(monitored_items)}\nUsuarios activos: {len([u for u in snipe_alerts.values() if u.get('active')])}",
+                inline=True
+            )
+            
+            await message.edit(embed=embed)
+            
+        except Exception as e:
+            logger.error(f"Error en snipe-test: {e}")
+            embed = discord.Embed(
+                title="<:1000182563:1396420770904932372> Error de Prueba",
+                description=f"Error durante la prueba: {str(e)[:100]}",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+    
     @bot.tree.command(name="snipe-stop", description="<:1000182563:1396420770904932372> Detener monitoreo de snipe")
     async def snipe_stop(interaction: discord.Interaction):
         """Detener el monitoreo de snipe para el usuario"""
@@ -306,12 +394,12 @@ async def search_catalog_now(item_type: str, max_price: int) -> List[Dict]:
     try:
         # URLs de la API de Roblox para diferentes tipos
         api_urls = {
-            "limited": "https://catalog.roblox.com/v1/search/items?category=Accessories&subcategory=All&limit=120&salesTypeFilter=1",  # Limited
-            "ugc": "https://catalog.roblox.com/v1/search/items?category=Accessories&subcategory=All&limit=120&creatorType=User",
-            "accessory": "https://catalog.roblox.com/v1/search/items?category=Accessories&limit=120",
-            "gear": "https://catalog.roblox.com/v1/search/items?category=Gear&limit=120",
-            "hat": "https://catalog.roblox.com/v1/search/items?category=Accessories&subcategory=Hats&limit=120",
-            "face": "https://catalog.roblox.com/v1/search/items?category=Accessories&subcategory=Faces&limit=120"
+            "limited": "https://catalog.roblox.com/v1/search/items?category=All&limit=120&salesTypeFilter=1",  # Limited items
+            "ugc": "https://catalog.roblox.com/v1/search/items?category=Accessories&limit=120&creatorType=User&salesTypeFilter=1",
+            "accessory": "https://catalog.roblox.com/v1/search/items?category=Accessories&limit=120&salesTypeFilter=1",
+            "gear": "https://catalog.roblox.com/v1/search/items?category=Gear&limit=120&salesTypeFilter=1",
+            "hat": "https://catalog.roblox.com/v1/search/items?category=Accessories&subcategory=Hats&limit=120&salesTypeFilter=1",
+            "face": "https://catalog.roblox.com/v1/search/items?category=Accessories&subcategory=Faces&limit=120&salesTypeFilter=1"
         }
         
         base_url = api_urls.get(item_type, api_urls["accessory"])
@@ -342,11 +430,16 @@ async def search_catalog_now(item_type: str, max_price: int) -> List[Dict]:
                         # Filtrar por disponibilidad y precio
                         price = item.get('price', 0)
                         is_for_sale = item.get('isForSale', False)
-                        remaining = item.get('unitsAvailableForConsumption', 0)
+                        remaining = item.get('unitsAvailableForConsumption')
+                        is_limited = item.get('isLimited', False)
+                        is_limited_unique = item.get('isLimitedUnique', False)
                         
-                        if (is_for_sale and 
-                            price <= max_price and 
-                            (remaining > 0 or remaining is None)):
+                        # Condiciones más amplias para detectar items
+                        price_ok = (price is not None and price <= max_price)
+                        available_ok = (is_for_sale and (remaining is None or remaining > 0))
+                        limited_ok = (is_limited or is_limited_unique or item_type == "limited")
+                        
+                        if price_ok and (available_ok or limited_ok):
                             
                             item_data = {
                                 'id': item.get('id'),
