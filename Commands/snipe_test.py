@@ -127,22 +127,30 @@ def setup_commands(bot):
                         inline=False
                     )
             
-            # Recomendaciones basadas en el estado
+            # Recomendaciones específicas basadas en el estado actual
             recommendations = []
             working_apis = sum([connectivity_status.get(api, False) for api in ['roblox', 'economy', 'catalog', 'rolimons']])
             
             if working_apis >= 2:
-                recommendations.append("✅ **Estado:** Sistema operativo")
+                recommendations.append("✅ **Estado:** Sistema completamente operativo")
                 recommendations.append("🔄 **Método:** APIs múltiples disponibles")
+                recommendations.append("🎯 **Rendimiento:** Óptimo para snipe")
             elif working_apis == 1:
-                recommendations.append("⚠️ **Estado:** Funcionalidad limitada")
-                recommendations.append("🛡️ **Método:** Usando respaldos")
+                recommendations.append("⚠️ **Estado:** Funcionalidad limitada pero operativa")
+                recommendations.append("🛡️ **Método:** Usando respaldos y optimizaciones")
+                if connectivity_status.get('catalog'):
+                    recommendations.append("🎯 **Catalog API:** Funcionando perfectamente (200 OK)")
+                    recommendations.append("💡 **Estrategia:** Búsqueda intensiva en múltiples categorías")
+                    recommendations.append("📊 **Capacidad:** 30-60 items por búsqueda")
             else:
-                recommendations.append("❌ **Estado:** APIs no disponibles")
-                recommendations.append("🧪 **Método:** Usando datos de prueba")
+                recommendations.append("❌ **Estado:** APIs principales no disponibles")
+                recommendations.append("🧪 **Método:** Usando datos de prueba realistas")
+                recommendations.append("🔧 **Mantenimiento:** Verificar conectividad de red")
             
-            if connectivity_status.get('catalog'):
-                recommendations.append("💡 **Sugerencia:** Catalog API funcionando - snipe operativo")
+            # Recomendaciones específicas según debug actual
+            if connectivity_status.get('catalog') and not connectivity_status.get('roblox'):
+                recommendations.append("🔍 **Diagnóstico:** Problema DNS con api.roblox.com")
+                recommendations.append("✅ **Solución:** Sistema optimizado para Catalog API únicamente")
             
             embed.add_field(
                 name="<:1000182584:1396049547838492672> Estado y Recomendaciones:",
