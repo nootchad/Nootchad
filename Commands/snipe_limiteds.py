@@ -347,77 +347,53 @@ def setup_commands(bot):
             logger.error(f"Error en snipe-stop: {e}")
 
 async def search_catalog_comprehensive(item_type: str, max_price: int) -> List[Dict]:
-    """Buscar en el catálogo de Roblox de forma comprehensiva"""
+    """Buscar en el catálogo de Roblox usando endpoints optimizados"""
     try:
         results = []
         
-        # APIs mejoradas que funcionan mejor
-        search_configs = []
-        
-        if item_type.lower() in ["limited", "all"]:
-            # Buscar limiteds con múltiples enfoques
-            search_configs.extend([
-                {
-                    "url": "https://catalog.roblox.com/v1/search/items",
-                    "params": {
-                        "category": "All",
-                        "limit": 120,
-                        "maxPrice": max_price if max_price > 0 else None,
-                        "salesTypeFilter": 1  # Limited items
-                    }
-                },
-                {
-                    "url": "https://catalog.roblox.com/v1/search/items",
-                    "params": {
-                        "category": "Accessories",
-                        "limit": 120,
-                        "maxPrice": max_price if max_price > 0 else None,
-                        "salesTypeFilter": 1
-                    }
-                }
-            ])
-        
-        if item_type.lower() in ["ugc", "all"]:
-            # Buscar UGC items
-            search_configs.extend([
-                {
-                    "url": "https://catalog.roblox.com/v1/search/items",
-                    "params": {
-                        "category": "Accessories",
-                        "limit": 120,
-                        "maxPrice": max_price if max_price > 0 else None,
-                        "creatorType": "User"
-                    }
-                }
-            ])
-        
-        if item_type.lower() in ["accessory", "all"]:
-            search_configs.extend([
-                {
-                    "url": "https://catalog.roblox.com/v1/search/items", 
-                    "params": {
-                        "category": "Accessories",
-                        "limit": 120,
-                        "maxPrice": max_price if max_price > 0 else None
-                    }
-                }
-            ])
-        
-        # Headers mejorados
+        # Headers optimizados para APIs de Roblox
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             "Accept": "application/json",
             "Accept-Language": "en-US,en;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1"
+            "Connection": "keep-alive"
         }
         
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
+            # Usar catálogo mejorado con búsqueda por categorías
+            search_configs = []
+            
+            if item_type.lower() in ["limited", "all"]:
+                search_configs.extend([
+                    {
+                        "url": "https://catalog.roblox.com/v1/search/items",
+                        "params": {
+                            "category": "Accessories",
+                            "limit": 120,
+                            "maxPrice": max_price if max_price > 0 else None,
+                            "salesTypeFilter": 1,  # Limited items
+                            "sortType": 4  # Precio (menor a mayor)
+                        }
+                    }
+                ])
+            
+            if item_type.lower() in ["ugc", "all"]:
+                search_configs.extend([
+                    {
+                        "url": "https://catalog.roblox.com/v1/search/items",
+                        "params": {
+                            "category": "Accessories", 
+                            "limit": 120,
+                            "maxPrice": max_price if max_price > 0 else None,
+                            "creatorType": "User",
+                            "sortType": 4
+                        }
+                    }
+                ])
+            
+            # Procesar búsquedas principales
             for config in search_configs:
                 try:
-                    # Construir URL con parámetros
                     params = {k: v for k, v in config["params"].items() if v is not None}
                     
                     async with session.get(config["url"], params=params, headers=headers) as response:
@@ -425,59 +401,215 @@ async def search_catalog_comprehensive(item_type: str, max_price: int) -> List[D
                             data = await response.json()
                             items = data.get('data', [])
                             
-                            for item in items:
-                                # Filtros más amplios
-                                price = item.get('price')
-                                if price is None:
+                            # Obtener detalles específicos para cada item encontrado
+                            for item in items[:30]:  # Limitar para evitar rate limits
+                                try:
+                                    asset_id = item.get('id')
+                                    if not asset_id:
+                                        continue
+                                    
+                                    # Obtener información detallada usando los nuevos endpoints
+                                    detailed_info = await get_enhanced_asset_info(session, asset_id, headers)
+                                    if detailed_info and detailed_info.get('price', 999999) <= max_price:
+                                        results.append(detailed_info)
+                                    
+                                    await asyncio.sleep(0.5)  # Rate limiting
+                                    
+                                except Exception as e:
+                                    logger.debug(f"Error obteniendo detalles del item {asset_id}: {e}")
                                     continue
-                                
-                                # Verificar precio
-                                if max_price > 0 and price > max_price:
-                                    continue
-                                
-                                # Datos más completos del item
-                                item_data = {
-                                    'id': item.get('id'),
-                                    'name': item.get('name', 'Item Desconocido'),
-                                    'price': price,
-                                    'remaining': item.get('unitsAvailableForConsumption'),
-                                    'creator': item.get('creatorName', 'Roblox'),
-                                    'creator_type': item.get('creatorType', 'Unknown'),
-                                    'item_type': item.get('itemType', 'Asset'),
-                                    'thumbnail': item.get('thumbnailUrl'),
-                                    'is_limited': item.get('isLimited', False),
-                                    'is_limited_unique': item.get('isLimitedUnique', False),
-                                    'is_for_sale': item.get('isForSale', True),
-                                    'found_at': datetime.now().isoformat(),
-                                    'search_type': item_type
-                                }
-                                
-                                # Evitar duplicados
-                                if not any(existing['id'] == item_data['id'] for existing in results):
-                                    results.append(item_data)
                         
+                        elif response.status == 429:
+                            logger.warning(f"Rate limit alcanzado, pausando...")
+                            await asyncio.sleep(5)
                         else:
                             logger.warning(f"API response {response.status} for {config['url']}")
                     
-                    # Pausa entre requests
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(2)  # Pausa entre configs
                     
                 except Exception as e:
-                    logger.error(f"Error en búsqueda específica: {e}")
+                    logger.error(f"Error en búsqueda: {e}")
                     continue
+            
+            # Buscar items específicos usando endpoints de detección
+            if len(results) < 10:
+                logger.info("🔍 Expandiendo búsqueda con endpoints especializados...")
+                additional_results = await search_with_marketplace_endpoints(session, headers, item_type, max_price)
+                results.extend(additional_results)
         
-        # Ordenar por precio (menor a mayor)
-        results.sort(key=lambda x: x.get('price', 0))
+        # Filtrar duplicados y ordenar
+        seen_ids = set()
+        unique_results = []
+        for item in results:
+            if item['id'] not in seen_ids:
+                seen_ids.add(item['id'])
+                unique_results.append(item)
         
-        logger.info(f"📊 Encontrados {len(results)} items de tipo {item_type} con precio ≤ {max_price}")
-        return results[:50]  # Limitar resultados
+        unique_results.sort(key=lambda x: x.get('price', 0))
+        
+        logger.info(f"📊 Encontrados {len(unique_results)} items únicos de tipo {item_type} con precio ≤ {max_price}")
+        return unique_results[:50]
         
     except Exception as e:
         logger.error(f"Error buscando en catálogo: {e}")
         return []
 
+async def get_enhanced_asset_info(session: aiohttp.ClientSession, asset_id: int, headers: dict) -> Optional[Dict]:
+    """Obtener información detallada de un asset usando múltiples endpoints"""
+    try:
+        asset_info = {}
+        
+        # 1. Información básica del asset
+        marketplace_url = f"https://api.roblox.com/marketplace/productinfo?assetId={asset_id}"
+        try:
+            async with session.get(marketplace_url, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    asset_info.update({
+                        'id': asset_id,
+                        'name': data.get('Name', 'Item Desconocido'),
+                        'price': data.get('PriceInRobux', 0),
+                        'creator': data.get('Creator', {}).get('Name', 'Roblox'),
+                        'is_limited': data.get('IsLimited', False),
+                        'is_limited_unique': data.get('IsLimitedUnique', False),
+                        'is_for_sale': data.get('IsForSale', False),
+                        'remaining': data.get('Remaining'),
+                        'asset_type': data.get('AssetTypeId')
+                    })
+        except Exception as e:
+            logger.debug(f"Error marketplace info {asset_id}: {e}")
+        
+        # 2. Detalles económicos del asset
+        economy_url = f"https://economy.roblox.com/v1/assets/{asset_id}/details"
+        try:
+            async with session.get(economy_url, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    asset_info.update({
+                        'rap': data.get('RecentAveragePrice', 0),
+                        'sales': data.get('Sales', 0),
+                        'original_price': data.get('OriginalPrice'),
+                        'price_robux': data.get('PriceInRobux', asset_info.get('price', 0))
+                    })
+                    
+                    # Actualizar precio si es más preciso
+                    if data.get('PriceInRobux') is not None:
+                        asset_info['price'] = data.get('PriceInRobux')
+        except Exception as e:
+            logger.debug(f"Error economy details {asset_id}: {e}")
+        
+        # 3. Información de revendedores (solo para limiteds)
+        if asset_info.get('is_limited') or asset_info.get('is_limited_unique'):
+            try:
+                resellers_url = f"https://economy.roblox.com/v1/assets/{asset_id}/resellers?limit=10"
+                async with session.get(resellers_url, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        resellers = data.get('data', [])
+                        if resellers:
+                            lowest_reseller = min(resellers, key=lambda x: x.get('price', 999999))
+                            asset_info.update({
+                                'lowest_reseller_price': lowest_reseller.get('price'),
+                                'resellers_count': len(resellers)
+                            })
+                            
+                            # Si hay revendedores más baratos, usar ese precio
+                            reseller_price = lowest_reseller.get('price', 999999)
+                            if reseller_price < asset_info.get('price', 999999):
+                                asset_info['price'] = reseller_price
+                                asset_info['price_source'] = 'reseller'
+            except Exception as e:
+                logger.debug(f"Error resellers info {asset_id}: {e}")
+        
+        # Agregar metadatos
+        asset_info.update({
+            'found_at': datetime.now().isoformat(),
+            'search_method': 'enhanced_endpoints'
+        })
+        
+        # Validar que tengamos información mínima
+        if asset_info.get('name') and asset_info.get('price') is not None:
+            return asset_info
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo info detallada del asset {asset_id}: {e}")
+        return None
+
+async def search_with_marketplace_endpoints(session: aiohttp.ClientSession, headers: dict, item_type: str, max_price: int) -> List[Dict]:
+    """Buscar usando endpoints especializados de marketplace"""
+    try:
+        results = []
+        
+        # Lista de asset IDs populares para escanear (puedes expandir esto)
+        scan_ranges = [
+            range(1000000000, 1000001000),  # UGCs nuevos
+            range(999990000, 1000000000),   # Range de UGCs
+            range(1, 100000),               # Limiteds clásicos
+        ]
+        
+        for asset_range in scan_ranges:
+            if len(results) >= 20:  # Limitar para evitar rate limits
+                break
+                
+            # Escanear sample de IDs
+            sample_ids = list(asset_range)[::100][:50]  # Tomar cada 100 IDs, máximo 50
+            
+            # Usar endpoint batch para múltiples assets
+            batch_url = "https://catalog.roblox.com/v1/catalog/items/details"
+            batch_data = {
+                "items": [{"itemType": "Asset", "id": asset_id} for asset_id in sample_ids]
+            }
+            
+            try:
+                async with session.post(batch_url, json=batch_data, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        items = data.get('data', [])
+                        
+                        for item in items:
+                            try:
+                                price = item.get('price', 0)
+                                if price <= max_price and item.get('isForSale', False):
+                                    
+                                    item_data = {
+                                        'id': item.get('id'),
+                                        'name': item.get('name', 'Item Desconocido'),
+                                        'price': price,
+                                        'creator': item.get('creatorName', 'Roblox'),
+                                        'is_limited': item.get('isLimited', False),
+                                        'is_limited_unique': item.get('isLimitedUnique', False),
+                                        'is_for_sale': item.get('isForSale', False),
+                                        'found_at': datetime.now().isoformat(),
+                                        'search_method': 'batch_scan'
+                                    }
+                                    
+                                    results.append(item_data)
+                                    
+                            except Exception as e:
+                                continue
+                    
+                    elif response.status == 429:
+                        logger.warning("Rate limit en batch scan, pausando...")
+                        await asyncio.sleep(10)
+                        break
+                        
+            except Exception as e:
+                logger.debug(f"Error en batch scan: {e}")
+                continue
+            
+            await asyncio.sleep(3)  # Pausa entre batches
+        
+        logger.info(f"🔍 Escaneado encontró {len(results)} items adicionales")
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error en marketplace scan: {e}")
+        return []
+
 async def get_item_info(item_id: str) -> Optional[Dict]:
-    """Obtener información de un item específico"""
+    """Obtener información de un item específico usando endpoints optimizados"""
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -485,24 +617,83 @@ async def get_item_info(item_id: str) -> Optional[Dict]:
         }
         
         async with aiohttp.ClientSession() as session:
-            # Probar múltiples endpoints
-            urls = [
-                f"https://catalog.roblox.com/v1/catalog/items/{item_id}/details",
-                f"https://economy.roblox.com/v2/assets/{item_id}/details"
+            # Usar el endpoint más confiable de marketplace
+            marketplace_url = f"https://api.roblox.com/marketplace/productinfo?assetId={item_id}"
+            
+            try:
+                async with session.get(marketplace_url, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        item_info = {
+                            'id': int(item_id),
+                            'name': data.get('Name', 'Item Desconocido'),
+                            'price': data.get('PriceInRobux', 0),
+                            'creator': data.get('Creator', {}).get('Name', 'Roblox'),
+                            'is_limited': data.get('IsLimited', False),
+                            'is_limited_unique': data.get('IsLimitedUnique', False),
+                            'is_for_sale': data.get('IsForSale', False),
+                            'remaining': data.get('Remaining'),
+                            'asset_type': data.get('AssetTypeId')
+                        }
+                        
+                        # Obtener información económica adicional
+                        try:
+                            economy_url = f"https://economy.roblox.com/v1/assets/{item_id}/details"
+                            async with session.get(economy_url, headers=headers) as econ_response:
+                                if econ_response.status == 200:
+                                    econ_data = await econ_response.json()
+                                    item_info.update({
+                                        'rap': econ_data.get('RecentAveragePrice', 0),
+                                        'sales': econ_data.get('Sales', 0),
+                                        'original_price': econ_data.get('OriginalPrice')
+                                    })
+                                    
+                                    # Actualizar precio si es más preciso
+                                    if econ_data.get('PriceInRobux') is not None:
+                                        item_info['price'] = econ_data.get('PriceInRobux')
+                        except:
+                            pass
+                        
+                        # Para limiteds, verificar revendedores
+                        if item_info.get('is_limited') or item_info.get('is_limited_unique'):
+                            try:
+                                resellers_url = f"https://economy.roblox.com/v1/assets/{item_id}/resellers?limit=1"
+                                async with session.get(resellers_url, headers=headers) as resell_response:
+                                    if resell_response.status == 200:
+                                        resell_data = await resell_response.json()
+                                        resellers = resell_data.get('data', [])
+                                        if resellers:
+                                            lowest_price = resellers[0].get('price', item_info['price'])
+                                            if lowest_price < item_info['price']:
+                                                item_info['price'] = lowest_price
+                                                item_info['price_source'] = 'reseller'
+                            except:
+                                pass
+                        
+                        return item_info
+                        
+            except Exception as e:
+                logger.debug(f"Error marketplace endpoint: {e}")
+            
+            # Fallback a endpoints alternativos
+            fallback_urls = [
+                f"https://economy.roblox.com/v1/assets/{item_id}/details",
+                f"https://catalog.roblox.com/v1/catalog/items/{item_id}/details"
             ]
             
-            for url in urls:
+            for url in fallback_urls:
                 try:
                     async with session.get(url, headers=headers) as response:
                         if response.status == 200:
                             data = await response.json()
                             return {
-                                'id': item_id,
-                                'name': data.get('name', 'Item Desconocido'),
-                                'price': data.get('price', 0),
-                                'creator': data.get('creatorName', 'Roblox'),
-                                'is_limited': data.get('isLimited', False),
-                                'is_for_sale': data.get('isForSale', False)
+                                'id': int(item_id),
+                                'name': data.get('name', data.get('Name', 'Item Desconocido')),
+                                'price': data.get('price', data.get('PriceInRobux', 0)),
+                                'creator': data.get('creatorName', data.get('Creator', {}).get('Name', 'Roblox')),
+                                'is_limited': data.get('isLimited', data.get('IsLimited', False)),
+                                'is_for_sale': data.get('isForSale', data.get('IsForSale', False))
                             }
                 except:
                     continue
