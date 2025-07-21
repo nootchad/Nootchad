@@ -3724,7 +3724,6 @@ async def on_ready():
     # Log adicional para debug si no se cargan datos
     if total_links == 0 and total_users == 0:
         logger.warning("⚠️ No se cargaron datos de servidores. Verificando archivo users_servers.json...")
-        from pathlib import Path
         if Path(scraper.users_servers_file).exists():
             logger.info(f"✅ Archivo {scraper.users_servers_file} existe")
             try:
@@ -3864,47 +3863,6 @@ async def on_ready():
 
     # Load dynamic commands from Commands folder
     await load_commands_from_folder(bot)
-
-    # Revisar usuarios verificados sin rol en servidores configurados
-    try:
-        from Commands.discord_verify import check_existing_verified_users, load_verify_config
-        
-        # Cargar configuraciones de verificación
-        import json
-        from pathlib import Path
-        
-        config_file = Path("discord_verify_config.json")
-        if config_file.exists():
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config_data = json.load(f)
-                
-            guilds_config = config_data.get('guilds', {})
-            total_roles_assigned = 0
-            
-            for guild_id, guild_config in guilds_config.items():
-                if guild_config.get('active', False):
-                    try:
-                        role_id = guild_config['role_id']
-                        guild_name = guild_config.get('guild_name', 'Servidor desconocido')
-                        
-                        logger.info(f"🔍 Revisando usuarios verificados sin rol en {guild_name}...")
-                        roles_assigned = await check_existing_verified_users(bot, guild_id, role_id)
-                        total_roles_assigned += roles_assigned
-                        
-                        if roles_assigned > 0:
-                            logger.info(f"✅ {roles_assigned} roles asignados automáticamente en {guild_name}")
-                        
-                    except Exception as guild_error:
-                        logger.warning(f"⚠️ Error revisando servidor {guild_id}: {guild_error}")
-                        continue
-            
-            if total_roles_assigned > 0:
-                logger.info(f"🎉 STARTUP: {total_roles_assigned} roles de verificado asignados automáticamente en total")
-            else:
-                logger.info("✅ STARTUP: Todos los usuarios verificados ya tienen sus roles asignados")
-                
-    except Exception as e:
-        logger.warning(f"⚠️ Error en revisión automática de usuarios verificados: {e}")
 
     # Inicializar servidor de callback de música
     try:

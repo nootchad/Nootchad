@@ -62,27 +62,13 @@
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=52327861749399401834677443438873",
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=41087944765785431068924310242081",
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=77532822842315836258679842685036"
-    ],
-    "1053394889112559636": [
-      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=50211548839066724572609089373866",
-      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=26195390559391190450427210820887",
-      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=85249195808552348025227659949467",
-      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=99542765555885266083057617893481",
-      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=91579921157423909853283250976375"
-    ],
-    "1396660898176696331": [
-      "https://www.roblox.com/games/301549746?privateServerLinkCode=bH0OAqSDYUjbSwJSBuSRFHiqnisYbNoY",
-      "https://www.roblox.com/games/301549746?privateServerLinkCode=52110875498195574403263705365003",
-      "https://www.roblox.com/games/301549746?privateServerLinkCode=19932651106360925147510859130186",
-      "https://www.roblox.com/games/301549746?privateServerLinkCode=96619219101045458644130304825425",
-      "https://www.roblox.com/games/301549746?privateServerLinkCode=60627955543511351496812493845997"
     ]
   },
   "metadata": {
     "created_at": "2025-01-12T00:00:00",
-    "last_updated": "2025-07-21T01:34:56.781413",
-    "total_users": 11,
-    "total_servers": 55,
+    "last_updated": "2025-07-20T22:13:49.677894",
+    "total_users": 9,
+    "total_servers": 45,
     "description": "Estructura simplificada: user_id -> array de hasta 5 servidores"
   }
 }
