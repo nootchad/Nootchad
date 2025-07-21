@@ -115,7 +115,7 @@ def setup_commands(bot):
                     )
                     embed.add_field(
                         name="🔄 **Funcionamiento:**",
-                        value="• Los usuarios verificados recibirán el rol automáticamente\n• El comando `/verify` asignará roles en este servidor\n• Solo funciona para usuarios ya verificados con el bot\n• Se enviará confirmación en el canal configurado",
+                        value="• Los usuarios verificados recibirán el rol automáticamente\n• El comando `/verify_role` asignará roles en este servidor\n• Solo funciona para usuarios ya verificados con el bot\n• Se enviará confirmación en el canal configurado",
                         inline=False
                     )
                     embed.add_field(
@@ -137,7 +137,7 @@ def setup_commands(bot):
                 
                 embed.add_field(
                     name="🎯 **Comando de Usuario:**",
-                    value="`/verify` - Los usuarios pueden usar este comando para obtener su rol de verificado",
+                    value="`/verify_role` - Los usuarios pueden usar este comando para obtener su rol de verificado",
                     inline=False
                 )
                 
@@ -170,7 +170,7 @@ def setup_commands(bot):
                             )
                             update_embed.add_field(
                                 name="🔄 **Funcionamiento:**",
-                                value="• Los usuarios verificados reciben el rol automáticamente\n• El comando `/verify` asigna roles en este servidor\n• Se envía confirmación en el canal configurado",
+                                value="• Los usuarios verificados reciben el rol automáticamente\n• El comando `/verify_role` asigna roles en este servidor\n• Se envía confirmación en el canal configurado",
                                 inline=False
                             )
                             update_embed.set_footer(text=f"Configurado por {interaction.user.name}")
@@ -198,7 +198,7 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @bot.tree.command(name="verify", description="Obtener rol de verificado si ya estás verificado con el bot")
+    @bot.tree.command(name="verify_role", description="Obtener rol de verificado si ya estás verificado con el bot")
     async def verify_role_command(interaction: discord.Interaction):
         """Comando para que usuarios verificados obtengan su rol de Discord"""
         try:
@@ -268,7 +268,7 @@ def setup_commands(bot):
                 
                 embed.add_field(
                     name="🎯 **Después de Verificarte:**",
-                    value="Regresa aquí y usa `/verify` nuevamente para obtener tu rol de Discord.",
+                    value="Regresa aquí y usa `/verify_role` nuevamente para obtener tu rol de Discord.",
                     inline=False
                 )
                 
