@@ -3214,6 +3214,8 @@ class VIPServerScraper:
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
+intents.members = True  # Necesario para ver todos los miembros del servidor
+intents.presences = False  # No necesario para roles, lo dejamos deshabilitado
 bot = commands.Bot(command_prefix='/', intents=intents, case_insensitive=True)
 
 # Global instances
