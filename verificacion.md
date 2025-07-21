@@ -33,4 +33,4 @@ Al verificarte podrás:
 
 ---
 
-*¿Problemas? Crea un ticket en <#soporte>*
+*¿Problemas? Puedes enviarle un mensaje al owner (.pesopluma) o hacer ping al rol de admin.
