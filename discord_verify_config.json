@@ -1,0 +1,27 @@
+{
+  "guilds": {
+    "1036018096420433920": {
+      "guild_id": "1036018096420433920",
+      "guild_name": "RbxServers",
+      "channel_id": "1036018096860827651",
+      "channel_name": "bot",
+      "role_id": "1270501169050943562",
+      "role_name": "Verified",
+      "active": true,
+      "setup_by": {
+        "user_id": "916070251895091241",
+        "username": ".pesopluma",
+        "setup_at": "2025-07-21T15:38:35.400513"
+      },
+      "statistics": {
+        "roles_assigned": 0,
+        "last_assignment": null
+      }
+    }
+  },
+  "metadata": {
+    "total_guilds": 1,
+    "last_updated": "2025-07-21T15:38:35.400588",
+    "active_guilds": 1
+  }
+}
