@@ -1,0 +1,18 @@
+{
+  "guilds": {
+    "1393431866903760937": {
+      "guild_name": "RbxServersBot",
+      "role_id": 1396876721579626506,
+      "role_name": "Verificado \u2705",
+      "active": true,
+      "configured_by": "916070251895091241",
+      "configured_at": "2025-07-21T23:19:50.996389",
+      "updated_at": "2025-07-21T23:19:50.996396"
+    }
+  },
+  "metadata": {
+    "total_guilds": 1,
+    "active_guilds": 1,
+    "last_updated": "2025-07-21T23:19:50.996402"
+  }
+}
