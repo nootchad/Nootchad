@@ -212,6 +212,13 @@ def setup_commands(bot):
             
             await interaction.response.defer(ephemeral=True)
             
+            # Debug adicional
+            logger.info(f"🔍 DEBUG: Verificando configuración para servidor {guild_id}")
+            logger.info(f"🔍 DEBUG: Usuario verificado: {roblox_verification.is_user_verified(user_id)}")
+            if roblox_verification.is_user_verified(user_id):
+                user_data = roblox_verification.verified_users.get(user_id, {})
+                logger.info(f"🔍 DEBUG: Datos del usuario: {user_data.get('roblox_username', 'N/A')}")
+            
             # Verificar que el sistema esté configurado para este servidor
             config = load_verify_config(guild_id)
             if not config:

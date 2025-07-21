@@ -3724,6 +3724,7 @@ async def on_ready():
     # Log adicional para debug si no se cargan datos
     if total_links == 0 and total_users == 0:
         logger.warning("⚠️ No se cargaron datos de servidores. Verificando archivo users_servers.json...")
+        from pathlib import Path
         if Path(scraper.users_servers_file).exists():
             logger.info(f"✅ Archivo {scraper.users_servers_file} existe")
             try:
