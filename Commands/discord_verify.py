@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands
 import logging
 import json
+import asyncio
 from datetime import datetime
 from pathlib import Path
 
@@ -143,6 +144,41 @@ def setup_commands(bot):
                 embed.set_footer(text=f"Configurado por {interaction.user.name}")
                 
                 await interaction.followup.send(embed=embed, ephemeral=True)
+                
+                # Revisar usuarios ya verificados sin rol si el sistema está activo
+                if activar:
+                    try:
+                        logger.info(f"🔄 Revisando usuarios ya verificados sin rol en {interaction.guild.name}...")
+                        roles_assigned = await check_existing_verified_users(bot, guild_id, rol_verificado.id)
+                        
+                        if roles_assigned > 0:
+                            # Enviar actualización con estadísticas
+                            update_embed = discord.Embed(
+                                title="<:verify:1396087763388072006> Sistema Configurado + Roles Asignados",
+                                description=f"Sistema configurado exitosamente y **{roles_assigned} usuarios ya verificados** recibieron automáticamente el rol.",
+                                color=0x00ff88
+                            )
+                            update_embed.add_field(
+                                name="⚙️ **Configuración:**",
+                                value=f"• **Servidor:** {interaction.guild.name}\n• **Canal:** {canal.mention}\n• **Rol:** {rol_verificado.mention}\n• **Estado:** <:verify:1396087763388072006> Activo",
+                                inline=False
+                            )
+                            update_embed.add_field(
+                                name="✅ **Asignación Automática:**",
+                                value=f"• **Roles asignados:** {roles_assigned}\n• **Usuarios revisados:** Todos los verificados\n• **Método:** Automático al configurar",
+                                inline=False
+                            )
+                            update_embed.add_field(
+                                name="🔄 **Funcionamiento:**",
+                                value="• Los usuarios verificados reciben el rol automáticamente\n• El comando `/verify` asigna roles en este servidor\n• Se envía confirmación en el canal configurado",
+                                inline=False
+                            )
+                            update_embed.set_footer(text=f"Configurado por {interaction.user.name}")
+                            
+                            await interaction.edit_original_response(embed=update_embed)
+                            
+                    except Exception as check_error:
+                        logger.warning(f"⚠️ Error revisando usuarios existentes: {check_error}")
                 
                 logger.info(f"Owner {interaction.user.name} configuró verificación con roles para servidor {interaction.guild.name} (ID: {guild_id})")
             else:
@@ -448,6 +484,63 @@ def update_verify_stats(guild_id: str, user_id: str, roblox_username: str):
         
     except Exception as e:
         logger.error(f"Error actualizando estadísticas: {e}")
+
+async def check_existing_verified_users(bot, guild_id: str, role_id: str):
+    """Revisar usuarios ya verificados sin rol y asignárselo automáticamente"""
+    try:
+        from main import roblox_verification
+        
+        guild = bot.get_guild(int(guild_id))
+        if not guild:
+            logger.warning(f"⚠️ No se pudo encontrar el servidor {guild_id}")
+            return 0
+        
+        role = guild.get_role(int(role_id))
+        if not role:
+            logger.warning(f"⚠️ No se pudo encontrar el rol {role_id} en servidor {guild.name}")
+            return 0
+        
+        logger.info(f"🔍 Revisando usuarios verificados sin rol en servidor {guild.name}...")
+        
+        roles_assigned = 0
+        checked_users = 0
+        
+        # Revisar todos los usuarios verificados
+        for discord_id, user_data in roblox_verification.verified_users.items():
+            try:
+                checked_users += 1
+                member = guild.get_member(int(discord_id))
+                
+                if member and role not in member.roles:
+                    try:
+                        await member.add_roles(role, reason="Rol de verificado asignado automáticamente al configurar sistema")
+                        
+                        roblox_username = user_data.get('roblox_username', 'Usuario desconocido')
+                        logger.info(f"✅ Rol asignado automáticamente a {member.name} (Roblox: {roblox_username})")
+                        
+                        # Actualizar estadísticas
+                        update_verify_stats(guild_id, discord_id, roblox_username)
+                        roles_assigned += 1
+                        
+                        # Pausa pequeña para evitar rate limits
+                        await asyncio.sleep(0.5)
+                        
+                    except Exception as role_error:
+                        logger.warning(f"⚠️ No se pudo asignar rol a {member.name}: {role_error}")
+                        
+                elif member and role in member.roles:
+                    logger.debug(f"✅ {member.name} ya tiene el rol de verificado")
+                    
+            except Exception as e:
+                logger.debug(f"⚠️ Error revisando usuario {discord_id}: {e}")
+                continue
+        
+        logger.info(f"📊 Revisión completada en {guild.name}: {roles_assigned} roles asignados de {checked_users} usuarios verificados revisados")
+        return roles_assigned
+        
+    except Exception as e:
+        logger.error(f"❌ Error revisando usuarios verificados existentes: {e}")
+        return 0
 
 def cleanup_commands(bot):
     """Función de limpieza opcional"""
