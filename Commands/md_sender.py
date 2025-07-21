@@ -58,6 +58,12 @@ class MDSelectView(discord.ui.View):
                 description="Enviar contenido del archivo importante.md",
                 value="importante.md",
                 emoji="⚠️"
+            ),
+            discord.SelectOption(
+                label="Verificación",
+                description="Enviar contenido del archivo verificacion.md",
+                value="verificacion.md",
+                emoji="<:verify:1396087763388072006>"
             )
         ]
     )
@@ -219,7 +225,7 @@ def setup_commands(bot):
 
             instruction_embed.add_field(
                 name="📋 Archivos Disponibles:",
-                value="• **Reglas** - Reglas del servidor\n• **Reportar** - Guía de reportes\n• **Artículos** - Artículos informativos\n• **Sugerencias** - Información de sugerencias\n• **Anuncios** - Anuncios del bot\n• **Importante** - Información importante",
+                value="• **Reglas** - Reglas del servidor\n• **Reportar** - Guía de reportes\n• **Artículos** - Artículos informativos\n• **Sugerencias** - Información de sugerencias\n• **Anuncios** - Anuncios del bot\n• **Importante** - Información importante\n• **Verificación** - Guía de verificación",
                 inline=False
             )
 
