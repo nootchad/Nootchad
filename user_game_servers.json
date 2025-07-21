@@ -62,13 +62,34 @@
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=52327861749399401834677443438873",
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=41087944765785431068924310242081",
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=77532822842315836258679842685036"
+    ],
+    "859456753577623554": [
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=01442048930491677670033855024364",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=83486378704173904241630959188664",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60168210964680268564241770694411",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=16070690040031251781841516264391",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=20953890836190509676425804700713"
+    ],
+    "1374194847786729472": [
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=77954166957713148158637637028549",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=61420970092450839269421458850840",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=02265931302235628125474976498813",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=52600115640443241071155457631676",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=09312531055410792527684107922769"
+    ],
+    "1083348361899413575": [
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=77954166957713148158637637028549",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=61420970092450839269421458850840",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=02265931302235628125474976498813",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=52600115640443241071155457631676",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=09312531055410792527684107922769"
     ]
   },
   "metadata": {
     "created_at": "2025-01-12T00:00:00",
-    "last_updated": "2025-07-20T22:13:49.677894",
-    "total_users": 9,
-    "total_servers": 45,
+    "last_updated": "2025-07-21T22:26:50.999668",
+    "total_users": 12,
+    "total_servers": 60,
     "description": "Estructura simplificada: user_id -> array de hasta 5 servidores"
   }
 }
