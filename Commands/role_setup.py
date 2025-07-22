@@ -27,6 +27,10 @@ def setup_commands(bot):
     if verification_monitor_task is None:
         verification_monitor_task = bot.loop.create_task(monitor_verification_changes(bot))
         logger.info("✅ Sistema de monitoreo de verificaciones iniciado")
+        
+        # Ejecutar verificación inicial de usuarios ya verificados
+        bot.loop.create_task(initial_role_assignment_check(bot))
+        logger.info("🔄 Iniciando verificación inicial de roles para usuarios verificados...")
 
     @bot.tree.command(name="setuprole", description="[OWNER] Configurar rol automático para usuarios verificados en este servidor")
     async def setuprole_command(
@@ -918,6 +922,102 @@ async def process_user_verification_in_all_guilds(bot: commands.Bot, discord_id:
             
     except Exception as e:
         logger.error(f"Error procesando verificación de usuario {discord_id}: {e}")
+
+async def initial_role_assignment_check(bot: commands.Bot):
+    """Verificar al inicio del bot si hay usuarios verificados sin el rol configurado"""
+    try:
+        # Esperar un poco para que el bot termine de inicializar
+        await asyncio.sleep(10)
+        
+        logger.info("🔍 Iniciando verificación inicial de roles para usuarios verificados...")
+        
+        # Obtener todas las configuraciones activas
+        all_configs = get_all_role_configs()
+        active_configs = {k: v for k, v in all_configs.items() if v.get('active', False)}
+        
+        if not active_configs:
+            logger.info("⚠️ No hay configuraciones de roles activas, saltando verificación inicial")
+            return
+        
+        total_users_checked = 0
+        total_roles_assigned = 0
+        
+        # Procesar cada servidor configurado
+        for guild_id, config in active_configs.items():
+            try:
+                guild = bot.get_guild(int(guild_id))
+                if not guild:
+                    logger.warning(f"⚠️ Servidor {guild_id} no encontrado")
+                    continue
+                
+                role_id = config.get('role_id')
+                role = guild.get_role(role_id)
+                if not role:
+                    logger.warning(f"⚠️ Rol {role_id} no encontrado en servidor {guild.name}")
+                    continue
+                
+                logger.info(f"🔍 Verificando servidor: {guild.name} (ID: {guild_id})")
+                
+                # Importar sistema de verificación
+                from main import roblox_verification
+                
+                verified_users_in_server = 0
+                roles_assigned_in_server = 0
+                
+                # Revisar cada usuario verificado
+                for discord_id, user_data in roblox_verification.verified_users.items():
+                    try:
+                        member = guild.get_member(int(discord_id))
+                        if not member:
+                            continue  # Usuario no está en este servidor
+                        
+                        verified_users_in_server += 1
+                        total_users_checked += 1
+                        
+                        # Verificar si ya tiene el rol
+                        if role in member.roles:
+                            logger.debug(f"✅ Usuario {member.name} ya tiene el rol en {guild.name}")
+                            continue
+                        
+                        # Asignar el rol
+                        try:
+                            await member.add_roles(role, reason="Asignación automática al inicio del bot - usuario ya verificado")
+                            roles_assigned_in_server += 1
+                            total_roles_assigned += 1
+                            
+                            roblox_username = user_data.get('roblox_username', 'Unknown')
+                            logger.info(f"✅ Rol asignado automáticamente a {member.name} ({roblox_username}) en {guild.name}")
+                            
+                            # Pequeña pausa para evitar rate limits
+                            await asyncio.sleep(0.5)
+                            
+                        except discord.Forbidden:
+                            logger.warning(f"❌ Sin permisos para asignar rol a {member.name} en {guild.name}")
+                        except discord.HTTPException as e:
+                            logger.error(f"❌ Error HTTP asignando rol a {member.name} en {guild.name}: {e}")
+                        except Exception as e:
+                            logger.error(f"❌ Error asignando rol a {member.name} en {guild.name}: {e}")
+                    
+                    except Exception as e:
+                        logger.error(f"❌ Error procesando usuario {discord_id}: {e}")
+                        continue
+                
+                if verified_users_in_server > 0:
+                    logger.info(f"📊 Servidor {guild.name}: {roles_assigned_in_server}/{verified_users_in_server} usuarios recibieron el rol")
+                else:
+                    logger.info(f"📊 Servidor {guild.name}: No hay usuarios verificados en este servidor")
+                
+            except Exception as e:
+                logger.error(f"❌ Error procesando servidor {guild_id}: {e}")
+                continue
+        
+        if total_users_checked > 0:
+            logger.info(f"✅ Verificación inicial completada: {total_roles_assigned}/{total_users_checked} roles asignados")
+        else:
+            logger.info("📊 Verificación inicial completada: No hay usuarios verificados en servidores configurados")
+            
+    except Exception as e:
+        logger.error(f"❌ Error crítico en verificación inicial: {e}")
 
 def cleanup_commands(bot):
     """Función de limpieza - detiene el monitoreo"""
