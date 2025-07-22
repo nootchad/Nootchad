@@ -432,6 +432,52 @@ def setup_commands(bot):
             except:
                 await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    @bot.tree.command(name="testrole", description="[OWNER] Probar asignación automática de roles para un usuario")
+    async def testrole_command(interaction: discord.Interaction, usuario: discord.Member):
+        """Probar asignación de rol automático"""
+        try:
+            user_id = str(interaction.user.id)
+
+            # Verificar que es owner
+            from main import is_owner_or_delegated
+            if not is_owner_or_delegated(user_id):
+                embed = discord.Embed(
+                    title="<:1000182563:1396420770904932372> Acceso Denegado",
+                    description="Solo el <:1000182644:1396049313481625611> **owner** puede usar este comando.",
+                    color=0xff0000
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            await interaction.response.defer()
+
+            # Probar asignación automática
+            success = await auto_assign_verification_role(str(usuario.id), interaction.guild, bot)
+
+            if success:
+                embed = discord.Embed(
+                    title="<:verify:1396087763388072006> Test Exitoso",
+                    description=f"Rol asignado exitosamente a {usuario.mention}",
+                    color=0x00aa55
+                )
+            else:
+                embed = discord.Embed(
+                    title="<:1000182563:1396420770904932372> Test Fallido",
+                    description=f"No se pudo asignar rol a {usuario.mention}. Verifica la configuración.",
+                    color=0xff0000
+                )
+
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+        except Exception as e:
+            logger.error(f"Error en comando testrole: {e}")
+            embed = discord.Embed(
+                title="<:1000182563:1396420770904932372> Error",
+                description="Ocurrió un error al probar la asignación.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
     logger.info("✅ Comandos de configuración de roles cargados exitosamente")
     return True
 
@@ -607,3 +653,53 @@ def get_all_role_configs() -> Dict:
 def cleanup_commands(bot):
     """Función de limpieza opcional"""
     pass
+
+# Utility function to automatically assign roles upon verification
+async def auto_assign_verification_role(discord_id: str, guild: discord.Guild, bot: commands.Bot) -> bool:
+    """Automatically assigns the configured role to a verified user."""
+    try:
+        # Get the role configuration for the guild
+        role_config = get_role_config(str(guild.id))
+
+        if not role_config or not role_config.get('active', False):
+            logger.info(f"No active role configuration found for guild {guild.id}")
+            return False
+
+        role_id = role_config.get('role_id')
+        role = guild.get_role(role_id)
+
+        if not role:
+            logger.error(f"Configured role (ID: {role_id}) not found in guild {guild.id}")
+            return False
+
+        # Get the member object
+        member = guild.get_member(int(discord_id))
+        if not member:
+            logger.warning(f"Member with Discord ID {discord_id} not found in guild {guild.id}")
+            return False
+
+        # Check if the member already has the role
+        if role in member.roles:
+            logger.info(f"Member {member.name} already has role {role.name} in guild {guild.id}")
+            return True
+
+        # Assign the role
+        await member.add_roles(role, reason="Automatic role assignment upon verification")
+        logger.info(f"Successfully assigned role {role.name} to {member.name} in guild {guild.id}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error assigning role to user {discord_id} in guild {guild.id}: {e}")
+        return False
+
+# Listen for verification events and trigger role assignment (assuming this is triggered from main.py)
+async def on_user_verified(bot: commands.Bot, discord_id: str, guild_id: str):
+    """This function is called when a user is verified."""
+    guild = bot.get_guild(int(guild_id))
+    if not guild:
+        logger.warning(f"Guild with ID {guild_id} not found.")
+        return
+
+    await auto_assign_verification_role(discord_id, guild, bot)
+
+# That function (on_user_verified) should be called from main.py
