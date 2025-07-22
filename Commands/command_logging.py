@@ -443,7 +443,7 @@ def setup_commands(bot):
                         params_text += f"• **{option['name']}:** `{str(option['value'])[:50]}{'...' if len(str(option['value'])) > 50 else ''}`\n"
                     
                     embed.add_field(
-                        name="⚙️ Parámetros:",
+                        name=":settings: Parámetros:",
                         value=params_text,
                         inline=False
                     )
