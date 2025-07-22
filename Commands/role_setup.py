@@ -10,11 +10,23 @@ import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
+import time
+import os
 
 logger = logging.getLogger(__name__)
 
+# Variables globales para el sistema de monitoreo
+verification_monitor_task = None
+last_verification_check = None
+
 def setup_commands(bot):
     """Función requerida para configurar comandos de roles automáticos"""
+    global verification_monitor_task
+    
+    # Iniciar el sistema de monitoreo automático
+    if verification_monitor_task is None:
+        verification_monitor_task = bot.loop.create_task(monitor_verification_changes(bot))
+        logger.info("✅ Sistema de monitoreo de verificaciones iniciado")
 
     @bot.tree.command(name="setuprole", description="[OWNER] Configurar rol automático para usuarios verificados en este servidor")
     async def setuprole_command(
@@ -478,6 +490,87 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
+    @bot.tree.command(name="monitorstatus", description="[OWNER] Ver estado del sistema de monitoreo automático de roles")
+    async def monitorstatus_command(interaction: discord.Interaction):
+        """Ver estado del monitoreo automático"""
+        try:
+            user_id = str(interaction.user.id)
+
+            # Verificar que es owner
+            from main import is_owner_or_delegated
+            if not is_owner_or_delegated(user_id):
+                embed = discord.Embed(
+                    title="<:1000182563:1396420770904932372> Acceso Denegado",
+                    description="Solo el <:1000182644:1396049313481625611> **owner** puede usar este comando.",
+                    color=0xff0000
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            global verification_monitor_task, last_verification_check
+
+            # Estado del monitoreo
+            is_running = verification_monitor_task is not None and not verification_monitor_task.done()
+            status_emoji = "<:verify:1396087763388072006>" if is_running else "<:1000182563:1396420770904932372>"
+            status_text = "Activo" if is_running else "Inactivo"
+
+            # Obtener configuraciones activas
+            all_configs = get_all_role_configs()
+            active_configs = {k: v for k, v in all_configs.items() if v.get('active', False)}
+
+            embed = discord.Embed(
+                title="<:1000182751:1396420551798558781> Estado del Monitoreo Automático",
+                description="Sistema que detecta nuevas verificaciones y asigna roles automáticamente",
+                color=0x00aa55 if is_running else 0xff0000
+            )
+
+            embed.add_field(
+                name="📊 **Estado General**",
+                value=f"• **Monitor:** {status_emoji} {status_text}\n• **Última verificación:** {last_verification_check or 'Nunca'}\n• **Servidores configurados:** {len(active_configs)}",
+                inline=False
+            )
+
+            if active_configs:
+                server_list = []
+                for guild_id, config in list(active_configs.items())[:5]:  # Mostrar máximo 5
+                    guild = bot.get_guild(int(guild_id))
+                    guild_name = guild.name if guild else config.get('guild_name', 'Servidor no encontrado')
+                    role_name = config.get('role_name', 'Rol desconocido')
+                    server_list.append(f"• **{guild_name}**: {role_name}")
+
+                if len(active_configs) > 5:
+                    server_list.append(f"• ... y {len(active_configs) - 5} más")
+
+                embed.add_field(
+                    name="⚙️ **Configuraciones Activas**",
+                    value="\n".join(server_list) if server_list else "Ninguna",
+                    inline=False
+                )
+
+            embed.add_field(
+                name="<:1000182657:1396060091366637669> **Funcionamiento**",
+                value="• Monitorea `followers.json` cada 10 segundos\n• Detecta nuevas verificaciones automáticamente\n• Asigna roles según configuración del servidor\n• Solo afecta usuarios en servidores configurados",
+                inline=False
+            )
+
+            if not is_running:
+                embed.add_field(
+                    name="<:1000182563:1396420770904932372> **Problema**",
+                    value="El sistema de monitoreo no está funcionando. Reinicia el bot o usa `/testrole` para pruebas manuales.",
+                    inline=False
+                )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        except Exception as e:
+            logger.error(f"Error en comando monitorstatus: {e}")
+            embed = discord.Embed(
+                title="<:1000182563:1396420770904932372> Error",
+                description="Ocurrió un error al obtener el estado del monitoreo.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
     logger.info("✅ Comandos de configuración de roles cargados exitosamente")
     return True
 
@@ -703,3 +796,133 @@ async def on_user_verified(bot: commands.Bot, discord_id: str, guild_id: str):
     await auto_assign_verification_role(discord_id, guild, bot)
 
 # That function (on_user_verified) should be called from main.py
+
+async def monitor_verification_changes(bot: commands.Bot):
+    """Monitorea cambios en el archivo de verificaciones y asigna roles automáticamente"""
+    global last_verification_check
+    
+    followers_file = "followers.json"
+    known_verified_users = set()
+    
+    logger.info("🔍 Iniciando monitoreo automático de verificaciones...")
+    
+    # Cargar usuarios verificados iniciales
+    try:
+        if Path(followers_file).exists():
+            with open(followers_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                known_verified_users = set(data.get('verified_users', {}).keys())
+                logger.info(f"📊 Cargados {len(known_verified_users)} usuarios verificados conocidos")
+    except Exception as e:
+        logger.error(f"Error cargando usuarios verificados iniciales: {e}")
+    
+    while True:
+        try:
+            # Verificar si el archivo existe
+            if not Path(followers_file).exists():
+                await asyncio.sleep(10)
+                continue
+            
+            # Leer archivo actual
+            with open(followers_file, 'r', encoding='utf-8') as f:
+                current_data = json.load(f)
+            
+            current_verified_users = set(current_data.get('verified_users', {}).keys())
+            
+            # Detectar nuevos usuarios verificados
+            new_users = current_verified_users - known_verified_users
+            
+            if new_users:
+                logger.info(f"🆕 Detectados {len(new_users)} nuevos usuarios verificados")
+                last_verification_check = datetime.now().strftime("%H:%M:%S")
+                
+                # Procesar cada nuevo usuario
+                for discord_id in new_users:
+                    user_data = current_data['verified_users'].get(discord_id, {})
+                    roblox_username = user_data.get('roblox_username', 'Unknown')
+                    
+                    logger.info(f"🔄 Procesando nuevo usuario verificado: {roblox_username} (ID: {discord_id})")
+                    
+                    # Buscar en todos los servidores donde está el bot
+                    await process_user_verification_in_all_guilds(bot, discord_id, roblox_username)
+                
+                # Actualizar conjunto de usuarios conocidos
+                known_verified_users = current_verified_users
+            
+            # Esperar antes del siguiente check
+            await asyncio.sleep(10)  # Verificar cada 10 segundos
+            
+        except FileNotFoundError:
+            # El archivo no existe, esperar
+            await asyncio.sleep(10)
+            continue
+        except json.JSONDecodeError as e:
+            logger.error(f"Error leyendo JSON de verificaciones: {e}")
+            await asyncio.sleep(10)
+            continue
+        except Exception as e:
+            logger.error(f"Error en monitoreo de verificaciones: {e}")
+            await asyncio.sleep(30)  # Esperar más tiempo si hay error
+            continue
+
+async def process_user_verification_in_all_guilds(bot: commands.Bot, discord_id: str, roblox_username: str):
+    """Procesa la verificación de un usuario en todos los servidores configurados"""
+    try:
+        # Obtener todas las configuraciones activas
+        all_configs = get_all_role_configs()
+        active_configs = {k: v for k, v in all_configs.items() if v.get('active', False)}
+        
+        if not active_configs:
+            logger.debug(f"No hay configuraciones activas para procesar usuario {roblox_username}")
+            return
+        
+        successful_assignments = 0
+        total_attempts = 0
+        
+        # Procesar cada servidor configurado
+        for guild_id, config in active_configs.items():
+            try:
+                guild = bot.get_guild(int(guild_id))
+                if not guild:
+                    logger.warning(f"Servidor {guild_id} no encontrado para usuario {roblox_username}")
+                    continue
+                
+                # Verificar si el usuario está en este servidor
+                member = guild.get_member(int(discord_id))
+                if not member:
+                    logger.debug(f"Usuario {roblox_username} no está en servidor {guild.name}")
+                    continue
+                
+                total_attempts += 1
+                
+                # Intentar asignar rol
+                success = await auto_assign_verification_role(discord_id, guild, bot)
+                
+                if success:
+                    successful_assignments += 1
+                    logger.info(f"✅ Rol asignado automáticamente a {roblox_username} en {guild.name}")
+                else:
+                    logger.warning(f"❌ No se pudo asignar rol a {roblox_username} en {guild.name}")
+                
+                # Pequeña pausa entre asignaciones
+                await asyncio.sleep(0.5)
+                
+            except Exception as e:
+                logger.error(f"Error procesando servidor {guild_id} para usuario {roblox_username}: {e}")
+                continue
+        
+        if total_attempts > 0:
+            logger.info(f"📊 Usuario {roblox_username}: {successful_assignments}/{total_attempts} asignaciones exitosas")
+        else:
+            logger.debug(f"Usuario {roblox_username} no está en ningún servidor configurado")
+            
+    except Exception as e:
+        logger.error(f"Error procesando verificación de usuario {discord_id}: {e}")
+
+def cleanup_commands(bot):
+    """Función de limpieza - detiene el monitoreo"""
+    global verification_monitor_task
+    
+    if verification_monitor_task and not verification_monitor_task.done():
+        verification_monitor_task.cancel()
+        logger.info("🛑 Sistema de monitoreo de verificaciones detenido")
