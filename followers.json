@@ -235,17 +235,17 @@
       "verification_code": "check-90_ok",
       "verified_at": 1753136447.704355
     },
-    "1348850482118131733": {
-      "roblox_username": "dtbuyet",
-      "verification_code": "hesizv28vok",
-      "verified_at": 1753142568.5500143
-    },
     "1194472549623529528": {
       "roblox_username": "Ferraton904",
       "verification_code": "check_782_vip",
       "verified_at": 1753142592.6466615
+    },
+    "1348850482118131733": {
+      "roblox_username": "dtbuyet",
+      "verification_code": "code-172vrbx",
+      "verified_at": 1753143137.3407614
     }
   },
   "pending_verifications": {},
-  "last_updated": "2025-07-22T00:03:12.646667"
+  "last_updated": "2025-07-22T00:12:17.340767"
 }

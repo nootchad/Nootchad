@@ -83,13 +83,20 @@
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=02265931302235628125474976498813",
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=52600115640443241071155457631676",
       "https://www.roblox.com/games/109983668079237?privateServerLinkCode=09312531055410792527684107922769"
+    ],
+    "1194472549623529528": [
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=91183847093572647903169482975429",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36961051040976493630866209379302",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=43722265284641604292164312238739",
+      "https://www.roblox.com/games/109983668079237?privateServerLinkCode=94384049101435540362881329559826"
     ]
   },
   "metadata": {
     "created_at": "2025-01-12T00:00:00",
-    "last_updated": "2025-07-21T22:26:50.999668",
-    "total_users": 12,
-    "total_servers": 60,
+    "last_updated": "2025-07-22T00:06:31.688904",
+    "total_users": 13,
+    "total_servers": 65,
     "description": "Estructura simplificada: user_id -> array de hasta 5 servidores"
   }
 }
