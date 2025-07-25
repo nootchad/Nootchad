@@ -27,16 +27,41 @@ def patch_scraper_save_method():
                     logger.info(f"🔍 Aplicando filtro de servidores únicos para usuario {user_id}")
                     logger.info(f"📊 Servidores antes del filtro: {len(servers)}")
                     
-                    # Filtrar y marcar servidores únicos
-                    unique_servers = filter_and_mark_servers(user_id, servers)
+                    # Filtrar y marcar servidores únicos (ahora devuelve duplicados encontrados)
+                    unique_servers, duplicates_count = unique_server_manager.filter_unique_servers_for_user(user_id, servers)
                     
                     logger.info(f"✅ Servidores después del filtro: {len(unique_servers)}")
                     
-                    if len(unique_servers) < len(servers):
-                        removed_count = len(servers) - len(unique_servers)
-                        logger.info(f"🚫 Removidos {removed_count} servidores duplicados/ya entregados")
+                    if duplicates_count > 0:
+                        logger.info(f"🚫 Removidos {duplicates_count} servidores duplicados/ya entregados")
+                        
+                        # 🔄 BUSCAR SERVIDORES DE REEMPLAZO SI HAY DUPLICADOS
+                        if len(unique_servers) < 3:  # Si quedaron menos de 3 servidores únicos
+                            needed_replacements = 5 - len(unique_servers)  # Intentar llegar a 5 total
+                            
+                            # Extraer game_id del primer servidor disponible
+                            game_id = None
+                            if servers:
+                                game_id = unique_server_manager.extract_game_id_from_link(servers[0])
+                            
+                            if game_id:
+                                logger.info(f"🔄 Buscando {needed_replacements} servidores de reemplazo para juego {game_id}")
+                                replacement_servers = await unique_server_manager.get_replacement_servers(
+                                    user_id, game_id, needed_replacements
+                                )
+                                
+                                if replacement_servers:
+                                    unique_servers.extend(replacement_servers)
+                                    logger.info(f"✅ Agregados {len(replacement_servers)} servidores de reemplazo")
+                                    
+                                    # Marcar los nuevos como entregados
+                                    unique_server_manager.mark_servers_as_delivered(user_id, replacement_servers)
                     
-                    # Usar los servidores únicos para el guardado
+                    # Marcar los originales únicos como entregados
+                    if unique_servers:
+                        unique_server_manager.mark_servers_as_delivered(user_id, unique_servers)
+                    
+                    # Usar los servidores únicos (incluidos reemplazos) para el guardado
                     return original_method(self, user_id, unique_servers)
                     
                 except Exception as e:

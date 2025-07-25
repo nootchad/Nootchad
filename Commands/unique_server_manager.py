@@ -131,6 +131,7 @@ class UniqueServerManager:
         """
         user_id = str(user_id)
         unique_servers = []
+        duplicates_found = 0
         
         # Obtener historial del usuario
         user_previous_servers = set(self.user_history.get(user_id, []))
@@ -144,18 +145,24 @@ class UniqueServerManager:
                 # Si fue entregado a otro usuario, no incluirlo
                 if delivered_to != user_id:
                     logger.debug(f"🚫 Servidor ya entregado a otro usuario {delivered_to}: {server_link[:50]}...")
+                    duplicates_found += 1
                     continue
             
             # Verificar si el usuario ya lo recibió antes
             if server_link in user_previous_servers:
                 logger.debug(f"🔄 Usuario {user_id} ya recibió este servidor: {server_link[:50]}...")
+                duplicates_found += 1
                 continue
             
             # Si pasa todas las verificaciones, incluirlo
             unique_servers.append(server_link)
         
         logger.info(f"🔍 Filtrados {len(unique_servers)}/{len(server_list)} servidores únicos para usuario {user_id}")
-        return unique_servers
+        
+        if duplicates_found > 0:
+            logger.info(f"🚫 Se encontraron {duplicates_found} servidores duplicados para usuario {user_id}")
+        
+        return unique_servers, duplicates_found
     
     def mark_servers_as_delivered(self, user_id: str, server_list: List[str]):
         """Marcar servidores como entregados a un usuario específico"""
@@ -190,6 +197,47 @@ class UniqueServerManager:
     def get_global_delivered_count(self) -> int:
         """Obtener cantidad total de servidores únicos entregados"""
         return len(self.delivered_servers)
+
+
+    async def get_replacement_servers(self, user_id: str, game_id: str, needed_count: int) -> List[str]:
+        """
+        Buscar servidores de reemplazo cuando se detectan duplicados
+        """
+        try:
+            logger.info(f"🔄 Buscando {needed_count} servidores de reemplazo para usuario {user_id}, juego {game_id}")
+            
+            # Importar el scraper desde main
+            import sys
+            if 'main' in sys.modules:
+                main_module = sys.modules['main']
+                if hasattr(main_module, 'scraper'):
+                    scraper = main_module.scraper
+                    
+                    # Ejecutar scraping para obtener nuevos servidores
+                    scraper.current_user_id = user_id
+                    new_links_count = scraper.scrape_vip_links(game_id=game_id, user_id=user_id)
+                    
+                    if new_links_count > 0:
+                        # Obtener los nuevos servidores
+                        user_servers = scraper.get_all_links(game_id, user_id)
+                        
+                        # Filtrar solo los más recientes (que no estén en delivered_servers)
+                        fresh_servers = []
+                        for server in user_servers[-needed_count:]:  # Tomar los últimos
+                            if server not in self.delivered_servers:
+                                fresh_servers.append(server)
+                        
+                        logger.info(f"✅ Encontrados {len(fresh_servers)} servidores frescos de reemplazo")
+                        return fresh_servers[:needed_count]
+            
+            logger.warning("⚠️ No se pudo acceder al scraper para buscar reemplazos")
+            return []
+            
+        except Exception as e:
+            logger.error(f"❌ Error buscando servidores de reemplazo: {e}")
+            return []
+
+
     
     def cleanup_expired_deliveries(self, days: int = 7):
         """Limpiar entregas expiradas (opcional para liberar servidores después de X días)"""
