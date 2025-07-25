@@ -328,6 +328,27 @@ def get_user_servers_from_file(user_id: str) -> List[str]:
             data = json.load(f)
         
         user_servers = data.get('user_servers', {}).get(user_id, [])
+        
+        # 🔄 INTEGRACIÓN: Filtrar servidores únicos usando el nuevo sistema
+        try:
+            from Commands.unique_server_manager import unique_server_manager
+            
+            # Solo filtrar si hay servidores
+            if user_servers and isinstance(user_servers, list):
+                # El sistema de servidores únicos ya debería tener estos marcados
+                # Pero por seguridad, verificamos que no estén duplicados con otros usuarios
+                filtered_servers = unique_server_manager.filter_unique_servers_for_user(user_id, user_servers)
+                
+                if len(filtered_servers) != len(user_servers):
+                    logger.info(f"🔍 Filtrados {len(filtered_servers)}/{len(user_servers)} servidores únicos para usuario {user_id}")
+                
+                return filtered_servers
+            
+        except ImportError:
+            logger.warning("⚠️ Sistema de servidores únicos no disponible, usando método tradicional")
+        except Exception as e:
+            logger.error(f"❌ Error aplicando filtro de servidores únicos: {e}")
+        
         return user_servers if isinstance(user_servers, list) else []
         
     except Exception as e:
