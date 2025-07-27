@@ -5604,20 +5604,150 @@ async def credits_command(interaction: discord.Interaction):
         
         await interaction.response.send_message(embed=error_embed, ephemeral=True)
 
-@bot.tree.command(name="executors", description="Obtener enlaces de descarga de ejecutores de Roblox que funcionan actualmente")
+@bot.tree.command(name="executors", description="Información importante sobre exploits y las reglas de Roblox")
 async def executors_command(interaction: discord.Interaction):
-    """Comando que proporciona enlaces de descarga de ejecutores de Roblox"""
+    """Comando que muestra mensaje disuasorio sobre exploits (versión en inglés)"""
+    user_id = str(interaction.user.id)
+    username = f"{interaction.user.name}#{interaction.user.discriminator}"
+    
+    logger.info(f"🚫 Usuario {username} (ID: {user_id}) solicitó información sobre executors")
+    
+    await interaction.response.defer(ephemeral=True)
+    
     try:
-        # Crear embed con información de ejecutores
-        embed = discord.Embed(
-            title="⚡ Ejecutores de Roblox Disponibles",
-            description="Lista de ejecutores que están funcionando actualmente para Android:",
-            color=0x00ff88
+        # Mensaje público disuasorio en inglés
+        public_embed = discord.Embed(
+            title="🚫 Policy on Exploits and Executors",
+            description="**RbxServers does NOT support or promote the use of exploits, hacks or executors on Roblox.**\n\nThese programs violate Roblox's Terms of Service and may result in permanent suspension of your account.",
+            color=0xff4444
         )
         
-        # Agregar Codex Executor
-        embed.add_field(
-            name="🔥 Codex Executor",
+        public_embed.add_field(
+            name="<:1000182563:1396420770904932372> **IMPORTANT**",
+            value="• Using exploits can result in **permanent ban** from Roblox\n• Roblox has very advanced anti-cheat systems\n• Your account may be compromised by malware\n• You violate the official Terms of Service",
+            inline=False
+        )
+        
+        public_embed.add_field(
+            name="<:verify:1396087763388072006> **Legal Alternatives**",
+            value="• Use **Roblox Studio** to create your own games\n• Learn **Lua programming** officially\n• Participate in **Roblox events and contests**\n• Join **legitimate developer groups**",
+            inline=False
+        )
+        
+        public_embed.add_field(
+            name="<:1000182584:1396049547838492672> **Additional Information**",
+            value="Detailed information has been sent to your **private message** with educational resources and safe alternatives.",
+            inline=False
+        )
+        
+        public_embed.add_field(
+            name="🔗 **Official Resources**",
+            value="• [Terms of Service](https://en.help.roblox.com/hc/articles/115004647846)\n• [Community Rules](https://en.help.roblox.com/hc/articles/203313410)\n• [Roblox Developer Hub](https://developer.roblox.com/)",
+            inline=False
+        )
+        
+        public_embed.set_footer(text="RbxServers • We promote responsible and safe use of Roblox")
+        public_embed.timestamp = datetime.now()
+        
+        await interaction.followup.send(embed=public_embed, ephemeral=True)
+        
+        # Intentar enviar DM detallado en inglés
+        try:
+            user = interaction.user
+            
+            dm_embed = discord.Embed(
+                title="🚨 Important Notice about Exploits on Roblox",
+                description="We have received your query about executors/exploits for Roblox. As an official bot, we have the responsibility to inform you about the risks and consequences of using these tools.",
+                color=0xff0000
+            )
+            
+            dm_embed.add_field(
+                name="⚖️ **Legal Aspects and Terms of Service**",
+                value="Using exploits, hacks, executors or any third-party software that modifies the Roblox experience constitutes a **direct violation** of Roblox Corporation's Terms of Service. This includes but is not limited to:\n\n• Game memory manipulation\n• Unauthorized code injection\n• Client file modification\n• Use of unofficial automation tools\n• Bypassing security systems",
+                inline=False
+            )
+            
+            dm_embed.add_field(
+                name="🚫 **Real Consequences of Using Exploits**",
+                value="**Immediate Consequences:**\n• Permanent and irreversible ban from your Roblox account\n• Loss of all Robux, items and progress\n• Loss of access to paid premium games\n• IP restriction that may affect other accounts\n\n**Security Risks:**\n• Malware and viruses in fake executors\n• Theft of credentials and personal data\n• Compromise of your Roblox account\n• Possible unauthorized access to other accounts",
+                inline=False
+            )
+            
+            dm_embed.add_field(
+                name="🔍 **Roblox Anti-Cheat Systems (Hyperion)**",
+                value="Roblox uses extremely advanced anti-cheat technologies:\n\n• **Hyperion**: Real-time detection system\n• **Behavior Analysis**: Detects anomalous patterns\n• **Machine Learning**: Constantly learns new methods\n• **Memory Analysis**: Detects unauthorized modifications\n• **Automatic Reports**: Players can easily report\n\nThese systems detect **99.9% of known exploits** within minutes or hours.",
+                inline=False
+            )
+            
+            dm_embed.add_field(
+                name="💡 **Educational and Legal Alternatives**",
+                value="**Learn Official Development:**\n• [Roblox Studio](https://www.roblox.com/create) - Free official tool\n• [Developer Hub](https://developer.roblox.com/) - Complete documentation\n• [Roblox Education](https://education.roblox.com/) - Official courses\n• [YouTube Creator Hub](https://www.youtube.com/robloxdev) - Official tutorials\n\n**Development Communities:**\n• Roblox Developer Forum\n• DevForum Communities\n• Official Roblox Discord Servers\n• Developer groups and communities",
+                inline=False
+            )
+            
+            dm_embed.add_field(
+                name="🎯 **Why You Should NOT Use Exploits**",
+                value="**Impact on Community:**\n• You ruin other players' experience\n• You cause economic losses to developers\n• You contribute to toxicity in games\n• You reduce the overall quality of the platform\n\n**Personal Development:**\n• You don't learn real programming skills\n• You depend on external tools\n• You don't develop genuine creativity\n• You lose professional growth opportunities",
+                inline=False
+            )
+            
+            dm_embed.add_field(
+                name="🌟 **Real Opportunities on Roblox**",
+                value="**Earn Money Legally:**\n• [DevEx Program](https://developer.roblox.com/devex) - Convert <:1000182645:1396420615057047612> to real money\n• Creating successful games (some developers earn $1M+ annually)\n• Selling items in the official catalog\n• Commissions for game development\n\n**Build your Portfolio:**\n• Roblox Studio is used by real companies\n• Lua experience is valued in the industry\n• Game portfolio can open professional doors\n• Networking with other developers",
+                inline=False
+            )
+            
+            dm_embed.add_field(
+                name="🤝 **Our Commitment as RbxServers**",
+                value="As an official bot for the Roblox community, our commitment is:\n\n• **Promote ethical** and responsible use of Roblox\n• **Educate** about the real risks of using exploits\n• **Support** legitimate and creative developers\n• **Protect** our community from threats\n• **Encourage** learning and development of real skills\n\nIf you have questions about legitimate development on Roblox, we're here to help you find the right resources!",
+                inline=False
+            )
+            
+            dm_embed.set_footer(text="This message was sent for your safety and education • RbxServers")
+            dm_embed.timestamp = datetime.now()
+            
+            await user.send(embed=dm_embed)
+            logger.info(f"✅ Educational DM sent successfully to {username}")
+            
+        except discord.Forbidden:
+            # Si no se puede enviar DM, informar en la respuesta ephemeral
+            no_dm_embed = discord.Embed(
+                title="<:1000182584:1396049547838492672> Could not send DM",
+                description="We couldn't send you the detailed information via private message. Make sure you have DMs enabled.",
+                color=0xff9900
+            )
+            no_dm_embed.add_field(
+                name="💡 To receive complete information:",
+                value="1. Go to **User Settings** → **Privacy & Safety**\n2. Enable **Allow direct messages from server members**\n3. Run the command again",
+                inline=False
+            )
+            await interaction.followup.send(embed=no_dm_embed, ephemeral=True)
+            logger.warning(f"⚠️ Could not send DM to {username} - DMs disabled")
+            
+        except Exception as dm_error:
+            logger.error(f"❌ Error sending DM to {username}: {dm_error}")
+            
+            error_embed = discord.Embed(
+                title="❌ Error Sending Information",
+                description="An error occurred while sending the detailed information. The main message contains the most important points.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+    
+    except Exception as e:
+        logger.error(f"❌ Error in /executors command for {username}: {e}")
+        
+        error_embed = discord.Embed(
+            title="❌ System Error",
+            description="An error occurred processing your request. However, remember: **RbxServers does NOT support the use of exploits on Roblox**.",
+            color=0xff0000
+        )
+        error_embed.add_field(
+            name="<:1000182563:1396420770904932372> Important Message",
+            value="Using exploits may result in permanent suspension of your Roblox account. Please respect the Terms of Service.",
+            inline=False
+        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)r",
             value="[📥 Descargar Codex 2.679](https://www.mediafire.com/file/l5u08f2fu888u69/Codex+2.679.apk/file)",
             inline=False
         )
