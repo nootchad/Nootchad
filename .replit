@@ -16,7 +16,6 @@ run = ["python3", "main.py"]
 deploymentTarget = "cloudrun"
 
 [workflows]
-runButton = "Start Discord Bot"
 
 [[workflows.workflow]]
 name = "Start Discord Bot"
