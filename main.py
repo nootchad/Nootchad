@@ -5747,10 +5747,7 @@ async def executors_command(interaction: discord.Interaction):
             value="Using exploits may result in permanent suspension of your Roblox account. Please respect the Terms of Service.",
             inline=False
         )
-        await interaction.followup.send(embed=error_embed, ephemeral=True)r",
-            value="[📥 Descargar Codex 2.679](https://www.mediafire.com/file/l5u08f2fu888u69/Codex+2.679.apk/file)",
-            inline=False
-        )
+        await interaction.followup.send(embed=error_embed, ephemeral=True)
         
         # Agregar Ronix Executor
         embed.add_field(
