@@ -37,7 +37,7 @@ def test_verification_request(discord_id, roblox_username):
     
     try:
         response = requests.post(
-            f"{API_BASE_URL}/api/external-verification-request",
+            f"{API_BASE_URL}/api/external-verification/request",
             headers=headers,
             json={
                 "discord_id": discord_id,
@@ -68,7 +68,7 @@ def test_verification_check(discord_id, roblox_username):
     
     try:
         response = requests.post(
-            f"{API_BASE_URL}/api/external-verification-check",
+            f"{API_BASE_URL}/api/external-verification/check",
             headers=headers,
             json={
                 "discord_id": discord_id,

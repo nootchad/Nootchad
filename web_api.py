@@ -52,8 +52,8 @@ class WebAPI:
         app.router.add_get('/api/recent-activity', self.get_recent_activity)
         app.router.add_post('/api/authenticate', self.authenticate_request)
         app.router.add_options('/{path:.*}', self.handle_options)
-        app.router.add_post('/api/external-verification-request', self.external_verification_request)
-        app.router.add_post('/api/external-verification-check', self.external_verification_check)
+        app.router.add_post('/api/external-verification/request', self.external_verification_request)
+        app.router.add_post('/api/external-verification/check', self.external_verification_check)
         app.router.add_get('/api/leaderboard', self.get_leaderboard_api)
         app.router.add_get('/api/economy-stats', self.get_economy_stats)
 
