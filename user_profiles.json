@@ -1,28 +1,93 @@
 {
   "user_profiles": {
     "916070251895091241": {
-      "first_seen": 1752285156.8183408,
-      "last_activity": 1752285941.20944,
-      "total_commands": 1,
-      "active_days": 1,
+      "user_id": "916070251895091241",
+      "username": "Usuario Desconocido",
+      "discriminator": "0000",
+      "avatar_url": null,
+      "created_at": null,
+      "joined_at": null,
       "is_verified": true,
+      "verification_date": 1751500970.0577545,
       "roblox_username": "9011a22344",
-      "coins_balance": 0,
-      "total_games": 0,
-      "total_servers": 0,
-      "redeemed_codes": [],
-      "achievements": [],
+      "roblox_id": null,
+      "servers_data": {
+        "servers": [
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=12641421568053565801264765312313",
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=20225409692913904664019795762741",
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=33549579223914555938517368694857",
+          "https://www.roblox.com/games/109983668079237?privateServerLinkCode=91183847093572647903169482975429"
+        ],
+        "total_servers": 4,
+        "games": {
+          "109983668079237": {
+            "server_links": [
+              "https://www.roblox.com/games/109983668079237?privateServerLinkCode=12641421568053565801264765312313",
+              "https://www.roblox.com/games/109983668079237?privateServerLinkCode=20225409692913904664019795762741",
+              "https://www.roblox.com/games/109983668079237?privateServerLinkCode=33549579223914555938517368694857",
+              "https://www.roblox.com/games/109983668079237?privateServerLinkCode=91183847093572647903169482975429"
+            ],
+            "game_name": "\ud83c\udfae Game 109983668079237",
+            "category": "other"
+          }
+        },
+        "total_games": 1,
+        "main_game": "109983668079237",
+        "servers_by_game": {
+          "109983668079237": 4
+        }
+      },
+      "user_servers": [
+        "https://www.roblox.com/games/109983668079237?privateServerLinkCode=12641421568053565801264765312313",
+        "https://www.roblox.com/games/109983668079237?privateServerLinkCode=20225409692913904664019795762741",
+        "https://www.roblox.com/games/109983668079237?privateServerLinkCode=33549579223914555938517368694857",
+        "https://www.roblox.com/games/109983668079237?privateServerLinkCode=91183847093572647903169482975429"
+      ],
+      "game_servers": {
+        "109983668079237": {
+          "server_links": [
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=12641421568053565801264765312313",
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=20225409692913904664019795762741",
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=33549579223914555938517368694857",
+            "https://www.roblox.com/games/109983668079237?privateServerLinkCode=91183847093572647903169482975429"
+          ],
+          "game_name": "\ud83c\udfae Game 109983668079237",
+          "category": "other"
+        }
+      },
+      "total_servers": 4,
+      "total_games": 1,
+      "main_game": "109983668079237",
+      "servers_by_game": {
+        "109983668079237": 4
+      },
+      "daily_server_average": 4.0,
+      "last_server_added": 1753943719.3744903,
+      "total_scraping_attempts": 4,
+      "coins": {
+        "balance": 289,
+        "total_earned": 309,
+        "total_transactions": 50,
+        "last_activity": "2025-07-25T03:47:20.904178"
+      },
+      "coins_balance": 289,
       "warnings": 0,
-      "risk_level": "bajo",
-      "is_trusted": true,
-      "verified_at": 1751500970.0577545,
-      "favorite_games": [],
-      "reserved_servers": [],
-      "verification_code": "rbxx10_bot",
       "is_banned": false,
-      "ban_time": null,
-      "game_categories": {},
-      "top_games": []
+      "ban_info": {
+        "ban_time": null,
+        "remaining_time": null
+      },
+      "is_trusted": true,
+      "risk_level": "bajo",
+      "total_commands": 4,
+      "active_days": 1,
+      "first_seen": 1751500970.0577545,
+      "last_activity": 1753943719.3745022,
+      "achievements": [],
+      "redeemed_codes": [],
+      "total_commands_used": 4,
+      "first_command_date": 1751500970.0577545,
+      "verified_at": 1751500970.0577545
     },
     "123456789012345678": {
       "user_id": "123456789012345678",
@@ -78,6 +143,6 @@
       "verified_at": null
     }
   },
-  "last_updated": "2025-07-31T06:31:12.760257",
+  "last_updated": "2025-07-31T06:35:19.374509",
   "total_profiles": 2
 }
