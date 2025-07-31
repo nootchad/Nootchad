@@ -190,7 +190,7 @@ class UserAccessCodeSystem:
         """Obtener información completa del usuario desde diferentes sistemas"""
         try:
             # Importar aquí para evitar import circular
-            from main import roblox_verification
+            from main import roblox_verification, bot
             from user_profile_system import user_profile_system
             
             # Obtener datos de verificación
@@ -203,12 +203,12 @@ class UserAccessCodeSystem:
             # Cargar datos de monedas
             coins_data = self.load_user_coins(user_id)
             
+            # Obtener información de Discord del usuario
+            discord_user_info = self.get_discord_user_info(user_id, bot)
+            
             user_info = {
                 'user_id': user_id,
-                'discord_info': {
-                    'user_id': user_id,
-                    'username': profile_data.get('username', 'Usuario Desconocido')
-                },
+                'discord_info': discord_user_info,
                 'verification': {
                     'is_verified': is_verified,
                     'roblox_username': verification_info.get('roblox_username'),
@@ -271,6 +271,116 @@ class UserAccessCodeSystem:
                 'total_earned': 0,
                 'total_transactions': 0,
                 'last_activity': None
+            }
+
+    def get_discord_user_info(self, user_id: str, bot) -> dict:
+        """Obtener información completa de Discord del usuario"""
+        try:
+            # Intentar obtener el usuario desde el cache del bot
+            user = bot.get_user(int(user_id))
+            
+            if user:
+                # Usuario encontrado en cache
+                discord_info = {
+                    'user_id': user_id,
+                    'username': user.name,
+                    'display_name': user.display_name,
+                    'discriminator': user.discriminator,
+                    'global_name': getattr(user, 'global_name', None),
+                    'avatar_url': str(user.display_avatar.url) if user.display_avatar else None,
+                    'avatar_hash': user.avatar.key if user.avatar else None,
+                    'default_avatar_url': str(user.default_avatar.url),
+                    'profile_url': f"https://discord.com/users/{user_id}",
+                    'created_at': user.created_at.isoformat(),
+                    'is_bot': user.bot,
+                    'is_system': getattr(user, 'system', False),
+                    'public_flags': user.public_flags.value if hasattr(user, 'public_flags') else 0,
+                    'cached': True
+                }
+                
+                # Información adicional de badges/flags
+                if hasattr(user, 'public_flags'):
+                    flags = user.public_flags
+                    discord_info['badges'] = {
+                        'staff': flags.staff,
+                        'partner': flags.partner,
+                        'hypesquad': flags.hypesquad,
+                        'bug_hunter': flags.bug_hunter,
+                        'hypesquad_bravery': flags.hypesquad_bravery,
+                        'hypesquad_brilliance': flags.hypesquad_brilliance,
+                        'hypesquad_balance': flags.hypesquad_balance,
+                        'early_supporter': flags.early_supporter,
+                        'verified_bot_developer': flags.verified_bot_developer,
+                        'discord_certified_moderator': flags.discord_certified_moderator,
+                        'active_developer': getattr(flags, 'active_developer', False)
+                    }
+                
+                logger.info(f"<:verify:1396087763388072006> Info de Discord obtenida desde cache para {user_id}: {user.name}")
+                return discord_info
+            
+            else:
+                # Usuario no en cache, intentar fetch
+                import asyncio
+                try:
+                    # Crear una nueva tarea asyncio para fetch
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # Si ya hay un loop corriendo, crear una tarea
+                        task = asyncio.create_task(bot.fetch_user(int(user_id)))
+                        # No podemos await aquí, así que devolvemos info básica
+                        pass
+                    else:
+                        # Si no hay loop, crear uno nuevo
+                        user = loop.run_until_complete(bot.fetch_user(int(user_id)))
+                        if user:
+                            return self.get_discord_user_info(user_id, bot)
+                except Exception as fetch_error:
+                    logger.warning(f"<:1000182563:1396420770904932372> No se pudo hacer fetch del usuario {user_id}: {fetch_error}")
+                
+                # Fallback: información básica
+                discord_info = {
+                    'user_id': user_id,
+                    'username': f'Usuario#{user_id[-4:]}',
+                    'display_name': f'Usuario Desconocido',
+                    'discriminator': '0000',
+                    'global_name': None,
+                    'avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
+                    'avatar_hash': None,
+                    'default_avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
+                    'profile_url': f"https://discord.com/users/{user_id}",
+                    'created_at': None,
+                    'is_bot': False,
+                    'is_system': False,
+                    'public_flags': 0,
+                    'cached': False,
+                    'badges': {},
+                    'note': 'Usuario no encontrado en cache del bot'
+                }
+                
+                logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado, usando info por defecto")
+                return discord_info
+                
+        except Exception as e:
+            logger.error(f"<:1000182563:1396420770904932372> Error obteniendo info de Discord para {user_id}: {e}")
+            
+            # Fallback completo
+            return {
+                'user_id': user_id,
+                'username': f'Error#{user_id[-4:]}',
+                'display_name': 'Error al cargar',
+                'discriminator': '0000',
+                'global_name': None,
+                'avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
+                'avatar_hash': None,
+                'default_avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
+                'profile_url': f"https://discord.com/users/{user_id}",
+                'created_at': None,
+                'is_bot': False,
+                'is_system': False,
+                'public_flags': 0,
+                'cached': False,
+                'badges': {},
+                'error': str(e)
             }
 
 class UserAccessAPI:

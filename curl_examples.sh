@@ -94,12 +94,19 @@ echo "  -H \"Content-Type: application/json\" \\"
 echo "  -X POST \\"
 echo "  -d '{\"access_code\": \"tu_codigo_aqui\"}'"
 
-# 11. Obtener info con código
+# 11. Obtener info con código (incluye perfil de Discord)
 echo ""
-echo "📋 11. Obtener info de usuario con código:"
+echo "📋 11. Obtener info completa de usuario con código:"
 echo "curl \"$API_URL/api/user-access/info/tu_codigo_aqui\" \\"
 echo "  -H \"Authorization: Bearer $API_KEY\" \\"
 echo "  -H \"Content-Type: application/json\""
+echo ""
+echo "💡 Respuesta incluye:"
+echo "   - Información completa de Discord (username, avatar, perfil URL)"
+echo "   - Datos de verificación Roblox"
+echo "   - Estadísticas de servidores y juegos"
+echo "   - Balance de monedas y economía"
+echo "   - Información de seguridad y actividad"
 
 # ==================================================
 # VERIFICACIÓN EXTERNA
