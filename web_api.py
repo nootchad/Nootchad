@@ -22,7 +22,7 @@ class WebAPI:
         # Middleware de CORS para permitir acceso desde cualquier origen
         @web.middleware
         async def cors_middleware(request, handler):
-            logger.debug(f"🌐 CORS Middleware: {request.method} {request.path} desde {request.remote}")
+            logger.info(f"🌐 CORS Middleware: {request.method} {request.path} desde {request.remote}")
             
             # Manejar preflight requests (OPTIONS)
             if request.method == 'OPTIONS':
@@ -65,6 +65,10 @@ class WebAPI:
         # Rutas de verificación externa - agregadas correctamente
         app.router.add_post('/api/external-verification/request', self.external_verification_request)
         app.router.add_post('/api/external-verification/check', self.external_verification_check)
+        
+        # Agregar ruta OPTIONS para verificación externa
+        app.router.add_options('/api/external-verification/request', self.handle_options)
+        app.router.add_options('/api/external-verification/check', self.handle_options)
         logger.info("🔗 Rutas de verificación externa configuradas")
         
         # Otras rutas
@@ -451,29 +455,57 @@ class WebAPI:
         logger.info(f"🔗 API Externa: Recibida solicitud de verificación desde {request.remote}")
         logger.info(f"📋 Método: {request.method}, Path: {request.path}")
         logger.info(f"📋 Headers: {dict(request.headers)}")
+        logger.info(f"📋 Content-Type: {request.headers.get('Content-Type', 'No especificado')}")
         
         try:
-            # Verificar método HTTP
+            # Verificar método HTTP ANTES de procesar
+            logger.info(f"🔍 Verificando método HTTP: {request.method}")
             if request.method != 'POST':
-                logger.error(f"❌ Método HTTP incorrecto: {request.method}")
+                logger.error(f"❌ Método HTTP incorrecto: {request.method} - Se esperaba POST")
                 return web.json_response({
                     'success': False,
-                    'error': f'Método {request.method} no permitido. Usa POST'
+                    'error': f'Método {request.method} no permitido. Usa POST',
+                    'allowed_methods': ['POST'],
+                    'received_method': request.method
                 }, status=405)
 
             if not self.verify_auth(request):
                 logger.warning(f"🚫 Solicitud no autorizada desde {request.remote}")
                 return web.json_response({'error': 'Unauthorized'}, status=401)
 
-            # Leer datos del request
+            # Leer datos del request con más debugging
             try:
-                data = await request.json()
-                logger.info(f"📄 Datos recibidos: {data}")
-            except Exception as json_error:
+                # Verificar si hay contenido
+                content_length = request.headers.get('Content-Length', '0')
+                logger.info(f"📦 Content-Length: {content_length}")
+                
+                # Intentar leer el texto primero para debug
+                raw_body = await request.text()
+                logger.info(f"📄 Raw body recibido: {raw_body[:200]}...")  # Primeros 200 caracteres
+                
+                # Ahora parsear como JSON
+                if raw_body.strip():
+                    data = json.loads(raw_body)
+                    logger.info(f"📄 JSON parseado exitosamente: {data}")
+                else:
+                    logger.error(f"❌ Body vacío recibido")
+                    return web.json_response({
+                        'success': False,
+                        'error': 'Request body vacío - se requiere JSON'
+                    }, status=400)
+                    
+            except json.JSONDecodeError as json_error:
                 logger.error(f"❌ Error parseando JSON: {json_error}")
+                logger.error(f"❌ Raw body que causó error: {raw_body}")
                 return web.json_response({
                     'success': False,
-                    'error': 'JSON inválido'
+                    'error': 'JSON inválido - verifica el formato'
+                }, status=400)
+            except Exception as read_error:
+                logger.error(f"❌ Error leyendo request: {read_error}")
+                return web.json_response({
+                    'success': False,
+                    'error': 'Error leyendo datos del request'
                 }, status=400)
 
             discord_id = str(data.get('discord_id', ''))
