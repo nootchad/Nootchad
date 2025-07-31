@@ -8,8 +8,16 @@
       "max_uses": 50,
       "active": true,
       "last_used": 1753942920.6220834
+    },
+    "aulJJ700EbNB": {
+      "user_id": "916070251895091241",
+      "created_at": 1753943163.0280669,
+      "expires_at": 1754029563.028067,
+      "uses": 0,
+      "max_uses": 50,
+      "active": true
     }
   },
-  "last_updated": "2025-07-31T06:22:00.622086",
-  "total_codes": 1
+  "last_updated": "2025-07-31T06:26:03.028072",
+  "total_codes": 2
 }
