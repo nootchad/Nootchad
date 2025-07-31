@@ -22,8 +22,11 @@ class WebAPI:
         # Middleware de CORS para permitir acceso desde cualquier origen
         @web.middleware
         async def cors_middleware(request, handler):
+            logger.debug(f"🌐 CORS Middleware: {request.method} {request.path} desde {request.remote}")
+            
             # Manejar preflight requests (OPTIONS)
             if request.method == 'OPTIONS':
+                logger.info(f"✈️ Preflight request para {request.path}")
                 response = web.Response()
                 response.headers['Access-Control-Allow-Origin'] = '*'
                 response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
@@ -32,12 +35,18 @@ class WebAPI:
                 return response
             
             # Procesar la petición normal
-            response = await handler(request)
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-            return response
+            try:
+                response = await handler(request)
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
+                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+                response.headers['Access-Control-Allow-Credentials'] = 'true'
+                return response
+            except Exception as middleware_error:
+                logger.error(f"❌ Error en CORS middleware: {middleware_error}")
+                logger.error(f"🔍 Path que causó error: {request.path}")
+                logger.error(f"🔍 Método que causó error: {request.method}")
+                raise
 
         # Solo agregar middleware si no existe
         if cors_middleware not in app.middlewares:
@@ -56,11 +65,16 @@ class WebAPI:
         # Rutas de verificación externa - agregadas correctamente
         app.router.add_post('/api/external-verification/request', self.external_verification_request)
         app.router.add_post('/api/external-verification/check', self.external_verification_check)
+        logger.info("🔗 Rutas de verificación externa configuradas")
         
         # Otras rutas
         app.router.add_get('/api/leaderboard', self.get_leaderboard_api)
         app.router.add_get('/api/economy-stats', self.get_economy_stats)
 
+        # Listar todas las rutas configuradas para debug
+        logger.info("📋 Rutas configuradas:")
+        for route in app.router.routes():
+            logger.info(f"  {route.method} {route.resource.canonical}")
 
         logger.info("🌐 API web configurada para acceso externo")
 
@@ -434,13 +448,38 @@ class WebAPI:
 
     async def external_verification_request(self, request):
         """API para solicitar verificación externa - genera código"""
+        logger.info(f"🔗 API Externa: Recibida solicitud de verificación desde {request.remote}")
+        logger.info(f"📋 Método: {request.method}, Path: {request.path}")
+        logger.info(f"📋 Headers: {dict(request.headers)}")
+        
         try:
+            # Verificar método HTTP
+            if request.method != 'POST':
+                logger.error(f"❌ Método HTTP incorrecto: {request.method}")
+                return web.json_response({
+                    'success': False,
+                    'error': f'Método {request.method} no permitido. Usa POST'
+                }, status=405)
+
             if not self.verify_auth(request):
+                logger.warning(f"🚫 Solicitud no autorizada desde {request.remote}")
                 return web.json_response({'error': 'Unauthorized'}, status=401)
 
-            data = await request.json()
+            # Leer datos del request
+            try:
+                data = await request.json()
+                logger.info(f"📄 Datos recibidos: {data}")
+            except Exception as json_error:
+                logger.error(f"❌ Error parseando JSON: {json_error}")
+                return web.json_response({
+                    'success': False,
+                    'error': 'JSON inválido'
+                }, status=400)
+
             discord_id = str(data.get('discord_id', ''))
             roblox_username = data.get('roblox_username', '').strip()
+            
+            logger.info(f"🎯 Procesando verificación: Discord {discord_id} → Roblox {roblox_username}")
 
             # Validaciones básicas
             if not discord_id or not roblox_username:
@@ -509,21 +548,51 @@ class WebAPI:
                 }, status=400)
 
         except Exception as e:
-            logger.error(f"❌ Error en external_verification_request: {e}")
+            logger.error(f"❌ Error crítico en external_verification_request: {e}")
+            logger.error(f"🔍 Tipo de error: {type(e).__name__}")
+            logger.error(f"🔍 Request method: {request.method}")
+            logger.error(f"🔍 Request path: {request.path}")
+            import traceback
+            logger.error(f"🔍 Traceback completo: {traceback.format_exc()}")
             return web.json_response({
                 'success': False,
-                'error': 'Error interno del servidor'
+                'error': 'Error interno del servidor',
+                'debug_info': str(e)
             }, status=500)
 
     async def external_verification_check(self, request):
         """API para verificar si el código fue puesto en la descripción"""
+        logger.info(f"✅ API Externa: Recibida solicitud de verificación CHECK desde {request.remote}")
+        logger.info(f"📋 Método: {request.method}, Path: {request.path}")
+        
         try:
+            # Verificar método HTTP
+            if request.method != 'POST':
+                logger.error(f"❌ Método HTTP incorrecto en CHECK: {request.method}")
+                return web.json_response({
+                    'success': False,
+                    'error': f'Método {request.method} no permitido. Usa POST'
+                }, status=405)
+
             if not self.verify_auth(request):
+                logger.warning(f"🚫 Solicitud CHECK no autorizada desde {request.remote}")
                 return web.json_response({'error': 'Unauthorized'}, status=401)
 
-            data = await request.json()
+            # Leer datos del request
+            try:
+                data = await request.json()
+                logger.info(f"📄 Datos CHECK recibidos: {data}")
+            except Exception as json_error:
+                logger.error(f"❌ Error parseando JSON en CHECK: {json_error}")
+                return web.json_response({
+                    'success': False,
+                    'error': 'JSON inválido'
+                }, status=400)
+
             discord_id = str(data.get('discord_id', ''))
             roblox_username = data.get('roblox_username', '').strip()
+            
+            logger.info(f"🔍 Verificando código para: Discord {discord_id} → Roblox {roblox_username}")
 
             # Validaciones básicas
             if not discord_id or not roblox_username:
@@ -582,10 +651,16 @@ class WebAPI:
                 }, status=400)
 
         except Exception as e:
-            logger.error(f"❌ Error en external_verification_check: {e}")
+            logger.error(f"❌ Error crítico en external_verification_check: {e}")
+            logger.error(f"🔍 Tipo de error CHECK: {type(e).__name__}")
+            logger.error(f"🔍 Request method CHECK: {request.method}")
+            logger.error(f"🔍 Request path CHECK: {request.path}")
+            import traceback
+            logger.error(f"🔍 Traceback completo CHECK: {traceback.format_exc()}")
             return web.json_response({
                 'success': False,
-                'error': 'Error interno del servidor'
+                'error': 'Error interno del servidor',
+                'debug_info': str(e)
             }, status=500)
 
     async def get_leaderboard_api(self, request):
