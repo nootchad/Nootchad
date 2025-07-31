@@ -314,31 +314,10 @@ class UserAccessCodeSystem:
                 except Exception as e:
                     logger.debug(f"Error buscando en servidores para {user_id}: {e}")
             
-            # Método 3: Intentar buscar usando fetch_user de forma segura
-            if not user and hasattr(bot, 'loop') and bot.loop and not bot.loop.is_closed():
-                try:
-                    import asyncio
-                    
-                    # Crear una tarea para fetch el usuario
-                    async def safe_fetch_user():
-                        try:
-                            return await bot.fetch_user(user_id_int)
-                        except Exception as fetch_error:
-                            logger.debug(f"Error en fetch_user para {user_id}: {fetch_error}")
-                            return None
-                    
-                    # Ejecutar la tarea de forma segura
-                    try:
-                        # Si estamos en el hilo principal del bot, podemos crear la tarea
-                        future = asyncio.run_coroutine_threadsafe(safe_fetch_user(), bot.loop)
-                        user = future.result(timeout=5.0)  # Timeout de 5 segundos
-                        if user:
-                            logger.info(f"✅ Usuario {user_id} obtenido via fetch: {user.name}")
-                    except Exception as async_error:
-                        logger.debug(f"Error en fetch async para {user_id}: {async_error}")
-                        
-                except Exception as e:
-                    logger.debug(f"Error en método de fetch seguro para {user_id}: {e}")
+            # Método 3: Intentar buscar usando fetch_user de forma segura - DESHABILITADO
+            # Este método está causando el error '_MissingSentinel' object has no attribute 'is_set'
+            # Se deshabilita temporalmente hasta que se arregle el problema con discord.py
+            logger.debug(f"⚠️ Método fetch_user deshabilitado para {user_id} - usando fallback mejorado")
             
             if user:
                 # Usuario encontrado - obtener información completa
