@@ -1,0 +1,11 @@
+
+{
+  "user_tokens": {},
+  "last_updated": "2025-07-31T10:00:00.000000",
+  "total_users": 0,
+  "system_info": {
+    "client_id": "1388660674573631549",
+    "redirect_uri": "https://rbxbot.vercel.app/api/auth/discord/callback",
+    "scopes": ["identify", "email"]
+  }
+}

@@ -1072,6 +1072,9 @@ class WebAPI:
                     'source': 'vercel_callback'
                 }
 
+                # Guardar datos persistentemente
+                discord_oauth.save_oauth2_data()
+
                 logger.info(f"✅ Usuario OAuth2 guardado desde Vercel: {data.get('username')} (ID: {user_id})")
 
                 return web.json_response({

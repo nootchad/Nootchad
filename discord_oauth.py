@@ -26,13 +26,19 @@ class DiscordOAuth2System:
         # Scopes que necesitamos
         self.scopes = ["identify", "email"]  # identify para info básica, email para email
         
-        # Almacenamiento temporal de tokens
+        # Archivo para persistencia de datos OAuth2
+        self.oauth2_file = "oauth2_users.json"
+        
+        # Almacenamiento de tokens (se carga desde archivo)
         self.user_tokens = {}
         
         # URLs de Discord
         self.discord_api_base = "https://discord.com/api/v10"
         self.authorize_url = "https://discord.com/api/oauth2/authorize"
         self.token_url = "https://discord.com/api/oauth2/token"
+        
+        # Cargar datos OAuth2 existentes
+        self.load_oauth2_data()
         
     def generate_oauth_url(self, state=None):
         """Generar URL de autorización OAuth2"""
@@ -172,6 +178,78 @@ class DiscordOAuth2System:
         
         return badges
     
+    def load_oauth2_data(self):
+        """Cargar datos OAuth2 desde archivo JSON"""
+        try:
+            if os.path.exists(self.oauth2_file):
+                with open(self.oauth2_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.user_tokens = data.get('user_tokens', {})
+                    
+                # Limpiar tokens expirados al cargar
+                current_time = time.time()
+                expired_users = []
+                
+                for user_id, token_info in self.user_tokens.items():
+                    if current_time > token_info.get('expires_at', 0):
+                        expired_users.append(user_id)
+                
+                for user_id in expired_users:
+                    del self.user_tokens[user_id]
+                
+                if expired_users:
+                    logger.info(f"🕐 {len(expired_users)} tokens expirados removidos al cargar")
+                    self.save_oauth2_data()  # Guardar sin tokens expirados
+                
+                logger.info(f"✅ Datos OAuth2 cargados: {len(self.user_tokens)} usuarios autorizados")
+            else:
+                logger.info("📄 No existe archivo OAuth2, iniciando con datos vacíos")
+                self.save_oauth2_data()  # Crear archivo inicial
+                
+        except Exception as e:
+            logger.error(f"❌ Error cargando datos OAuth2: {e}")
+            self.user_tokens = {}
+    
+    def save_oauth2_data(self):
+        """Guardar datos OAuth2 en archivo JSON"""
+        try:
+            data = {
+                'user_tokens': self.user_tokens,
+                'last_updated': datetime.now().isoformat(),
+                'total_users': len(self.user_tokens),
+                'system_info': {
+                    'client_id': self.client_id,
+                    'redirect_uri': self.redirect_uri,
+                    'scopes': self.scopes
+                }
+            }
+            
+            with open(self.oauth2_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            logger.debug(f"💾 Datos OAuth2 guardados: {len(self.user_tokens)} usuarios")
+            
+        except Exception as e:
+            logger.error(f"❌ Error guardando datos OAuth2: {e}")
+    
+    def cleanup_expired_tokens(self):
+        """Limpiar tokens expirados y guardar cambios"""
+        current_time = time.time()
+        expired_users = []
+        
+        for user_id, token_info in self.user_tokens.items():
+            if current_time > token_info.get('expires_at', 0):
+                expired_users.append(user_id)
+        
+        for user_id in expired_users:
+            del self.user_tokens[user_id]
+            logger.info(f"🕐 Token expirado removido para usuario {user_id}")
+        
+        if expired_users:
+            self.save_oauth2_data()
+        
+        return len(expired_users)
+    
     def setup_routes(self, app):
         """Configurar rutas OAuth2 en la aplicación web"""
         
@@ -267,8 +345,12 @@ class DiscordOAuth2System:
                 'refresh_token': token_data.get('refresh_token'),
                 'expires_at': time.time() + token_data.get('expires_in', 3600),
                 'user_info': user_info,
-                'authorized_at': time.time()
+                'authorized_at': time.time(),
+                'source': 'discord_oauth2_callback'
             }
+            
+            # Guardar datos persistentemente
+            self.save_oauth2_data()
             
             logger.info(f"✅ Usuario autorizado correctamente: {user_info['username']} (ID: {user_id})")
             
@@ -348,16 +430,7 @@ class DiscordOAuth2System:
         """Obtener lista de usuarios con OAuth2 autorizado"""
         try:
             # Limpiar tokens expirados primero
-            current_time = time.time()
-            expired_users = []
-            
-            for user_id, token_info in self.user_tokens.items():
-                if current_time > token_info['expires_at']:
-                    expired_users.append(user_id)
-            
-            for user_id in expired_users:
-                del self.user_tokens[user_id]
-                logger.info(f"🕐 Token expirado removido para usuario {user_id}")
+            expired_count = self.cleanup_expired_tokens()
             
             # Preparar lista de usuarios autorizados
             authorized_users = []
@@ -407,6 +480,10 @@ class DiscordOAuth2System:
                 # await self._revoke_token_on_discord(self.user_tokens[user_id]['access_token'])
                 
                 del self.user_tokens[user_id]
+                
+                # Guardar cambios persistentemente
+                self.save_oauth2_data()
+                
                 logger.info(f"🚫 Autorización revocada para usuario {user_id}")
                 
                 return web.json_response({
