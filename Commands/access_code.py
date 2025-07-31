@@ -149,7 +149,16 @@ def setup_access_code_commands(bot):
 
     logger.info("<:1000182584:1396049547838492672> Comandos de códigos de acceso configurados")
 
-# Auto-registro cuando el bot esté disponible
+def setup_commands(bot):
+    """
+    Función requerida para configurar comandos
+    Esta función será llamada automáticamente por el sistema de carga
+    """
+    setup_access_code_commands(bot)
+    logger.info("<:verify:1396087763388072006> Comandos de códigos de acceso configurados")
+    return True
+
+# Mantener compatibilidad con auto-registro anterior
 def _try_auto_register():
     """Intentar registrar automáticamente los comandos"""
     try:
@@ -161,20 +170,9 @@ def _try_auto_register():
                 logger.info("<:verify:1396087763388072006> Comandos de acceso auto-registrados exitosamente")
                 return True
     except Exception as e:
-        pass
+        logger.debug(f"Auto-registro falló: {e}")
     return False
 
-# Intentar auto-registro inmediato
+# Intentar auto-registro inmediato solo si no se usa el sistema de carga dinámico
 if not _try_auto_register():
-    # Si no funciona inmediatamente, intentar después
-    import threading
-    import time
-    
-    def delayed_register():
-        for i in range(10):  # Intentar por 10 segundos
-            time.sleep(1)
-            if _try_auto_register():
-                break
-    
-    thread = threading.Thread(target=delayed_register, daemon=True)
-    thread.start()
+    logger.debug("Auto-registro inmediato falló, se usará el sistema de carga dinámico")

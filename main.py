@@ -3699,6 +3699,14 @@ async def on_ready():
         web_api_system = setup_web_api(remote_control.app, roblox_verification, scraper, remote_control)
         logger.info("🌐 API web configurada para acceso externo desde páginas web")
         
+        # Configurar APIs de códigos de acceso
+        try:
+            from apis import setup_user_access_api
+            user_access_api, access_code_system = setup_user_access_api(remote_control.app)
+            logger.info("🔑 API de códigos de acceso configurada exitosamente")
+        except Exception as e:
+            logger.error(f"❌ Error configurando API de códigos de acceso: {e}")
+        
         await remote_control.start_web_server()
         logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
         
@@ -3867,6 +3875,19 @@ async def on_ready():
 
     # Load dynamic commands from Commands folder
     await load_commands_from_folder(bot)
+    
+    # Sincronizar comandos inmediatamente después de cargar comandos dinámicos
+    try:
+        logger.info("🔄 Sincronizando comandos slash después de carga dinámica...")
+        synced = await bot.tree.sync()
+        logger.info(f"✅ {len(synced)} comandos sincronizados después de carga dinámica")
+        
+        # Mostrar comandos sincronizados
+        for cmd in synced:
+            logger.info(f"  ✅ /{cmd.name} - {cmd.description[:60]}...")
+            
+    except Exception as e:
+        logger.error(f"❌ Error sincronizando comandos después de carga dinámica: {e}")
 
     # Inicializar servidor de callback de música
     try:

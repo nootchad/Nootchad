@@ -250,31 +250,34 @@ class UserAccessAPI:
     def setup_routes(self, app):
         """Configurar rutas de la API de acceso de usuarios"""
         
-        # Registrar rutas directamente en el router
-        app.router.add_post('/api/user-access/generate', self.generate_access_code)
-        app.router.add_post('/api/user-access/verify', self.verify_access_code)
-        app.router.add_get('/api/user-access/info/{code}', self.get_user_info_by_code)
-        
-        # Rutas OPTIONS para CORS
-        app.router.add_options('/api/user-access/generate', self.handle_options)
-        app.router.add_options('/api/user-access/verify', self.handle_options)
-        app.router.add_options('/api/user-access/info/{code}', self.handle_options)
-        
-        logger.info("<:1000182750:1396420537227411587> Rutas de API de acceso de usuarios configuradas exitosamente")
-        
-        # Debug: Mostrar rutas registradas
-        user_access_routes = []
-        for route in app.router.routes():
-            route_path = str(route.resource)
-            if '/api/user-access/' in route_path:
-                user_access_routes.append(f"{route.method} {route_path}")
+        try:
+            # Registrar rutas directamente en el router
+            app.router.add_post('/api/user-access/generate', self.generate_access_code)
+            app.router.add_post('/api/user-access/verify', self.verify_access_code)
+            app.router.add_get('/api/user-access/info/{code}', self.get_user_info_by_code)
+            
+            # Rutas OPTIONS para CORS
+            app.router.add_options('/api/user-access/generate', self.handle_options)
+            app.router.add_options('/api/user-access/verify', self.handle_options)
+            app.router.add_options('/api/user-access/info/{code}', self.handle_options)
+            
+            logger.info("<:1000182750:1396420537227411587> Rutas de API de acceso de usuarios registradas exitosamente")
+            
+            # Verificar rutas registradas
+            registered_routes = []
+            for route in app.router.routes():
+                route_info = str(route.resource)
+                if '/api/user-access/' in route_info:
+                    registered_routes.append(f"{route.method} {route_info}")
+                    
+            logger.info(f"<:verify:1396087763388072006> {len(registered_routes)} rutas de acceso registradas:")
+            for route_info in registered_routes:
+                logger.info(f"  ✅ {route_info}")
                 
-        if user_access_routes:
-            logger.info("<:verify:1396087763388072006> Rutas de acceso de usuarios registradas:")
-            for route_info in user_access_routes:
-                logger.info(f"  {route_info}")
-        else:
-            logger.error("<:1000182563:1396420770904932372> No se registraron rutas de acceso de usuarios")
+        except Exception as e:
+            logger.error(f"<:1000182563:1396420770904932372> Error configurando rutas: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
 
     async def handle_options(self, request):
         """Manejar peticiones OPTIONS para CORS"""
