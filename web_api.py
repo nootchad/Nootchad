@@ -915,4 +915,13 @@ def setup_web_api(app, verification_system, scraper, remote_control):
     """Configurar la API web en la app existente"""
     web_api = WebAPI(verification_system, scraper, remote_control)
     web_api.setup_routes(app)
+    
+    # Integrar API de códigos de acceso
+    try:
+        from apis import setup_user_access_api
+        user_access_api, access_code_system = setup_user_access_api(app)
+        logger.info("🔗 API de códigos de acceso integrada exitosamente")
+    except Exception as e:
+        logger.error(f"❌ Error integrando API de códigos de acceso: {e}")
+    
     return web_api
