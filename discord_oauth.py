@@ -184,6 +184,9 @@ class DiscordOAuth2System:
         # Ruta para obtener información del usuario autorizado
         app.router.add_get('/auth/discord/user/{user_id}', self.get_authorized_user_info)
         
+        # Ruta para obtener lista de todos los usuarios autorizados
+        app.router.add_get('/auth/discord/users', self.get_authorized_users_list)
+        
         # Ruta para revocar autorización
         app.router.add_post('/auth/discord/revoke/{user_id}', self.revoke_authorization)
         
@@ -341,6 +344,59 @@ class DiscordOAuth2System:
                 'error': 'Error interno del servidor'
             }, status=500)
     
+    async def get_authorized_users_list(self, request):
+        """Obtener lista de usuarios con OAuth2 autorizado"""
+        try:
+            # Limpiar tokens expirados primero
+            current_time = time.time()
+            expired_users = []
+            
+            for user_id, token_info in self.user_tokens.items():
+                if current_time > token_info['expires_at']:
+                    expired_users.append(user_id)
+            
+            for user_id in expired_users:
+                del self.user_tokens[user_id]
+                logger.info(f"🕐 Token expirado removido para usuario {user_id}")
+            
+            # Preparar lista de usuarios autorizados
+            authorized_users = []
+            for user_id, token_info in self.user_tokens.items():
+                user_info = token_info.get('user_info', {})
+                authorized_users.append({
+                    'user_id': user_id,
+                    'discord_username': user_info.get('username', 'Desconocido'),
+                    'display_name': user_info.get('display_name', 'Desconocido'),
+                    'email': user_info.get('email', 'No disponible'),
+                    'avatar_url': user_info.get('avatar_url', None),
+                    'authorized_at': token_info.get('authorized_at'),
+                    'expires_at': token_info.get('expires_at'),
+                    'time_remaining_hours': int((token_info.get('expires_at', 0) - current_time) / 3600),
+                    'oauth_scopes': self.scopes
+                })
+            
+            # Ordenar por fecha de autorización (más recientes primero)
+            authorized_users.sort(key=lambda x: x.get('authorized_at', 0), reverse=True)
+            
+            return web.json_response({
+                'success': True,
+                'total_authorized_users': len(authorized_users),
+                'authorized_users': authorized_users,
+                'oauth_config': {
+                    'client_id': self.client_id,
+                    'scopes': self.scopes,
+                    'redirect_uri': self.redirect_uri
+                },
+                'generated_at': datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo usuarios autorizados: {e}")
+            return web.json_response({
+                'success': False,
+                'error': 'Error interno del servidor'
+            }, status=500)
+
     async def revoke_authorization(self, request):
         """Revocar autorización de usuario"""
         try:

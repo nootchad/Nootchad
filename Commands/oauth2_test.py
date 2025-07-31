@@ -114,6 +114,98 @@ def setup_commands(bot):
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @bot.tree.command(name="oauth2-users", description="[OWNER] Ver usuarios que han autorizado OAuth2")
+    async def oauth2_users_command(interaction: discord.Interaction):
+        user_id = str(interaction.user.id)
+        
+        # Solo el owner puede usar este comando
+        DISCORD_OWNER_ID = "916070251895091241"
+        if user_id != DISCORD_OWNER_ID:
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            # Importar sistema OAuth2
+            from discord_oauth import discord_oauth
+            
+            # Obtener usuarios autorizados
+            current_time = time.time()
+            authorized_users = []
+            
+            for user_id_oauth, token_info in discord_oauth.user_tokens.items():
+                if current_time < token_info.get('expires_at', 0):
+                    user_info = token_info.get('user_info', {})
+                    authorized_users.append({
+                        'user_id': user_id_oauth,
+                        'username': user_info.get('username', 'Desconocido'),
+                        'display_name': user_info.get('display_name', 'Desconocido'),
+                        'email': user_info.get('email', 'No disponible'),
+                        'authorized_at': token_info.get('authorized_at', 0),
+                        'expires_at': token_info.get('expires_at', 0)
+                    })
+            
+            embed = discord.Embed(
+                title="👥 Usuarios con OAuth2 Autorizado",
+                description=f"**{len(authorized_users)}** usuarios han autorizado el acceso OAuth2",
+                color=0x00ff88
+            )
+            
+            if authorized_users:
+                # Mostrar hasta 10 usuarios más recientes
+                recent_users = sorted(authorized_users, key=lambda x: x['authorized_at'], reverse=True)[:10]
+                
+                for i, user in enumerate(recent_users, 1):
+                    hours_remaining = int((user['expires_at'] - current_time) / 3600)
+                    embed.add_field(
+                        name=f"**{i}.** {user['display_name']}",
+                        value=f"**Usuario:** @{user['username']}\n**ID:** `{user['user_id']}`\n**Email:** {user['email']}\n**Expira en:** {hours_remaining}h",
+                        inline=True
+                    )
+                
+                if len(authorized_users) > 10:
+                    embed.add_field(
+                        name="📊 Información Adicional",
+                        value=f"*Mostrando 10 de {len(authorized_users)} usuarios*\nUsa la API `/auth/discord/users` para ver todos",
+                        inline=False
+                    )
+            else:
+                embed.add_field(
+                    name="📭 Sin Usuarios",
+                    value="Ningún usuario ha autorizado OAuth2 aún.",
+                    inline=False
+                )
+            
+            embed.set_footer(text="RbxServers • Usuarios OAuth2")
+            embed.timestamp = discord.utils.utcnow()
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+            logger.info(f"Owner {interaction.user.name} consultó usuarios OAuth2")
+            
+        except ImportError:
+            embed = discord.Embed(
+                title="❌ Sistema OAuth2 No Disponible",
+                description="El sistema OAuth2 no está disponible o no se pudo importar.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Error en comando oauth2-users: {e}")
+            embed = discord.Embed(
+                title="❌ Error",
+                description=f"Ocurrió un error al obtener los usuarios OAuth2: {str(e)}",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
     
     logger.info("✅ Comando OAuth2 info configurado")
     return True
