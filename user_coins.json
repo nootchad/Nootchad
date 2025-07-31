@@ -2188,8 +2188,76 @@
           "balance_after": 5
         }
       ]
+    },
+    "1093893613798293544": {
+      "balance": 30,
+      "total_earned": 30,
+      "transactions": [
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-30T23:43:19.633280",
+          "balance_after": 5
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-30T23:48:08.732298",
+          "balance_after": 10
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-30T23:48:28.902607",
+          "balance_after": 15
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-30T23:49:01.901895",
+          "balance_after": 20
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-30T23:53:26.710428",
+          "balance_after": 25
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-30T23:54:58.148043",
+          "balance_after": 30
+        }
+      ]
+    },
+    "1143043080933625977": {
+      "balance": 10,
+      "total_earned": 10,
+      "transactions": [
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-30T23:46:40.901534",
+          "balance_after": 5
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-07-30T23:46:52.295070",
+          "balance_after": 10
+        }
+      ]
     }
   },
-  "last_updated": "2025-07-27T13:27:49.480484",
-  "total_users": 58
+  "last_updated": "2025-07-30T23:54:58.148053",
+  "total_users": 60
 }
