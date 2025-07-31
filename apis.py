@@ -274,202 +274,212 @@ class UserAccessCodeSystem:
             }
 
     def get_discord_user_info(self, user_id: str, bot) -> dict:
-        """Obtener información completa de Discord del usuario con fetch asíncrono mejorado"""
+        """Obtener información completa de Discord del usuario con manejo robusto de errores"""
         try:
-            import asyncio
+            # Validar que user_id sea válido
+            try:
+                user_id_int = int(user_id)
+                if user_id_int <= 0:
+                    raise ValueError("ID de usuario inválido")
+            except (ValueError, TypeError) as e:
+                logger.error(f"<:1000182563:1396420770904932372> ID de usuario inválido {user_id}: {e}")
+                return self._generate_fallback_user_info(user_id, "ID de usuario inválido")
             
-            # Función asíncrona para obtener el usuario
-            async def fetch_user_async():
+            user = None
+            
+            # Método 1: Intentar obtener desde caché del bot
+            try:
+                user = bot.get_user(user_id_int)
+                if user:
+                    logger.debug(f"✅ Usuario {user_id} encontrado en caché del bot")
+            except Exception as e:
+                logger.debug(f"Error en caché del bot para {user_id}: {e}")
+            
+            # Método 2: Buscar en servidores del bot
+            if not user and hasattr(bot, 'guilds'):
                 try:
-                    # Intentar fetch del usuario directamente
-                    user = await bot.fetch_user(int(user_id))
-                    return user
+                    for guild in bot.guilds:
+                        try:
+                            member = guild.get_member(user_id_int)
+                            if member:
+                                user = member
+                                logger.debug(f"✅ Usuario {user_id} encontrado en servidor {guild.name}")
+                                break
+                        except Exception as guild_error:
+                            logger.debug(f"Error buscando en guild {guild.id}: {guild_error}")
+                            continue
                 except Exception as e:
-                    logger.warning(f"<:1000182563:1396420770904932372> No se pudo hacer fetch del usuario {user_id}: {e}")
-                    return None
+                    logger.debug(f"Error buscando en servidores para {user_id}: {e}")
             
-            # Intentar obtener el usuario desde el cache del bot primero
-            user = bot.get_user(int(user_id))
-            
-            # Si no está en cache, buscar en servidores
-            if not user:
-                for guild in bot.guilds:
+            # Método 3: Fetch directo (solo si el bot está listo)
+            if not user and hasattr(bot, 'is_ready') and bot.is_ready():
+                try:
+                    import asyncio
+                    
+                    # Verificar si hay un loop activo
                     try:
-                        member = guild.get_member(int(user_id))
-                        if member:
-                            user = member
-                            break
-                    except:
-                        continue
-            
-            # Si aún no se encuentra, intentar fetch asíncrono
-            if not user:
-                try:
-                    # Ejecutar fetch asíncrono si hay un loop activo
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        # Crear una tarea para el fetch
-                        import concurrent.futures
-                        with concurrent.futures.ThreadPoolExecutor() as executor:
-                            future = executor.submit(asyncio.run, fetch_user_async())
-                            user = future.result(timeout=5)
-                    else:
-                        user = asyncio.run(fetch_user_async())
+                        loop = asyncio.get_running_loop()
+                        # No podemos hacer fetch directo desde un hilo síncrono con loop activo
+                        logger.debug(f"Loop de asyncio activo, omitiendo fetch directo para {user_id}")
+                    except RuntimeError:
+                        # No hay loop activo, podemos usar asyncio.run
+                        try:
+                            async def fetch_user():
+                                return await bot.fetch_user(user_id_int)
+                            
+                            user = asyncio.run(fetch_user())
+                            if user:
+                                logger.debug(f"✅ Usuario {user_id} obtenido via fetch directo")
+                        except Exception as fetch_error:
+                            logger.debug(f"Error en fetch directo para {user_id}: {fetch_error}")
                 except Exception as e:
-                    logger.warning(f"<:1000182563:1396420770904932372> Error en fetch asíncrono para {user_id}: {e}")
-                    user = None
+                    logger.debug(f"Error en método de fetch para {user_id}: {e}")
             
             if user:
                 # Usuario encontrado - obtener información completa
-                display_name = getattr(user, 'display_name', user.name)
-                global_name = getattr(user, 'global_name', None)
-                
-                # Usar global_name si está disponible, sino display_name, sino name
-                if global_name:
-                    shown_name = global_name
-                elif display_name and display_name != user.name:
-                    shown_name = display_name
-                else:
-                    shown_name = user.name
-                
-                discord_info = {
-                    'user_id': user_id,
-                    'username': user.name,
-                    'display_name': shown_name,
-                    'discriminator': getattr(user, 'discriminator', '0'),
-                    'global_name': global_name,
-                    'avatar_url': str(user.display_avatar.url) if user.display_avatar else str(user.default_avatar.url),
-                    'avatar_hash': user.avatar.key if user.avatar else None,
-                    'default_avatar_url': str(user.default_avatar.url),
-                    'profile_url': f"https://discord.com/users/{user_id}",
-                    'created_at': user.created_at.isoformat(),
-                    'is_bot': getattr(user, 'bot', False),
-                    'is_system': getattr(user, 'system', False),
-                    'public_flags': user.public_flags.value if hasattr(user, 'public_flags') else 0,
-                    'cached': hasattr(user, 'joined_at'),  # True si es Member (de servidor)
-                    'found_via_fetch': True
-                }
-                
-                # Información adicional de badges/flags
-                if hasattr(user, 'public_flags'):
-                    flags = user.public_flags
-                    discord_info['badges'] = {
-                        'staff': flags.staff,
-                        'partner': flags.partner,
-                        'hypesquad': flags.hypesquad,
-                        'bug_hunter': flags.bug_hunter,
-                        'hypesquad_bravery': flags.hypesquad_bravery,
-                        'hypesquad_brilliance': flags.hypesquad_brilliance,
-                        'hypesquad_balance': flags.hypesquad_balance,
-                        'early_supporter': flags.early_supporter,
-                        'verified_bot_developer': flags.verified_bot_developer,
-                        'discord_certified_moderator': flags.discord_certified_moderator,
-                        'active_developer': getattr(flags, 'active_developer', False)
-                    }
-                
-                # Información de miembro del servidor si aplica
-                if hasattr(user, 'joined_at') and user.joined_at:
-                    discord_info['joined_at'] = user.joined_at.isoformat()
-                
-                logger.info(f"<:verify:1396087763388072006> Info de Discord obtenida para {user_id}: {shown_name}")
-                return discord_info
+                try:
+                    return self._extract_user_info_safely(user, user_id)
+                except Exception as extract_error:
+                    logger.error(f"<:1000182563:1396420770904932372> Error extrayendo info del usuario {user_id}: {extract_error}")
+                    return self._generate_fallback_user_info(user_id, f"Error extrayendo información: {extract_error}")
             
             else:
-                # Fallback: generar información basada en ID
-                try:
-                    # Calcular fecha de creación desde el ID de Discord
-                    discord_epoch = 1420070400000  # 1 de enero 2015
-                    timestamp = ((int(user_id) >> 22) + discord_epoch) / 1000
-                    created_at = datetime.fromtimestamp(timestamp).isoformat()
-                    
-                    # Generar avatar por defecto basado en ID
-                    avatar_index = int(user_id) % 5
-                    default_avatar = f"https://cdn.discordapp.com/embed/avatars/{avatar_index}.png"
-                    
-                    # Intentar obtener un nombre más descriptivo desde user_profiles.json
-                    try:
-                        with open('user_profiles.json', 'r', encoding='utf-8') as f:
-                            profiles_data = json.load(f)
-                            existing_profile = profiles_data.get('user_profiles', {}).get(user_id, {})
-                            if existing_profile.get('username') and not existing_profile['username'].startswith('Usuario#'):
-                                username = existing_profile['username']
-                                display_name = existing_profile.get('display_name', username)
-                            else:
-                                username = f'Usuario#{user_id[-4:]}'
-                                display_name = f'Usuario {user_id[-4:]}'
-                    except:
-                        username = f'Usuario#{user_id[-4:]}'
-                        display_name = f'Usuario {user_id[-4:]}'
-                    
-                    discord_info = {
-                        'user_id': user_id,
-                        'username': username,
-                        'display_name': display_name,
-                        'discriminator': '0',
-                        'global_name': None,
-                        'avatar_url': default_avatar,
-                        'avatar_hash': None,
-                        'default_avatar_url': default_avatar,
-                        'profile_url': f"https://discord.com/users/{user_id}",
-                        'created_at': created_at,
-                        'is_bot': False,
-                        'is_system': False,
-                        'public_flags': 0,
-                        'cached': False,
-                        'found_via_fetch': False,
-                        'badges': {},
-                        'note': 'Usuario no encontrado - información generada desde ID'
-                    }
-                    
-                    logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado, usando info calculada: {display_name}")
-                    return discord_info
-                    
-                except Exception as fallback_error:
-                    logger.error(f"<:1000182563:1396420770904932372> Error en fallback para {user_id}: {fallback_error}")
-                    # Fallback final
-                    return {
-                        'user_id': user_id,
-                        'username': f'Usuario#{user_id[-4:]}',
-                        'display_name': 'Usuario Desconocido',
-                        'discriminator': '0',
-                        'global_name': None,
-                        'avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
-                        'avatar_hash': None,
-                        'default_avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
-                        'profile_url': f"https://discord.com/users/{user_id}",
-                        'created_at': None,
-                        'is_bot': False,
-                        'is_system': False,
-                        'public_flags': 0,
-                        'cached': False,
-                        'found_via_fetch': False,
-                        'badges': {},
-                        'error': 'No se pudo obtener información del usuario'
-                    }
+                # Usuario no encontrado, generar información de fallback
+                logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado en ningún método")
+                return self._generate_fallback_user_info(user_id, "Usuario no encontrado")
                 
         except Exception as e:
-            logger.error(f"<:1000182563:1396420770904932372> Error obteniendo info de Discord para {user_id}: {e}")
+            logger.error(f"<:1000182563:1396420770904932372> Error crítico obteniendo info de Discord para {user_id}: {e}")
+            return self._generate_fallback_user_info(user_id, f"Error crítico: {str(e)}")
+    
+    def _extract_user_info_safely(self, user, user_id: str) -> dict:
+        """Extraer información del usuario de forma segura"""
+        try:
+            # Obtener nombres de forma segura
+            username = getattr(user, 'name', f'Usuario#{user_id[-4:]}')
+            display_name = getattr(user, 'display_name', username)
+            global_name = getattr(user, 'global_name', None)
             
-            # Fallback completo con información mínima
+            # Determinar el nombre a mostrar
+            if global_name:
+                shown_name = global_name
+            elif display_name and display_name != username:
+                shown_name = display_name
+            else:
+                shown_name = username
+            
+            # Obtener URLs de avatar de forma segura
             try:
-                # Intentar calcular al menos la fecha de creación
-                discord_epoch = 1420070400000
+                avatar_url = str(user.display_avatar.url) if hasattr(user, 'display_avatar') and user.display_avatar else None
+                default_avatar_url = str(user.default_avatar.url) if hasattr(user, 'default_avatar') and user.default_avatar else f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png"
+                
+                if not avatar_url:
+                    avatar_url = default_avatar_url
+            except Exception as avatar_error:
+                logger.debug(f"Error obteniendo avatar para {user_id}: {avatar_error}")
+                avatar_url = f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png"
+                default_avatar_url = avatar_url
+            
+            # Información básica del usuario
+            discord_info = {
+                'user_id': user_id,
+                'username': username,
+                'display_name': shown_name,
+                'discriminator': getattr(user, 'discriminator', '0'),
+                'global_name': global_name,
+                'avatar_url': avatar_url,
+                'avatar_hash': user.avatar.key if hasattr(user, 'avatar') and user.avatar else None,
+                'default_avatar_url': default_avatar_url,
+                'profile_url': f"https://discord.com/users/{user_id}",
+                'created_at': user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None,
+                'is_bot': getattr(user, 'bot', False),
+                'is_system': getattr(user, 'system', False),
+                'public_flags': user.public_flags.value if hasattr(user, 'public_flags') and user.public_flags else 0,
+                'cached': hasattr(user, 'joined_at'),
+                'found_via_fetch': True
+            }
+            
+            # Badges de forma segura
+            try:
+                if hasattr(user, 'public_flags') and user.public_flags:
+                    flags = user.public_flags
+                    discord_info['badges'] = {
+                        'staff': getattr(flags, 'staff', False),
+                        'partner': getattr(flags, 'partner', False),
+                        'hypesquad': getattr(flags, 'hypesquad', False),
+                        'bug_hunter': getattr(flags, 'bug_hunter', False),
+                        'hypesquad_bravery': getattr(flags, 'hypesquad_bravery', False),
+                        'hypesquad_brilliance': getattr(flags, 'hypesquad_brilliance', False),
+                        'hypesquad_balance': getattr(flags, 'hypesquad_balance', False),
+                        'early_supporter': getattr(flags, 'early_supporter', False),
+                        'verified_bot_developer': getattr(flags, 'verified_bot_developer', False),
+                        'discord_certified_moderator': getattr(flags, 'discord_certified_moderator', False),
+                        'active_developer': getattr(flags, 'active_developer', False)
+                    }
+                else:
+                    discord_info['badges'] = {}
+            except Exception as badges_error:
+                logger.debug(f"Error obteniendo badges para {user_id}: {badges_error}")
+                discord_info['badges'] = {}
+            
+            # Información de servidor si es miembro
+            try:
+                if hasattr(user, 'joined_at') and user.joined_at:
+                    discord_info['joined_at'] = user.joined_at.isoformat()
+            except Exception as joined_error:
+                logger.debug(f"Error obteniendo fecha de unión para {user_id}: {joined_error}")
+            
+            logger.info(f"<:verify:1396087763388072006> Info de Discord extraída exitosamente para {user_id}: {shown_name}")
+            return discord_info
+            
+        except Exception as e:
+            logger.error(f"<:1000182563:1396420770904932372> Error en _extract_user_info_safely para {user_id}: {e}")
+            raise
+    
+    def _generate_fallback_user_info(self, user_id: str, reason: str = "Usuario no encontrado") -> dict:
+        """Generar información de fallback cuando no se puede obtener del usuario"""
+        try:
+            # Calcular fecha de creación desde el ID de Discord
+            try:
+                discord_epoch = 1420070400000  # 1 de enero 2015
                 timestamp = ((int(user_id) >> 22) + discord_epoch) / 1000
                 created_at = datetime.fromtimestamp(timestamp).isoformat()
-                avatar_index = int(user_id) % 5
-            except:
+            except Exception as date_error:
+                logger.debug(f"Error calculando fecha de creación para {user_id}: {date_error}")
                 created_at = None
-                avatar_index = 0
             
-            return {
+            # Generar avatar por defecto
+            try:
+                avatar_index = int(user_id) % 5
+                default_avatar = f"https://cdn.discordapp.com/embed/avatars/{avatar_index}.png"
+            except Exception as avatar_error:
+                logger.debug(f"Error generando avatar para {user_id}: {avatar_error}")
+                default_avatar = "https://cdn.discordapp.com/embed/avatars/0.png"
+            
+            # Intentar obtener nombre desde perfiles existentes
+            username = f'Usuario#{user_id[-4:]}'
+            display_name = f'Usuario {user_id[-4:]}'
+            
+            try:
+                import json
+                with open('user_profiles.json', 'r', encoding='utf-8') as f:
+                    profiles_data = json.load(f)
+                    existing_profile = profiles_data.get('user_profiles', {}).get(user_id, {})
+                    if existing_profile.get('username') and not existing_profile['username'].startswith('Usuario#'):
+                        username = existing_profile['username']
+                        display_name = existing_profile.get('display_name', username)
+            except Exception as profile_error:
+                logger.debug(f"Error leyendo perfil existente para {user_id}: {profile_error}")
+            
+            fallback_info = {
                 'user_id': user_id,
-                'username': f'Usuario#{user_id[-4:]}',
-                'display_name': 'Usuario Desconocido',
+                'username': username,
+                'display_name': display_name,
                 'discriminator': '0',
                 'global_name': None,
-                'avatar_url': f"https://cdn.discordapp.com/embed/avatars/{avatar_index}.png",
+                'avatar_url': default_avatar,
                 'avatar_hash': None,
-                'default_avatar_url': f"https://cdn.discordapp.com/embed/avatars/{avatar_index}.png",
+                'default_avatar_url': default_avatar,
                 'profile_url': f"https://discord.com/users/{user_id}",
                 'created_at': created_at,
                 'is_bot': False,
@@ -478,7 +488,35 @@ class UserAccessCodeSystem:
                 'cached': False,
                 'found_via_fetch': False,
                 'badges': {},
-                'error': str(e)
+                'fallback_reason': reason,
+                'note': f'Información generada automáticamente - {reason}'
+            }
+            
+            logger.warning(f"<:1000182563:1396420770904932372> Usando información de fallback para {user_id}: {reason}")
+            return fallback_info
+            
+        except Exception as e:
+            logger.error(f"<:1000182563:1396420770904932372> Error crítico en fallback para {user_id}: {e}")
+            # Fallback del fallback
+            return {
+                'user_id': user_id,
+                'username': 'Usuario Desconocido',
+                'display_name': 'Usuario Desconocido',
+                'discriminator': '0000',
+                'global_name': None,
+                'avatar_url': "https://cdn.discordapp.com/embed/avatars/0.png",
+                'avatar_hash': None,
+                'default_avatar_url': "https://cdn.discordapp.com/embed/avatars/0.png",
+                'profile_url': f"https://discord.com/users/{user_id}",
+                'created_at': None,
+                'is_bot': False,
+                'is_system': False,
+                'public_flags': 0,
+                'cached': False,
+                'found_via_fetch': False,
+                'badges': {},
+                'error': f'Error crítico generando fallback: {str(e)}',
+                'fallback_reason': f'Error crítico: {str(e)}'
             }
 
 class UserAccessAPI:
