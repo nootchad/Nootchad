@@ -920,8 +920,15 @@ def setup_web_api(app, verification_system, scraper, remote_control):
     try:
         from apis import setup_user_access_api
         user_access_api, access_code_system = setup_user_access_api(app)
-        logger.info("🔗 API de códigos de acceso integrada exitosamente")
+        logger.info("<:verify:1396087763388072006> API de códigos de acceso integrada exitosamente")
+        
+        # Verificar que las rutas se registraron
+        access_routes = [str(route.resource) for route in app.router.routes() if '/api/user-access/' in str(route.resource)]
+        logger.info(f"<:1000182750:1396420537227411587> Rutas de acceso registradas: {len(access_routes)}")
+        
     except Exception as e:
-        logger.error(f"❌ Error integrando API de códigos de acceso: {e}")
+        logger.error(f"<:1000182563:1396420770904932372> Error integrando API de códigos de acceso: {e}")
+        import traceback
+        logger.error(f"<:1000182563:1396420770904932372> Traceback: {traceback.format_exc()}")
     
     return web_api
