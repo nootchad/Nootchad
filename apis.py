@@ -250,33 +250,22 @@ class UserAccessAPI:
     def setup_routes(self, app):
         """Configurar rutas de la API de acceso de usuarios"""
         
-        # Middleware de CORS específico para estas rutas
-        @web.middleware
-        async def cors_middleware(request, handler):
-            if request.method == 'OPTIONS':
-                response = web.Response()
-                response.headers['Access-Control-Allow-Origin'] = '*'
-                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-                return response
-            
-            response = await handler(request)
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-            return response
-
-        # Solo agregar middleware si no existe
-        if cors_middleware not in app.middlewares:
-            app.middlewares.append(cors_middleware)
-
-        # Rutas de la API de códigos de acceso
+        # No agregar middleware aquí, usar el existente del sistema principal
+        
+        # Rutas específicas primero (más específicas a menos específicas)
         app.router.add_post('/api/user-access/generate', self.generate_access_code)
         app.router.add_post('/api/user-access/verify', self.verify_access_code)
         app.router.add_get('/api/user-access/info/{code}', self.get_user_info_by_code)
-        app.router.add_options('/api/user-access/{path:.*}', self.handle_options)
+        app.router.add_options('/api/user-access/generate', self.handle_options)
+        app.router.add_options('/api/user-access/verify', self.handle_options)
+        app.router.add_options('/api/user-access/info/{code}', self.handle_options)
         
         logger.info("<:1000182750:1396420537227411587> Rutas de API de acceso de usuarios configuradas")
+        
+        # Debug: Listar rutas configuradas
+        for route in app.router.routes():
+            if '/api/user-access/' in str(route.resource):
+                logger.info(f"  {route.method} {route.resource}")
 
     async def handle_options(self, request):
         """Manejar peticiones OPTIONS para CORS"""
