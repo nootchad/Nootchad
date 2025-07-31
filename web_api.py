@@ -19,6 +19,16 @@ class WebAPI:
     def setup_routes(self, app):
         """Configurar rutas de la API web"""
 
+        # Configurar sistema OAuth2 de Discord
+        try:
+            from discord_oauth import discord_oauth
+            discord_oauth.setup_routes(app)
+            logger.info("🔐 Sistema OAuth2 de Discord integrado exitosamente")
+        except ImportError as e:
+            logger.warning(f"⚠️ Sistema OAuth2 no disponible: {e}")
+        except Exception as e:
+            logger.error(f"❌ Error integrando OAuth2: {e}")
+
         # Middleware de CORS para permitir acceso desde cualquier origen
         @web.middleware
         async def cors_middleware(request, handler):

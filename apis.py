@@ -276,7 +276,28 @@ class UserAccessCodeSystem:
     def get_discord_user_info(self, user_id: str, bot) -> dict:
         """Obtener información completa de Discord del usuario con manejo robusto de errores"""
         try:
-            # Validar que user_id sea válido
+            # Método 1: Verificar si el usuario tiene autorización OAuth2
+            try:
+                from discord_oauth import discord_oauth
+                if user_id in discord_oauth.user_tokens:
+                    token_info = discord_oauth.user_tokens[user_id]
+                    # Verificar si el token no ha expirado
+                    if time.time() < token_info['expires_at']:
+                        oauth_info = token_info['user_info'].copy()
+                        oauth_info['data_source'] = 'oauth2_authorized'
+                        oauth_info['authorization_status'] = 'active'
+                        logger.info(f"✅ Usuario {user_id} obtenido via OAuth2: {oauth_info.get('username', 'N/A')}")
+                        return oauth_info
+                    else:
+                        # Token expirado, limpiar
+                        del discord_oauth.user_tokens[user_id]
+                        logger.info(f"⏰ Token OAuth2 expirado para {user_id}, usando método tradicional")
+            except ImportError:
+                logger.debug("Sistema OAuth2 no disponible, usando método tradicional")
+            except Exception as oauth_error:
+                logger.debug(f"Error verificando OAuth2 para {user_id}: {oauth_error}")
+            
+            # Método 2: Validar que user_id sea válido
             try:
                 user_id_int = int(user_id)
                 if user_id_int <= 0:
@@ -287,7 +308,7 @@ class UserAccessCodeSystem:
             
             user = None
             
-            # Método 1: Intentar obtener desde caché del bot
+            # Método 3: Intentar obtener desde caché del bot
             try:
                 if hasattr(bot, 'get_user') and bot.get_user:
                     user = bot.get_user(user_id_int)
@@ -298,7 +319,7 @@ class UserAccessCodeSystem:
             except Exception as e:
                 logger.debug(f"Error en caché del bot para {user_id}: {e}")
             
-            # Método 2: Buscar en servidores del bot si no se encontró en caché
+            # Método 4: Buscar en servidores del bot si no se encontró en caché
             if not user and hasattr(bot, 'guilds') and bot.guilds:
                 try:
                     for guild in bot.guilds:
@@ -314,15 +335,12 @@ class UserAccessCodeSystem:
                 except Exception as e:
                     logger.debug(f"Error buscando en servidores para {user_id}: {e}")
             
-            # Método 3: Intentar buscar usando fetch_user de forma segura - DESHABILITADO
-            # Este método está causando el error '_MissingSentinel' object has no attribute 'is_set'
-            # Se deshabilita temporalmente hasta que se arregle el problema con discord.py
-            logger.debug(f"⚠️ Método fetch_user deshabilitado para {user_id} - usando fallback mejorado")
-            
             if user:
                 # Usuario encontrado - obtener información completa
                 try:
                     discord_info = self._extract_user_info_safely(user, user_id)
+                    discord_info['oauth_available'] = True  # Indica que OAuth2 está disponible
+                    discord_info['data_source'] = 'bot_cache_or_guild'
                     logger.info(f"<:verify:1396087763388072006> Info de Discord obtenida exitosamente para {user_id}: {discord_info.get('username', 'N/A')}")
                     return discord_info
                 except Exception as extract_error:
@@ -330,9 +348,12 @@ class UserAccessCodeSystem:
                     return self._generate_fallback_user_info(user_id, f"Error extrayendo información: {extract_error}")
             
             else:
-                # Usuario no encontrado en ningún método, generar información de fallback con datos existentes
-                logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado en Discord, usando fallback mejorado")
-                return self._generate_enhanced_fallback_user_info(user_id)
+                # Usuario no encontrado - generar fallback con sugerencia de OAuth2
+                fallback_info = self._generate_enhanced_fallback_user_info(user_id)
+                fallback_info['oauth_available'] = True
+                fallback_info['oauth_suggestion'] = f"Para obtener información completa, el usuario puede autorizar la aplicación en: /auth/discord/start"
+                logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado, OAuth2 disponible para mejor información")
+                return fallback_info
                 
         except Exception as e:
             logger.error(f"<:1000182563:1396420770904932372> Error crítico obteniendo info de Discord para {user_id}: {e}")
