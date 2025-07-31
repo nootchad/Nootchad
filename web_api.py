@@ -1055,7 +1055,7 @@ class WebAPI:
                 }
 
                 # Decodificar badges si se proporcionan
-                if data.get('public_flags')):
+                if data.get('public_flags'):
                     oauth_user_data['badges'] = discord_oauth._decode_user_flags(data['public_flags'])
 
                 # Simular token data para compatibilidad
