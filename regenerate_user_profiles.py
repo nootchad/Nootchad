@@ -8,6 +8,7 @@ Script para regenerar user_profiles.json con información correcta de Discord
 
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from apis import access_code_system
 
