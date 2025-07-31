@@ -5,6 +5,7 @@ Comando para probar y mostrar información del sistema OAuth2 de Discord
 import discord
 from discord.ext import commands
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
