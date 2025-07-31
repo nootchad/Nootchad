@@ -17,7 +17,7 @@ class DiscordOAuth2System:
     def __init__(self):
         # Configuración OAuth2 de Discord - TODO desde variables de entorno
         self.client_id = os.getenv('DISCORD_CLIENT_ID', "1388660674573631549")
-        self.client_secret = os.getenv('DISCORD_CLIENT_SECRET', "XUppnOJNCNZSVouqe6KU5FH7qkpqyXtn")
+        self.client_secret = os.getenv('DISCORD_CLIENT_SECRET', "K5410w2PWzK2sj2Zv0AMiuUPL3PLC9s3")
         
         # Configurar redirect URI - Usar la URL configurada en Discord
         # La URL ya está configurada en Discord como: https://rbxbot.vercel.app/api/auth/discord/callback
