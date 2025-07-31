@@ -90,6 +90,10 @@ class WebAPI:
         # Agregar ruta para recibir datos OAuth2
         app.router.add_post('/api/oauth2-user-add', self.receive_oauth2_user_data)
 
+        # Rutas para analytics
+        app.router.add_post('/api/web-analytics', self.receive_web_analytics)
+        app.router.add_get('/api/web-analytics', self.get_web_analytics)
+
         # Listar todas las rutas configuradas para debug
         logger.info("📋 Rutas configuradas:")
         for route in app.router.routes():
@@ -1051,7 +1055,7 @@ class WebAPI:
                 }
 
                 # Decodificar badges si se proporcionan
-                if data.get('public_flags'):
+                if data.get('public_flags')):
                     oauth_user_data['badges'] = discord_oauth._decode_user_flags(data['public_flags'])
 
                 # Simular token data para compatibilidad
@@ -1111,6 +1115,217 @@ class WebAPI:
                 'debug_info': str(e)
             }, status=500)
 
+    async def receive_web_analytics(self, request):
+        """Endpoint para recibir analytics desde Vercel"""
+        logger.info(f"📊 Analytics: Recibida solicitud desde {request.remote}")
+
+        try:
+            # Verificar método HTTP
+            if request.method != 'POST':
+                logger.error(f"❌ Método HTTP incorrecto: {request.method}")
+                return web.json_response({
+                    'success': False,
+                    'error': f'Método {request.method} no permitido. Usa POST'
+                }, status=405)
+
+            # Verificar autenticación (opcional para analytics)
+            auth_header = request.headers.get('Authorization', '')
+            api_key_query = request.query.get('api_key', '')
+
+            # Permitir tanto header como query parameter
+            if not (auth_header == f"Bearer {WEBHOOK_SECRET}" or api_key_query == WEBHOOK_SECRET):
+                logger.info(f"📊 Analytics sin autenticación desde {request.remote} - permitido")
+
+            # Leer datos del request
+            try:
+                data = await request.json()
+                logger.info(f"📄 Datos analytics recibidos: {data}")
+            except Exception as json_error:
+                logger.error(f"❌ Error parseando JSON analytics: {json_error}")
+                return web.json_response({
+                    'success': False,
+                    'error': 'JSON inválido'
+                }, status=400)
+
+            # Procesar analytics
+            analytics_entry = {
+                'timestamp': datetime.now().isoformat(),
+                'source': data.get('source', 'vercel'),
+                'event_type': data.get('event_type', 'page_view'),
+                'page': data.get('page', '/'),
+                'user_agent': request.headers.get('User-Agent', 'Unknown'),
+                'ip': request.remote,
+                'data': data,
+                'processed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+
+            # Guardar analytics
+            success = await self.save_analytics_data(analytics_entry)
+
+            if success:
+                logger.info(f"✅ Analytics guardado exitosamente desde {data.get('source', 'vercel')}")
+                return web.json_response({
+                    'success': True,
+                    'message': 'Analytics recibido y almacenado correctamente',
+                    'timestamp': analytics_entry['timestamp'],
+                    'event_id': analytics_entry['timestamp'],
+                    'status': 'SUCCESS'
+                })
+            else:
+                logger.error(f"❌ Error guardando analytics")
+                return web.json_response({
+                    'success': False,
+                    'error': 'Error interno procesando analytics'
+                }, status=500)
+
+        except Exception as e:
+            logger.error(f"❌ Error crítico en receive_web_analytics: {e}")
+            import traceback
+            logger.error(f"❌ Traceback completo: {traceback.format_exc()}")
+            return web.json_response({
+                'success': False,
+                'error': 'Error interno del servidor',
+                'debug_info': str(e)
+            }, status=500)
+
+    async def get_web_analytics(self, request):
+        """Endpoint para obtener analytics almacenados"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            # Parámetros de consulta
+            limit = min(int(request.query.get('limit', 100)), 1000)
+            source = request.query.get('source', None)
+            event_type = request.query.get('event_type', None)
+
+            # Cargar datos de analytics
+            analytics_data = await self.load_analytics_data()
+
+            # Filtrar datos
+            filtered_analytics = analytics_data.get('analytics', [])
+
+            if source:
+                filtered_analytics = [a for a in filtered_analytics if a.get('source') == source]
+
+            if event_type:
+                filtered_analytics = [a for a in filtered_analytics if a.get('event_type') == event_type]
+
+            # Ordenar por timestamp más reciente
+            filtered_analytics.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+
+            # Aplicar límite
+            filtered_analytics = filtered_analytics[:limit]
+
+            # Estadísticas
+            total_events = len(analytics_data.get('analytics', []))
+            sources_stats = {}
+            event_types_stats = {}
+
+            for event in analytics_data.get('analytics', []):
+                source_name = event.get('source', 'unknown')
+                event_type_name = event.get('event_type', 'unknown')
+
+                sources_stats[source_name] = sources_stats.get(source_name, 0) + 1
+                event_types_stats[event_type_name] = event_types_stats.get(event_type_name, 0) + 1
+
+            response_data = {
+                'success': True,
+                'analytics': filtered_analytics,
+                'metadata': {
+                    'total_events': total_events,
+                    'filtered_count': len(filtered_analytics),
+                    'limit_applied': limit,
+                    'sources_stats': sources_stats,
+                    'event_types_stats': event_types_stats,
+                    'last_updated': analytics_data.get('metadata', {}).get('last_updated')
+                },
+                'generated_at': datetime.now().isoformat()
+            }
+
+            logger.info(f"📊 Analytics enviados: {len(filtered_analytics)} eventos")
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_web_analytics: {e}")
+            return web.json_response({
+                'success': False,
+                'error': 'Error interno del servidor'
+            }, status=500)
+
+    async def save_analytics_data(self, analytics_entry):
+        """Guardar datos de analytics en archivo JSON"""
+        try:
+            # Cargar datos existentes
+            analytics_data = await self.load_analytics_data()
+
+            # Agregar nuevo evento
+            analytics_data['analytics'].append(analytics_entry)
+
+            # Mantener solo los últimos 1000 eventos
+            max_events = analytics_data.get('config', {}).get('max_events', 1000)
+            if len(analytics_data['analytics']) > max_events:
+                analytics_data['analytics'] = analytics_data['analytics'][-max_events:]
+
+            # Actualizar metadata
+            analytics_data['metadata']['last_updated'] = datetime.now().isoformat()
+            analytics_data['metadata']['total_events'] = len(analytics_data['analytics'])
+
+            # Actualizar estadísticas por fuente
+            source = analytics_entry.get('source', 'other')
+            if 'sources' not in analytics_data['metadata']:
+                analytics_data['metadata']['sources'] = {}
+            analytics_data['metadata']['sources'][source] = analytics_data['metadata']['sources'].get(source, 0) + 1
+
+            # Guardar archivo
+            with open('web_analytics.json', 'w', encoding='utf-8') as f:
+                json.dump(analytics_data, f, indent=2, ensure_ascii=False)
+
+            logger.info(f"💾 Analytics guardado exitosamente: evento {analytics_entry.get('event_type', 'unknown')}")
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Error guardando analytics: {e}")
+            return False
+
+    async def load_analytics_data(self):
+        """Cargar datos de analytics desde archivo JSON"""
+        try:
+            if os.path.exists('web_analytics.json'):
+                with open('web_analytics.json', 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            else:
+                # Crear estructura inicial
+                return {
+                    "analytics": [],
+                    "metadata": {
+                        "created_at": datetime.now().isoformat(),
+                        "last_updated": datetime.now().isoformat(),
+                        "total_events": 0,
+                        "sources": {}
+                    },
+                    "config": {
+                        "max_events": 1000,
+                        "retention_days": 30,
+                        "allowed_sources": ["vercel", "website", "bot"]
+                    }
+                }
+        except Exception as e:
+            logger.error(f"❌ Error cargando analytics: {e}")
+            return {
+                "analytics": [],
+                "metadata": {
+                    "created_at": datetime.now().isoformat(),
+                    "last_updated": datetime.now().isoformat(),
+                    "total_events": 0,
+                    "sources": {}
+                },
+                "config": {
+                    "max_events": 1000,
+                    "retention_days": 30,
+                    "allowed_sources": ["vercel", "website", "bot"]
+                }
+            }
 
 # Función para integrar la API web en el sistema existente
 def setup_web_api(app, verification_system, scraper, remote_control):
