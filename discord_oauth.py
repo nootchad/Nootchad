@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class DiscordOAuth2System:
     def __init__(self):
         # Configuración OAuth2 de Discord
-        self.client_id = "TU_CLIENT_ID_DE_DISCORD"  # Obtener de Discord Developer Portal
-        self.client_secret = "TU_CLIENT_SECRET_DE_DISCORD"  # Obtener de Discord Developer Portal
+        self.client_id = "1388660674573631549"  # Obtener de Discord Developer Portal
+        self.client_secret = "XUppnOJNCNZSVouqe6KU5FH7qkpqyXtn"  # Obtener de Discord Developer Portal
         self.redirect_uri = "https://tu-repl-url.replit.dev/auth/discord/callback"
         
         # Scopes que necesitamos
