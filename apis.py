@@ -24,7 +24,7 @@ class UserAccessCodeSystem:
         try:
             with open(self.access_codes_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                self.access_codes = data.get('access_codes', {})
+                self.access_codes = data.get('codes', {})
                 # Limpiar códigos expirados al cargar
                 self.cleanup_expired_codes()
                 logger.info(f"<:1000182750:1396420537227411587> Códigos de acceso cargados: {len(self.access_codes)}")
@@ -39,7 +39,7 @@ class UserAccessCodeSystem:
         """Guardar códigos de acceso a archivo"""
         try:
             data = {
-                'access_codes': self.access_codes,
+                'codes': self.access_codes,
                 'last_updated': datetime.now().isoformat(),
                 'total_codes': len(self.access_codes)
             }
@@ -109,10 +109,13 @@ class UserAccessCodeSystem:
             self.save_access_codes()
 
     def validate_code(self, code: str) -> dict:
-        """Validar un código y obtener información del usuario"""
+        """Validar un código y devolver información"""
+        # Limpiar códigos expirados primero
         self.cleanup_expired_codes()
         
+        # Verificar si el código existe
         if code not in self.access_codes:
+            logger.warning(f"<:1000182563:1396420770904932372> Código no encontrado: {code}")
             return {
                 'valid': False,
                 'error': 'Código no encontrado o inválido'
@@ -146,6 +149,8 @@ class UserAccessCodeSystem:
         self.access_codes[code]['uses'] += 1
         self.access_codes[code]['last_used'] = current_time
         self.save_access_codes()
+        
+        logger.info(f"<:verify:1396087763388072006> Código validado exitosamente: {code} (usos: {self.access_codes[code]['uses']}/50)")
         
         return {
             'valid': True,
@@ -345,16 +350,19 @@ class UserAccessAPI:
             data = await request.json()
             code = data.get('access_code', '').strip()
             
+            logger.info(f"<:1000182657:1396060091366637669> Verificando código: {code}")
+            
             if not code:
                 return web.json_response({
                     'success': False,
                     'error': 'access_code es requerido'
                 }, status=400)
             
-            # Validar código
+            # Validar código usando el sistema simplificado
             validation_result = self.access_code_system.validate_code(code)
             
             if not validation_result['valid']:
+                logger.warning(f"<:1000182563:1396420770904932372> Código inválido: {code} - {validation_result['error']}")
                 return web.json_response({
                     'success': False,
                     'error': validation_result['error'],
@@ -370,7 +378,7 @@ class UserAccessAPI:
                 'verified_at': time.time()
             }
             
-            logger.info(f"<:verify:1396087763388072006> Código verificado exitosamente: {code}")
+            logger.info(f"<:verify:1396087763388072006> Código verificado exitosamente: {code} para usuario {validation_result['user_id']}")
             return web.json_response(response_data)
             
         except Exception as e:
@@ -385,6 +393,8 @@ class UserAccessAPI:
         try:
             code = request.match_info['code'].strip()
             
+            logger.info(f"<:1000182584:1396049547838492672> Obteniendo info con código: {code}")
+            
             if not code:
                 return web.json_response({
                     'success': False,
@@ -395,6 +405,7 @@ class UserAccessAPI:
             validation_result = self.access_code_system.validate_code(code)
             
             if not validation_result['valid']:
+                logger.warning(f"<:1000182563:1396420770904932372> Código inválido para info: {code}")
                 return web.json_response({
                     'success': False,
                     'error': validation_result['error'],

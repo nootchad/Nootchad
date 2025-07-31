@@ -1,23 +1,6 @@
+
 {
-  "access_codes": {
-    "JM1IzLFKvrNW": {
-      "user_id": "123456789012345678",
-      "created_at": 1753943467.7034652,
-      "expires_at": 1754029867.7034652,
-      "uses": 5,
-      "max_uses": 50,
-      "active": true,
-      "last_used": 1753943472.759015
-    },
-    "6Jyp6ynrHyB7": {
-      "user_id": "916070251895091241",
-      "created_at": 1753944577.9633565,
-      "expires_at": 1754030977.9633567,
-      "uses": 0,
-      "max_uses": 50,
-      "active": true
-    }
-  },
-  "last_updated": "2025-07-31T06:49:37.963360",
-  "total_codes": 2
+  "codes": {},
+  "last_updated": "2025-07-31T06:52:00.000000",
+  "total_codes": 0
 }

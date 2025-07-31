@@ -4,250 +4,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RbxServers API - Ejemplos para Web Externa</title>
+    <title>Integración API RbxServers - Ejemplos</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .code-block { background: #2d2d2d; color: #fff; padding: 15px; border-radius: 5px; margin: 10px 0; overflow-x: auto; }
-        .button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
-        .result { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px; }
-        .success { background: #d4edda; border-color: #c3e6cb; }
-        .error { background: #f8d7da; border-color: #f5c6cb; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .example-button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .example-button:hover {
+            background: #3182ce;
+        }
+        .result {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .success { border-color: #68d391; background-color: #f0fff4; }
+        .error { border-color: #fc8181; background-color: #fed7d7; }
+        .input-group {
+            margin: 10px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
-    <h1>🔗 RbxServers API - Ejemplos para Web Externa</h1>
+    <h1>🚀 Ejemplos de Integración API RbxServers</h1>
     
-    <h2>📋 Configuración Base</h2>
-    <div class="code-block">
-const API_BASE_URL = 'https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev';
-const API_KEY = 'rbxservers_webhook_secret_2024';
-
-const headers = {
-    'Authorization': `Bearer ${API_KEY}`,
-    'Content-Type': 'application/json'
-};
+    <!-- Configuración -->
+    <div class="container">
+        <h2>⚙️ Configuración</h2>
+        <div class="input-group">
+            <label for="apiUrl">URL de la API:</label>
+            <input type="text" id="apiUrl" value="https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev">
+        </div>
+        <div class="input-group">
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" value="rbxservers_webhook_secret_2024">
+        </div>
     </div>
 
-    <h2>🚀 Ejemplos de Peticiones</h2>
-
-    <h3>1. Obtener Usuarios Verificados</h3>
-    <button class="button" onclick="getVerifiedUsers()">🔍 Probar</button>
-    <div class="code-block">
-async function getVerifiedUsers() {
+    <!-- Ejemplos de JavaScript -->
+    <div class="container">
+        <h2>📝 1. Generar Código de Acceso</h2>
+        <p>Genera un código de acceso temporal para un usuario:</p>
+        
+        <div class="input-group">
+            <label for="userId">Discord User ID:</label>
+            <input type="text" id="userId" value="1143043080933625977" placeholder="ID del usuario de Discord">
+        </div>
+        
+        <button class="example-button" onclick="generateAccessCode()">Generar Código</button>
+        
+        <div class="code-block">
+async function generateAccessCode() {
+    const userId = document.getElementById('userId').value;
+    const apiUrl = document.getElementById('apiUrl').value;
+    const apiKey = document.getElementById('apiKey').value;
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/api/verified-users`, {
-            method: 'GET',
-            headers: headers
-        });
-        const data = await response.json();
-        console.log('Usuarios verificados:', data);
-        return data;
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-    </div>
-
-    <h3>2. Estado del Bot</h3>
-    <button class="button" onclick="getBotStatus()">🤖 Probar</button>
-    <div class="code-block">
-async function getBotStatus() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/bot-status`, {
-            method: 'GET',
-            headers: headers
-        });
-        const data = await response.json();
-        console.log('Estado del bot:', data);
-        return data;
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-    </div>
-
-    <h3>3. Generar Código de Acceso</h3>
-    <button class="button" onclick="generateAccessCode()">🔑 Probar</button>
-    <div class="code-block">
-async function generateAccessCode(userId = '1143043080933625977') {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/user-access/generate`, {
+        const response = await fetch(`${apiUrl}/api/user-access/generate`, {
             method: 'POST',
-            headers: headers,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
             body: JSON.stringify({
                 user_id: userId
             })
         });
+        
         const data = await response.json();
-        console.log('Código generado:', data);
-        return data;
+        showResult('generateResult', data, response.ok);
     } catch (error) {
-        console.error('Error:', error);
+        showResult('generateResult', { error: error.message }, false);
     }
 }
+        </div>
+        
+        <div id="generateResult" class="result" style="display: none;"></div>
     </div>
 
-    <h3>4. Leaderboard</h3>
-    <button class="button" onclick="getLeaderboard()">🏆 Probar</button>
-    <div class="code-block">
-async function getLeaderboard(limit = 10) {
+    <!-- Verificar Código -->
+    <div class="container">
+        <h2>✅ 2. Verificar Código de Acceso</h2>
+        <p>Verifica si un código de acceso es válido:</p>
+        
+        <div class="input-group">
+            <label for="accessCode">Código de Acceso:</label>
+            <input type="text" id="accessCode" placeholder="Código de 12 caracteres">
+        </div>
+        
+        <button class="example-button" onclick="verifyAccessCode()">Verificar Código</button>
+        
+        <div class="code-block">
+async function verifyAccessCode() {
+    const accessCode = document.getElementById('accessCode').value;
+    const apiUrl = document.getElementById('apiUrl').value;
+    const apiKey = document.getElementById('apiKey').value;
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/api/leaderboard?limit=${limit}`, {
-            method: 'GET',
-            headers: headers
-        });
-        const data = await response.json();
-        console.log('Leaderboard:', data);
-        return data;
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-    </div>
-
-    <h3>5. Solicitar Verificación Externa</h3>
-    <button class="button" onclick="requestExternalVerification()">📝 Probar</button>
-    <div class="code-block">
-async function requestExternalVerification(discordId, robloxUsername) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/external-verification/request`, {
+        const response = await fetch(`${apiUrl}/api/user-access/verify`, {
             method: 'POST',
-            headers: headers,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
             body: JSON.stringify({
-                discord_id: discordId,
-                roblox_username: robloxUsername
+                access_code: accessCode
             })
         });
+        
         const data = await response.json();
-        console.log('Verificación solicitada:', data);
-        return data;
+        showResult('verifyResult', data, response.ok);
     } catch (error) {
-        console.error('Error:', error);
+        showResult('verifyResult', { error: error.message }, false);
     }
 }
+        </div>
+        
+        <div id="verifyResult" class="result" style="display: none;"></div>
     </div>
 
-    <h2>📊 Resultado de Pruebas</h2>
-    <div id="results" class="result">
-        Los resultados aparecerán aquí...
-    </div>
-
-    <h2>🔗 cURL Equivalentes</h2>
+    <!-- Obtener Información -->
+    <div class="container">
+        <h2>📊 3. Obtener Información del Usuario</h2>
+        <p>Obtiene información completa del usuario usando su código:</p>
+        
+        <div class="input-group">
+            <label for="infoCode">Código de Acceso:</label>
+            <input type="text" id="infoCode" placeholder="Código de 12 caracteres">
+        </div>
+        
+        <button class="example-button" onclick="getUserInfo()">Obtener Información</button>
+        
+        <div class="code-block">
+async function getUserInfo() {
+    const accessCode = document.getElementById('infoCode').value;
+    const apiUrl = document.getElementById('apiUrl').value;
+    const apiKey = document.getElementById('apiKey').value;
     
-    <h3>Usuarios Verificados</h3>
-    <div class="code-block">
-curl "https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev/api/verified-users" \
-  -H "Authorization: Bearer rbxservers_webhook_secret_2024" \
-  -H "Content-Type: application/json"
+    try {
+        const response = await fetch(`${apiUrl}/api/user-access/info/${accessCode}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            }
+        });
+        
+        const data = await response.json();
+        showResult('infoResult', data, response.ok);
+    } catch (error) {
+        showResult('infoResult', { error: error.message }, false);
+    }
+}
+        </div>
+        
+        <div id="infoResult" class="result" style="display: none;"></div>
     </div>
 
-    <h3>Estado del Bot</h3>
-    <div class="code-block">
-curl "https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev/api/bot-status" \
-  -H "Authorization: Bearer rbxservers_webhook_secret_2024" \
-  -H "Content-Type: application/json"
-    </div>
-
-    <h3>Generar Código de Acceso</h3>
-    <div class="code-block">
-curl "https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev/api/user-access/generate" \
+    <!-- Ejemplo cURL -->
+    <div class="container">
+        <h2>🖥️ Ejemplos con cURL</h2>
+        
+        <h3>Generar código:</h3>
+        <div class="code-block">
+curl "https://tu-repl-url.replit.dev/api/user-access/generate" \
   -H "Authorization: Bearer rbxservers_webhook_secret_2024" \
   -H "Content-Type: application/json" \
   -X POST \
   -d '{"user_id": "1143043080933625977"}'
+        </div>
+        
+        <h3>Verificar código:</h3>
+        <div class="code-block">
+curl "https://tu-repl-url.replit.dev/api/user-access/verify" \
+  -H "Authorization: Bearer rbxservers_webhook_secret_2024" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d '{"access_code": "tu_codigo_aqui"}'
+        </div>
+        
+        <h3>Obtener información:</h3>
+        <div class="code-block">
+curl "https://tu-repl-url.replit.dev/api/user-access/info/tu_codigo_aqui" \
+  -H "Authorization: Bearer rbxservers_webhook_secret_2024" \
+  -H "Content-Type: application/json"
+        </div>
+    </div>
+
+    <!-- Ejemplo Python -->
+    <div class="container">
+        <h2>🐍 Ejemplo en Python</h2>
+        <div class="code-block">
+import requests
+import json
+
+API_URL = "https://tu-repl-url.replit.dev"
+API_KEY = "rbxservers_webhook_secret_2024"
+
+# Generar código
+def generate_code(user_id):
+    response = requests.post(
+        f"{API_URL}/api/user-access/generate",
+        headers={
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={"user_id": user_id}
+    )
+    return response.json()
+
+# Verificar código
+def verify_code(access_code):
+    response = requests.post(
+        f"{API_URL}/api/user-access/verify",
+        headers={
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={"access_code": access_code}
+    )
+    return response.json()
+
+# Obtener información
+def get_user_info(access_code):
+    response = requests.get(
+        f"{API_URL}/api/user-access/info/{access_code}",
+        headers={
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+    )
+    return response.json()
+
+# Uso
+user_id = "1143043080933625977"
+result = generate_code(user_id)
+if result["success"]:
+    code = result["access_code"]
+    print(f"Código generado: {code}")
+    
+    # Verificar el código
+    verify_result = verify_code(code)
+    print(f"Verificación: {verify_result}")
+    
+    # Obtener información
+    info_result = get_user_info(code)
+    print(f"Información: {info_result}")
+        </div>
     </div>
 
     <script>
-        // Configuración
-        const API_BASE_URL = 'https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev';
-        const API_KEY = 'rbxservers_webhook_secret_2024';
+        // URL base y API key
+        const API_URL = "https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev";
+        const API_KEY = "rbxservers_webhook_secret_2024";
 
-        const headers = {
-            'Authorization': `Bearer ${API_KEY}`,
-            'Content-Type': 'application/json'
-        };
-
-        function showResult(data, isError = false) {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.className = `result ${isError ? 'error' : 'success'}`;
-            resultsDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-        }
-
-        // Funciones de prueba
-        async function getVerifiedUsers() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/verified-users`, {
-                    method: 'GET',
-                    headers: headers
-                });
-                const data = await response.json();
-                showResult(data);
-                return data;
-            } catch (error) {
-                showResult({error: error.message}, true);
-            }
-        }
-
-        async function getBotStatus() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/bot-status`, {
-                    method: 'GET',
-                    headers: headers
-                });
-                const data = await response.json();
-                showResult(data);
-                return data;
-            } catch (error) {
-                showResult({error: error.message}, true);
-            }
+        function showResult(elementId, data, success) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${success ? 'success' : 'error'}`;
+            element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
         }
 
         async function generateAccessCode() {
+            const userId = document.getElementById('userId').value;
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!userId) {
+                showResult('generateResult', { error: 'Por favor ingresa un User ID' }, false);
+                return;
+            }
+            
             try {
-                const response = await fetch(`${API_BASE_URL}/api/user-access/generate`, {
+                const response = await fetch(`${apiUrl}/api/user-access/generate`, {
                     method: 'POST',
-                    headers: headers,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
                     body: JSON.stringify({
-                        user_id: '1143043080933625977'
+                        user_id: userId
                     })
                 });
+                
                 const data = await response.json();
-                showResult(data);
-                return data;
+                showResult('generateResult', data, response.ok);
+                
+                // Auto-llenar el código en los otros campos
+                if (data.success && data.access_code) {
+                    document.getElementById('accessCode').value = data.access_code;
+                    document.getElementById('infoCode').value = data.access_code;
+                }
             } catch (error) {
-                showResult({error: error.message}, true);
+                showResult('generateResult', { error: error.message }, false);
             }
         }
 
-        async function getLeaderboard() {
+        async function verifyAccessCode() {
+            const accessCode = document.getElementById('accessCode').value;
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!accessCode) {
+                showResult('verifyResult', { error: 'Por favor ingresa un código de acceso' }, false);
+                return;
+            }
+            
             try {
-                const response = await fetch(`${API_BASE_URL}/api/leaderboard?limit=10`, {
+                const response = await fetch(`${apiUrl}/api/user-access/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        access_code: accessCode
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('verifyResult', data, response.ok);
+            } catch (error) {
+                showResult('verifyResult', { error: error.message }, false);
+            }
+        }
+
+        async function getUserInfo() {
+            const accessCode = document.getElementById('infoCode').value;
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!accessCode) {
+                showResult('infoResult', { error: 'Por favor ingresa un código de acceso' }, false);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${apiUrl}/api/user-access/info/${accessCode}`, {
                     method: 'GET',
-                    headers: headers
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    }
                 });
+                
                 const data = await response.json();
-                showResult(data);
-                return data;
+                showResult('infoResult', data, response.ok);
             } catch (error) {
-                showResult({error: error.message}, true);
-            }
-        }
-
-        async function requestExternalVerification() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/external-verification/request`, {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify({
-                        discord_id: '1143043080933625977',
-                        roblox_username: 'hesiz'
-                    })
-                });
-                const data = await response.json();
-                showResult(data);
-                return data;
-            } catch (error) {
-                showResult({error: error.message}, true);
+                showResult('infoResult', { error: error.message }, false);
             }
         }
     </script>
