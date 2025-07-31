@@ -87,6 +87,9 @@ class WebAPI:
         # Agregar ruta para OAuth2 info
         app.router.add_get('/api/oauth2-info', self.get_oauth2_info)
 
+        # Agregar ruta para recibir datos OAuth2
+        app.router.add_post('/api/oauth2-user-add', self.receive_oauth2_user_data)
+
         # Listar todas las rutas configuradas para debug
         logger.info("📋 Rutas configuradas:")
         for route in app.router.routes():
@@ -971,6 +974,138 @@ class WebAPI:
             return web.json_response({
                 'success': False,
                 'error': 'Error interno del servidor'
+            }, status=500)
+
+    async def receive_oauth2_user_data(self, request):
+        """Endpoint para recibir datos de usuarios OAuth2 desde Vercel"""
+        logger.info(f"🔐 OAuth2: Recibida solicitud desde Vercel desde {request.remote}")
+
+        try:
+            # Verificar método HTTP
+            if request.method != 'POST':
+                logger.error(f"❌ Método HTTP incorrecto: {request.method}")
+                return web.json_response({
+                    'success': False,
+                    'error': f'Método {request.method} no permitido. Usa POST'
+                }, status=405)
+
+            # Verificar autenticación
+            if not self.verify_auth(request):
+                logger.warning(f"🚫 Solicitud OAuth2 no autorizada desde {request.remote}")
+                return web.json_response({
+                    'success': False,
+                    'error': 'API key requerida - usa el header Authorization: Bearer rbxservers_webhook_secret_2024'
+                }, status=401)
+
+            # Leer datos del request
+            try:
+                data = await request.json()
+                logger.info(f"📄 Datos OAuth2 recibidos: {data}")
+            except Exception as json_error:
+                logger.error(f"❌ Error parseando JSON OAuth2: {json_error}")
+                return web.json_response({
+                    'success': False,
+                    'error': 'JSON inválido'
+                }, status=400)
+
+            # Validar datos requeridos
+            required_fields = ['user_id', 'username', 'display_name', 'email', 'avatar_url']
+            missing_fields = [field for field in required_fields if not data.get(field)]
+
+            if missing_fields:
+                return web.json_response({
+                    'success': False,
+                    'error': f'Campos requeridos faltantes: {", ".join(missing_fields)}',
+                    'required_fields': required_fields
+                }, status=400)
+
+            user_id = str(data['user_id'])
+
+            # Importar sistema OAuth2 y guardar datos
+            try:
+                from discord_oauth import discord_oauth
+
+                # Crear estructura de datos compatible
+                oauth_user_data = {
+                    'user_id': user_id,
+                    'username': data.get('username'),
+                    'discriminator': data.get('discriminator', '0'),
+                    'global_name': data.get('global_name'),
+                    'display_name': data.get('display_name'),
+                    'email': data.get('email'),
+                    'verified': data.get('verified', True),
+                    'avatar': data.get('avatar'),
+                    'avatar_url': data.get('avatar_url'),
+                    'banner': data.get('banner'),
+                    'banner_url': data.get('banner_url'),
+                    'accent_color': data.get('accent_color'),
+                    'locale': data.get('locale'),
+                    'mfa_enabled': data.get('mfa_enabled', False),
+                    'premium_type': data.get('premium_type'),
+                    'public_flags': data.get('public_flags', 0),
+                    'flags': data.get('flags', 0),
+                    'profile_url': f"https://discord.com/users/{user_id}",
+                    'oauth_authorized': True,
+                    'authorization_date': datetime.now().isoformat(),
+                    'data_source': 'vercel_oauth2_callback'
+                }
+
+                # Decodificar badges si se proporcionan
+                if data.get('public_flags'):
+                    oauth_user_data['badges'] = discord_oauth._decode_user_flags(data['public_flags'])
+
+                # Simular token data para compatibilidad
+                token_data = {
+                    'access_token': f"vercel_token_{user_id}",
+                    'refresh_token': None,
+                    'expires_in': 3600
+                }
+
+                # Guardar en el sistema OAuth2
+                import time
+                discord_oauth.user_tokens[user_id] = {
+                    'access_token': token_data['access_token'],
+                    'refresh_token': token_data.get('refresh_token'),
+                    'expires_at': time.time() + token_data.get('expires_in', 3600),
+                    'user_info': oauth_user_data,
+                    'authorized_at': time.time(),
+                    'source': 'vercel_callback'
+                }
+
+                logger.info(f"✅ Usuario OAuth2 guardado desde Vercel: {data.get('username')} (ID: {user_id})")
+
+                return web.json_response({
+                    'success': True,
+                    'message': 'Usuario OAuth2 recibido y almacenado correctamente',
+                    'user_id': user_id,
+                    'username': data.get('username'),
+                    'display_name': data.get('display_name'),
+                    'stored_at': datetime.now().isoformat(),
+                    'expires_at': discord_oauth.user_tokens[user_id]['expires_at']
+                })
+
+            except ImportError:
+                logger.error("❌ Sistema OAuth2 no disponible")
+                return web.json_response({
+                    'success': False,
+                    'error': 'Sistema OAuth2 no disponible en este servidor'
+                }, status=500)
+            except Exception as oauth_error:
+                logger.error(f"❌ Error guardando datos OAuth2: {oauth_error}")
+                return web.json_response({
+                    'success': False,
+                    'error': 'Error interno procesando datos OAuth2'
+                }, status=500)
+
+        except Exception as e:
+            logger.error(f"❌ Error crítico en receive_oauth2_user_data: {e}")
+            logger.error(f"🔍 Tipo de error: {type(e).__name__}")
+            import traceback
+            logger.error(f"🔍 Traceback completo: {traceback.format_exc()}")
+            return web.json_response({
+                'success': False,
+                'error': 'Error interno del servidor',
+                'debug_info': str(e)
             }, status=500)
 
 
