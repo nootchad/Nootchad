@@ -62,7 +62,7 @@
         "109983668079237": 4
       },
       "daily_server_average": 4.0,
-      "last_server_added": 1753943719.3744903,
+      "last_server_added": 1753946438.332692,
       "total_scraping_attempts": 4,
       "coins": {
         "balance": 289,
@@ -82,7 +82,7 @@
       "total_commands": 4,
       "active_days": 1,
       "first_seen": 1751500970.0577545,
-      "last_activity": 1753943719.3745022,
+      "last_activity": 1753946438.332701,
       "achievements": [],
       "redeemed_codes": [],
       "total_commands_used": 4,
@@ -143,6 +143,6 @@
       "verified_at": null
     }
   },
-  "last_updated": "2025-07-31T06:35:19.374509",
+  "last_updated": "2025-07-31T07:20:38.332723",
   "total_profiles": 2
 }

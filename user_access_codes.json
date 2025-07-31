@@ -13,11 +13,12 @@
       "user_id": "916070251895091241",
       "created_at": 1753945625.5631814,
       "expires_at": 1754032025.5631814,
-      "uses": 0,
+      "uses": 4,
       "max_uses": 50,
-      "active": true
+      "active": true,
+      "last_used": 1753946438.330935
     }
   },
-  "last_updated": "2025-07-31T07:07:05.563185",
+  "last_updated": "2025-07-31T07:20:38.331008",
   "total_codes": 2
 }
