@@ -52,8 +52,12 @@ class WebAPI:
         app.router.add_get('/api/recent-activity', self.get_recent_activity)
         app.router.add_post('/api/authenticate', self.authenticate_request)
         app.router.add_options('/{path:.*}', self.handle_options)
+        
+        # Rutas de verificación externa - agregadas correctamente
         app.router.add_post('/api/external-verification/request', self.external_verification_request)
         app.router.add_post('/api/external-verification/check', self.external_verification_check)
+        
+        # Otras rutas
         app.router.add_get('/api/leaderboard', self.get_leaderboard_api)
         app.router.add_get('/api/economy-stats', self.get_economy_stats)
 
@@ -91,6 +95,22 @@ class WebAPI:
         if not auth_header:
             logger.info(f"🔓 Acceso sin token permitido desde {request.remote}")
             return True
+            
+        return True
+
+    def validate_roblox_username_format(self, username: str) -> bool:
+        """Validar formato básico de username de Roblox"""
+        if not username or len(username) < 3 or len(username) > 20:
+            return False
+        
+        # Verificar que solo contenga caracteres alfanuméricos y guiones bajos
+        import re
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return False
+            
+        # No puede empezar o terminar con guión bajo
+        if username.startswith('_') or username.endswith('_'):
+            return False
             
         return True
 
@@ -438,8 +458,8 @@ class WebAPI:
                     'error': 'discord_id debe ser un número válido'
                 }, status=400)
 
-            # Validar formato de roblox_username (método async)
-            if not await self.verification_system.validate_roblox_username(roblox_username):
+            # Validar formato de roblox_username
+            if not self.validate_roblox_username_format(roblox_username):
                 return web.json_response({
                     'success': False,
                     'error': 'Nombre de usuario de Roblox inválido'
