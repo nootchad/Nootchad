@@ -113,12 +113,27 @@ class UserAccessCodeSystem:
         # Limpiar códigos expirados primero
         self.cleanup_expired_codes()
         
+        # Log para debug
+        logger.info(f"<:1000182657:1396060091366637669> Validando código: '{code}' (longitud: {len(code)})")
+        logger.info(f"<:1000182750:1396420537227411587> Códigos disponibles: {list(self.access_codes.keys())}")
+        
+        # Verificar formato del código
+        if not code or len(code) != 12:
+            logger.warning(f"<:1000182563:1396420770904932372> Código con formato inválido: '{code}' (longitud: {len(code)})")
+            return {
+                'valid': False,
+                'error': 'Formato de código inválido (debe tener 12 caracteres)',
+                'debug_info': f'Código recibido: "{code}" (longitud: {len(code)})'
+            }
+        
         # Verificar si el código existe
         if code not in self.access_codes:
             logger.warning(f"<:1000182563:1396420770904932372> Código no encontrado: {code}")
+            available_codes = list(self.access_codes.keys())
             return {
                 'valid': False,
-                'error': 'Código no encontrado o inválido'
+                'error': 'Código no encontrado o inválido',
+                'debug_info': f'Códigos disponibles: {len(available_codes)} códigos activos'
             }
         
         code_data = self.access_codes[code]
@@ -126,23 +141,33 @@ class UserAccessCodeSystem:
         
         # Verificar si está activo
         if not code_data.get('active', True):
+            logger.warning(f"<:1000182563:1396420770904932372> Código desactivado: {code}")
             return {
                 'valid': False,
-                'error': 'Código desactivado'
+                'error': 'Código desactivado',
+                'debug_info': 'El código fue desactivado manualmente'
             }
         
         # Verificar expiración
-        if current_time > code_data.get('expires_at', 0):
+        expires_at = code_data.get('expires_at', 0)
+        if current_time > expires_at:
+            hours_expired = int((current_time - expires_at) / 3600)
+            logger.warning(f"<:1000182563:1396420770904932372> Código expirado: {code} (expiró hace {hours_expired} horas)")
             return {
                 'valid': False,
-                'error': 'Código expirado'
+                'error': 'Código expirado',
+                'debug_info': f'Expiró hace {hours_expired} horas'
             }
         
         # Verificar límite de usos
-        if code_data.get('uses', 0) >= code_data.get('max_uses', 50):
+        uses = code_data.get('uses', 0)
+        max_uses = code_data.get('max_uses', 50)
+        if uses >= max_uses:
+            logger.warning(f"<:1000182563:1396420770904932372> Código sin usos restantes: {code} ({uses}/{max_uses})")
             return {
                 'valid': False,
-                'error': 'Código ha alcanzado el límite de usos'
+                'error': 'Código ha alcanzado el límite de usos',
+                'debug_info': f'Usos agotados: {uses}/{max_uses}'
             }
         
         # Incrementar contador de usos
@@ -157,7 +182,7 @@ class UserAccessCodeSystem:
             'user_id': code_data['user_id'],
             'created_at': code_data['created_at'],
             'expires_at': code_data['expires_at'],
-            'uses': code_data['uses'],
+            'uses': self.access_codes[code]['uses'],
             'max_uses': code_data['max_uses']
         }
 
@@ -366,7 +391,11 @@ class UserAccessAPI:
                 return web.json_response({
                     'success': False,
                     'error': validation_result['error'],
-                    'code_status': 'invalid'
+                    'code_status': 'invalid',
+                    'debug_info': validation_result.get('debug_info', 'Sin información adicional'),
+                    'provided_code': code,
+                    'code_length': len(code),
+                    'timestamp': datetime.now().isoformat()
                 }, status=400)
             
             response_data = {
