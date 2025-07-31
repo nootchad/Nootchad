@@ -8,16 +8,16 @@
       "max_uses": 50,
       "active": true
     },
-    "qMsZDgzSHvow": {
+    "JM1IzLFKvrNW": {
       "user_id": "123456789012345678",
-      "created_at": 1753943377.6406968,
-      "expires_at": 1754029777.640697,
+      "created_at": 1753943467.7034652,
+      "expires_at": 1754029867.7034652,
       "uses": 5,
       "max_uses": 50,
       "active": true,
-      "last_used": 1753943382.69153
+      "last_used": 1753943472.759015
     }
   },
-  "last_updated": "2025-07-31T06:29:42.691534",
+  "last_updated": "2025-07-31T06:31:12.759019",
   "total_codes": 2
 }

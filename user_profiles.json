@@ -23,8 +23,61 @@
       "ban_time": null,
       "game_categories": {},
       "top_games": []
+    },
+    "123456789012345678": {
+      "user_id": "123456789012345678",
+      "username": "Usuario Desconocido",
+      "discriminator": "0000",
+      "avatar_url": null,
+      "created_at": null,
+      "joined_at": null,
+      "is_verified": false,
+      "verification_date": null,
+      "roblox_username": null,
+      "roblox_id": null,
+      "servers_data": {
+        "servers": [],
+        "total_servers": 0,
+        "games": {},
+        "total_games": 0,
+        "main_game": null,
+        "servers_by_game": {}
+      },
+      "user_servers": [],
+      "game_servers": {},
+      "total_servers": 0,
+      "total_games": 0,
+      "main_game": null,
+      "servers_by_game": {},
+      "daily_server_average": 0,
+      "last_server_added": 1753943472.7602425,
+      "total_scraping_attempts": 1,
+      "coins": {
+        "balance": 0,
+        "total_earned": 0,
+        "total_transactions": 0,
+        "last_activity": null
+      },
+      "coins_balance": 0,
+      "warnings": 0,
+      "is_banned": false,
+      "ban_info": {
+        "ban_time": null,
+        "remaining_time": null
+      },
+      "is_trusted": true,
+      "risk_level": "bajo",
+      "total_commands": 0,
+      "active_days": 1,
+      "first_seen": null,
+      "last_activity": 1753943472.760251,
+      "achievements": [],
+      "redeemed_codes": [],
+      "total_commands_used": 0,
+      "first_command_date": null,
+      "verified_at": null
     }
   },
-  "last_updated": "2025-07-12T02:05:41.209443",
-  "total_profiles": 1
+  "last_updated": "2025-07-31T06:31:12.760257",
+  "total_profiles": 2
 }
