@@ -438,7 +438,7 @@ class WebAPI:
                     'error': 'discord_id debe ser un número válido'
                 }, status=400)
 
-            # Validar formato de roblox_username
+            # Validar formato de roblox_username (método síncrono)
             if not await self.verification_system.validate_roblox_username(roblox_username):
                 return web.json_response({
                     'success': False,
