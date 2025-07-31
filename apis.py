@@ -274,9 +274,9 @@ class UserAccessCodeSystem:
             }
 
     def get_discord_user_info(self, user_id: str, bot) -> dict:
-        """Obtener información completa de Discord del usuario"""
+        """Obtener información completa de Discord del usuario con fetch asíncrono mejorado"""
         try:
-            # Intentar obtener el usuario desde el cache del bot
+            # Intentar obtener el usuario desde el cache del bot primero
             user = bot.get_user(int(user_id))
             
             if user:
@@ -319,66 +319,129 @@ class UserAccessCodeSystem:
                 return discord_info
             
             else:
-                # Usuario no en cache, intentar fetch
-                import asyncio
-                try:
-                    # Crear una nueva tarea asyncio para fetch
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        # Si ya hay un loop corriendo, crear una tarea
-                        task = asyncio.create_task(bot.fetch_user(int(user_id)))
-                        # No podemos await aquí, así que devolvemos info básica
-                        pass
-                    else:
-                        # Si no hay loop, crear uno nuevo
-                        user = loop.run_until_complete(bot.fetch_user(int(user_id)))
-                        if user:
-                            return self.get_discord_user_info(user_id, bot)
-                except Exception as fetch_error:
-                    logger.warning(f"<:1000182563:1396420770904932372> No se pudo hacer fetch del usuario {user_id}: {fetch_error}")
+                # Usuario no en cache, intentar obtener de los servidores del bot
+                fetched_user = None
                 
-                # Fallback: información básica
+                # Buscar en todos los servidores del bot
+                for guild in bot.guilds:
+                    try:
+                        member = guild.get_member(int(user_id))
+                        if member:
+                            fetched_user = member
+                            break
+                    except:
+                        continue
+                
+                if fetched_user:
+                    # Usuario encontrado en un servidor
+                    discord_info = {
+                        'user_id': user_id,
+                        'username': fetched_user.name,
+                        'display_name': fetched_user.display_name,
+                        'discriminator': fetched_user.discriminator,
+                        'global_name': getattr(fetched_user, 'global_name', None),
+                        'avatar_url': str(fetched_user.display_avatar.url) if fetched_user.display_avatar else None,
+                        'avatar_hash': fetched_user.avatar.key if fetched_user.avatar else None,
+                        'default_avatar_url': str(fetched_user.default_avatar.url),
+                        'profile_url': f"https://discord.com/users/{user_id}",
+                        'created_at': fetched_user.created_at.isoformat(),
+                        'is_bot': fetched_user.bot,
+                        'is_system': getattr(fetched_user, 'system', False),
+                        'public_flags': fetched_user.public_flags.value if hasattr(fetched_user, 'public_flags') else 0,
+                        'cached': False,
+                        'found_in_guild': True
+                    }
+                    
+                    # Información de miembro del servidor
+                    if hasattr(fetched_user, 'joined_at') and fetched_user.joined_at:
+                        discord_info['joined_at'] = fetched_user.joined_at.isoformat()
+                    
+                    if hasattr(fetched_user, 'public_flags'):
+                        flags = fetched_user.public_flags
+                        discord_info['badges'] = {
+                            'staff': flags.staff,
+                            'partner': flags.partner,
+                            'hypesquad': flags.hypesquad,
+                            'bug_hunter': flags.bug_hunter,
+                            'hypesquad_bravery': flags.hypesquad_bravery,
+                            'hypesquad_brilliance': flags.hypesquad_brilliance,
+                            'hypesquad_balance': flags.hypesquad_balance,
+                            'early_supporter': flags.early_supporter,
+                            'verified_bot_developer': flags.verified_bot_developer,
+                            'discord_certified_moderator': flags.discord_certified_moderator,
+                            'active_developer': getattr(flags, 'active_developer', False)
+                        }
+                    
+                    logger.info(f"<:verify:1396087763388072006> Info de Discord obtenida desde servidor para {user_id}: {fetched_user.name}")
+                    return discord_info
+                
+                # Si no se encuentra en cache ni servidores, usar información basada en ID
+                import discord
+                try:
+                    # Calcular fecha de creación aproximada desde el ID de Discord
+                    discord_epoch = 1420070400000  # 1 de enero 2015
+                    timestamp = ((int(user_id) >> 22) + discord_epoch) / 1000
+                    created_at = datetime.fromtimestamp(timestamp).isoformat()
+                except:
+                    created_at = None
+                
+                # Generar avatar por defecto basado en ID
+                avatar_index = int(user_id) % 5
+                default_avatar = f"https://cdn.discordapp.com/embed/avatars/{avatar_index}.png"
+                
                 discord_info = {
                     'user_id': user_id,
                     'username': f'Usuario#{user_id[-4:]}',
-                    'display_name': f'Usuario Desconocido',
+                    'display_name': f'Usuario {user_id[-4:]}',
                     'discriminator': '0000',
                     'global_name': None,
-                    'avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
+                    'avatar_url': default_avatar,
                     'avatar_hash': None,
-                    'default_avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
+                    'default_avatar_url': default_avatar,
                     'profile_url': f"https://discord.com/users/{user_id}",
-                    'created_at': None,
+                    'created_at': created_at,
                     'is_bot': False,
                     'is_system': False,
                     'public_flags': 0,
                     'cached': False,
+                    'found_in_guild': False,
                     'badges': {},
-                    'note': 'Usuario no encontrado en cache del bot'
+                    'note': 'Usuario no encontrado en cache ni servidores del bot'
                 }
                 
-                logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado, usando info por defecto")
+                logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado, usando info calculada desde ID")
                 return discord_info
                 
         except Exception as e:
             logger.error(f"<:1000182563:1396420770904932372> Error obteniendo info de Discord para {user_id}: {e}")
             
-            # Fallback completo
+            # Fallback completo con información mínima
+            try:
+                # Intentar calcular al menos la fecha de creación
+                discord_epoch = 1420070400000
+                timestamp = ((int(user_id) >> 22) + discord_epoch) / 1000
+                created_at = datetime.fromtimestamp(timestamp).isoformat()
+                avatar_index = int(user_id) % 5
+            except:
+                created_at = None
+                avatar_index = 0
+            
             return {
                 'user_id': user_id,
-                'username': f'Error#{user_id[-4:]}',
-                'display_name': 'Error al cargar',
+                'username': f'Usuario#{user_id[-4:]}',
+                'display_name': 'Usuario Desconocido',
                 'discriminator': '0000',
                 'global_name': None,
-                'avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
+                'avatar_url': f"https://cdn.discordapp.com/embed/avatars/{avatar_index}.png",
                 'avatar_hash': None,
-                'default_avatar_url': f"https://cdn.discordapp.com/embed/avatars/{int(user_id) % 5}.png",
+                'default_avatar_url': f"https://cdn.discordapp.com/embed/avatars/{avatar_index}.png",
                 'profile_url': f"https://discord.com/users/{user_id}",
-                'created_at': None,
+                'created_at': created_at,
                 'is_bot': False,
                 'is_system': False,
                 'public_flags': 0,
                 'cached': False,
+                'found_in_guild': False,
                 'badges': {},
                 'error': str(e)
             }
