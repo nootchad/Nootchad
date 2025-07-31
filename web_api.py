@@ -439,7 +439,7 @@ class WebAPI:
                 }, status=400)
 
             # Validar formato de roblox_username
-            if not self.verification_system.is_valid_roblox_username(roblox_username):
+            if not await self.verification_system.validate_roblox_username(roblox_username):
                 return web.json_response({
                     'success': False,
                     'error': 'Nombre de usuario de Roblox inválido'
