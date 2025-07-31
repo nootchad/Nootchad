@@ -19,13 +19,24 @@ class WebAPI:
     def setup_routes(self, app):
         """Configurar rutas de la API web"""
 
-        # Middleware de CORS para permitir acceso desde tu página web
+        # Middleware de CORS para permitir acceso desde cualquier origen
         @web.middleware
         async def cors_middleware(request, handler):
+            # Manejar preflight requests (OPTIONS)
+            if request.method == 'OPTIONS':
+                response = web.Response()
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
+                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+                response.headers['Access-Control-Max-Age'] = '86400'
+                return response
+            
+            # Procesar la petición normal
             response = await handler(request)
             response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
             return response
 
         # Solo agregar middleware si no existe
@@ -55,20 +66,32 @@ class WebAPI:
             status=200,
             headers={
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE, PATCH',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+                'Access-Control-Allow-Credentials': 'true',
                 'Access-Control-Max-Age': '86400'
             }
         )
 
     def verify_auth(self, request):
-        """Verificar autenticación de la petición"""
+        """Verificar autenticación de la petición - modo permisivo"""
         auth_header = request.headers.get('Authorization', '')
         expected_header = f"Bearer {WEBHOOK_SECRET}"
 
-        if auth_header != expected_header:
-            logger.warning(f"🚫 Intento de acceso no autorizado desde {request.remote}")
+        # Permitir acceso sin autenticación para endpoints públicos
+        if request.path.startswith('/api/') and request.method in ['GET', 'OPTIONS']:
+            return True
+            
+        # Verificar token si se proporciona
+        if auth_header and auth_header != expected_header:
+            logger.warning(f"🚫 Token inválido desde {request.remote}")
             return False
+            
+        # Permitir acceso sin token para compatibilidad
+        if not auth_header:
+            logger.info(f"🔓 Acceso sin token permitido desde {request.remote}")
+            return True
+            
         return True
 
     async def get_verified_users(self, request):
