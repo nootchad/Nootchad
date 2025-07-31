@@ -1136,7 +1136,7 @@ class UserProfileSystem:
         }
         return game_names.get(game_id, f"🎮 Game {game_id}")
 
-def save_user_servers_simple(self, user_id: str, servers: list):
+    def save_user_servers_simple(self, user_id: str, servers: list):
         """Guardar servidores de usuario en la estructura simplificada"""
         try:
             import json
