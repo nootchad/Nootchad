@@ -6,6 +6,7 @@ import json
 import time
 import secrets
 import logging
+import os
 from datetime import datetime, timedelta
 from aiohttp import web
 import asyncio
@@ -14,10 +15,21 @@ logger = logging.getLogger(__name__)
 
 class DiscordOAuth2System:
     def __init__(self):
-        # Configuración OAuth2 de Discord
-        self.client_id = "1388660674573631549"  # Obtener de Discord Developer Portal
-        self.client_secret = "XUppnOJNCNZSVouqe6KU5FH7qkpqyXtn"  # Obtener de Discord Developer Portal
-        self.redirect_uri = "https://tu-repl-url.replit.dev/auth/discord/callback"
+        # Configuración OAuth2 de Discord - TODO desde variables de entorno
+        self.client_id = os.getenv('DISCORD_CLIENT_ID', "1388660674573631549")
+        self.client_secret = os.getenv('DISCORD_CLIENT_SECRET', "XUppnOJNCNZSVouqe6KU5FH7qkpqyXtn")
+        
+        # Obtener URL dinámicamente desde variables de entorno de Replit
+        import os
+        repl_slug = os.getenv('REPL_SLUG', 'workspace')
+        repl_owner = os.getenv('REPL_OWNER', 'user')
+        
+        if repl_slug and repl_owner:
+            self.redirect_uri = f"https://{repl_slug}-{repl_owner}.replit.dev/auth/discord/callback"
+        else:
+            # Fallback para desarrollo local sin URLs hardcodeadas
+            port = os.getenv('PORT', '8080')
+            self.redirect_uri = f"http://0.0.0.0:{port}/auth/discord/callback"
         
         # Scopes que necesitamos
         self.scopes = ["identify", "email"]  # identify para info básica, email para email
