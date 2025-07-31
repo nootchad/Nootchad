@@ -33,7 +33,7 @@ class WebAPI:
         @web.middleware
         async def cors_middleware(request, handler):
             logger.info(f"🌐 CORS Middleware: {request.method} {request.path} desde {request.remote}")
-            
+
             # Manejar preflight requests (OPTIONS)
             if request.method == 'OPTIONS':
                 logger.info(f"✈️ Preflight request para {request.path}")
@@ -43,7 +43,7 @@ class WebAPI:
                 response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
                 response.headers['Access-Control-Max-Age'] = '86400'
                 return response
-            
+
             # Procesar la petición normal
             try:
                 response = await handler(request)
@@ -71,19 +71,21 @@ class WebAPI:
         app.router.add_get('/api/recent-activity', self.get_recent_activity)
         app.router.add_post('/api/authenticate', self.authenticate_request)
         app.router.add_options('/{path:.*}', self.handle_options)
-        
+
         # Rutas de verificación externa - agregadas correctamente
         app.router.add_post('/api/external-verification/request', self.external_verification_request)
         app.router.add_post('/api/external-verification/check', self.external_verification_check)
-        
+
         # Agregar ruta OPTIONS para verificación externa
         app.router.add_options('/api/external-verification/request', self.handle_options)
         app.router.add_options('/api/external-verification/check', self.handle_options)
         logger.info("🔗 Rutas de verificación externa configuradas")
-        
+
         # Otras rutas
         app.router.add_get('/api/leaderboard', self.get_leaderboard_api)
         app.router.add_get('/api/economy-stats', self.get_economy_stats)
+        # Agregar ruta para OAuth2 info
+        app.router.add_get('/api/oauth2-info', self.get_oauth2_info)
 
         # Listar todas las rutas configuradas para debug
         logger.info("📋 Rutas configuradas:")
@@ -113,33 +115,33 @@ class WebAPI:
         # Permitir acceso sin autenticación para endpoints públicos
         if request.path.startswith('/api/') and request.method in ['GET', 'OPTIONS']:
             return True
-            
+
         # Verificar token si se proporciona
         if auth_header and auth_header != expected_header:
             logger.warning(f"🚫 Token inválido desde {request.remote}")
             return False
-            
+
         # Permitir acceso sin token para compatibilidad
         if not auth_header:
             logger.info(f"🔓 Acceso sin token permitido desde {request.remote}")
             return True
-            
+
         return True
 
     def validate_roblox_username_format(self, username: str) -> bool:
         """Validar formato básico de username de Roblox"""
         if not username or len(username) < 3 or len(username) > 20:
             return False
-        
+
         # Verificar que solo contenga caracteres alfanuméricos y guiones bajos
         import re
         if not re.match(r'^[a-zA-Z0-9_]+$', username):
             return False
-            
+
         # No puede empezar o terminar con guión bajo
         if username.startswith('_') or username.endswith('_'):
             return False
-            
+
         return True
 
     async def get_verified_users(self, request):
@@ -466,7 +468,7 @@ class WebAPI:
         logger.info(f"📋 Método: {request.method}, Path: {request.path}")
         logger.info(f"📋 Headers: {dict(request.headers)}")
         logger.info(f"📋 Content-Type: {request.headers.get('Content-Type', 'No especificado')}")
-        
+
         try:
             # Verificar método HTTP ANTES de procesar
             logger.info(f"🔍 Verificando método HTTP: {request.method}")
@@ -488,11 +490,11 @@ class WebAPI:
                 # Verificar si hay contenido
                 content_length = request.headers.get('Content-Length', '0')
                 logger.info(f"📦 Content-Length: {content_length}")
-                
+
                 # Intentar leer el texto primero para debug
                 raw_body = await request.text()
                 logger.info(f"📄 Raw body recibido: {raw_body[:200]}...")  # Primeros 200 caracteres
-                
+
                 # Ahora parsear como JSON
                 if raw_body.strip():
                     data = json.loads(raw_body)
@@ -503,7 +505,7 @@ class WebAPI:
                         'success': False,
                         'error': 'Request body vacío - se requiere JSON'
                     }, status=400)
-                    
+
             except json.JSONDecodeError as json_error:
                 logger.error(f"❌ Error parseando JSON: {json_error}")
                 logger.error(f"❌ Raw body que causó error: {raw_body}")
@@ -520,7 +522,7 @@ class WebAPI:
 
             discord_id = str(data.get('discord_id', ''))
             roblox_username = data.get('roblox_username', '').strip()
-            
+
             logger.info(f"🎯 Procesando verificación: Discord {discord_id} → Roblox {roblox_username}")
 
             # Validaciones básicas
@@ -606,7 +608,7 @@ class WebAPI:
         """API para verificar si el código fue puesto en la descripción"""
         logger.info(f"✅ API Externa: Recibida solicitud de verificación CHECK desde {request.remote}")
         logger.info(f"📋 Método: {request.method}, Path: {request.path}")
-        
+
         try:
             # Verificar método HTTP
             if request.method != 'POST':
@@ -633,7 +635,7 @@ class WebAPI:
 
             discord_id = str(data.get('discord_id', ''))
             roblox_username = data.get('roblox_username', '').strip()
-            
+
             logger.info(f"🔍 Verificando código para: Discord {discord_id} → Roblox {roblox_username}")
 
             # Validaciones básicas
@@ -919,26 +921,78 @@ class WebAPI:
                 'error': 'Error interno del servidor'
             }, status=500)
 
+    async def get_oauth2_info(self, request):
+        """API para obtener información del sistema OAuth2"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            # Importar sistema OAuth2
+            try:
+                from discord_oauth import discord_oauth
+
+                oauth_info = {
+                    'client_id': discord_oauth.client_id,
+                    'redirect_uri': discord_oauth.redirect_uri,
+                    'scopes': discord_oauth.scopes,
+                    'authorize_url': discord_oauth.authorize_url,
+                    'token_url': discord_oauth.token_url,
+                    'configured': True
+                }
+
+                # Generar URL de ejemplo
+                auth_url, state = discord_oauth.generate_oauth_url()
+                oauth_info['example_auth_url'] = auth_url
+                oauth_info['example_state'] = state
+
+            except ImportError:
+                oauth_info = {
+                    'configured': False,
+                    'error': 'Sistema OAuth2 no disponible'
+                }
+
+            response_data = {
+                'success': True,
+                'oauth2_info': oauth_info,
+                'endpoints': {
+                    'start_auth': '/auth/discord/start',
+                    'callback': '/auth/discord/callback',
+                    'user_info': '/auth/discord/user/{user_id}',
+                    'revoke': '/auth/discord/revoke/{user_id}'
+                },
+                'generated_at': datetime.now().isoformat()
+            }
+
+            logger.info(f"🔐 API: Información OAuth2 enviada")
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_oauth2_info: {e}")
+            return web.json_response({
+                'success': False,
+                'error': 'Error interno del servidor'
+            }, status=500)
+
 
 # Función para integrar la API web en el sistema existente
 def setup_web_api(app, verification_system, scraper, remote_control):
     """Configurar la API web en la app existente"""
     web_api = WebAPI(verification_system, scraper, remote_control)
     web_api.setup_routes(app)
-    
+
     # Integrar API de códigos de acceso
     try:
         from apis import setup_user_access_api
         user_access_api, access_code_system = setup_user_access_api(app)
         logger.info("<:verify:1396087763388072006> API de códigos de acceso integrada exitosamente")
-        
+
         # Verificar que las rutas se registraron
         access_routes = [str(route.resource) for route in app.router.routes() if '/api/user-access/' in str(route.resource)]
         logger.info(f"<:1000182750:1396420537227411587> Rutas de acceso registradas: {len(access_routes)}")
-        
+
     except Exception as e:
         logger.error(f"<:1000182563:1396420770904932372> Error integrando API de códigos de acceso: {e}")
         import traceback
         logger.error(f"<:1000182563:1396420770904932372> Traceback: {traceback.format_exc()}")
-    
+
     return web_api

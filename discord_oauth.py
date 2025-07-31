@@ -19,21 +19,9 @@ class DiscordOAuth2System:
         self.client_id = os.getenv('DISCORD_CLIENT_ID', "1388660674573631549")
         self.client_secret = os.getenv('DISCORD_CLIENT_SECRET', "XUppnOJNCNZSVouqe6KU5FH7qkpqyXtn")
         
-        # Configurar redirect URI - Usar Vercel si está configurado, sino Replit dinámico
-        vercel_url = os.getenv('VERCEL_URL')  # Variable de entorno personalizada
-        if vercel_url:
-            self.redirect_uri = f"https://{vercel_url}/auth/discord/callback"
-        else:
-            # Fallback a Replit dinámico
-            repl_slug = os.getenv('REPL_SLUG', 'workspace')
-            repl_owner = os.getenv('REPL_OWNER', 'user')
-            
-            if repl_slug and repl_owner:
-                self.redirect_uri = f"https://{repl_slug}-{repl_owner}.replit.dev/auth/discord/callback"
-            else:
-                # Fallback para desarrollo local sin URLs hardcodeadas
-                port = os.getenv('PORT', '8080')
-                self.redirect_uri = f"http://0.0.0.0:{port}/auth/discord/callback"
+        # Configurar redirect URI - Usar la URL configurada en Discord
+        # La URL ya está configurada en Discord como: https://rbxbot.vercel.app/api/auth/discord/callback
+        self.redirect_uri = "https://rbxbot.vercel.app/api/auth/discord/callback"
         
         # Scopes que necesitamos
         self.scopes = ["identify", "email"]  # identify para info básica, email para email
