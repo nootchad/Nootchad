@@ -148,3 +148,33 @@ def setup_access_code_commands(bot):
             await interaction.response.send_message(embed=error_embed, ephemeral=True)
 
     logger.info("<:1000182584:1396049547838492672> Comandos de códigos de acceso configurados")
+
+# Auto-registro cuando el bot esté disponible
+def _try_auto_register():
+    """Intentar registrar automáticamente los comandos"""
+    try:
+        import sys
+        if 'main' in sys.modules:
+            main_module = sys.modules['main']
+            if hasattr(main_module, 'bot') and main_module.bot:
+                setup_access_code_commands(main_module.bot)
+                logger.info("<:verify:1396087763388072006> Comandos de acceso auto-registrados exitosamente")
+                return True
+    except Exception as e:
+        pass
+    return False
+
+# Intentar auto-registro inmediato
+if not _try_auto_register():
+    # Si no funciona inmediatamente, intentar después
+    import threading
+    import time
+    
+    def delayed_register():
+        for i in range(10):  # Intentar por 10 segundos
+            time.sleep(1)
+            if _try_auto_register():
+                break
+    
+    thread = threading.Thread(target=delayed_register, daemon=True)
+    thread.start()

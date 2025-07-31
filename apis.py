@@ -428,3 +428,17 @@ def setup_user_access_api(app):
     """Configurar la API de acceso de usuarios en la app existente"""
     user_access_api.setup_routes(app)
     return user_access_api, access_code_system
+
+# Sistema de auto-carga
+def initialize_access_code_system():
+    """Inicializar sistema de códigos de acceso automáticamente"""
+    try:
+        from auto_apis_loader import get_auto_loader
+        loader = get_auto_loader()
+        loader.force_load()
+        logger.info("<:1000182751:1396420551798558781> Sistema de códigos inicializado automáticamente")
+    except Exception as e:
+        logger.warning(f"<:1000182563:1396420770904932372> Error en inicialización automática: {e}")
+
+# Inicializar cuando se carga el módulo
+initialize_access_code_system()
