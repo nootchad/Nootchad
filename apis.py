@@ -289,21 +289,24 @@ class UserAccessCodeSystem:
             
             # Método 1: Intentar obtener desde caché del bot
             try:
-                user = bot.get_user(user_id_int)
-                if user:
-                    logger.debug(f"✅ Usuario {user_id} encontrado en caché del bot")
+                if hasattr(bot, 'get_user') and bot.get_user:
+                    user = bot.get_user(user_id_int)
+                    if user:
+                        logger.info(f"✅ Usuario {user_id} encontrado en caché del bot: {user.name}")
+                    else:
+                        logger.debug(f"Usuario {user_id} no encontrado en caché del bot")
             except Exception as e:
                 logger.debug(f"Error en caché del bot para {user_id}: {e}")
             
-            # Método 2: Buscar en servidores del bot
-            if not user and hasattr(bot, 'guilds'):
+            # Método 2: Buscar en servidores del bot si no se encontró en caché
+            if not user and hasattr(bot, 'guilds') and bot.guilds:
                 try:
                     for guild in bot.guilds:
                         try:
                             member = guild.get_member(user_id_int)
                             if member:
                                 user = member
-                                logger.debug(f"✅ Usuario {user_id} encontrado en servidor {guild.name}")
+                                logger.info(f"✅ Usuario {user_id} encontrado en servidor {guild.name}: {member.name}")
                                 break
                         except Exception as guild_error:
                             logger.debug(f"Error buscando en guild {guild.id}: {guild_error}")
@@ -311,42 +314,46 @@ class UserAccessCodeSystem:
                 except Exception as e:
                     logger.debug(f"Error buscando en servidores para {user_id}: {e}")
             
-            # Método 3: Fetch directo (solo si el bot está listo)
-            if not user and hasattr(bot, 'is_ready') and bot.is_ready():
+            # Método 3: Intentar buscar usando fetch_user de forma segura
+            if not user and hasattr(bot, 'loop') and bot.loop and not bot.loop.is_closed():
                 try:
                     import asyncio
                     
-                    # Verificar si hay un loop activo
-                    try:
-                        loop = asyncio.get_running_loop()
-                        # No podemos hacer fetch directo desde un hilo síncrono con loop activo
-                        logger.debug(f"Loop de asyncio activo, omitiendo fetch directo para {user_id}")
-                    except RuntimeError:
-                        # No hay loop activo, podemos usar asyncio.run
+                    # Crear una tarea para fetch el usuario
+                    async def safe_fetch_user():
                         try:
-                            async def fetch_user():
-                                return await bot.fetch_user(user_id_int)
-                            
-                            user = asyncio.run(fetch_user())
-                            if user:
-                                logger.debug(f"✅ Usuario {user_id} obtenido via fetch directo")
+                            return await bot.fetch_user(user_id_int)
                         except Exception as fetch_error:
-                            logger.debug(f"Error en fetch directo para {user_id}: {fetch_error}")
+                            logger.debug(f"Error en fetch_user para {user_id}: {fetch_error}")
+                            return None
+                    
+                    # Ejecutar la tarea de forma segura
+                    try:
+                        # Si estamos en el hilo principal del bot, podemos crear la tarea
+                        future = asyncio.run_coroutine_threadsafe(safe_fetch_user(), bot.loop)
+                        user = future.result(timeout=5.0)  # Timeout de 5 segundos
+                        if user:
+                            logger.info(f"✅ Usuario {user_id} obtenido via fetch: {user.name}")
+                    except Exception as async_error:
+                        logger.debug(f"Error en fetch async para {user_id}: {async_error}")
+                        
                 except Exception as e:
-                    logger.debug(f"Error en método de fetch para {user_id}: {e}")
+                    logger.debug(f"Error en método de fetch seguro para {user_id}: {e}")
             
             if user:
                 # Usuario encontrado - obtener información completa
                 try:
-                    return self._extract_user_info_safely(user, user_id)
+                    discord_info = self._extract_user_info_safely(user, user_id)
+                    logger.info(f"<:verify:1396087763388072006> Info de Discord obtenida exitosamente para {user_id}: {discord_info.get('username', 'N/A')}")
+                    return discord_info
                 except Exception as extract_error:
                     logger.error(f"<:1000182563:1396420770904932372> Error extrayendo info del usuario {user_id}: {extract_error}")
                     return self._generate_fallback_user_info(user_id, f"Error extrayendo información: {extract_error}")
             
             else:
-                # Usuario no encontrado, generar información de fallback
-                logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado en ningún método")
-                return self._generate_fallback_user_info(user_id, "Usuario no encontrado")
+                # Usuario no encontrado en ningún método, generar información de fallback con datos existentes
+                logger.warning(f"<:1000182563:1396420770904932372> Usuario {user_id} no encontrado en Discord, usando fallback mejorado")
+                return self._generate_enhanced_fallback_user_info(user_id)
                 
         except Exception as e:
             logger.error(f"<:1000182563:1396420770904932372> Error crítico obteniendo info de Discord para {user_id}: {e}")
@@ -436,6 +443,94 @@ class UserAccessCodeSystem:
             logger.error(f"<:1000182563:1396420770904932372> Error en _extract_user_info_safely para {user_id}: {e}")
             raise
     
+    def _generate_enhanced_fallback_user_info(self, user_id: str) -> dict:
+        """Generar información mejorada de fallback usando datos existentes del sistema"""
+        try:
+            # Intentar obtener datos desde user_profiles.json
+            existing_data = self._load_existing_profile_data(user_id)
+            
+            # Calcular fecha de creación desde el ID de Discord
+            try:
+                discord_epoch = 1420070400000  # 1 de enero 2015
+                timestamp = ((int(user_id) >> 22) + discord_epoch) / 1000
+                created_at = datetime.fromtimestamp(timestamp).isoformat()
+            except Exception as date_error:
+                logger.debug(f"Error calculando fecha de creación para {user_id}: {date_error}")
+                created_at = None
+            
+            # Generar avatar por defecto
+            try:
+                avatar_index = int(user_id) % 5
+                default_avatar = f"https://cdn.discordapp.com/embed/avatars/{avatar_index}.png"
+            except Exception:
+                default_avatar = "https://cdn.discordapp.com/embed/avatars/0.png"
+            
+            # Usar datos existentes si están disponibles
+            username = existing_data.get('username', f'Usuario#{user_id[-4:]}')
+            display_name = existing_data.get('display_name', username)
+            
+            enhanced_info = {
+                'user_id': user_id,
+                'username': username,
+                'display_name': display_name,
+                'discriminator': existing_data.get('discriminator', '0'),
+                'global_name': existing_data.get('global_name'),
+                'avatar_url': existing_data.get('avatar_url', default_avatar),
+                'avatar_hash': existing_data.get('avatar_hash'),
+                'default_avatar_url': default_avatar,
+                'profile_url': f"https://discord.com/users/{user_id}",
+                'created_at': created_at,
+                'is_bot': existing_data.get('is_bot', False),
+                'is_system': existing_data.get('is_system', False),
+                'public_flags': existing_data.get('public_flags', 0),
+                'cached': False,
+                'found_via_fetch': False,
+                'badges': existing_data.get('badges', {}),
+                'fallback_reason': 'Usuario no encontrado en Discord, usando datos del sistema',
+                'data_source': 'enhanced_fallback',
+                'has_existing_data': bool(existing_data)
+            }
+            
+            logger.info(f"<:1000182750:1396420537227411587> Usando fallback mejorado para {user_id}: {username} (datos existentes: {bool(existing_data)})")
+            return enhanced_info
+            
+        except Exception as e:
+            logger.error(f"<:1000182563:1396420770904932372> Error en fallback mejorado para {user_id}: {e}")
+            return self._generate_fallback_user_info(user_id, f"Error en fallback mejorado: {str(e)}")
+    
+    def _load_existing_profile_data(self, user_id: str) -> dict:
+        """Cargar datos existentes del perfil de usuario"""
+        try:
+            import json
+            
+            # Intentar cargar desde user_profiles.json
+            try:
+                with open('user_profiles.json', 'r', encoding='utf-8') as f:
+                    profiles_data = json.load(f)
+                    existing_profile = profiles_data.get('user_profiles', {}).get(user_id, {})
+                    
+                    if existing_profile:
+                        return {
+                            'username': existing_profile.get('username'),
+                            'display_name': existing_profile.get('display_name'),
+                            'discriminator': existing_profile.get('discriminator'),
+                            'global_name': existing_profile.get('global_name'),
+                            'avatar_url': existing_profile.get('avatar_url'),
+                            'avatar_hash': existing_profile.get('avatar_hash'),
+                            'is_bot': existing_profile.get('is_bot'),
+                            'is_system': existing_profile.get('is_system'),
+                            'public_flags': existing_profile.get('public_flags'),
+                            'badges': existing_profile.get('badges')
+                        }
+            except Exception as profile_error:
+                logger.debug(f"Error leyendo user_profiles.json para {user_id}: {profile_error}")
+            
+            return {}
+            
+        except Exception as e:
+            logger.debug(f"Error cargando datos existentes para {user_id}: {e}")
+            return {}
+
     def _generate_fallback_user_info(self, user_id: str, reason: str = "Usuario no encontrado") -> dict:
         """Generar información de fallback cuando no se puede obtener del usuario"""
         try:
