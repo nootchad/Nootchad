@@ -172,6 +172,20 @@ def main():
     print(f"<:1000182644:1396049313481625611> Usuario de prueba: {TEST_USER_ID}")
     print("=" * 60)
     
+    # Probar código específico del usuario
+    specific_code = "aulJJ700EbNB"
+    print(f"\n🔍 PROBANDO CÓDIGO ESPECÍFICO: {specific_code}")
+    print("=" * 50)
+    
+    # Verificar el código específico
+    if test_verify_access_code(specific_code):
+        test_get_user_info_by_code(specific_code)
+        test_multiple_uses(specific_code, 2)
+    
+    print("\n" + "=" * 50)
+    print("🆕 GENERANDO NUEVO CÓDIGO")
+    print("=" * 50)
+    
     # 1. Generar código de acceso
     access_code = test_generate_access_code()
     
