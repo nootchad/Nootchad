@@ -3,7 +3,7 @@
     "916070251895091241": {
       "user_id": "916070251895091241",
       "username": "Usuario#1241",
-      "discriminator": "0000",
+      "discriminator": "0",
       "avatar_url": "https://cdn.discordapp.com/embed/avatars/1.png",
       "created_at": "2021-12-02T20:56:07.814000",
       "joined_at": null,
@@ -92,7 +92,7 @@
     "123456789012345678": {
       "user_id": "123456789012345678",
       "username": "Usuario#5678",
-      "discriminator": "0000",
+      "discriminator": "0",
       "avatar_url": "https://cdn.discordapp.com/embed/avatars/3.png",
       "created_at": "2015-12-07T16:13:12.216000",
       "joined_at": null,
@@ -145,7 +145,7 @@
     "1143043080933625977": {
       "user_id": "1143043080933625977",
       "username": "Usuario#5977",
-      "discriminator": "0000",
+      "discriminator": "0",
       "avatar_url": "https://cdn.discordapp.com/embed/avatars/2.png",
       "created_at": "2023-08-21T04:45:07.208000",
       "joined_at": null,
@@ -236,6 +236,6 @@
       "verified_at": 1753919080.4301717
     }
   },
-  "last_updated": "2025-07-31T07:55:39.572097",
+  "last_updated": "2025-07-31T07:58:13.461546",
   "total_profiles": 3
 }
