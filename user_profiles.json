@@ -62,7 +62,7 @@
         "109983668079237": 4
       },
       "daily_server_average": 4.0,
-      "last_server_added": 1753946438.332692,
+      "last_server_added": 1753946995.0023072,
       "total_scraping_attempts": 4,
       "coins": {
         "balance": 289,
@@ -82,7 +82,7 @@
       "total_commands": 4,
       "active_days": 1,
       "first_seen": 1751500970.0577545,
-      "last_activity": 1753946438.332701,
+      "last_activity": 1753946995.0023174,
       "achievements": [],
       "redeemed_codes": [],
       "total_commands_used": 4,
@@ -141,8 +141,101 @@
       "total_commands_used": 0,
       "first_command_date": null,
       "verified_at": null
+    },
+    "1143043080933625977": {
+      "user_id": "1143043080933625977",
+      "username": "Usuario Desconocido",
+      "discriminator": "0000",
+      "avatar_url": null,
+      "created_at": null,
+      "joined_at": null,
+      "is_verified": true,
+      "verification_date": 1753919080.4301717,
+      "roblox_username": "whoofax",
+      "roblox_id": null,
+      "servers_data": {
+        "servers": [
+          "https://www.roblox.com/games/920587237?privateServerLinkCode=40936639211587385367151446954683",
+          "https://www.roblox.com/games/920587237?privateServerLinkCode=00194676817271403631123319209300",
+          "https://www.roblox.com/games/920587237?privateServerLinkCode=00745564609913142096081354810977",
+          "https://www.roblox.com/games/920587237?privateServerLinkCode=51553626754137522642651894416635",
+          "https://www.roblox.com/games/920587237?privateServerLinkCode=08954217500110269118986262928094"
+        ],
+        "total_servers": 5,
+        "games": {
+          "920587237": {
+            "server_links": [
+              "https://www.roblox.com/games/920587237?privateServerLinkCode=40936639211587385367151446954683",
+              "https://www.roblox.com/games/920587237?privateServerLinkCode=00194676817271403631123319209300",
+              "https://www.roblox.com/games/920587237?privateServerLinkCode=00745564609913142096081354810977",
+              "https://www.roblox.com/games/920587237?privateServerLinkCode=51553626754137522642651894416635",
+              "https://www.roblox.com/games/920587237?privateServerLinkCode=08954217500110269118986262928094"
+            ],
+            "game_name": "\ud83c\udfe0 Adopt Me!",
+            "category": "other"
+          }
+        },
+        "total_games": 1,
+        "main_game": "920587237",
+        "servers_by_game": {
+          "920587237": 5
+        }
+      },
+      "user_servers": [
+        "https://www.roblox.com/games/920587237?privateServerLinkCode=40936639211587385367151446954683",
+        "https://www.roblox.com/games/920587237?privateServerLinkCode=00194676817271403631123319209300",
+        "https://www.roblox.com/games/920587237?privateServerLinkCode=00745564609913142096081354810977",
+        "https://www.roblox.com/games/920587237?privateServerLinkCode=51553626754137522642651894416635",
+        "https://www.roblox.com/games/920587237?privateServerLinkCode=08954217500110269118986262928094"
+      ],
+      "game_servers": {
+        "920587237": {
+          "server_links": [
+            "https://www.roblox.com/games/920587237?privateServerLinkCode=40936639211587385367151446954683",
+            "https://www.roblox.com/games/920587237?privateServerLinkCode=00194676817271403631123319209300",
+            "https://www.roblox.com/games/920587237?privateServerLinkCode=00745564609913142096081354810977",
+            "https://www.roblox.com/games/920587237?privateServerLinkCode=51553626754137522642651894416635",
+            "https://www.roblox.com/games/920587237?privateServerLinkCode=08954217500110269118986262928094"
+          ],
+          "game_name": "\ud83c\udfe0 Adopt Me!",
+          "category": "other"
+        }
+      },
+      "total_servers": 5,
+      "total_games": 1,
+      "main_game": "920587237",
+      "servers_by_game": {
+        "920587237": 5
+      },
+      "daily_server_average": 5.0,
+      "last_server_added": 1753946688.2210233,
+      "total_scraping_attempts": 5,
+      "coins": {
+        "balance": 10,
+        "total_earned": 10,
+        "total_transactions": 2,
+        "last_activity": "2025-07-30T23:46:52.295070"
+      },
+      "coins_balance": 10,
+      "warnings": 0,
+      "is_banned": false,
+      "ban_info": {
+        "ban_time": null,
+        "remaining_time": null
+      },
+      "is_trusted": true,
+      "risk_level": "bajo",
+      "total_commands": 5,
+      "active_days": 1,
+      "first_seen": 1753919080.4301717,
+      "last_activity": 1753946688.2210307,
+      "achievements": [],
+      "redeemed_codes": [],
+      "total_commands_used": 5,
+      "first_command_date": 1753919080.4301717,
+      "verified_at": 1753919080.4301717
     }
   },
-  "last_updated": "2025-07-31T07:20:38.332723",
-  "total_profiles": 2
+  "last_updated": "2025-07-31T07:29:55.002325",
+  "total_profiles": 3
 }
