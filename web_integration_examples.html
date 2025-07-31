@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RbxServers API - Ejemplos para Web Externa</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .code-block { background: #2d2d2d; color: #fff; padding: 15px; border-radius: 5px; margin: 10px 0; overflow-x: auto; }
+        .button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .result { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🔗 RbxServers API - Ejemplos para Web Externa</h1>
+    
+    <h2>📋 Configuración Base</h2>
+    <div class="code-block">
+const API_BASE_URL = 'https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev';
+const API_KEY = 'rbxservers_webhook_secret_2024';
+
+const headers = {
+    'Authorization': `Bearer ${API_KEY}`,
+    'Content-Type': 'application/json'
+};
+    </div>
+
+    <h2>🚀 Ejemplos de Peticiones</h2>
+
+    <h3>1. Obtener Usuarios Verificados</h3>
+    <button class="button" onclick="getVerifiedUsers()">🔍 Probar</button>
+    <div class="code-block">
+async function getVerifiedUsers() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/verified-users`, {
+            method: 'GET',
+            headers: headers
+        });
+        const data = await response.json();
+        console.log('Usuarios verificados:', data);
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+    </div>
+
+    <h3>2. Estado del Bot</h3>
+    <button class="button" onclick="getBotStatus()">🤖 Probar</button>
+    <div class="code-block">
+async function getBotStatus() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/bot-status`, {
+            method: 'GET',
+            headers: headers
+        });
+        const data = await response.json();
+        console.log('Estado del bot:', data);
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+    </div>
+
+    <h3>3. Generar Código de Acceso</h3>
+    <button class="button" onclick="generateAccessCode()">🔑 Probar</button>
+    <div class="code-block">
+async function generateAccessCode(userId = '1143043080933625977') {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/user-access/generate`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                user_id: userId
+            })
+        });
+        const data = await response.json();
+        console.log('Código generado:', data);
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+    </div>
+
+    <h3>4. Leaderboard</h3>
+    <button class="button" onclick="getLeaderboard()">🏆 Probar</button>
+    <div class="code-block">
+async function getLeaderboard(limit = 10) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/leaderboard?limit=${limit}`, {
+            method: 'GET',
+            headers: headers
+        });
+        const data = await response.json();
+        console.log('Leaderboard:', data);
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+    </div>
+
+    <h3>5. Solicitar Verificación Externa</h3>
+    <button class="button" onclick="requestExternalVerification()">📝 Probar</button>
+    <div class="code-block">
+async function requestExternalVerification(discordId, robloxUsername) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/external-verification/request`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                discord_id: discordId,
+                roblox_username: robloxUsername
+            })
+        });
+        const data = await response.json();
+        console.log('Verificación solicitada:', data);
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+    </div>
+
+    <h2>📊 Resultado de Pruebas</h2>
+    <div id="results" class="result">
+        Los resultados aparecerán aquí...
+    </div>
+
+    <h2>🔗 cURL Equivalentes</h2>
+    
+    <h3>Usuarios Verificados</h3>
+    <div class="code-block">
+curl "https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev/api/verified-users" \
+  -H "Authorization: Bearer rbxservers_webhook_secret_2024" \
+  -H "Content-Type: application/json"
+    </div>
+
+    <h3>Estado del Bot</h3>
+    <div class="code-block">
+curl "https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev/api/bot-status" \
+  -H "Authorization: Bearer rbxservers_webhook_secret_2024" \
+  -H "Content-Type: application/json"
+    </div>
+
+    <h3>Generar Código de Acceso</h3>
+    <div class="code-block">
+curl "https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev/api/user-access/generate" \
+  -H "Authorization: Bearer rbxservers_webhook_secret_2024" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d '{"user_id": "1143043080933625977"}'
+    </div>
+
+    <script>
+        // Configuración
+        const API_BASE_URL = 'https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev';
+        const API_KEY = 'rbxservers_webhook_secret_2024';
+
+        const headers = {
+            'Authorization': `Bearer ${API_KEY}`,
+            'Content-Type': 'application/json'
+        };
+
+        function showResult(data, isError = false) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultsDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        // Funciones de prueba
+        async function getVerifiedUsers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/verified-users`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                const data = await response.json();
+                showResult(data);
+                return data;
+            } catch (error) {
+                showResult({error: error.message}, true);
+            }
+        }
+
+        async function getBotStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/bot-status`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                const data = await response.json();
+                showResult(data);
+                return data;
+            } catch (error) {
+                showResult({error: error.message}, true);
+            }
+        }
+
+        async function generateAccessCode() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user-access/generate`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        user_id: '1143043080933625977'
+                    })
+                });
+                const data = await response.json();
+                showResult(data);
+                return data;
+            } catch (error) {
+                showResult({error: error.message}, true);
+            }
+        }
+
+        async function getLeaderboard() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/leaderboard?limit=10`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                const data = await response.json();
+                showResult(data);
+                return data;
+            } catch (error) {
+                showResult({error: error.message}, true);
+            }
+        }
+
+        async function requestExternalVerification() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/external-verification/request`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        discord_id: '1143043080933625977',
+                        roblox_username: 'hesiz'
+                    })
+                });
+                const data = await response.json();
+                showResult(data);
+                return data;
+            } catch (error) {
+                showResult({error: error.message}, true);
+            }
+        }
+    </script>
+</body>
+</html>
