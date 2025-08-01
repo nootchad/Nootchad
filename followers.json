@@ -1,35 +1,5 @@
 {
   "verified_users": {
-    "1176309699210133594": {
-      "roblox_username": "AxKaleth1",
-      "verification_code": "hesiz-34_bot",
-      "verified_at": 1751423089.166212
-    },
-    "1318245738349854811": {
-      "roblox_username": "YTBENJAMIN1767",
-      "verification_code": "code-2025-vip",
-      "verified_at": 1751423095.031193
-    },
-    "1374194847786729472": {
-      "roblox_username": "tamgniton",
-      "verification_code": "codev448-bot",
-      "verified_at": 1751493201.2194684
-    },
-    "1103693008626532434": {
-      "roblox_username": "emtake678",
-      "verification_code": "server_358xrbx",
-      "verified_at": 1751493269.5559282
-    },
-    "1355671670194704414": {
-      "roblox_username": "alejandro_log",
-      "verification_code": "hesizx98-vip",
-      "verified_at": 1751493504.3298886
-    },
-    "930890527728095284": {
-      "roblox_username": "EmpaNadaFrita012",
-      "verification_code": "verify_100xbot",
-      "verified_at": 1751494018.1323473
-    },
     "1374215569393320006": {
       "roblox_username": "chicafanarcoirisss",
       "verification_code": "bot_98-ok",
@@ -432,5 +402,5 @@
     }
   },
   "pending_verifications": {},
-  "last_updated": "2025-07-30T23:44:40.430180"
+  "last_updated": "2025-08-01T22:37:46.596421"
 }

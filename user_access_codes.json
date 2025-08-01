@@ -1,24 +1,5 @@
 {
-  "codes": {
-    "uA3U2dEbH1Uw": {
-      "user_id": "916070251895091241",
-      "created_at": 1753946795.1766884,
-      "expires_at": 1754033195.1766887,
-      "uses": 4,
-      "max_uses": 50,
-      "active": true,
-      "last_used": 1753946995.0006785
-    },
-    "dd0kM6DpNdvp": {
-      "user_id": "1143043080933625977",
-      "created_at": 1753949114.4401307,
-      "expires_at": 1754035514.4401312,
-      "uses": 1,
-      "max_uses": 50,
-      "active": true,
-      "last_used": 1753949114.465886
-    }
-  },
-  "last_updated": "2025-07-31T08:05:14.465892",
-  "total_codes": 2
+  "codes": {},
+  "last_updated": "2025-08-01T22:37:42.411981",
+  "total_codes": 0
 }
