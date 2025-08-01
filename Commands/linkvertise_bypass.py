@@ -112,7 +112,7 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
 
         # Configurar Chrome
         chrome_options = Options()
-        chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--headless')  # Comentado para ver el navegador
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
