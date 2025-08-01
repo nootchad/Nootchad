@@ -146,10 +146,10 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
             pass
 
         steps_completed += 1
-        await update_progress(message, "🔍 Buscando botón 'Free Access'...", steps_completed, start_time)
+        await update_progress(message, "🔍 Buscando botón 'Get link'...", steps_completed, start_time)
 
-        # Paso 3: Buscar y hacer clic en "Free Access"
-        get_link_clicked = await find_and_click_free_access(driver)
+        # Paso 3: Buscar y hacer clic en "Get link"
+        get_link_clicked = await find_and_click_get_link(driver)
         if not get_link_clicked:
             # Intentar detectar la página actual
             current_url = driver.current_url
@@ -157,7 +157,7 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
             
             return {
                 'success': False,
-                'error': 'No se encontró el botón "Free Access"',
+                'error': 'No se encontró el botón "Get link"',
                 'details': f'URL actual: {current_url}\nTítulo: {page_title}\nLa página podría haber cambiado su estructura',
                 'duration': time.time() - start_time,
                 'steps_completed': steps_completed
@@ -249,36 +249,40 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
             except:
                 pass
 
-async def find_and_click_free_access(driver):
-    """Encontrar y hacer clic en el botón 'Free Access' inicial"""
+async def find_and_click_get_link(driver):
+    """Encontrar y hacer clic en el botón 'Get link' inicial"""
     try:
         # Timeout más corto para evitar bloquear Discord
         wait = WebDriverWait(driver, 8)
 
-        # Selectores actualizados para Linkvertise 2024/2025
+        # Selectores específicos para el botón "Get link" inicial de Linkvertise
         selectors_to_try = [
-            # Selectores más comunes en Linkvertise moderno
-            "//button[contains(text(), 'Free Access')]",
-            "//button[contains(text(), 'FREE ACCESS')]",
-            "//a[contains(text(), 'Free Access')]",
-            "//a[contains(text(), 'FREE ACCESS')]",
-            
-            # Selectores por clases comunes
-            "//button[contains(@class, 'free')]",
-            "//button[contains(@class, 'access')]",
-            "//a[contains(@class, 'free')]",
-            "//a[contains(@class, 'access')]",
-            
-            # Selectores originales como respaldo
+            # Selectores específicos por ID y clase (más precisos)
             "//button[@id='get-link']",
-            "//button[contains(@class, 'btn-primary')]",
-            "//button[contains(text(), 'Get link')]",
-            "//button[contains(text(), 'Continue')]",
-            "//button[contains(text(), 'CONTINUE')]",
+            "//button[contains(@class, 'btn-primary') and @id='get-link']",
+            "//button[@data-action='start-process']",
+            "//button[contains(@onclick, 'startLinkProcess')]",
             
-            # Selectores más generales
-            "//button[contains(@class, 'button')]",
-            "//a[contains(@class, 'button')]"
+            # Selectores por texto exacto
+            "//button[contains(text(), 'Get link')]",
+            "//button[contains(text(), 'GET LINK')]",
+            "//button[text()='Get link']",
+            "//button[text()='GET LINK']",
+            
+            # Selectores CSS equivalentes
+            "#get-link",
+            "button.btn-primary#get-link",
+            "button[data-action='start-process']",
+            
+            # Selectores por enlace (a veces es un enlace)
+            "//a[@id='get-link']",
+            "//a[contains(text(), 'Get link')]",
+            "//a[contains(@class, 'btn-primary')]",
+            
+            # Selectores de respaldo por clase y texto general
+            "//button[contains(@class, 'btn-primary')]",
+            "//button[contains(text(), 'Continue')]",
+            "//button[contains(text(), 'CONTINUE')]"
         ]
 
         # Intentar cada selector con timeout reducido
@@ -286,11 +290,10 @@ async def find_and_click_free_access(driver):
             try:
                 logger.debug(f"Probando selector {i+1}/{len(selectors_to_try)}: {selector}")
                 
-                # Buscar elementos sin wait largo
-                elements = driver.find_elements(By.XPATH, selector)
-                
-                for element in elements:
+                # Para selectores CSS, usar CSS_SELECTOR
+                if selector.startswith('#') or selector.startswith('button.') or selector.startswith('button['):
                     try:
+                        element = driver.find_element(By.CSS_SELECTOR, selector)
                         if element.is_displayed() and element.is_enabled():
                             # Scroll al elemento
                             driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
@@ -298,19 +301,37 @@ async def find_and_click_free_access(driver):
                             
                             # Verificar que sigue visible después del scroll
                             if element.is_displayed():
-                                # Intentar clic normal primero
-                                try:
-                                    element.click()
-                                except:
-                                    # Si falla, usar JavaScript
-                                    driver.execute_script("arguments[0].click();", element)
+                                # Intentar clic JavaScript directo para mayor compatibilidad
+                                driver.execute_script("arguments[0].click();", element)
                                 
-                                logger.info(f"<:verify:1396087763388072006> Clic exitoso en 'Free Access' con: {selector}")
+                                logger.info(f"<:verify:1396087763388072006> Clic exitoso en 'Get link' con CSS: {selector}")
                                 logger.info(f"Texto del botón: '{element.text}'")
                                 return True
                     except Exception as e:
-                        logger.debug(f"Error con elemento: {e}")
+                        logger.debug(f"Error con selector CSS {selector}: {e}")
                         continue
+                else:
+                    # Buscar elementos XPath
+                    elements = driver.find_elements(By.XPATH, selector)
+                    
+                    for element in elements:
+                        try:
+                            if element.is_displayed() and element.is_enabled():
+                                # Scroll al elemento
+                                driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
+                                await asyncio.sleep(1)
+                                
+                                # Verificar que sigue visible después del scroll
+                                if element.is_displayed():
+                                    # Intentar clic JavaScript directo
+                                    driver.execute_script("arguments[0].click();", element)
+                                    
+                                    logger.info(f"<:verify:1396087763388072006> Clic exitoso en 'Get link' con XPath: {selector}")
+                                    logger.info(f"Texto del botón: '{element.text}'")
+                                    return True
+                        except Exception as e:
+                            logger.debug(f"Error con elemento: {e}")
+                            continue
                         
             except Exception as e:
                 logger.debug(f"Error con selector {selector}: {e}")
@@ -353,11 +374,11 @@ async def find_and_click_free_access(driver):
         except Exception as e:
             logger.debug(f"Error en método de respaldo: {e}")
 
-        logger.warning("<:1000182563:1396420770904932372> No se encontró botón 'Free Access'")
+        logger.warning("<:1000182563:1396420770904932372> No se encontró botón 'Get link'")
         return False
 
     except Exception as e:
-        logger.error(f"Error buscando 'Free Access': {e}")
+        logger.error(f"Error buscando 'Get link': {e}")
         return False
 
 async def find_and_click_real_skip(driver):
