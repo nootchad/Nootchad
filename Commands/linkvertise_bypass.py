@@ -1,4 +1,3 @@
-
 """
 Comando para bypassear enlaces de Linkvertise automáticamente
 """
@@ -45,7 +44,7 @@ def setup_commands(bot):
             # Validar URL
             if not url.startswith('http'):
                 url = f'https://{url}'
-            
+
             if 'linkvertise.com' not in url.lower():
                 embed = discord.Embed(
                     title="❌ URL Inválida",
@@ -121,7 +120,7 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
         chrome_options.add_argument('--disable-blink-features=AutomationControlled')
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
-        
+
         # Anti-detección
         chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
 
@@ -129,7 +128,7 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
         await update_progress(message, "🌐 Inicializando navegador...", steps_completed, start_time)
         driver = webdriver.Chrome(options=chrome_options)
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        
+
         steps_completed += 1
         await update_progress(message, "📂 Navegando a Linkvertise...", steps_completed, start_time)
 
@@ -182,7 +181,7 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
 
         # Paso 7: Obtener URL final
         final_url = driver.current_url
-        
+
         logger.info(f"✅ URL final obtenida: {final_url}")
         print(f"🔗 URL FINAL: {final_url}")  # Imprimir en consola como se solicitó
 
@@ -213,7 +212,7 @@ async def find_and_click_free_access(driver):
     """Encontrar y hacer clic en el botón Free Access"""
     try:
         wait = WebDriverWait(driver, 15)
-        
+
         # Selectores múltiples para el botón Free Access
         free_access_selectors = [
             "//button[contains(text(), 'Free Access')]",
@@ -227,7 +226,7 @@ async def find_and_click_free_access(driver):
             "//*[contains(text(), 'Continue for free')]",
             "//*[contains(text(), 'Continuar gratis')]"
         ]
-        
+
         for selector in free_access_selectors:
             try:
                 element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
@@ -239,7 +238,7 @@ async def find_and_click_free_access(driver):
             except Exception as e:
                 logger.debug(f"Error con selector {selector}: {e}")
                 continue
-        
+
         # Método alternativo: buscar por texto parcial
         try:
             elements = driver.find_elements(By.XPATH, "//*[contains(text(), 'ree') and contains(text(), 'ccess')]")
@@ -250,10 +249,10 @@ async def find_and_click_free_access(driver):
                     return True
         except Exception as e:
             logger.debug(f"Error en método alternativo: {e}")
-        
+
         logger.warning("❌ No se encontró botón Free Access")
         return False
-        
+
     except Exception as e:
         logger.error(f"Error buscando Free Access: {e}")
         return False
@@ -264,7 +263,7 @@ async def find_and_click_real_skip(driver):
         # Esperar hasta 30 segundos para que aparezca el botón skip real
         max_wait_time = 30
         start_wait = time.time()
-        
+
         while time.time() - start_wait < max_wait_time:
             try:
                 # Buscar botones skip verdaderos (típicamente están en la parte superior)
@@ -272,29 +271,29 @@ async def find_and_click_real_skip(driver):
                     # Botón skip que típicamente aparece arriba de la página
                     "//button[contains(text(), 'Skip') and not(ancestor::*[contains(@class, 'ad')]) and not(ancestor::*[contains(@class, 'banner')])]",
                     "//a[contains(text(), 'Skip') and not(ancestor::*[contains(@class, 'ad')]) and not(ancestor::*[contains(@class, 'banner')])]",
-                    
+
                     # Botón skip con clases específicas de Linkvertise
                     "//button[contains(@class, 'skip') and not(contains(@class, 'fake')) and not(contains(@class, 'ad'))]",
                     "//a[contains(@class, 'skip') and not(contains(@class, 'fake')) and not(contains(@class, 'ad'))]",
-                    
+
                     # Botón skip en contenedores específicos (no en anuncios)
                     "//div[contains(@class, 'header')]//button[contains(text(), 'Skip')]",
                     "//div[contains(@class, 'top')]//button[contains(text(), 'Skip')]",
                     "//div[contains(@class, 'navigation')]//button[contains(text(), 'Skip')]",
-                    
+
                     # Selectores más específicos para evitar falsas alarmas
                     "//button[text()='Skip' or text()='Skip Ad' or text()='Skip >>']",
                     "//a[text()='Skip' or text()='Skip Ad' or text()='Skip >>']",
-                    
+
                     # Botón skip que no esté en contenedores grandes/negros
                     "//button[contains(text(), 'Skip') and not(ancestor::div[contains(@style, 'background') and contains(@style, 'black')])]",
-                    
+
                     # Específico para Linkvertise 2025
                     "//*[@data-testid='skip-button']",
                     "//*[@id='skip-button']",
                     "//button[contains(@class, 'linkvertise-skip')]"
                 ]
-                
+
                 # Verificar cada selector
                 for selector in real_skip_selectors:
                     try:
@@ -303,11 +302,11 @@ async def find_and_click_real_skip(driver):
                             if (element.is_displayed() and 
                                 element.is_enabled() and 
                                 is_real_skip_button(element, driver)):
-                                
+
                                 # Hacer scroll al elemento para asegurar que es clickeable
                                 driver.execute_script("arguments[0].scrollIntoView(true);", element)
                                 await asyncio.sleep(1)
-                                
+
                                 # Hacer clic
                                 driver.execute_script("arguments[0].click();", element)
                                 logger.info(f"✅ Clic en Skip real exitoso con selector: {selector}")
@@ -315,17 +314,17 @@ async def find_and_click_real_skip(driver):
                     except Exception as e:
                         logger.debug(f"Error con selector skip {selector}: {e}")
                         continue
-                
+
                 # Si no se encuentra, esperar un poco más
                 await asyncio.sleep(2)
-                
+
             except Exception as e:
                 logger.debug(f"Error en búsqueda de skip: {e}")
                 await asyncio.sleep(2)
-        
+
         logger.warning("❌ No se encontró botón Skip verdadero")
         return False
-        
+
     except Exception as e:
         logger.error(f"Error buscando Skip real: {e}")
         return False
@@ -336,21 +335,21 @@ def is_real_skip_button(element, driver):
         # Obtener información del elemento
         location = element.location
         size = element.size
-        
+
         # Los botones skip reales típicamente:
         # 1. Están en la parte superior de la página (Y < 200)
         # 2. No están en banners grandes
         # 3. No tienen backgrounds oscuros/negros
         # 4. Tienen tamaño razonable (no muy grandes)
-        
+
         # Verificar posición Y (arriba de la página)
         if location['y'] > 300:  # Si está muy abajo, probablemente es falso
             return False
-        
+
         # Verificar tamaño (los botones falsos suelen ser muy grandes)
         if size['width'] > 400 or size['height'] > 100:
             return False
-        
+
         # Verificar que no esté en un contenedor de anuncio
         parent_classes = driver.execute_script("""
             var element = arguments[0];
@@ -364,30 +363,30 @@ def is_real_skip_button(element, driver):
             }
             return classes.join(' ');
         """, element)
-        
+
         # Palabras que indican que es un anuncio falso
         false_indicators = ['ad', 'banner', 'popup', 'overlay', 'modal', 'fake']
         for indicator in false_indicators:
             if indicator in parent_classes.lower():
                 return False
-        
+
         # Verificar el texto del elemento
         element_text = element.text.strip().lower()
         if len(element_text) > 20:  # Texto muy largo, probablemente falso
             return False
-        
+
         # Verificar color de fondo (evitar botones negros grandes)
         bg_color = driver.execute_script("""
             var style = window.getComputedStyle(arguments[0]);
             return style.backgroundColor;
         """, element)
-        
+
         if 'rgb(0, 0, 0)' in bg_color or 'black' in bg_color.lower():
             return False
-        
+
         logger.info(f"✅ Botón skip validado como real: posición Y={location['y']}, tamaño={size}, texto='{element_text}'")
         return True
-        
+
     except Exception as e:
         logger.debug(f"Error validando botón skip: {e}")
         return True  # Si hay error en validación, intentar hacer clic de todos modos
@@ -396,21 +395,21 @@ async def update_progress(message, status, steps, start_time):
     """Actualizar el progreso del bypass"""
     try:
         elapsed_time = time.time() - start_time
-        
+
         embed = discord.Embed(
             title="🔗 Linkvertise Bypass",
             description="Bypass en progreso...",
             color=0xffaa00
         )
         embed.add_field(name="📊 Estado:", value=status, inline=True)
-        embed.add_field(name="🔄 Pasos:", value=f"{steps}/7", inline=True)
+        embed.add_field(name="🔄 Pasos:", value=f"{steps}/8", inline=True)
         embed.add_field(name="⏱️ Tiempo:", value=f"{elapsed_time:.1f}s", inline=True)
         embed.add_field(
             name="💡 Progreso:",
-            value=f"{'▰' * steps}{'▱' * (7-steps)} {int((steps/7)*100)}%",
+            value=f"{'▰' * steps}{'▱' * (8-steps)} {int((steps/8)*100)}%",
             inline=False
         )
-        
+
         await message.edit(embed=embed)
     except Exception as e:
         logger.debug(f"Error actualizando progreso: {e}")
