@@ -47,7 +47,7 @@ def setup_commands(bot):
 
             if 'linkvertise.com' not in url.lower():
                 embed = discord.Embed(
-                    title="❌ URL Inválida",
+                    title="<:1000182563:1396420770904932372> URL Inválida",
                     description="La URL debe ser de Linkvertise.",
                     color=0xff0000
                 )
@@ -85,7 +85,7 @@ def setup_commands(bot):
             else:
                 # Error
                 error_embed = discord.Embed(
-                    title="❌ Error en Bypass",
+                    title="<:1000182563:1396420770904932372> Error en Bypass",
                     description=result['error'],
                     color=0xff0000
                 )
@@ -95,7 +95,7 @@ def setup_commands(bot):
         except Exception as e:
             logger.error(f"Error en comando linkvertise para {username}: {e}")
             embed = discord.Embed(
-                title="❌ Error Interno",
+                title="<:1000182563:1396420770904932372> Error Interno",
                 description="Ocurrió un error durante el bypass.",
                 color=0xff0000
             )
@@ -429,24 +429,24 @@ async def find_and_click_get_button(driver):
             # Botón que contiene "Get" seguido del nombre
             "//button[starts-with(text(), 'Get ')]",
             "//a[starts-with(text(), 'Get ')]",
-            
+
             # Botón con clase específica de Linkvertise
             "//button[contains(@class, 'get-link') or contains(@class, 'get-button')]",
             "//a[contains(@class, 'get-link') or contains(@class, 'get-button')]",
-            
+
             # Botón que contenga "Get" y no sea falso
             "//button[contains(text(), 'Get') and not(contains(@class, 'fake')) and not(contains(@class, 'disabled'))]",
             "//a[contains(text(), 'Get') and not(contains(@class, 'fake')) and not(contains(@class, 'disabled'))]",
-            
+
             # Selectores más específicos para 2025
             "//*[@data-testid='get-button']",
             "//*[@id*='get-button']",
             "//button[contains(@class, 'linkvertise-get')]",
-            
+
             # Botón de continuar o finalizar
             "//button[contains(text(), 'Continue') and contains(text(), 'to')]",
             "//a[contains(text(), 'Continue') and contains(text(), 'to')]",
-            
+
             # Textos alternativos
             "//button[contains(text(), 'Obtener')]",
             "//a[contains(text(), 'Obtener')]"
@@ -455,19 +455,19 @@ async def find_and_click_get_button(driver):
         for selector in get_button_selectors:
             try:
                 element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
-                
+
                 # Verificar que el botón sea visible y esté habilitado
                 if element.is_displayed() and element.is_enabled():
                     # Scroll al elemento
                     driver.execute_script("arguments[0].scrollIntoView(true);", element)
                     await asyncio.sleep(1)
-                    
+
                     # Hacer clic
                     driver.execute_script("arguments[0].click();", element)
                     logger.info(f"✅ Clic en botón Get exitoso con selector: {selector}")
                     await asyncio.sleep(3)  # Esperar después del clic
                     return True
-                    
+
             except TimeoutException:
                 continue
             except Exception as e:
@@ -481,7 +481,7 @@ async def find_and_click_get_button(driver):
                 if (element.is_displayed() and 
                     element.is_enabled() and 
                     len(element.text.strip()) < 50):  # Evitar textos muy largos
-                    
+
                     driver.execute_script("arguments[0].scrollIntoView(true);", element)
                     await asyncio.sleep(1)
                     driver.execute_script("arguments[0].click();", element)
@@ -508,28 +508,28 @@ async def find_and_click_open_button(driver):
             # Botón Open estándar
             "//button[text()='Open' or text()='OPEN']",
             "//a[text()='Open' or text()='OPEN']",
-            
+
             # Botón con texto que contenga Open
             "//button[contains(text(), 'Open')]",
             "//a[contains(text(), 'Open')]",
-            
+
             # Botón con clases específicas
             "//button[contains(@class, 'open') or contains(@class, 'final')]",
             "//a[contains(@class, 'open') or contains(@class, 'final')]",
-            
+
             # Selectores específicos de Linkvertise 2025
             "//*[@data-testid='open-button']",
             "//*[@id*='open-button']",
             "//button[contains(@class, 'linkvertise-open')]",
-            
+
             # Botón de abrir o ir al enlace
             "//button[contains(text(), 'Go to') or contains(text(), 'Visit')]",
             "//a[contains(text(), 'Go to') or contains(text(), 'Visit')]",
-            
+
             # Textos en español
             "//button[contains(text(), 'Abrir')]",
             "//a[contains(text(), 'Abrir')]",
-            
+
             # Botón de continuar final
             "//button[contains(text(), 'Continue to destination')]",
             "//a[contains(text(), 'Continue to destination')]"
@@ -538,19 +538,19 @@ async def find_and_click_open_button(driver):
         for selector in open_button_selectors:
             try:
                 element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
-                
+
                 # Verificar que el botón sea visible y esté habilitado
                 if element.is_displayed() and element.is_enabled():
                     # Scroll al elemento
                     driver.execute_script("arguments[0].scrollIntoView(true);", element)
                     await asyncio.sleep(1)
-                    
+
                     # Hacer clic
                     driver.execute_script("arguments[0].click();", element)
                     logger.info(f"✅ Clic en botón Open exitoso con selector: {selector}")
                     await asyncio.sleep(3)  # Esperar después del clic para la redirección
                     return True
-                    
+
             except TimeoutException:
                 continue
             except Exception as e:
@@ -564,12 +564,12 @@ async def find_and_click_open_button(driver):
                 "//button[contains(@class, 'btn') and (contains(text(), 'Open') or contains(text(), 'Go') or contains(text(), 'Visit'))] | " +
                 "//a[contains(@class, 'btn') and (contains(text(), 'Open') or contains(text(), 'Go') or contains(text(), 'Visit'))]"
             )
-            
+
             for button in final_buttons:
                 if (button.is_displayed() and 
                     button.is_enabled() and 
                     len(button.text.strip()) < 30):  # Evitar textos muy largos
-                    
+
                     driver.execute_script("arguments[0].scrollIntoView(true);", button)
                     await asyncio.sleep(1)
                     driver.execute_script("arguments[0].click();", button)
