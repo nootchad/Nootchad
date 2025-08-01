@@ -72,13 +72,13 @@ def setup_commands(bot):
             if result['success']:
                 # Éxito
                 success_embed = discord.Embed(
-                    title="✅ Bypass Completado",
+                    title="<:verify:1396087763388072006> Bypass Completado",
                     description=f"URL final obtenida exitosamente.",
                     color=0x00ff88
                 )
                 success_embed.add_field(name="🔗 URL Final:", value=f"```{result['final_url']}```", inline=False)
-                success_embed.add_field(name="⏱️ Tiempo total:", value=f"{result['duration']:.1f}s", inline=True)
-                success_embed.add_field(name="🔄 Pasos completados:", value=f"{result['steps_completed']}", inline=True)
+                success_embed.add_field(name="<:1000182657:1396060091366637669> Tiempo total:", value=f"{result['duration']:.1f}s", inline=True)
+                success_embed.add_field(name="<:1000182750:1396420537227411587> Pasos completados:", value=f"{result['steps_completed']}", inline=True)
 
                 await message.edit(embed=success_embed)
 
@@ -139,67 +139,67 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
         steps_completed += 1
         await update_progress(message, "🔍 Buscando botón 'Free Access'...", steps_completed, start_time)
 
-        # Paso 3: Buscar y hacer clic en "Free Access"
-        free_access_clicked = await find_and_click_free_access(driver)
-        if not free_access_clicked:
+        # Paso 3: Buscar y hacer clic en "Get link"
+        get_link_clicked = await find_and_click_free_access(driver)
+        if not get_link_clicked:
             return {
                 'success': False,
-                'error': 'No se encontró el botón "Free Access"',
-                'details': 'El botón de acceso gratuito no está disponible o cambió su estructura',
+                'error': 'No se encontró el botón "Get link"',
+                'details': 'El botón inicial "Get link" no está disponible o cambió su estructura',
                 'duration': time.time() - start_time,
                 'steps_completed': steps_completed
             }
 
         steps_completed += 1
-        await update_progress(message, "⏳ Esperando anuncios...", steps_completed, start_time)
+        await update_progress(message, "<:1000182657:1396060091366637669> Esperando timer de anuncios...", steps_completed, start_time)
 
-        # Paso 4: Esperar y buscar el botón Skip verdadero
+        # Paso 4: Esperar y buscar el botón Skip circular
         await asyncio.sleep(5)  # Esperar a que aparezcan los anuncios
 
         steps_completed += 1
-        await update_progress(message, "🎯 Buscando botón Skip verdadero...", steps_completed, start_time)
+        await update_progress(message, "<:1000182750:1396420537227411587> Buscando botón Skip circular...", steps_completed, start_time)
 
-        # Paso 5: Encontrar y hacer clic en el botón Skip real
+        # Paso 5: Encontrar y hacer clic en el botón Skip circular
         skip_clicked = await find_and_click_real_skip(driver)
         if not skip_clicked:
             return {
                 'success': False,
-                'error': 'No se encontró el botón Skip verdadero',
-                'details': 'El botón de skip no apareció o cambió su ubicación',
+                'error': 'No se encontró el botón Skip circular',
+                'details': 'El botón skip circular no apareció o no se habilitó',
                 'duration': time.time() - start_time,
                 'steps_completed': steps_completed
             }
 
         steps_completed += 1
-        await update_progress(message, "⏰ Esperando 10 segundos (proceso del sitio)...", steps_completed, start_time)
+        await update_progress(message, "<:1000182657:1396060091366637669> Esperando proceso del sitio...", steps_completed, start_time)
 
-        # Paso 6: Esperar 10 segundos como hace el sitio
-        await asyncio.sleep(10)
+        # Paso 6: Esperar proceso del sitio
+        await asyncio.sleep(5)
 
         steps_completed += 1
-        await update_progress(message, "🎯 Buscando botón 'Get'...", steps_completed, start_time)
+        await update_progress(message, "<:1000182750:1396420537227411587> Buscando botón 'Get [nombre]'...", steps_completed, start_time)
 
-        # Paso 7: Buscar y hacer clic en el botón "Get"
-        get_clicked = await find_and_click_get_button(driver)
-        if not get_clicked:
+        # Paso 7: Buscar y hacer clic en el botón "Get [nombre]"
+        get_content_clicked = await find_and_click_get_button(driver)
+        if not get_content_clicked:
             return {
                 'success': False,
-                'error': 'No se encontró el botón "Get"',
-                'details': 'El botón Get no apareció después de la espera',
+                'error': 'No se encontró el botón "Get [nombre]"',
+                'details': 'El botón secundario Get no apareció después del skip',
                 'duration': time.time() - start_time,
                 'steps_completed': steps_completed
             }
 
         steps_completed += 1
-        await update_progress(message, "🔓 Buscando botón 'Open'...", steps_completed, start_time)
+        await update_progress(message, "<:1000182750:1396420537227411587> Buscando botón 'Open' final...", steps_completed, start_time)
 
         # Paso 8: Buscar y hacer clic en el botón "Open"
         open_clicked = await find_and_click_open_button(driver)
         if not open_clicked:
             return {
                 'success': False,
-                'error': 'No se encontró el botón "Open"',
-                'details': 'El botón Open no apareció después del Get',
+                'error': 'No se encontró el botón "Open" final',
+                'details': 'El botón Open final no apareció después del Get',
                 'duration': time.time() - start_time,
                 'steps_completed': steps_completed
             }
@@ -237,29 +237,38 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
                 pass
 
 async def find_and_click_free_access(driver):
-    """Encontrar y hacer clic en el botón Free Access"""
+    """Encontrar y hacer clic en el botón 'Get link' inicial"""
     try:
         wait = WebDriverWait(driver, 15)
 
-        # Selectores múltiples para el botón Free Access
-        free_access_selectors = [
-            "//button[contains(text(), 'Free Access')]",
-            "//a[contains(text(), 'Free Access')]",
-            "//div[contains(text(), 'Free Access')]",
-            "//span[contains(text(), 'Free Access')]",
-            "//button[contains(@class, 'free') and contains(@class, 'access')]",
-            "//a[contains(@class, 'free-access')]",
-            "//button[contains(text(), 'Acceso Gratuito')]",
-            "//a[contains(text(), 'Acceso Gratuito')]",
-            "//*[contains(text(), 'Continue for free')]",
-            "//*[contains(text(), 'Continuar gratis')]"
+        # Selectores específicos para el botón "Get link" inicial
+        get_link_selectors = [
+            # Selector específico por ID
+            "//button[@id='get-link']",
+            
+            # Selector por clase y contenido
+            "//button[contains(@class, 'btn-primary') and @id='get-link']",
+            
+            # Selector por atributo data-action
+            "//button[@data-action='start-process']",
+            
+            # Selector por función onclick
+            "//button[contains(@onclick, 'startLinkProcess')]",
+            
+            # Selector por texto "Get link"
+            "//button[contains(text(), 'Get link')]",
+            "//button[contains(text(), 'Get Link')]",
+            
+            # Selectores de respaldo
+            "//button[contains(@class, 'btn-primary')]",
+            "//button[@type='button' and contains(@class, 'btn-primary')]"
         ]
 
-        for selector in free_access_selectors:
+        for selector in get_link_selectors:
             try:
                 element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
                 driver.execute_script("arguments[0].click();", element)
-                logger.info(f"✅ Clic en Free Access exitoso con selector: {selector}")
+                logger.info(f"<:verify:1396087763388072006> Clic en 'Get link' exitoso con selector: {selector}")
                 return True
             except TimeoutException:
                 continue
@@ -267,94 +276,120 @@ async def find_and_click_free_access(driver):
                 logger.debug(f"Error con selector {selector}: {e}")
                 continue
 
-        # Método alternativo: buscar por texto parcial
+        # Método alternativo: buscar por CSS selector
         try:
-            elements = driver.find_elements(By.XPATH, "//*[contains(text(), 'ree') and contains(text(), 'ccess')]")
-            for element in elements:
-                if element.is_displayed() and element.is_enabled():
-                    driver.execute_script("arguments[0].click();", element)
-                    logger.info("✅ Clic en Free Access exitoso (método alternativo)")
-                    return True
+            css_selectors = [
+                "#get-link",
+                "button.btn-primary#get-link",
+                "button[data-action='start-process']",
+                "button.btn-primary"
+            ]
+            
+            for css_selector in css_selectors:
+                try:
+                    element = driver.find_element(By.CSS_SELECTOR, css_selector)
+                    if element.is_displayed() and element.is_enabled():
+                        driver.execute_script("arguments[0].click();", element)
+                        logger.info(f"<:verify:1396087763388072006> Clic en 'Get link' exitoso con CSS: {css_selector}")
+                        return True
+                except:
+                    continue
         except Exception as e:
-            logger.debug(f"Error en método alternativo: {e}")
+            logger.debug(f"Error en método CSS alternativo: {e}")
 
-        logger.warning("❌ No se encontró botón Free Access")
+        logger.warning("<:1000182563:1396420770904932372> No se encontró botón 'Get link'")
         return False
 
     except Exception as e:
-        logger.error(f"Error buscando Free Access: {e}")
+        logger.error(f"Error buscando 'Get link': {e}")
         return False
 
 async def find_and_click_real_skip(driver):
-    """Encontrar y hacer clic en el botón Skip verdadero (no el falso)"""
+    """Encontrar y hacer clic en el botón Skip circular"""
     try:
-        # Esperar hasta 30 segundos para que aparezca el botón skip real
+        # Esperar hasta 30 segundos para que aparezca el botón skip y se habilite
         max_wait_time = 30
         start_wait = time.time()
 
         while time.time() - start_wait < max_wait_time:
             try:
-                # Buscar botones skip verdaderos (típicamente están en la parte superior)
-                real_skip_selectors = [
-                    # Botón skip que típicamente aparece arriba de la página
-                    "//button[contains(text(), 'Skip') and not(ancestor::*[contains(@class, 'ad')]) and not(ancestor::*[contains(@class, 'banner')])]",
-                    "//a[contains(text(), 'Skip') and not(ancestor::*[contains(@class, 'ad')]) and not(ancestor::*[contains(@class, 'banner')])]",
-
-                    # Botón skip con clases específicas de Linkvertise
-                    "//button[contains(@class, 'skip') and not(contains(@class, 'fake')) and not(contains(@class, 'ad'))]",
-                    "//a[contains(@class, 'skip') and not(contains(@class, 'fake')) and not(contains(@class, 'ad'))]",
-
-                    # Botón skip en contenedores específicos (no en anuncios)
-                    "//div[contains(@class, 'header')]//button[contains(text(), 'Skip')]",
-                    "//div[contains(@class, 'top')]//button[contains(text(), 'Skip')]",
-                    "//div[contains(@class, 'navigation')]//button[contains(text(), 'Skip')]",
-
-                    # Selectores más específicos para evitar falsas alarmas
-                    "//button[text()='Skip' or text()='Skip Ad' or text()='Skip >>']",
-                    "//a[text()='Skip' or text()='Skip Ad' or text()='Skip >>']",
-
-                    # Botón skip que no esté en contenedores grandes/negros
-                    "//button[contains(text(), 'Skip') and not(ancestor::div[contains(@style, 'background') and contains(@style, 'black')])]",
-
-                    # Específico para Linkvertise 2025
-                    "//*[@data-testid='skip-button']",
-                    "//*[@id='skip-button']",
-                    "//button[contains(@class, 'linkvertise-skip')]"
+                # Selectores específicos para el botón Skip circular de Linkvertise
+                skip_button_selectors = [
+                    # Selector específico por ID
+                    "//button[@id='skip-ad']",
+                    
+                    # Selector por clases específicas
+                    "//button[contains(@class, 'skip-btn') and contains(@class, 'circular')]",
+                    
+                    # Selector por atributo data-step
+                    "//button[@data-step='1']",
+                    
+                    # Selector por data-timer
+                    "//button[@data-timer='countdown']",
+                    
+                    # Selector por función onclick
+                    "//button[contains(@onclick, 'skipAdvertisement')]",
+                    
+                    # Selectores CSS equivalentes
+                    "#skip-ad",
+                    "button.skip-btn.circular",
+                    "button[data-step='1']",
+                    "button[data-timer='countdown']"
                 ]
 
-                # Verificar cada selector
-                for selector in real_skip_selectors:
+                # Verificar cada selector XPath
+                for selector in skip_button_selectors[:5]:  # Primeros 5 son XPath
                     try:
                         elements = driver.find_elements(By.XPATH, selector)
                         for element in elements:
-                            if (element.is_displayed() and 
-                                element.is_enabled() and 
-                                is_real_skip_button(element, driver)):
+                            if element.is_displayed():
+                                # Verificar si el botón está habilitado (no disabled)
+                                is_disabled = element.get_attribute("disabled")
+                                if not is_disabled:
+                                    # Hacer scroll al elemento
+                                    driver.execute_script("arguments[0].scrollIntoView(true);", element)
+                                    await asyncio.sleep(1)
 
-                                # Hacer scroll al elemento para asegurar que es clickeable
-                                driver.execute_script("arguments[0].scrollIntoView(true);", element)
-                                await asyncio.sleep(1)
-
-                                # Hacer clic
-                                driver.execute_script("arguments[0].click();", element)
-                                logger.info(f"✅ Clic en Skip real exitoso con selector: {selector}")
-                                return True
+                                    # Hacer clic
+                                    driver.execute_script("arguments[0].click();", element)
+                                    logger.info(f"<:verify:1396087763388072006> Clic en Skip circular exitoso con selector: {selector}")
+                                    return True
+                                else:
+                                    logger.debug(f"Botón Skip encontrado pero está deshabilitado: {selector}")
                     except Exception as e:
-                        logger.debug(f"Error con selector skip {selector}: {e}")
+                        logger.debug(f"Error con selector XPath {selector}: {e}")
                         continue
 
-                # Si no se encuentra, esperar un poco más
+                # Verificar selectores CSS
+                for css_selector in skip_button_selectors[5:]:  # Últimos son CSS
+                    try:
+                        element = driver.find_element(By.CSS_SELECTOR, css_selector)
+                        if element.is_displayed():
+                            is_disabled = element.get_attribute("disabled")
+                            if not is_disabled:
+                                driver.execute_script("arguments[0].scrollIntoView(true);", element)
+                                await asyncio.sleep(1)
+                                driver.execute_script("arguments[0].click();", element)
+                                logger.info(f"<:verify:1396087763388072006> Clic en Skip circular exitoso con CSS: {css_selector}")
+                                return True
+                            else:
+                                logger.debug(f"Botón Skip encontrado pero está deshabilitado: {css_selector}")
+                    except Exception as e:
+                        logger.debug(f"Error con selector CSS {css_selector}: {e}")
+                        continue
+
+                # Si no se encuentra habilitado, esperar un poco más
                 await asyncio.sleep(2)
 
             except Exception as e:
                 logger.debug(f"Error en búsqueda de skip: {e}")
                 await asyncio.sleep(2)
 
-        logger.warning("❌ No se encontró botón Skip verdadero")
+        logger.warning("<:1000182563:1396420770904932372> No se encontró botón Skip circular habilitado")
         return False
 
     except Exception as e:
-        logger.error(f"Error buscando Skip real: {e}")
+        logger.error(f"Error buscando Skip circular: {e}")
         return False
 
 def is_real_skip_button(element, driver):
@@ -420,43 +455,42 @@ def is_real_skip_button(element, driver):
         return True  # Si hay error en validación, intentar hacer clic de todos modos
 
 async def find_and_click_get_button(driver):
-    """Encontrar y hacer clic en el botón 'Get' (que contiene el nombre del linkvertise)"""
+    """Encontrar y hacer clic en el botón 'Get [nombre]' secundario"""
     try:
         wait = WebDriverWait(driver, 20)
 
-        # Selectores para el botón Get - actualizado para Linkvertise 2025
-        get_button_selectors = [
-            # Botón que contiene "Get" seguido del nombre
+        # Selectores específicos para el botón "Get [nombre]" secundario
+        get_content_selectors = [
+            # Selector específico por ID
+            "//button[@id='get-content']",
+            
+            # Selector por clase secundaria
+            "//button[contains(@class, 'btn-secondary') and @id='get-content']",
+            
+            # Selector por atributo data-step
+            "//button[@data-step='2']",
+            
+            # Selector por data-content-name
+            "//button[@data-content-name]",
+            
+            # Selector por función onclick
+            "//button[contains(@onclick, 'proceedToNext')]",
+            
+            # Selector por texto que empiece con "Get "
             "//button[starts-with(text(), 'Get ')]",
-            "//a[starts-with(text(), 'Get ')]",
-
-            # Botón con clase específica de Linkvertise
-            "//button[contains(@class, 'get-link') or contains(@class, 'get-button')]",
-            "//a[contains(@class, 'get-link') or contains(@class, 'get-button')]",
-
-            # Botón que contenga "Get" y no sea falso
-            "//button[contains(text(), 'Get') and not(contains(@class, 'fake')) and not(contains(@class, 'disabled'))]",
-            "//a[contains(text(), 'Get') and not(contains(@class, 'fake')) and not(contains(@class, 'disabled'))]",
-
-            # Selectores más específicos para 2025
-            "//*[@data-testid='get-button']",
-            "//*[@id*='get-button']",
-            "//button[contains(@class, 'linkvertise-get')]",
-
-            # Botón de continuar o finalizar
-            "//button[contains(text(), 'Continue') and contains(text(), 'to')]",
-            "//a[contains(text(), 'Continue') and contains(text(), 'to')]",
-
-            # Textos alternativos
-            "//button[contains(text(), 'Obtener')]",
-            "//a[contains(text(), 'Obtener')]"
+            
+            # Selectores CSS equivalentes
+            "#get-content",
+            "button.btn-secondary#get-content",
+            "button[data-step='2']",
+            "button[data-content-name]"
         ]
 
-        for selector in get_button_selectors:
+        # Verificar selectores XPath
+        for selector in get_content_selectors[:6]:
             try:
                 element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
 
-                # Verificar que el botón sea visible y esté habilitado
                 if element.is_displayed() and element.is_enabled():
                     # Scroll al elemento
                     driver.execute_script("arguments[0].scrollIntoView(true);", element)
@@ -464,38 +498,50 @@ async def find_and_click_get_button(driver):
 
                     # Hacer clic
                     driver.execute_script("arguments[0].click();", element)
-                    logger.info(f"✅ Clic en botón Get exitoso con selector: {selector}")
-                    await asyncio.sleep(3)  # Esperar después del clic
+                    logger.info(f"<:verify:1396087763388072006> Clic en 'Get [nombre]' exitoso con selector: {selector}")
+                    await asyncio.sleep(3)
                     return True
 
             except TimeoutException:
                 continue
             except Exception as e:
-                logger.debug(f"Error con selector Get {selector}: {e}")
+                logger.debug(f"Error con selector XPath {selector}: {e}")
                 continue
 
-        # Método alternativo: buscar por texto que contenga "Get"
-        try:
-            elements = driver.find_elements(By.XPATH, "//*[contains(text(), 'Get') and (self::button or self::a)]")
-            for element in elements:
-                if (element.is_displayed() and 
-                    element.is_enabled() and 
-                    len(element.text.strip()) < 50):  # Evitar textos muy largos
-
+        # Verificar selectores CSS
+        for css_selector in get_content_selectors[6:]:
+            try:
+                element = driver.find_element(By.CSS_SELECTOR, css_selector)
+                if element.is_displayed() and element.is_enabled():
                     driver.execute_script("arguments[0].scrollIntoView(true);", element)
                     await asyncio.sleep(1)
                     driver.execute_script("arguments[0].click();", element)
-                    logger.info(f"✅ Clic en Get exitoso (método alternativo): {element.text}")
+                    logger.info(f"<:verify:1396087763388072006> Clic en 'Get [nombre]' exitoso con CSS: {css_selector}")
+                    await asyncio.sleep(3)
+                    return True
+            except Exception as e:
+                logger.debug(f"Error con selector CSS {css_selector}: {e}")
+                continue
+
+        # Método alternativo: buscar botón secundario por clase y texto
+        try:
+            elements = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-secondary') and contains(text(), 'Get')]")
+            for element in elements:
+                if element.is_displayed() and element.is_enabled():
+                    driver.execute_script("arguments[0].scrollIntoView(true);", element)
+                    await asyncio.sleep(1)
+                    driver.execute_script("arguments[0].click();", element)
+                    logger.info(f"<:verify:1396087763388072006> Clic en 'Get [nombre]' exitoso (método alternativo): {element.text}")
                     await asyncio.sleep(3)
                     return True
         except Exception as e:
-            logger.debug(f"Error en método alternativo Get: {e}")
+            logger.debug(f"Error en método alternativo: {e}")
 
-        logger.warning("❌ No se encontró botón Get")
+        logger.warning("<:1000182563:1396420770904932372> No se encontró botón 'Get [nombre]'")
         return False
 
     except Exception as e:
-        logger.error(f"Error buscando botón Get: {e}")
+        logger.error(f"Error buscando botón 'Get [nombre]': {e}")
         return False
 
 async def find_and_click_open_button(driver):
@@ -503,43 +549,38 @@ async def find_and_click_open_button(driver):
     try:
         wait = WebDriverWait(driver, 20)
 
-        # Selectores para el botón Open - actualizado para Linkvertise 2025
-        open_button_selectors = [
-            # Botón Open estándar
+        # Selectores específicos para el botón "Open" final
+        open_link_selectors = [
+            # Selector específico por ID
+            "//button[@id='open-link']",
+            
+            # Selector por clase success
+            "//button[contains(@class, 'btn-success') and @id='open-link']",
+            
+            # Selector por atributo data-step final
+            "//button[@data-step='final']",
+            
+            # Selector por data-destination-url
+            "//button[@data-destination-url]",
+            
+            # Selector por función onclick
+            "//button[contains(@onclick, 'openFinalLink')]",
+            
+            # Selector por texto "Open"
             "//button[text()='Open' or text()='OPEN']",
-            "//a[text()='Open' or text()='OPEN']",
-
-            # Botón con texto que contenga Open
-            "//button[contains(text(), 'Open')]",
-            "//a[contains(text(), 'Open')]",
-
-            # Botón con clases específicas
-            "//button[contains(@class, 'open') or contains(@class, 'final')]",
-            "//a[contains(@class, 'open') or contains(@class, 'final')]",
-
-            # Selectores específicos de Linkvertise 2025
-            "//*[@data-testid='open-button']",
-            "//*[@id*='open-button']",
-            "//button[contains(@class, 'linkvertise-open')]",
-
-            # Botón de abrir o ir al enlace
-            "//button[contains(text(), 'Go to') or contains(text(), 'Visit')]",
-            "//a[contains(text(), 'Go to') or contains(text(), 'Visit')]",
-
-            # Textos en español
-            "//button[contains(text(), 'Abrir')]",
-            "//a[contains(text(), 'Abrir')]",
-
-            # Botón de continuar final
-            "//button[contains(text(), 'Continue to destination')]",
-            "//a[contains(text(), 'Continue to destination')]"
+            
+            # Selectores CSS equivalentes
+            "#open-link",
+            "button.btn-success#open-link",
+            "button[data-step='final']",
+            "button[data-destination-url]"
         ]
 
-        for selector in open_button_selectors:
+        # Verificar selectores XPath
+        for selector in open_link_selectors[:6]:
             try:
                 element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
 
-                # Verificar que el botón sea visible y esté habilitado
                 if element.is_displayed() and element.is_enabled():
                     # Scroll al elemento
                     driver.execute_script("arguments[0].scrollIntoView(true);", element)
@@ -547,43 +588,50 @@ async def find_and_click_open_button(driver):
 
                     # Hacer clic
                     driver.execute_script("arguments[0].click();", element)
-                    logger.info(f"✅ Clic en botón Open exitoso con selector: {selector}")
-                    await asyncio.sleep(3)  # Esperar después del clic para la redirección
+                    logger.info(f"<:verify:1396087763388072006> Clic en 'Open' final exitoso con selector: {selector}")
+                    await asyncio.sleep(3)  # Esperar redirección
                     return True
 
             except TimeoutException:
                 continue
             except Exception as e:
-                logger.debug(f"Error con selector Open {selector}: {e}")
+                logger.debug(f"Error con selector XPath {selector}: {e}")
                 continue
 
-        # Método alternativo: buscar botones que podrían ser el Open final
-        try:
-            # Buscar botones que podrían llevar al destino final
-            final_buttons = driver.find_elements(By.XPATH, 
-                "//button[contains(@class, 'btn') and (contains(text(), 'Open') or contains(text(), 'Go') or contains(text(), 'Visit'))] | " +
-                "//a[contains(@class, 'btn') and (contains(text(), 'Open') or contains(text(), 'Go') or contains(text(), 'Visit'))]"
-            )
-
-            for button in final_buttons:
-                if (button.is_displayed() and 
-                    button.is_enabled() and 
-                    len(button.text.strip()) < 30):  # Evitar textos muy largos
-
-                    driver.execute_script("arguments[0].scrollIntoView(true);", button)
+        # Verificar selectores CSS
+        for css_selector in open_link_selectors[6:]:
+            try:
+                element = driver.find_element(By.CSS_SELECTOR, css_selector)
+                if element.is_displayed() and element.is_enabled():
+                    driver.execute_script("arguments[0].scrollIntoView(true);", element)
                     await asyncio.sleep(1)
-                    driver.execute_script("arguments[0].click();", button)
-                    logger.info(f"✅ Clic en Open exitoso (método alternativo): {button.text}")
+                    driver.execute_script("arguments[0].click();", element)
+                    logger.info(f"<:verify:1396087763388072006> Clic en 'Open' final exitoso con CSS: {css_selector}")
+                    await asyncio.sleep(3)
+                    return True
+            except Exception as e:
+                logger.debug(f"Error con selector CSS {css_selector}: {e}")
+                continue
+
+        # Método alternativo: buscar botón success
+        try:
+            elements = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-success') and contains(text(), 'Open')]")
+            for element in elements:
+                if element.is_displayed() and element.is_enabled():
+                    driver.execute_script("arguments[0].scrollIntoView(true);", element)
+                    await asyncio.sleep(1)
+                    driver.execute_script("arguments[0].click();", element)
+                    logger.info(f"<:verify:1396087763388072006> Clic en 'Open' final exitoso (método alternativo): {element.text}")
                     await asyncio.sleep(3)
                     return True
         except Exception as e:
             logger.debug(f"Error en método alternativo Open: {e}")
 
-        logger.warning("❌ No se encontró botón Open")
+        logger.warning("<:1000182563:1396420770904932372> No se encontró botón 'Open' final")
         return False
 
     except Exception as e:
-        logger.error(f"Error buscando botón Open: {e}")
+        logger.error(f"Error buscando botón 'Open' final: {e}")
         return False
 
 async def update_progress(message, status, steps, start_time):
