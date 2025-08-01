@@ -135,26 +135,39 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
         # Paso 2: Navegar a la URL
         driver.get(url)
         await asyncio.sleep(3)  # Esperar carga inicial
+        
+        # Debug: obtener información de la página actual
+        try:
+            current_url = driver.current_url
+            page_title = driver.title
+            logger.info(f"📄 Página cargada - URL: {current_url}")
+            logger.info(f"📄 Título: {page_title}")
+        except:
+            pass
 
         steps_completed += 1
         await update_progress(message, "🔍 Buscando botón 'Free Access'...", steps_completed, start_time)
 
-        # Paso 3: Buscar y hacer clic en "Get link"
+        # Paso 3: Buscar y hacer clic en "Free Access"
         get_link_clicked = await find_and_click_free_access(driver)
         if not get_link_clicked:
+            # Intentar detectar la página actual
+            current_url = driver.current_url
+            page_title = driver.title
+            
             return {
                 'success': False,
-                'error': 'No se encontró el botón "Get link"',
-                'details': 'El botón inicial "Get link" no está disponible o cambió su estructura',
+                'error': 'No se encontró el botón "Free Access"',
+                'details': f'URL actual: {current_url}\nTítulo: {page_title}\nLa página podría haber cambiado su estructura',
                 'duration': time.time() - start_time,
                 'steps_completed': steps_completed
             }
 
         steps_completed += 1
-        await update_progress(message, "<:1000182657:1396060091366637669> Esperando timer de anuncios...", steps_completed, start_time)
+        await update_progress(message, "<:1000182657:1396060091366637669> Esperando carga de la página...", steps_completed, start_time)
 
-        # Paso 4: Esperar y buscar el botón Skip circular
-        await asyncio.sleep(5)  # Esperar a que aparezcan los anuncios
+        # Paso 4: Esperar y buscar el botón Skip - reducir tiempo de espera
+        await asyncio.sleep(3)  # Reducido de 5 a 3 segundos
 
         steps_completed += 1
         await update_progress(message, "<:1000182750:1396420537227411587> Buscando botón Skip circular...", steps_completed, start_time)
@@ -237,71 +250,114 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
                 pass
 
 async def find_and_click_free_access(driver):
-    """Encontrar y hacer clic en el botón 'Get link' inicial"""
+    """Encontrar y hacer clic en el botón 'Free Access' inicial"""
     try:
-        wait = WebDriverWait(driver, 15)
+        # Timeout más corto para evitar bloquear Discord
+        wait = WebDriverWait(driver, 8)
 
-        # Selectores específicos para el botón "Get link" inicial
-        get_link_selectors = [
-            # Selector específico por ID
+        # Selectores actualizados para Linkvertise 2024/2025
+        selectors_to_try = [
+            # Selectores más comunes en Linkvertise moderno
+            "//button[contains(text(), 'Free Access')]",
+            "//button[contains(text(), 'FREE ACCESS')]",
+            "//a[contains(text(), 'Free Access')]",
+            "//a[contains(text(), 'FREE ACCESS')]",
+            
+            # Selectores por clases comunes
+            "//button[contains(@class, 'free')]",
+            "//button[contains(@class, 'access')]",
+            "//a[contains(@class, 'free')]",
+            "//a[contains(@class, 'access')]",
+            
+            # Selectores originales como respaldo
             "//button[@id='get-link']",
-            
-            # Selector por clase y contenido
-            "//button[contains(@class, 'btn-primary') and @id='get-link']",
-            
-            # Selector por atributo data-action
-            "//button[@data-action='start-process']",
-            
-            # Selector por función onclick
-            "//button[contains(@onclick, 'startLinkProcess')]",
-            
-            # Selector por texto "Get link"
-            "//button[contains(text(), 'Get link')]",
-            "//button[contains(text(), 'Get Link')]",
-            
-            # Selectores de respaldo
             "//button[contains(@class, 'btn-primary')]",
-            "//button[@type='button' and contains(@class, 'btn-primary')]"
+            "//button[contains(text(), 'Get link')]",
+            "//button[contains(text(), 'Continue')]",
+            "//button[contains(text(), 'CONTINUE')]",
+            
+            # Selectores más generales
+            "//button[contains(@class, 'button')]",
+            "//a[contains(@class, 'button')]"
         ]
 
-        for selector in get_link_selectors:
+        # Intentar cada selector con timeout reducido
+        for i, selector in enumerate(selectors_to_try):
             try:
-                element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
-                driver.execute_script("arguments[0].click();", element)
-                logger.info(f"<:verify:1396087763388072006> Clic en 'Get link' exitoso con selector: {selector}")
-                return True
-            except TimeoutException:
-                continue
+                logger.debug(f"Probando selector {i+1}/{len(selectors_to_try)}: {selector}")
+                
+                # Buscar elementos sin wait largo
+                elements = driver.find_elements(By.XPATH, selector)
+                
+                for element in elements:
+                    try:
+                        if element.is_displayed() and element.is_enabled():
+                            # Scroll al elemento
+                            driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
+                            await asyncio.sleep(1)
+                            
+                            # Verificar que sigue visible después del scroll
+                            if element.is_displayed():
+                                # Intentar clic normal primero
+                                try:
+                                    element.click()
+                                except:
+                                    # Si falla, usar JavaScript
+                                    driver.execute_script("arguments[0].click();", element)
+                                
+                                logger.info(f"<:verify:1396087763388072006> Clic exitoso en 'Free Access' con: {selector}")
+                                logger.info(f"Texto del botón: '{element.text}'")
+                                return True
+                    except Exception as e:
+                        logger.debug(f"Error con elemento: {e}")
+                        continue
+                        
             except Exception as e:
                 logger.debug(f"Error con selector {selector}: {e}")
                 continue
+            
+            # Pequeña pausa entre intentos para no saturar
+            await asyncio.sleep(0.5)
 
-        # Método alternativo: buscar por CSS selector
+        # Método de respaldo: buscar cualquier botón/enlace clickeable
         try:
-            css_selectors = [
-                "#get-link",
-                "button.btn-primary#get-link",
-                "button[data-action='start-process']",
-                "button.btn-primary"
+            logger.info("Buscando cualquier botón clickeable como respaldo...")
+            
+            fallback_selectors = [
+                "//button[@type='button']",
+                "//a[contains(@href, 'javascript:') or @onclick]",
+                "//div[@role='button']",
+                "//span[@role='button']"
             ]
             
-            for css_selector in css_selectors:
-                try:
-                    element = driver.find_element(By.CSS_SELECTOR, css_selector)
-                    if element.is_displayed() and element.is_enabled():
-                        driver.execute_script("arguments[0].click();", element)
-                        logger.info(f"<:verify:1396087763388072006> Clic en 'Get link' exitoso con CSS: {css_selector}")
-                        return True
-                except:
-                    continue
+            for selector in fallback_selectors:
+                elements = driver.find_elements(By.XPATH, selector)
+                for element in elements:
+                    try:
+                        if (element.is_displayed() and element.is_enabled() and 
+                            element.size['width'] > 50 and element.size['height'] > 20):
+                            
+                            element_text = element.text.strip().lower()
+                            # Buscar palabras clave relevantes
+                            keywords = ['free', 'access', 'continue', 'next', 'proceed', 'start']
+                            
+                            if any(keyword in element_text for keyword in keywords) or len(element_text) < 20:
+                                driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
+                                await asyncio.sleep(1)
+                                driver.execute_script("arguments[0].click();", element)
+                                logger.info(f"<:verify:1396087763388072006> Clic en botón de respaldo: '{element.text}'")
+                                return True
+                    except:
+                        continue
+                        
         except Exception as e:
-            logger.debug(f"Error en método CSS alternativo: {e}")
+            logger.debug(f"Error en método de respaldo: {e}")
 
-        logger.warning("<:1000182563:1396420770904932372> No se encontró botón 'Get link'")
+        logger.warning("<:1000182563:1396420770904932372> No se encontró botón 'Free Access'")
         return False
 
     except Exception as e:
-        logger.error(f"Error buscando 'Get link': {e}")
+        logger.error(f"Error buscando 'Free Access': {e}")
         return False
 
 async def find_and_click_real_skip(driver):
