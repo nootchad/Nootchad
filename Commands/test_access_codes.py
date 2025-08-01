@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def setup_test_access_codes_commands(bot):
     """Configurar comandos de prueba para códigos de acceso"""
 
-    @bot.tree.command(name="test_access_codes", description="<:1000182751:1396420551798558781> [OWNER ONLY] Probar completamente el sistema de códigos de acceso")
+    @bot.tree.command(name="test_access_codes", description="[OWNER ONLY] Probar completamente el sistema de códigos de acceso")
     async def test_access_codes_command(interaction: discord.Interaction):
         """Comando completo de prueba para el sistema de códigos"""
         try:
