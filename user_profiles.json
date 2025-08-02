@@ -62,15 +62,15 @@
         "109983668079237": 4
       },
       "daily_server_average": 4.0,
-      "last_server_added": 1754121193.1716888,
+      "last_server_added": 1754130504.975834,
       "total_scraping_attempts": 4,
       "coins": {
-        "balance": 289,
+        "balance": 249,
         "total_earned": 309,
-        "total_transactions": 50,
-        "last_activity": "2025-07-25T03:47:20.904178"
+        "total_transactions": 52,
+        "last_activity": "2025-08-02T10:28:22.590931"
       },
-      "coins_balance": 289,
+      "coins_balance": 249,
       "warnings": 0,
       "is_banned": false,
       "ban_info": {
@@ -82,7 +82,7 @@
       "total_commands": 4,
       "active_days": 1,
       "first_seen": null,
-      "last_activity": 1754121193.1717224,
+      "last_activity": 1754130504.9758434,
       "achievements": [],
       "redeemed_codes": [],
       "total_commands_used": 4,
@@ -234,8 +234,61 @@
       "total_commands_used": 5,
       "first_command_date": 1753919080.4301717,
       "verified_at": 1753919080.4301717
+    },
+    "global": {
+      "user_id": "global",
+      "username": "Usuario Desconocido",
+      "discriminator": "0000",
+      "avatar_url": null,
+      "created_at": null,
+      "joined_at": null,
+      "is_verified": false,
+      "verification_date": null,
+      "roblox_username": null,
+      "roblox_id": null,
+      "servers_data": {
+        "servers": [],
+        "total_servers": 0,
+        "games": {},
+        "total_games": 0,
+        "main_game": null,
+        "servers_by_game": {}
+      },
+      "user_servers": [],
+      "game_servers": {},
+      "total_servers": 0,
+      "total_games": 0,
+      "main_game": null,
+      "servers_by_game": {},
+      "daily_server_average": 0,
+      "last_server_added": 1754172171.8599234,
+      "total_scraping_attempts": 1,
+      "coins": {
+        "balance": 0,
+        "total_earned": 0,
+        "total_transactions": 0,
+        "last_activity": null
+      },
+      "coins_balance": 0,
+      "warnings": 0,
+      "is_banned": false,
+      "ban_info": {
+        "ban_time": null,
+        "remaining_time": null
+      },
+      "is_trusted": true,
+      "risk_level": "bajo",
+      "total_commands": 0,
+      "active_days": 1,
+      "first_seen": null,
+      "last_activity": 1754172171.859932,
+      "achievements": [],
+      "redeemed_codes": [],
+      "total_commands_used": 0,
+      "first_command_date": null,
+      "verified_at": null
     }
   },
-  "last_updated": "2025-08-02T07:53:13.171733",
-  "total_profiles": 3
+  "last_updated": "2025-08-02T22:02:51.859940",
+  "total_profiles": 4
 }

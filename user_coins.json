@@ -1,7 +1,7 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 289,
+      "balance": 249,
       "total_earned": 309,
       "transactions": [
         {
@@ -210,7 +210,7 @@
         {
           "type": "spend",
           "amount": 20,
-          "reason": "Compra r\u00e1pida: izan",
+          "reason": "Compra rápida: izan",
           "timestamp": "2025-07-14T09:38:12.212480",
           "balance_after": 209
         },
@@ -353,6 +353,24 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-25T03:47:20.904178",
           "balance_after": 289
+        },
+        {
+          "type": "purchase",
+          "amount": -20,
+          "item_id": "item_1752216910",
+          "item_name": "izan",
+          "quantity": 1,
+          "timestamp": "2025-08-02T10:28:16.920753",
+          "description": "Compra: 1x izan"
+        },
+        {
+          "type": "purchase",
+          "amount": -20,
+          "item_id": "item_1752216910",
+          "item_name": "izan",
+          "quantity": 1,
+          "timestamp": "2025-08-02T10:28:22.590931",
+          "description": "Compra: 1x izan"
         }
       ]
     },
@@ -901,7 +919,7 @@
         {
           "type": "spend",
           "amount": 20,
-          "reason": "Compra r\u00e1pida: izan",
+          "reason": "Compra rápida: izan",
           "timestamp": "2025-07-26T03:52:14.941073",
           "balance_after": 4
         },
