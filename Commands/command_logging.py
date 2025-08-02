@@ -1,4 +1,3 @@
-
 """
 Sistema de logging de comandos para RbxServers
 Registra todos los comandos usados y los envía a un canal configurado
@@ -11,6 +10,7 @@ import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class CommandLogger:
     def __init__(self):
         self.config_file = "command_logging_config.json"
         self.load_config()
-    
+
     def load_config(self):
         """Cargar configuración desde archivo JSON"""
         try:
@@ -38,13 +38,13 @@ class CommandLogger:
         except Exception as e:
             logger.error(f"❌ Error cargando configuración de logging: {e}")
             self.config = {'servers': {}, 'metadata': {}}
-    
+
     def save_config(self):
         """Guardar configuración instantáneamente"""
         try:
             self.config['metadata']['last_updated'] = datetime.now().isoformat()
             self.config['metadata']['total_servers_configured'] = len(self.config['servers'])
-            
+
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=2, ensure_ascii=False)
             logger.info("💾 Configuración de logging guardada exitosamente")
@@ -52,7 +52,7 @@ class CommandLogger:
         except Exception as e:
             logger.error(f"❌ Error guardando configuración de logging: {e}")
             return False
-    
+
     def setup_server(self, guild_id: str, channel_id: str, setup_by: str) -> bool:
         """Configurar servidor para logging de comandos"""
         try:
@@ -67,7 +67,7 @@ class CommandLogger:
         except Exception as e:
             logger.error(f"❌ Error configurando servidor {guild_id}: {e}")
             return False
-    
+
     def disable_server(self, guild_id: str) -> bool:
         """Deshabilitar logging para un servidor"""
         try:
@@ -79,35 +79,74 @@ class CommandLogger:
         except Exception as e:
             logger.error(f"❌ Error deshabilitando servidor {guild_id}: {e}")
             return False
-    
+
     def get_log_channel(self, guild_id: str) -> Optional[str]:
         """Obtener canal de logging para un servidor"""
         server_config = self.config['servers'].get(guild_id)
         if server_config and server_config.get('enabled', False):
             return server_config.get('channel_id')
         return None
-    
+
     def increment_command_count(self, guild_id: str):
-        """Incrementar contador de comandos registrados"""
+        """Incrementar contador de comandos para un servidor"""
         if guild_id in self.config['servers']:
             self.config['servers'][guild_id]['commands_logged'] += 1
             # Guardar cada 10 comandos para no sobrecargar
             if self.config['servers'][guild_id]['commands_logged'] % 10 == 0:
                 self.save_config()
 
+    async def send_to_vercel_api(self, interaction: discord.Interaction, command_name: str, success: bool = True, response_time: int = None):
+        """Enviar datos del comando a la API de Vercel"""
+        try:
+            # Preparar datos para la API
+            api_data = {
+                "username": f"{interaction.user.name}#{interaction.user.discriminator}",
+                "command": command_name,
+                "server_name": interaction.guild.name if interaction.guild else "DM",
+                "server_id": str(interaction.guild.id) if interaction.guild else "0",
+                "user_id": str(interaction.user.id),
+                "success": success,
+                "response_time": response_time or 150,
+                "additional_data": {
+                    "timestamp": datetime.now().isoformat(),
+                    "channel_id": str(interaction.channel.id),
+                    "channel_name": interaction.channel.name if hasattr(interaction.channel, 'name') else "Unknown",
+                    "bot_mention": "RbxServers",
+                    "guild_member_count": interaction.guild.member_count if interaction.guild else 0
+                }
+            }
+
+            # Hacer petición HTTP a la API de Vercel
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    'https://v0-fork-of-discord-bot-website-chi.vercel.app/api/activity/log',
+                    headers={'Content-Type': 'application/json'},
+                    json=api_data,
+                    timeout=aiohttp.ClientTimeout(total=5)
+                ) as response:
+                    if response.status == 200:
+                        logger.info(f"✅ Datos enviados a API Vercel para comando {command_name}")
+                    else:
+                        logger.warning(f"⚠️ API Vercel respondió con status {response.status} para comando {command_name}")
+
+        except asyncio.TimeoutError:
+            logger.warning(f"⏰ Timeout enviando a API Vercel para comando {command_name}")
+        except Exception as e:
+            logger.error(f"❌ Error enviando a API Vercel para comando {command_name}: {e}")
+
 # Instancia global
 command_logger = CommandLogger()
 
 def setup_commands(bot):
     """Función requerida para configurar comandos de logging"""
-    
+
     @bot.tree.command(name="logsetup", description="[OWNER ONLY] Configurar canal para logging de comandos")
     async def logsetup_command(interaction: discord.Interaction, canal: discord.TextChannel = None):
         """Configurar canal donde se enviarán los logs de comandos"""
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
         guild_id = str(interaction.guild.id)
-        
+
         # Verificar que solo el owner pueda usar este comando
         from main import is_owner_or_delegated
         if not is_owner_or_delegated(user_id):
@@ -118,13 +157,13 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        
+
         await interaction.response.defer(ephemeral=True)
-        
+
         try:
             # Si no se especifica canal, usar el canal actual
             target_channel = canal or interaction.channel
-            
+
             # Verificar permisos del bot en el canal
             permissions = target_channel.permissions_for(interaction.guild.me)
             if not permissions.send_messages or not permissions.embed_links:
@@ -140,10 +179,10 @@ def setup_commands(bot):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Configurar el servidor
             success = command_logger.setup_server(guild_id, str(target_channel.id), user_id)
-            
+
             if success:
                 embed = discord.Embed(
                     title="<:verify:1396087763388072006> Logging Configurado",
@@ -175,7 +214,7 @@ def setup_commands(bot):
                     value="• Usa `/logdisable` para deshabilitar\n• Usa `/logstats` para ver estadísticas\n• La configuración se guarda automáticamente",
                     inline=False
                 )
-                
+
                 # Enviar mensaje de prueba al canal configurado
                 test_embed = discord.Embed(
                     title="<:verify:1396087763388072006> Sistema de Logging Activado",
@@ -193,7 +232,7 @@ def setup_commands(bot):
                     inline=True
                 )
                 test_embed.set_footer(text="RbxServers • Sistema de Logging de Comandos")
-                
+
                 try:
                     await target_channel.send(embed=test_embed)
                     embed.add_field(
@@ -207,10 +246,10 @@ def setup_commands(bot):
                         value=f"La configuración fue exitosa, pero no se pudo enviar el mensaje de prueba: {str(test_error)[:100]}",
                         inline=False
                     )
-                
+
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 logger.info(f"Owner {username} configuró logging en servidor {guild_id}, canal {target_channel.id}")
-                
+
             else:
                 embed = discord.Embed(
                     title="❌ Error de Configuración",
@@ -223,7 +262,7 @@ def setup_commands(bot):
                     inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
-        
+
         except Exception as e:
             logger.error(f"Error en comando logsetup: {e}")
             embed = discord.Embed(
@@ -233,14 +272,14 @@ def setup_commands(bot):
             )
             embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}```", inline=False)
             await interaction.followup.send(embed=embed, ephemeral=True)
-    
+
     @bot.tree.command(name="logdisable", description="[OWNER ONLY] Deshabilitar logging de comandos")
     async def logdisable_command(interaction: discord.Interaction):
         """Deshabilitar el sistema de logging de comandos"""
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
         guild_id = str(interaction.guild.id)
-        
+
         # Verificar que solo el owner pueda usar este comando
         from main import is_owner_or_delegated
         if not is_owner_or_delegated(user_id):
@@ -251,12 +290,12 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        
+
         await interaction.response.defer(ephemeral=True)
-        
+
         try:
             success = command_logger.disable_server(guild_id)
-            
+
             if success:
                 embed = discord.Embed(
                     title="⏹️ Logging Deshabilitado",
@@ -273,7 +312,7 @@ def setup_commands(bot):
                     value="Usa `/logsetup` para reactivar el sistema",
                     inline=False
                 )
-                
+
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 logger.info(f"Owner {username} deshabilitó logging en servidor {guild_id}")
             else:
@@ -283,7 +322,7 @@ def setup_commands(bot):
                     color=0xff9900
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
-        
+
         except Exception as e:
             logger.error(f"Error en comando logdisable: {e}")
             embed = discord.Embed(
@@ -292,13 +331,13 @@ def setup_commands(bot):
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
-    
+
     @bot.tree.command(name="logstats", description="[OWNER ONLY] Ver estadísticas del sistema de logging")
     async def logstats_command(interaction: discord.Interaction):
         """Ver estadísticas del sistema de logging"""
         user_id = str(interaction.user.id)
         guild_id = str(interaction.guild.id)
-        
+
         # Verificar que solo el owner pueda usar este comando
         from main import is_owner_or_delegated
         if not is_owner_or_delegated(user_id):
@@ -309,12 +348,12 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        
+
         await interaction.response.defer(ephemeral=True)
-        
+
         try:
             server_config = command_logger.config['servers'].get(guild_id)
-            
+
             if not server_config:
                 embed = discord.Embed(
                     title="<:1000182584:1396049547838492672> Sin Configuración",
@@ -328,17 +367,17 @@ def setup_commands(bot):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Obtener información del canal
             channel_id = server_config.get('channel_id')
             channel = interaction.guild.get_channel(int(channel_id)) if channel_id else None
-            
+
             embed = discord.Embed(
                 title="<:1000182584:1396049547838492672> Estadísticas de Logging",
                 description="Información detallada del sistema de logging de comandos.",
                 color=0x3366ff
             )
-            
+
             # Estado actual
             status = "✅ Activo" if server_config.get('enabled', False) else "⏸️ Deshabilitado"
             embed.add_field(
@@ -346,7 +385,7 @@ def setup_commands(bot):
                 value=f"• **Estado:** {status}\n• **Canal:** {channel.mention if channel else 'Canal no encontrado'}\n• **Comandos registrados:** {server_config.get('commands_logged', 0)}",
                 inline=False
             )
-            
+
             # Información de configuración
             setup_at = server_config.get('setup_at', 'Desconocido')
             try:
@@ -354,27 +393,27 @@ def setup_commands(bot):
                 setup_time = f"<t:{int(setup_timestamp.timestamp())}:F>"
             except:
                 setup_time = "Fecha desconocida"
-            
+
             embed.add_field(
                 name="<:1000182751:1396420551798558781> **Configuración**",
                 value=f"• **Configurado:** {setup_time}\n• **Por usuario ID:** {server_config.get('setup_by', 'Desconocido')}",
                 inline=True
             )
-            
+
             # Estadísticas globales
             total_servers = len(command_logger.config['servers'])
             active_servers = sum(1 for s in command_logger.config['servers'].values() if s.get('enabled', False))
-            
+
             embed.add_field(
                 name="🌐 **Estadísticas Globales**",
                 value=f"• **Servidores configurados:** {total_servers}\n• **Servidores activos:** {active_servers}",
                 inline=True
             )
-            
+
             embed.set_footer(text="RbxServers • Sistema de Logging de Comandos")
-            
+
             await interaction.followup.send(embed=embed, ephemeral=True)
-        
+
         except Exception as e:
             logger.error(f"Error en comando logstats: {e}")
             embed = discord.Embed(
@@ -383,7 +422,7 @@ def setup_commands(bot):
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
-    
+
     # Hook para capturar todos los comandos
     @bot.event
     async def on_app_command_completion(interaction: discord.Interaction, command):
@@ -391,49 +430,53 @@ def setup_commands(bot):
         try:
             if not interaction.guild:
                 return  # Ignorar comandos en DM
-            
+
             guild_id = str(interaction.guild.id)
             log_channel_id = command_logger.get_log_channel(guild_id)
-            
+
             if not log_channel_id:
                 return  # No hay logging configurado para este servidor
-            
+
             # Obtener canal de logging
             log_channel = bot.get_channel(int(log_channel_id))
             if not log_channel:
                 return
-            
+
             # Incrementar contador
             command_logger.increment_command_count(guild_id)
-            
+
+            command_name = command.qualified_name if command else "unknown"
+            # Enviar a API de Vercel
+            await command_logger.send_to_vercel_api(interaction, command_name)
+
             # Crear embed del log
             embed = discord.Embed(
                 title="<:1000182584:1396049547838492672> Comando Ejecutado",
                 color=0x00aa55,
                 timestamp=datetime.now()
             )
-            
+
             # Información del comando
             embed.add_field(
                 name="<:1000182751:1396420551798558781> Comando:",
-                value=f"`/{command.name}`",
+                value=f"`/{command_name}`",
                 inline=True
             )
-            
+
             # Información del usuario
             embed.add_field(
                 name="<:1000182614:1396049500375875646> Usuario:",
                 value=f"{interaction.user.mention}\n`{interaction.user.name}#{interaction.user.discriminator}`\nID: `{interaction.user.id}`",
                 inline=True
             )
-            
+
             # Información del canal
             embed.add_field(
                 name="<:1000182750:1396420537227411587> Canal:",
                 value=f"{interaction.channel.mention}\n`#{interaction.channel.name}`",
                 inline=True
             )
-            
+
             # Obtener parámetros del comando si los hay
             if hasattr(interaction, 'data') and 'options' in interaction.data:
                 options = interaction.data['options']
@@ -441,25 +484,40 @@ def setup_commands(bot):
                     params_text = ""
                     for option in options[:3]:  # Máximo 3 parámetros para no sobrecargar
                         params_text += f"• **{option['name']}:** `{str(option['value'])[:50]}{'...' if len(str(option['value'])) > 50 else ''}`\n"
-                    
+
                     embed.add_field(
                         name="Parámetros:",
                         value=params_text,
                         inline=False
                     )
-            
+
             embed.set_footer(
                 text="RbxServers • Logging de Comandos",
                 icon_url=interaction.user.display_avatar.url
             )
-            
+
             # Enviar log al canal
             await log_channel.send(embed=embed)
-            
+
         except Exception as e:
             logger.error(f"Error en logging de comando: {e}")
             # No mostrar error al usuario, solo registrar internamente
-    
+
+    # Hook para capturar comandos fallidos
+    @bot.event
+    async def on_app_command_error(interaction: discord.Interaction, error):
+        """Evento que se ejecuta cuando un comando falla"""
+        try:
+            command_name = interaction.command.qualified_name if interaction.command else "unknown"
+
+            # Enviar a API de Vercel indicando que falló
+            await command_logger.send_to_vercel_api(interaction, command_name, success=False)
+
+            logger.info(f"❌ Comando fallido enviado a API Vercel: {command_name}")
+
+        except Exception as e:
+            logger.error(f"Error enviando comando fallido a API Vercel: {e}")
+
     logger.info("✅ Sistema de logging de comandos configurado")
     return True
 
