@@ -261,7 +261,7 @@
       "main_game": null,
       "servers_by_game": {},
       "daily_server_average": 0,
-      "last_server_added": 1754172171.8599234,
+      "last_server_added": 1754172348.973163,
       "total_scraping_attempts": 1,
       "coins": {
         "balance": 0,
@@ -281,7 +281,7 @@
       "total_commands": 0,
       "active_days": 1,
       "first_seen": null,
-      "last_activity": 1754172171.859932,
+      "last_activity": 1754172348.9731722,
       "achievements": [],
       "redeemed_codes": [],
       "total_commands_used": 0,
@@ -289,6 +289,6 @@
       "verified_at": null
     }
   },
-  "last_updated": "2025-08-02T22:02:51.859940",
+  "last_updated": "2025-08-02T22:05:48.973182",
   "total_profiles": 4
 }

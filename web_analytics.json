@@ -1519,14 +1519,432 @@
         }
       },
       "processed_at": "2025-08-02 22:01:40"
+    },
+    {
+      "timestamp": "2025-08-02T22:11:14.155716",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:11:13.555Z",
+        "page": "/",
+        "user_agent": "Unknown",
+        "referer": "Direct",
+        "client_ip": "Unknown",
+        "session_data": {
+          "viewport": {
+            "width": 899,
+            "height": 319
+          },
+          "screen_resolution": {
+            "width": 1303,
+            "height": 582
+          },
+          "timezone": "America/Mazatlan",
+          "language": "es-ES"
+        },
+        "performance": {
+          "load_time": 36149.5,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:11:14"
+    },
+    {
+      "timestamp": "2025-08-02T22:12:34.506814",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:12:33.920Z",
+        "page": "/",
+        "user_agent": "Unknown",
+        "referer": "Direct",
+        "client_ip": "Unknown",
+        "session_data": {
+          "viewport": {
+            "width": 899,
+            "height": 319
+          },
+          "screen_resolution": {
+            "width": 1303,
+            "height": 582
+          },
+          "timezone": "America/Mazatlan",
+          "language": "es-ES"
+        },
+        "performance": {
+          "load_time": 32269.400000095367,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:12:34"
+    },
+    {
+      "timestamp": "2025-08-02T22:14:38.469827",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:14:37.844Z",
+        "page": "/",
+        "user_agent": "Unknown",
+        "referer": "Direct",
+        "client_ip": "Unknown",
+        "session_data": {
+          "viewport": {
+            "width": 899,
+            "height": 226
+          },
+          "screen_resolution": {
+            "width": 1303,
+            "height": 582
+          },
+          "timezone": "America/Mazatlan",
+          "language": "es-ES"
+        },
+        "performance": {
+          "load_time": 44169.90000009537,
+          "connection_type": "3g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:14:38"
+    },
+    {
+      "timestamp": "2025-08-02T22:19:56.571095",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:19:55.982Z",
+        "page": "/",
+        "user_agent": "Unknown",
+        "referer": "Direct",
+        "client_ip": "Unknown",
+        "session_data": {
+          "viewport": {
+            "width": 899,
+            "height": 226
+          },
+          "screen_resolution": {
+            "width": 1303,
+            "height": 582
+          },
+          "timezone": "America/Mazatlan",
+          "language": "es-ES"
+        },
+        "performance": {
+          "load_time": 31339.39999985695,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:19:56"
+    },
+    {
+      "timestamp": "2025-08-02T22:20:47.791928",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:20:47.663Z",
+        "page": "/",
+        "user_agent": "vercel-screenshot/1.0",
+        "referer": "https://v0-fork-of-discord-bot-website-nsl4f1gu9.vercel.app/",
+        "client_ip": "64.227.105.162",
+        "session_data": {
+          "viewport": {
+            "width": 1280,
+            "height": 800
+          },
+          "screen_resolution": {
+            "width": 800,
+            "height": 600
+          },
+          "timezone": "UTC",
+          "language": "en-US"
+        },
+        "performance": {
+          "load_time": 521.9000000059605,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:20:47"
+    },
+    {
+      "timestamp": "2025-08-02T22:20:48.357527",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:20:48.239Z",
+        "page": "/",
+        "user_agent": "vercel-screenshot/1.0",
+        "referer": "https://v0-fork-of-discord-bot-website-nsl4f1gu9.vercel.app/",
+        "client_ip": "209.38.140.194",
+        "session_data": {
+          "viewport": {
+            "width": 1280,
+            "height": 800
+          },
+          "screen_resolution": {
+            "width": 800,
+            "height": 600
+          },
+          "timezone": "UTC",
+          "language": "en-US"
+        },
+        "performance": {
+          "load_time": 543.3999999761581,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:20:48"
+    },
+    {
+      "timestamp": "2025-08-02T22:20:55.934410",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:20:55.317Z",
+        "page": "/",
+        "user_agent": "Unknown",
+        "referer": "Direct",
+        "client_ip": "Unknown",
+        "session_data": {
+          "viewport": {
+            "width": 899,
+            "height": 226
+          },
+          "screen_resolution": {
+            "width": 1303,
+            "height": 582
+          },
+          "timezone": "America/Mazatlan",
+          "language": "es-ES"
+        },
+        "performance": {
+          "load_time": 91354.19999980927,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:20:55"
+    },
+    {
+      "timestamp": "2025-08-02T22:21:02.278946",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:21:02.171Z",
+        "page": "/",
+        "user_agent": "Mozilla/5.0 (Linux; Android 15; V2405A) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36",
+        "referer": "https://v0-fork-of-discord-bot-website-chi.vercel.app/",
+        "client_ip": "187.228.11.196",
+        "session_data": {
+          "viewport": {
+            "width": 420,
+            "height": 934
+          },
+          "screen_resolution": {
+            "width": 420,
+            "height": 934
+          },
+          "timezone": "America/Mexico_City",
+          "language": "es-US"
+        },
+        "performance": {
+          "load_time": 13.205,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:21:02"
+    },
+    {
+      "timestamp": "2025-08-02T22:21:02.353447",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:21:02.341Z",
+        "page": "/",
+        "user_agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36",
+        "referer": "https://v0-fork-of-discord-bot-website-chi.vercel.app/",
+        "client_ip": "187.223.174.220",
+        "session_data": {
+          "viewport": {
+            "width": 1225,
+            "height": 494
+          },
+          "screen_resolution": {
+            "width": 1303,
+            "height": 582
+          },
+          "timezone": "America/Mazatlan",
+          "language": "es-ES"
+        },
+        "performance": {
+          "load_time": 7046.699999809265,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:21:02"
+    },
+    {
+      "timestamp": "2025-08-02T22:21:55.989024",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:21:55.333Z",
+        "page": "/",
+        "user_agent": "Unknown",
+        "referer": "Direct",
+        "client_ip": "Unknown",
+        "session_data": {
+          "viewport": {
+            "width": 957,
+            "height": 226
+          },
+          "screen_resolution": {
+            "width": 1303,
+            "height": 582
+          },
+          "timezone": "America/Mazatlan",
+          "language": "es-ES"
+        },
+        "performance": {
+          "load_time": 151353.5,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:21:55"
+    },
+    {
+      "timestamp": "2025-08-02T22:22:03.259624",
+      "source": "vercel",
+      "event_type": "page_visit",
+      "page": "/",
+      "user_agent": "RbxServers-Website/1.0",
+      "ip": "172.31.72.34",
+      "data": {
+        "event_type": "page_visit",
+        "timestamp": "2025-08-02T22:22:03.183Z",
+        "page": "/",
+        "user_agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36",
+        "referer": "https://v0-fork-of-discord-bot-website-chi.vercel.app/",
+        "client_ip": "187.223.174.220",
+        "session_data": {
+          "viewport": {
+            "width": 1225,
+            "height": 494
+          },
+          "screen_resolution": {
+            "width": 1303,
+            "height": 582
+          },
+          "timezone": "America/Mazatlan",
+          "language": "es-ES"
+        },
+        "performance": {
+          "load_time": 68047.09999990463,
+          "connection_type": "4g"
+        },
+        "website_stats": {
+          "total_visits": 1,
+          "unique_visitor": true,
+          "source": "rbxbot.vercel.app"
+        }
+      },
+      "processed_at": "2025-08-02 22:22:03"
     }
   ],
   "metadata": {
     "created_at": "2025-07-31T10:00:00.000000",
-    "last_updated": "2025-08-02T22:01:40.587114",
-    "total_events": 40,
+    "last_updated": "2025-08-02T22:22:03.260656",
+    "total_events": 51,
     "sources": {
-      "vercel": 40,
+      "vercel": 51,
       "other": 0
     }
   },
