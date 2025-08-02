@@ -1,0 +1,16 @@
+
+{
+  "tickets": {},
+  "metadata": {
+    "created_at": "2025-01-02T00:00:00.000000",
+    "last_updated": "2025-01-02T00:00:00.000000",
+    "total_tickets": 0,
+    "open_tickets": 0,
+    "closed_tickets": 0
+  },
+  "settings": {
+    "auto_close_days": 30,
+    "priority_levels": ["low", "medium", "high", "urgent"],
+    "ticket_types": ["bug", "feature_request", "support", "abuse", "other"]
+  }
+}

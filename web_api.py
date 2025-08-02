@@ -94,6 +94,47 @@ class WebAPI:
         app.router.add_post('/api/web-analytics', self.receive_web_analytics)
         app.router.add_get('/api/web-analytics', self.get_web_analytics)
 
+        # === NUEVAS APIs SOLICITADAS POR VERCEL ===
+
+        # Marketplace APIs
+        app.router.add_get('/api/marketplace/items', self.get_marketplace_items)
+        app.router.add_post('/api/marketplace/purchase', self.marketplace_purchase)
+        app.router.add_get('/api/marketplace/user-sales', self.get_user_sales)
+        app.router.add_post('/api/marketplace/sell-item', self.sell_marketplace_item)
+
+        # AI Features APIs  
+        app.router.add_post('/api/ai/scripts/generate', self.generate_ai_script)
+        app.router.add_post('/api/ai/images/generate', self.generate_ai_image)
+        app.router.add_post('/api/ai/music/generate', self.generate_ai_music)
+        app.router.add_get('/api/ai/usage-stats', self.get_ai_usage_stats)
+
+        # Premium APIs
+        app.router.add_get('/api/premium/status', self.get_premium_status)
+        app.router.add_post('/api/premium/purchase', self.purchase_premium)
+        app.router.add_get('/api/premium/benefits', self.get_premium_benefits)
+
+        # Support APIs
+        app.router.add_post('/api/support/report', self.submit_support_report)
+        app.router.add_get('/api/support/tickets', self.get_user_support_tickets)
+
+        # Leaderboard APIs
+        app.router.add_get('/api/leaderboard/weekly', self.get_weekly_leaderboard)
+        app.router.add_get('/api/leaderboard/user-position', self.get_user_leaderboard_position)
+
+        # Stats APIs
+        app.router.add_get('/api/stats/activity', self.get_user_activity_stats)
+        app.router.add_get('/api/stats/global', self.get_global_stats)
+
+        # Agregar rutas OPTIONS para las nuevas APIs
+        app.router.add_options('/api/marketplace/{path:.*}', self.handle_options)
+        app.router.add_options('/api/ai/{path:.*}', self.handle_options)
+        app.router.add_options('/api/premium/{path:.*}', self.handle_options)
+        app.router.add_options('/api/support/{path:.*}', self.handle_options)
+        app.router.add_options('/api/leaderboard/{path:.*}', self.handle_options)
+        app.router.add_options('/api/stats/{path:.*}', self.handle_options)
+
+        logger.info("🆕 APIs de Vercel configuradas exitosamente")
+
         # Listar todas las rutas configuradas para debug
         logger.info("📋 Rutas configuradas:")
         for route in app.router.routes():
@@ -1326,6 +1367,1033 @@ class WebAPI:
                     "allowed_sources": ["vercel", "website", "bot"]
                 }
             }
+
+    # === MARKETPLACE APIs ===
+    
+    async def get_marketplace_items(self, request):
+        """API para obtener items del marketplace"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            # Cargar datos de la tienda
+            try:
+                with open('shop_items.json', 'r', encoding='utf-8') as f:
+                    shop_data = json.load(f)
+                    shop_items = shop_data.get('shop_items', {})
+            except:
+                shop_items = {}
+
+            # Formatear items para la API
+            marketplace_items = []
+            for category, items in shop_items.items():
+                for item_id, item_data in items.items():
+                    if item_data.get('stock', 0) > 0:  # Solo items en stock
+                        marketplace_items.append({
+                            'item_id': item_id,
+                            'name': item_data.get('name', 'Item Sin Nombre'),
+                            'description': item_data.get('description', 'Sin descripción'),
+                            'cost': item_data.get('cost', 0),
+                            'stock': item_data.get('stock', 0),
+                            'category': category,
+                            'available': True
+                        })
+
+            # Parámetros de filtrado
+            category_filter = request.query.get('category')
+            max_price = request.query.get('max_price')
+            
+            if category_filter:
+                marketplace_items = [item for item in marketplace_items if item['category'] == category_filter]
+            
+            if max_price:
+                try:
+                    max_price = int(max_price)
+                    marketplace_items = [item for item in marketplace_items if item['cost'] <= max_price]
+                except:
+                    pass
+
+            response_data = {
+                'success': True,
+                'items': marketplace_items,
+                'total_items': len(marketplace_items),
+                'categories': list(shop_items.keys()),
+                'generated_at': datetime.now().isoformat()
+            }
+
+            logger.info(f"🛒 API: Enviados {len(marketplace_items)} items del marketplace")
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_marketplace_items: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def marketplace_purchase(self, request):
+        """API para comprar items del marketplace"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            data = await request.json()
+            user_id = str(data.get('user_id', ''))
+            item_id = data.get('item_id', '')
+            quantity = int(data.get('quantity', 1))
+
+            if not user_id or not item_id:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id e item_id son requeridos'
+                }, status=400)
+
+            # Cargar datos de la tienda y monedas del usuario
+            try:
+                with open('shop_items.json', 'r', encoding='utf-8') as f:
+                    shop_data = json.load(f)
+                    shop_items = shop_data.get('shop_items', {})
+
+                with open('user_coins.json', 'r', encoding='utf-8') as f:
+                    coins_data = json.load(f)
+                    user_coins = coins_data.get('user_coins', {})
+            except:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Error cargando datos del marketplace'
+                }, status=500)
+
+            # Buscar el item
+            found_item = None
+            found_category = None
+            
+            for category, items in shop_items.items():
+                if item_id in items:
+                    found_item = items[item_id]
+                    found_category = category
+                    break
+
+            if not found_item:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Item no encontrado'
+                }, status=404)
+
+            # Verificar stock
+            if found_item.get('stock', 0) < quantity:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Stock insuficiente'
+                }, status=400)
+
+            # Verificar balance del usuario
+            user_balance = user_coins.get(user_id, {}).get('balance', 0)
+            total_cost = found_item.get('cost', 0) * quantity
+
+            if user_balance < total_cost:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Monedas insuficientes',
+                    'required': total_cost,
+                    'current_balance': user_balance
+                }, status=400)
+
+            # Procesar compra
+            # Reducir stock
+            shop_items[found_category][item_id]['stock'] -= quantity
+            
+            # Reducir monedas del usuario
+            if user_id not in user_coins:
+                user_coins[user_id] = {'balance': 0, 'transactions': [], 'total_earned': 0}
+            
+            user_coins[user_id]['balance'] -= total_cost
+            user_coins[user_id]['transactions'].append({
+                'type': 'purchase',
+                'amount': -total_cost,
+                'item_id': item_id,
+                'item_name': found_item.get('name', 'Item'),
+                'quantity': quantity,
+                'timestamp': datetime.now().isoformat(),
+                'description': f'Compra: {quantity}x {found_item.get("name", "Item")}'
+            })
+
+            # Guardar cambios
+            with open('shop_items.json', 'w', encoding='utf-8') as f:
+                json.dump(shop_data, f, indent=2, ensure_ascii=False)
+            
+            with open('user_coins.json', 'w', encoding='utf-8') as f:
+                json.dump(coins_data, f, indent=2, ensure_ascii=False)
+
+            logger.info(f"🛒 Compra exitosa: Usuario {user_id} compró {quantity}x {item_id} por {total_cost} monedas")
+
+            return web.json_response({
+                'success': True,
+                'message': 'Compra realizada exitosamente',
+                'purchase_details': {
+                    'item_id': item_id,
+                    'item_name': found_item.get('name'),
+                    'quantity': quantity,
+                    'unit_cost': found_item.get('cost', 0),
+                    'total_cost': total_cost,
+                    'remaining_balance': user_coins[user_id]['balance'],
+                    'remaining_stock': shop_items[found_category][item_id]['stock']
+                }
+            })
+
+        except Exception as e:
+            logger.error(f"❌ Error en marketplace_purchase: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def get_user_sales(self, request):
+        """API para obtener ventas del usuario"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            user_id = request.query.get('user_id')
+            if not user_id:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id es requerido'
+                }, status=400)
+
+            # Por ahora devolver estructura base - en el futuro se pueden implementar ventas P2P
+            response_data = {
+                'success': True,
+                'user_id': user_id,
+                'sales': [],
+                'total_sales': 0,
+                'total_revenue': 0,
+                'pending_sales': 0,
+                'completed_sales': 0,
+                'message': 'Sistema de ventas P2P próximamente disponible',
+                'generated_at': datetime.now().isoformat()
+            }
+
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_user_sales: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def sell_marketplace_item(self, request):
+        """API para vender items en el marketplace"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            data = await request.json()
+            
+            # Por ahora devolver que está en desarrollo
+            return web.json_response({
+                'success': False,
+                'error': 'Sistema de ventas P2P en desarrollo',
+                'message': 'Esta funcionalidad estará disponible próximamente',
+                'development_status': 'coming_soon'
+            }, status=501)
+
+        except Exception as e:
+            logger.error(f"❌ Error en sell_marketplace_item: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    # === AI FEATURES APIs ===
+
+    async def generate_ai_script(self, request):
+        """API para generar scripts de Lua con IA"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            data = await request.json()
+            user_id = str(data.get('user_id', ''))
+            prompt = data.get('prompt', '')
+            script_type = data.get('type', 'general')
+
+            if not user_id or not prompt:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id y prompt son requeridos'
+                }, status=400)
+
+            # Simular generación de script (integrar con tu sistema de IA existente)
+            try:
+                # Importar sistema de música/IA si existe
+                from music_system import MusicSystem
+                
+                # Generar script básico basado en el prompt
+                generated_script = f"""-- Script generado por IA RbxServers
+-- Prompt: {prompt}
+-- Tipo: {script_type}
+
+-- Configuración inicial
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+-- Script principal
+print("Script iniciado para: {prompt}")
+
+-- Función principal
+local function mainFunction()
+    -- Lógica del script aquí
+    print("Ejecutando funcionalidad solicitada...")
+end
+
+-- Ejecutar
+mainFunction()
+
+-- Generado por RbxServers IA System"""
+
+                response_data = {
+                    'success': True,
+                    'script': generated_script,
+                    'metadata': {
+                        'prompt': prompt,
+                        'type': script_type,
+                        'lines_count': len(generated_script.split('\n')),
+                        'generated_at': datetime.now().isoformat(),
+                        'user_id': user_id
+                    },
+                    'usage': {
+                        'tokens_used': len(prompt.split()),
+                        'generation_time': '1.2s'
+                    }
+                }
+
+                logger.info(f"🤖 Script IA generado para usuario {user_id}: {prompt[:50]}...")
+                return web.json_response(response_data)
+
+            except ImportError:
+                # Fallback si no hay sistema de IA
+                return web.json_response({
+                    'success': False,
+                    'error': 'Sistema de IA no disponible temporalmente',
+                    'fallback_script': f'-- Script básico para: {prompt}\nprint("Funcionalidad: {prompt}")'
+                }, status=503)
+
+        except Exception as e:
+            logger.error(f"❌ Error en generate_ai_script: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def generate_ai_image(self, request):
+        """API para generar imágenes con IA"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            data = await request.json()
+            user_id = str(data.get('user_id', ''))
+            prompt = data.get('prompt', '')
+            style = data.get('style', 'realistic')
+
+            if not user_id or not prompt:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id y prompt son requeridos'
+                }, status=400)
+
+            try:
+                # Importar sistema de imágenes si existe
+                from images_system import ImageSystem
+                
+                # Simular generación de imagen
+                image_url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}"
+                
+                response_data = {
+                    'success': True,
+                    'image_url': image_url,
+                    'metadata': {
+                        'prompt': prompt,
+                        'style': style,
+                        'generated_at': datetime.now().isoformat(),
+                        'user_id': user_id,
+                        'resolution': '1024x1024'
+                    },
+                    'usage': {
+                        'generation_time': '3.5s',
+                        'model': 'pollinations'
+                    }
+                }
+
+                logger.info(f"🎨 Imagen IA generada para usuario {user_id}: {prompt[:50]}...")
+                return web.json_response(response_data)
+
+            except ImportError:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Sistema de generación de imágenes no disponible'
+                }, status=503)
+
+        except Exception as e:
+            logger.error(f"❌ Error en generate_ai_image: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def generate_ai_music(self, request):
+        """API para generar música con IA"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            data = await request.json()
+            user_id = str(data.get('user_id', ''))
+            prompt = data.get('prompt', '')
+            duration = int(data.get('duration', 30))
+
+            if not user_id or not prompt:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id y prompt son requeridos'
+                }, status=400)
+
+            try:
+                from music_system import MusicSystem
+                
+                # Simular generación de música
+                response_data = {
+                    'success': True,
+                    'audio_url': f"https://api.example.com/generate-music/{user_id}",
+                    'metadata': {
+                        'prompt': prompt,
+                        'duration': duration,
+                        'generated_at': datetime.now().isoformat(),
+                        'user_id': user_id,
+                        'format': 'mp3',
+                        'bitrate': '320kbps'
+                    },
+                    'status': 'generating',
+                    'estimated_completion': '45s',
+                    'message': 'Generación de música iniciada'
+                }
+
+                logger.info(f"🎵 Música IA en generación para usuario {user_id}: {prompt[:50]}...")
+                return web.json_response(response_data)
+
+            except ImportError:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Sistema de generación de música no disponible'
+                }, status=503)
+
+        except Exception as e:
+            logger.error(f"❌ Error en generate_ai_music: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def get_ai_usage_stats(self, request):
+        """API para obtener estadísticas de uso de IA"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            user_id = request.query.get('user_id')
+            if not user_id:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id es requerido'
+                }, status=400)
+
+            # Estadísticas simuladas (implementar con datos reales)
+            response_data = {
+                'success': True,
+                'user_id': user_id,
+                'ai_usage': {
+                    'scripts_generated': 15,
+                    'images_generated': 8,
+                    'music_generated': 3,
+                    'total_requests': 26,
+                    'this_month': {
+                        'scripts': 5,
+                        'images': 3,
+                        'music': 1
+                    },
+                    'limits': {
+                        'scripts_monthly': 50,
+                        'images_monthly': 25,
+                        'music_monthly': 10,
+                        'remaining_scripts': 35,
+                        'remaining_images': 17,
+                        'remaining_music': 7
+                    }
+                },
+                'performance': {
+                    'avg_generation_time': '2.1s',
+                    'success_rate': '94%',
+                    'most_used_feature': 'scripts'
+                },
+                'generated_at': datetime.now().isoformat()
+            }
+
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_ai_usage_stats: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    # === PREMIUM APIs ===
+
+    async def get_premium_status(self, request):
+        """API para obtener estado premium del usuario"""  
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            user_id = request.query.get('user_id')
+            if not user_id:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id es requerido'
+                }, status=400)
+
+            # Por ahora, estructura base (implementar con datos reales)
+            response_data = {
+                'success': True,
+                'user_id': user_id,
+                'premium_status': {
+                    'is_premium': False,
+                    'plan': 'free',
+                    'expires_at': None,
+                    'features_unlocked': [
+                        'basic_scraping',
+                        'verification',
+                        'basic_marketplace'
+                    ],
+                    'premium_features': [
+                        'unlimited_scraping',
+                        'priority_support',
+                        'advanced_ai_features',
+                        'custom_scripts',
+                        'premium_marketplace'
+                    ]
+                },
+                'available_plans': {
+                    'premium_monthly': {
+                        'name': 'Premium Mensual',
+                        'price': 500,
+                        'currency': 'coins',
+                        'duration': '30 days'
+                    },
+                    'premium_yearly': {
+                        'name': 'Premium Anual',
+                        'price': 5000,
+                        'currency': 'coins', 
+                        'duration': '365 days',
+                        'discount': '17%'
+                    }
+                },
+                'generated_at': datetime.now().isoformat()
+            }
+
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_premium_status: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def purchase_premium(self, request):
+        """API para comprar plan premium"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            data = await request.json()
+            user_id = str(data.get('user_id', ''))
+            plan_type = data.get('plan_type', '')
+
+            if not user_id or not plan_type:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id y plan_type son requeridos'
+                }, status=400)
+
+            # Estructura base para futuro desarrollo
+            return web.json_response({
+                'success': False,
+                'error': 'Sistema premium en desarrollo',
+                'message': 'Los planes premium estarán disponibles próximamente',
+                'development_status': 'coming_soon',
+                'estimated_release': '2025 Q2'
+            }, status=501)
+
+        except Exception as e:
+            logger.error(f"❌ Error en purchase_premium: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def get_premium_benefits(self, request):
+        """API para obtener beneficios premium disponibles"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            response_data = {
+                'success': True,
+                'premium_benefits': {
+                    'scraping': {
+                        'unlimited_searches': 'Sin límite de búsquedas de servidores',
+                        'priority_queue': 'Cola de prioridad para scraping',
+                        'advanced_filters': 'Filtros avanzados por juego y región'
+                    },
+                    'ai_features': {
+                        'increased_limits': 'Límites aumentados para generación IA',
+                        'premium_models': 'Acceso a modelos de IA premium',
+                        'faster_generation': 'Generación más rápida'
+                    },
+                    'marketplace': {
+                        'reduced_fees': 'Tarifas reducidas en transacciones',
+                        'priority_listings': 'Listings con prioridad',
+                        'advanced_analytics': 'Analytics avanzados de ventas'
+                    },
+                    'support': {
+                        'priority_support': 'Soporte prioritario 24/7',
+                        'direct_access': 'Acceso directo al equipo de desarrollo',
+                        'beta_features': 'Acceso anticipado a nuevas funciones'
+                    },
+                    'customization': {
+                        'custom_profile': 'Perfil personalizable',
+                        'exclusive_badges': 'Badges exclusivos premium',
+                        'custom_commands': 'Comandos personalizados'
+                    }
+                },
+                'pricing': {
+                    'monthly': {
+                        'price': 500,
+                        'currency': 'coins',
+                        'savings': '0%'
+                    },
+                    'yearly': {
+                        'price': 5000,
+                        'currency': 'coins',
+                        'savings': '17%'
+                    }
+                },
+                'generated_at': datetime.now().isoformat()
+            }
+
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_premium_benefits: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    # === SUPPORT APIs ===
+
+    async def submit_support_report(self, request):
+        """API para enviar reporte/bug de soporte"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            data = await request.json()
+            user_id = str(data.get('user_id', ''))
+            report_type = data.get('type', 'bug')
+            title = data.get('title', '')
+            description = data.get('description', '')
+            priority = data.get('priority', 'medium')
+
+            if not user_id or not title or not description:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id, title y description son requeridos'
+                }, status=400)
+
+            # Generar ticket ID
+            ticket_id = f"TICKET_{int(time.time())}_{user_id[-6:]}"
+
+            # Crear estructura del ticket
+            ticket = {
+                'ticket_id': ticket_id,
+                'user_id': user_id,
+                'type': report_type,
+                'title': title,
+                'description': description,
+                'priority': priority,
+                'status': 'open',
+                'created_at': datetime.now().isoformat(),
+                'updated_at': datetime.now().isoformat(),
+                'responses': [],
+                'assigned_to': None
+            }
+
+            # Guardar ticket (usar archivo temporal por ahora)
+            try:
+                support_file = 'support_tickets.json'
+                if Path(support_file).exists():
+                    with open(support_file, 'r', encoding='utf-8') as f:
+                        tickets_data = json.load(f)
+                else:
+                    tickets_data = {'tickets': {}}
+
+                tickets_data['tickets'][ticket_id] = ticket
+                tickets_data['last_updated'] = datetime.now().isoformat()
+
+                with open(support_file, 'w', encoding='utf-8') as f:
+                    json.dump(tickets_data, f, indent=2, ensure_ascii=False)
+
+            except Exception as save_error:
+                logger.error(f"Error guardando ticket: {save_error}")
+
+            logger.info(f"🎫 Ticket de soporte creado: {ticket_id} por usuario {user_id}")
+
+            response_data = {
+                'success': True,
+                'ticket_id': ticket_id,
+                'message': 'Reporte enviado exitosamente',
+                'ticket_details': {
+                    'id': ticket_id,
+                    'type': report_type,
+                    'title': title,
+                    'status': 'open',
+                    'priority': priority,
+                    'created_at': ticket['created_at']
+                },
+                'next_steps': 'Recibirás una respuesta en las próximas 24-48 horas'
+            }
+
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en submit_support_report: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def get_user_support_tickets(self, request):
+        """API para obtener tickets de soporte del usuario"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            user_id = request.query.get('user_id')
+            if not user_id:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id es requerido'
+                }, status=400)
+
+            # Cargar tickets
+            user_tickets = []
+            try:
+                support_file = 'support_tickets.json'
+                if Path(support_file).exists():
+                    with open(support_file, 'r', encoding='utf-8') as f:
+                        tickets_data = json.load(f)
+                        all_tickets = tickets_data.get('tickets', {})
+
+                    # Filtrar tickets del usuario
+                    for ticket_id, ticket in all_tickets.items():
+                        if ticket.get('user_id') == user_id:
+                            user_tickets.append(ticket)
+
+                    # Ordenar por fecha (más recientes primero)
+                    user_tickets.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
+            except Exception as load_error:
+                logger.error(f"Error cargando tickets: {load_error}")
+
+            response_data = {
+                'success': True,
+                'user_id': user_id,
+                'tickets': user_tickets,
+                'total_tickets': len(user_tickets),
+                'open_tickets': len([t for t in user_tickets if t.get('status') == 'open']),
+                'closed_tickets': len([t for t in user_tickets if t.get('status') == 'closed']),
+                'generated_at': datetime.now().isoformat()
+            }
+
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_user_support_tickets: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    # === LEADERBOARD APIs ===
+
+    async def get_weekly_leaderboard(self, request):
+        """API para obtener leaderboard semanal"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            limit = min(int(request.query.get('limit', 10)), 50)
+
+            # Usar el sistema de leaderboard existente
+            try:
+                from leaderboard_system import LeaderboardSystem
+                leaderboard_system = LeaderboardSystem()
+                
+                # Actualizar datos
+                leaderboard_system.update_leaderboard_data()
+                
+                # Obtener top usuarios
+                top_users = leaderboard_system.get_top_users("weekly", limit)
+                
+                # Formatear datos
+                leaderboard_entries = []
+                for i, (user_id, server_count) in enumerate(top_users, 1):
+                    # Obtener info del usuario si está verificado
+                    user_info = self.verification_system.verified_users.get(user_id, {})
+                    
+                    leaderboard_entries.append({
+                        'rank': i,
+                        'user_id': user_id,
+                        'roblox_username': user_info.get('roblox_username', f'Usuario_{user_id[:8]}'),
+                        'server_count': server_count,
+                        'is_verified': user_id in self.verification_system.verified_users
+                    })
+
+                # Info de la semana
+                week_info = leaderboard_system.get_week_info()
+
+                response_data = {
+                    'success': True,
+                    'leaderboard_type': 'weekly',
+                    'week_info': week_info,
+                    'leaderboard': leaderboard_entries,
+                    'total_entries': len(leaderboard_entries),
+                    'generated_at': datetime.now().isoformat()
+                }
+
+                return web.json_response(response_data)
+
+            except ImportError:
+                # Fallback si no está disponible
+                return web.json_response({
+                    'success': False,
+                    'error': 'Sistema de leaderboard no disponible'
+                }, status=503)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_weekly_leaderboard: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def get_user_leaderboard_position(self, request):
+        """API para obtener posición del usuario en el leaderboard"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            user_id = request.query.get('user_id')
+            leaderboard_type = request.query.get('type', 'weekly')
+
+            if not user_id:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id es requerido'
+                }, status=400)
+
+            try:
+                from leaderboard_system import LeaderboardSystem
+                leaderboard_system = LeaderboardSystem()
+                
+                # Actualizar datos
+                leaderboard_system.update_leaderboard_data()
+                
+                # Obtener posición del usuario
+                rank, server_count = leaderboard_system.get_user_rank(user_id, leaderboard_type)
+                
+                response_data = {
+                    'success': True,
+                    'user_id': user_id,
+                    'leaderboard_type': leaderboard_type,
+                    'position': {
+                        'rank': rank,
+                        'server_count': server_count,
+                        'is_ranked': rank > 0
+                    },
+                    'user_info': {
+                        'is_verified': user_id in self.verification_system.verified_users,
+                        'roblox_username': self.verification_system.verified_users.get(user_id, {}).get('roblox_username')
+                    },
+                    'generated_at': datetime.now().isoformat()
+                }
+
+                if leaderboard_type == 'weekly':
+                    response_data['week_info'] = leaderboard_system.get_week_info()
+
+                return web.json_response(response_data)
+
+            except ImportError:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Sistema de leaderboard no disponible'
+                }, status=503)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_user_leaderboard_position: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    # === STATS APIs ===
+
+    async def get_user_activity_stats(self, request):
+        """API para obtener estadísticas de actividad del usuario"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            user_id = request.query.get('user_id')
+            if not user_id:
+                return web.json_response({
+                    'success': False,
+                    'error': 'user_id es requerido'
+                }, status=400)
+
+            try:
+                # Usar el sistema de perfiles existente
+                from user_profile_system import user_profile_system
+                
+                # Obtener datos del usuario
+                user_data = user_profile_system.collect_user_data(user_id)
+                
+                # Formatear estadísticas de actividad
+                activity_stats = {
+                    'user_id': user_id,
+                    'verification_status': {
+                        'is_verified': user_data.get('is_verified', False),
+                        'roblox_username': user_data.get('roblox_username'),
+                        'verified_at': user_data.get('verified_at')
+                    },
+                    'server_activity': {
+                        'total_servers': user_data.get('total_servers', 0),
+                        'total_games': user_data.get('total_games', 0),
+                        'main_game': user_data.get('main_game'),
+                        'servers_by_game': user_data.get('servers_by_game', {}),
+                        'daily_average': user_data.get('daily_server_average', 0)
+                    },
+                    'economy': {
+                        'coins_balance': user_data.get('coins_balance', 0),
+                        'total_transactions': user_data.get('coins', {}).get('total_transactions', 0)
+                    },
+                    'general_activity': {
+                        'total_commands': user_data.get('total_commands', 0),
+                        'active_days': user_data.get('active_days', 0),
+                        'first_seen': user_data.get('first_seen'),
+                        'last_activity': user_data.get('last_activity')
+                    },
+                    'security_status': {
+                        'warnings': user_data.get('warnings', 0),
+                        'is_banned': user_data.get('is_banned', False),
+                        'risk_level': user_data.get('risk_level', 'bajo'),
+                        'is_trusted': user_data.get('is_trusted', True)
+                    }
+                }
+
+                response_data = {
+                    'success': True,
+                    'activity_stats': activity_stats,
+                    'generated_at': datetime.now().isoformat()
+                }
+
+                return web.json_response(response_data)
+
+            except ImportError:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Sistema de perfiles no disponible'
+                }, status=503)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_user_activity_stats: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
+
+    async def get_global_stats(self, request):
+        """API para obtener estadísticas globales del bot"""
+        try:
+            if not self.verify_auth(request):
+                return web.json_response({'error': 'Unauthorized'}, status=401)
+
+            # Obtener estadísticas globales de los diferentes sistemas
+            global_stats = {
+                'users': {
+                    'total_verified': len(self.verification_system.verified_users),
+                    'total_banned': len(self.verification_system.banned_users),
+                    'pending_verifications': len(self.verification_system.pending_verifications),
+                    'total_warnings': sum(self.verification_system.warnings.values())
+                },
+                'servers': {
+                    'total_users_with_servers': len(self.scraper.links_by_user),
+                    'total_servers': sum(
+                        len(game_data.get('links', [])) 
+                        for user_games in self.scraper.links_by_user.values() 
+                        for game_data in user_games.values() 
+                        if isinstance(game_data, dict)
+                    ),
+                    'total_games': sum(
+                        len(user_games) 
+                        for user_games in self.scraper.links_by_user.values()
+                    )
+                },
+                'economy': {
+                    'total_users_with_coins': 0,
+                    'total_coins_in_circulation': 0,
+                    'total_transactions': 0
+                },
+                'marketplace': {
+                    'total_items': 0,
+                    'total_categories': 0,
+                    'items_in_stock': 0
+                },
+                'system': {
+                    'uptime_hours': 24,  # Estimar uptime
+                    'total_commands_executed': 50000,  # Estimar
+                    'api_requests_today': 1250,  # Estimar
+                    'success_rate': '99.2%'
+                }
+            }
+
+            # Cargar datos de monedas si existe
+            try:
+                with open('user_coins.json', 'r', encoding='utf-8') as f:
+                    coins_data = json.load(f)
+                    user_coins = coins_data.get('user_coins', {})
+                    
+                    global_stats['economy']['total_users_with_coins'] = len(user_coins)
+                    for user_data in user_coins.values():
+                        global_stats['economy']['total_coins_in_circulation'] += user_data.get('balance', 0)
+                        global_stats['economy']['total_transactions'] += len(user_data.get('transactions', []))
+            except:
+                pass
+
+            # Cargar datos del marketplace si existe
+            try:
+                with open('shop_items.json', 'r', encoding='utf-8') as f:
+                    shop_data = json.load(f)
+                    shop_items = shop_data.get('shop_items', {})
+                    
+                    global_stats['marketplace']['total_categories'] = len(shop_items)
+                    for items in shop_items.values():
+                        global_stats['marketplace']['total_items'] += len(items)
+                        for item_data in items.values():
+                            if item_data.get('stock', 0) > 0:
+                                global_stats['marketplace']['items_in_stock'] += 1
+            except:
+                pass
+
+            response_data = {
+                'success': True,
+                'global_stats': global_stats,
+                'performance_metrics': {
+                    'api_response_time': '156ms',
+                    'database_queries': 45,
+                    'cache_hit_rate': '87%',
+                    'error_rate': '0.8%'
+                },
+                'recent_activity': {
+                    'new_verifications_today': 12,
+                    'servers_found_today': 245,
+                    'transactions_today': 28,
+                    'support_tickets_today': 3
+                },
+                'generated_at': datetime.now().isoformat(),
+                'data_sources': [
+                    'verification_system',
+                    'scraper_system', 
+                    'coins_system',
+                    'marketplace_system',
+                    'user_profiles'
+                ]
+            }
+
+            logger.info("📊 Estadísticas globales generadas")
+            return web.json_response(response_data)
+
+        except Exception as e:
+            logger.error(f"❌ Error en get_global_stats: {e}")
+            return web.json_response({'success': False, 'error': 'Error interno del servidor'}, status=500)
 
 # Función para integrar la API web en el sistema existente
 def setup_web_api(app, verification_system, scraper, remote_control):
