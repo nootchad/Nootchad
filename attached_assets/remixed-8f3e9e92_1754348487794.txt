@@ -1,0 +1,156 @@
+
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local targetModels = {
+    "Tralalero Tralala",
+    "Secret Lucky Block",
+    "Odin Din Din Dun",
+    "Los Tralaleritos",
+    "Matteo",
+    "Los Tungtungtungcitos",
+    "Los Crocodillitos",
+    "Los Combinasionas",
+    "Las Vaquitas Saturnitas",
+    "Las Tralaleritas",
+    "La Vacca Saturno Saturnita",
+    "Garama and Madundung",
+    "Graipuss Medussi",
+    "Dragon Cannelloni",
+    "Espresso Signora",
+    "Chicleteira Bicicleteira",
+    "Cocofanto Elefanto",
+    "Agarrini la Palini",
+    "Brainrot God Lucky Block",
+    "Pipi Kiwi"
+}
+
+local WEBHOOK_URL = "https://workspace-paysencharlee.replit.dev/api/brainrot-alert"
+
+local function findModelsInWorkspace()
+    local foundModels = {}
+    
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") then
+            for _, targetName in pairs(targetModels) do
+                if obj.Name == targetName then
+                    table.insert(foundModels, {
+                        name = obj.Name,
+                        position = obj.PrimaryPart and obj.PrimaryPart.Position or Vector3.new(0, 0, 0),
+                        parent = "Workspace",
+                        fullPath = obj:GetFullName()
+                    })
+                    print("Modelo encontrado en raiz de Workspace: " .. obj.Name)
+                end
+            end
+        end
+    end
+    
+    return foundModels
+end
+
+local function sendHttpRequest(modelsData)
+    local success, result = pcall(function()
+        local data = {
+            serverId = game.JobId,
+            placeId = game.PlaceId,
+            playerCount = #Players:GetPlayers(),
+            timestamp = os.time(),
+            foundModels = modelsData,
+            playerName = Players.LocalPlayer.Name
+        }
+        
+        local jsonData = HttpService:JSONEncode(data)
+        
+        local response = HttpService:PostAsync(
+            WEBHOOK_URL,
+            jsonData,
+            Enum.HttpContentType.ApplicationJson,
+            false
+        )
+        
+        print("Datos enviados exitosamente!")
+        print("Respuesta del servidor:", response)
+        return true
+    end)
+    
+    if not success then
+        warn("Error al enviar datos HTTP:", result)
+        return false
+    end
+    
+    return true
+end
+
+local function serverHop()
+    print("Iniciando server hop...")
+    
+    local success, result = pcall(function()
+        TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
+    end)
+    
+    if not success then
+        warn("Error durante server hop:", result)
+        wait(2)
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer)
+        end)
+    end
+end
+
+local function main()
+    print("Iniciando busqueda de modelos en raiz de Workspace SOLAMENTE...")
+    print("Modelos objetivo:", #targetModels)
+    
+    wait(3)
+    
+    local foundModels = findModelsInWorkspace()
+    
+    if #foundModels > 0 then
+        print("Se encontraron", #foundModels, "modelos en la raiz de Workspace!")
+        
+        for i, model in pairs(foundModels) do
+            print(string.format("  %d. %s", i, model.name))
+        end
+        
+        print("MODELOS ENCONTRADOS - SERVIDOR UTIL!")
+        
+        local httpSuccess = sendHttpRequest(foundModels)
+        
+        if httpSuccess then
+            print("Proceso completado exitosamente!")
+        else
+            print("Modelos encontrados pero fallo el envio HTTP")
+            print("ATENCION: Modelos presentes en este servidor")
+        end
+        
+    else
+        print("No se encontraron modelos objetivo en la raiz de Workspace")
+        print("Preparando server hop en 5 segundos...")
+        
+        wait(5)
+        serverHop()
+    end
+end
+
+main()
+
+spawn(function()
+    while true do
+        wait(30)
+        
+        local foundModels = findModelsInWorkspace()
+        if #foundModels > 0 then
+            print("Verificacion periodica: Modelos encontrados!")
+            print("MODELOS DETECTADOS EN VERIFICACION PERIODICA!")
+            
+            for i, model in pairs(foundModels) do
+                print(string.format("  Modelo: %s", model.name))
+            end
+            
+            sendHttpRequest(foundModels)
+        end
+    end
+end)

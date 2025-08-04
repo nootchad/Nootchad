@@ -90,6 +90,14 @@ class WebAPI:
         # Agregar ruta para recibir datos OAuth2
         app.router.add_post('/api/oauth2-user-add', self.receive_oauth2_user_data)
 
+        # Integrar webhook de alertas Brainrot
+        try:
+            from Commands.brainrot_alerts import setup_brainrot_webhook
+            setup_brainrot_webhook(app)
+            logger.info("🧠 Sistema de alertas Brainrot integrado exitosamente")
+        except Exception as e:
+            logger.error(f"🧠 Error integrando alertas Brainrot: {e}")
+
         # Rutas para analytics
         app.router.add_post('/api/web-analytics', self.receive_web_analytics)
         app.router.add_get('/api/web-analytics', self.get_web_analytics)
