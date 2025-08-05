@@ -111,10 +111,32 @@ async def handle_brainrot_api(request):
         channel = bot.get_channel(channel_id)
         
         if not channel:
+            # Debug detallado de servidores y canales
             logger.error(f"🧠 Canal configurado no encontrado: {channel_id}")
+            logger.info(f"🔍 Servidores conectados: {len(bot.guilds)}")
+            
+            for guild in bot.guilds:
+                logger.info(f"🏠 Servidor: {guild.name} (ID: {guild.id})")
+                text_channels = [ch for ch in guild.channels if hasattr(ch, 'send')]
+                logger.info(f"📺 Canales de texto en {guild.name}: {len(text_channels)}")
+                
+                for channel_debug in text_channels[:5]:  # Solo mostrar primeros 5
+                    logger.info(f"   📍 Canal: {channel_debug.name} (ID: {channel_debug.id})")
+                
+                # Buscar específicamente el canal configurado en este servidor
+                specific_channel = guild.get_channel(channel_id)
+                if specific_channel:
+                    logger.info(f"✅ ¡Canal encontrado en {guild.name}!: {specific_channel.name}")
+                else:
+                    logger.info(f"❌ Canal {channel_id} NO está en {guild.name}")
+            
             return web.json_response({
                 'status': 'error',
-                'message': f'Configured channel {channel_id} not found'
+                'message': f'Configured channel {channel_id} not found',
+                'debug': {
+                    'servers_connected': len(bot.guilds),
+                    'servers_checked': [f"{g.name} (ID: {g.id})" for g in bot.guilds]
+                }
             }, status=404)
         
         # Crear embed de alerta
