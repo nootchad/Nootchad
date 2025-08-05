@@ -31,9 +31,9 @@ def setup_commands(bot):
             # Verificar que solo el owner pueda usar este comando
             if user_id != DISCORD_OWNER_ID:
                 embed = discord.Embed(
-                    title="❌ Acceso Denegado",
-                    description="Este comando solo puede ser usado por el owner del bot.",
-                    color=0xff0000
+                    title="<:1000182563:1396420770904932372> Acceso Denegado",
+                    description="Este comando solo puede ser usado por el <:1000182644:1396049313481625611> owner del bot.",
+                    color=0x2b2d31
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
@@ -58,12 +58,12 @@ def setup_commands(bot):
             embed = discord.Embed(
                 title="<:verify:1396087763388072006> Canal de Alertas Configurado",
                 description=f"Las alertas de **Brainrot God** se enviarán automáticamente a {canal.mention}",
-                color=0x00ff88
+                color=0x2b2d31
             )
             
             embed.add_field(
                 name="<:1000182584:1396049547838492672> **Configuración Activa**",
-                value=f"• **Canal:** {canal.mention}\n• **Servidor:** {interaction.guild.name}\n• **Webhook:** `https://workspace-paysencharlee.replit.dev/api/brainrot-alert`",
+                value=f"• **Canal:** {canal.mention}\n• **Servidor:** {interaction.guild.name}\n• **Webhook:** `/api/brainrot-alert`",
                 inline=False
             )
             
@@ -73,19 +73,19 @@ def setup_commands(bot):
                 inline=False
             )
             
-            embed.set_footer(text="💡 El sistema está ahora activo y monitoreando")
+            embed.set_footer(text="Sistema está ahora activo y monitoreando")
             
             await interaction.followup.send(embed=embed)
             
             # Enviar mensaje de prueba al canal configurado
             test_embed = discord.Embed(
-                title="🧠 Sistema de Alertas Brainrot Activado",
+                title="<:1000182751:1396420551798558781> Sistema de Alertas Brainrot Activado",
                 description="Este canal ha sido configurado para recibir alertas automáticas cuando se detecten modelos de **Brainrot God** en Steal A Brainrot.",
-                color=0x9932cc
+                color=0x2b2d31
             )
             test_embed.add_field(
-                name="⚡ **Estado del Sistema**",
-                value="✅ **ACTIVO** - Monitoreando servidores en tiempo real",
+                name="<:verify:1396087763388072006> **Estado del Sistema**",
+                value="**ACTIVO** - Monitoreando servidores en tiempo real",
                 inline=False
             )
             
@@ -96,9 +96,9 @@ def setup_commands(bot):
         except Exception as e:
             logger.error(f"Error configurando canal de alertas Brainrot: {e}")
             embed = discord.Embed(
-                title="❌ Error",
+                title="<:1000182563:1396420770904932372> Error",
                 description="Ocurrió un error al configurar el canal de alertas.",
-                color=0xff0000
+                color=0x2b2d31
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -129,78 +129,131 @@ async def handle_brainrot_alert(request):
         data = await request.json()
         logger.info(f"🧠 Alerta de Brainrot recibida: {data}")
         
-        # Verificar si hay canal configurado
-        if not ALERT_CHANNEL_ID:
+        # RECARGAR CONFIGURACIÓN CADA VEZ
+        config = load_brainrot_config()
+        if not config or not config.get('alert_channel_id'):
             logger.warning("🧠 No hay canal configurado para alertas de Brainrot")
             return web.json_response({'error': 'No alert channel configured'}, status=400)
         
         # Obtener el bot desde el contexto global
         from main import bot
         
-        channel = bot.get_channel(ALERT_CHANNEL_ID)
+        channel_id = config.get('alert_channel_id')
+        channel = bot.get_channel(channel_id)
         if not channel:
-            logger.error(f"🧠 Canal de alertas no encontrado: {ALERT_CHANNEL_ID}")
+            logger.error(f"🧠 Canal de alertas no encontrado: {channel_id}")
             return web.json_response({'error': 'Alert channel not found'}, status=404)
         
-        # Procesar datos del servidor
-        server_id = data.get('serverId', 'Desconocido')
-        place_id = data.get('placeId', 'Desconocido')
+        # Procesar TODOS los datos del servidor
+        players = data.get('players', [])
+        place_name = data.get('placeName', 'Desconocido')
         player_count = data.get('playerCount', 0)
+        max_players = data.get('maxPlayers', 50)
+        place_version = data.get('placeVersion', 'N/A')
+        place_id = data.get('placeId', 'Desconocido')
+        game_creator = data.get('gameCreator', 'Desconocido')
+        executor = data.get('executor', 'Desconocido')
+        datetime_detected = data.get('datetime', 'Ahora')
+        server_id = data.get('serverId', 'Desconocido')
+        local_player_id = data.get('localPlayerId', 'Desconocido')
+        model_count = data.get('modelCount', 0)
+        local_player = data.get('localPlayer', 'Scout Bot')
+        timestamp = data.get('timestamp', 0)
         found_models = data.get('foundModels', [])
-        player_name = data.get('playerName', 'Scout Bot')
         
         # Crear enlace directo al servidor
-        server_link = f"https://www.roblox.com/games/{place_id}?privateServerLinkCode={server_id}" if server_id != 'Desconocido' else "Link no disponible"
+        if place_id != 'Desconocido' and server_id != 'Desconocido':
+            server_link = f"https://www.roblox.com/games/{place_id}?privateServerLinkCode={server_id}"
+        else:
+            server_link = "Link no disponible"
         
         # Preparar lista de modelos encontrados
         models_text = ""
-        for i, model in enumerate(found_models[:10], 1):  # Máximo 10 modelos
-            models_text += f"**{i}.** `{model.get('name', 'Modelo Desconocido')}`\n"
+        for i, model in enumerate(found_models[:8], 1):  # Máximo 8 modelos para no sobrecargar
+            model_name = model.get('name', 'Modelo Desconocido')
+            model_position = model.get('position', 'Posición desconocida')
+            model_class = model.get('className', 'Model')
+            models_text += f"**{i}.** `{model_name}`\n"
+            models_text += f"     <:1000182750:1396420537227411587> `{model_class}` en `{model_position}`\n"
         
-        if len(found_models) > 10:
-            models_text += f"*... y {len(found_models) - 10} modelos más*\n"
+        if len(found_models) > 8:
+            models_text += f"*... y {len(found_models) - 8} modelos más*\n"
         
-        # Crear embed épico
+        # Lista de jugadores en el servidor
+        players_text = ""
+        for i, player in enumerate(players[:10], 1):  # Máximo 10 jugadores
+            player_name = player.get('name', 'Desconocido')
+            player_display = player.get('displayName', player_name)
+            player_id = player.get('userId', 'N/A')
+            players_text += f"**{i}.** `{player_display}` (ID: {player_id})\n"
+        
+        if len(players) > 10:
+            players_text += f"*... y {len(players) - 10} jugadores más*\n"
+        
+        # Crear embed épico con colores grises
         embed = discord.Embed(
-            title="🧠💎 ¡BRAINROT GOD DETECTADO! 💎🧠",
-            description=f"**¡Un servidor con modelos de Brainrot ha sido encontrado!**\n\n🔥 **¡ÚNETE AHORA MISMO ANTES QUE SE LLENE!** 🔥",
-            color=0xff6b35
+            title="<:1000182751:1396420551798558781> BRAINROT GOD DETECTADO",
+            description=f"**¡Un servidor con modelos de Brainrot ha sido encontrado!**\n\n<:verify:1396087763388072006> **¡ÚNETE AHORA MISMO ANTES QUE SE LLENE!**",
+            color=0x2b2d31
         )
         
         embed.add_field(
-            name="🎯 **MODELOS ENCONTRADOS**",
+            name="<:1000182584:1396049547838492672> **MODELOS ENCONTRADOS** ({})".format(len(found_models)),
             value=models_text or "`No hay detalles específicos`",
             inline=False
         )
         
         embed.add_field(
-            name="🌐 **INFORMACIÓN DEL SERVIDOR**",
-            value=f"• **ID del Servidor:** `{server_id}`\n• **Lugar ID:** `{place_id}`\n• **Jugadores:** `{player_count}/50`\n• **Detectado por:** `{player_name}`",
+            name="<:1000182750:1396420537227411587> **INFORMACIÓN DEL SERVIDOR**",
+            value=(
+                f"• **Nombre del Lugar:** `{place_name}`\n"
+                f"• **ID del Lugar:** `{place_id}`\n"
+                f"• **Versión:** `{place_version}`\n"
+                f"• **Creador:** `{game_creator}`\n"
+                f"• **Servidor ID:** `{server_id}`\n"
+                f"• **Jugadores:** `{player_count}/{max_players}`"
+            ),
             inline=True
         )
         
         embed.add_field(
-            name="⚡ **ACCESO RÁPIDO**",
-            value=f"[🔗 **CLICK AQUÍ PARA UNIRTE**]({server_link})\n\n🚀 **¡VE RÁPIDO!**",
+            name="<:1000182657:1396060091366637669> **DETALLES DE DETECCIÓN**",
+            value=(
+                f"• **Ejecutor Usado:** `{executor}`\n"
+                f"• **Detectado por:** `{local_player}`\n"
+                f"• **Player ID:** `{local_player_id}`\n"
+                f"• **Modelos Total:** `{model_count}`\n"
+                f"• **Detectado:** `{datetime_detected}`"
+            ),
             inline=True
         )
         
+        if players_text:
+            embed.add_field(
+                name="<:1000182614:1396049500375875646> **JUGADORES EN SERVIDOR** ({})".format(len(players)),
+                value=players_text,
+                inline=False
+            )
+        
         embed.add_field(
-            name="🏆 **¿QUÉ HACER?**",
+            name="<:verify:1396087763388072006> **ACCESO DIRECTO**",
+            value=f"[**CLICK AQUÍ PARA UNIRTE AL SERVIDOR**]({server_link})\n\n<:1000182751:1396420551798558781> **¡VE RÁPIDO ANTES QUE SE LLENE!**",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="<:1000182584:1396049547838492672> **QUÉ HACER**",
             value="• Click en el enlace de arriba\n• Únete al servidor inmediatamente\n• Busca los modelos listados\n• ¡Consigue tu Brainrot God!",
             inline=False
         )
         
         embed.set_footer(
-            text=f"🕐 Detectado el {datetime.now().strftime('%H:%M:%S')} | Sistema automático RbxServers",
-            icon_url="https://cdn.discordapp.com/emojis/1396087763388072006.png"
+            text=f"Detectado el {datetime.now().strftime('%H:%M:%S')} | Sistema automático RbxServers"
         )
-        
-        embed.set_thumbnail(url="https://tr.rbxcdn.com/180DAY-7bf01e1bb77441b8a2a99b92e7b3b4e7/768/432/Image/Png/noFilter")
         
         # Enviar alerta con @everyone
         await channel.send(
-            content="@everyone 🚨 **¡ALERTA MÁXIMA DE BRAINROT GOD!** 🚨", 
+            content="@everyone <:1000182563:1396420770904932372> **¡ALERTA MÁXIMA DE BRAINROT GOD!** <:1000182563:1396420770904932372>", 
             embed=embed
         )
         
@@ -210,7 +263,8 @@ async def handle_brainrot_alert(request):
             'status': 'success',
             'message': 'Alert sent successfully',
             'channel': channel.name,
-            'models_count': len(found_models)
+            'models_count': len(found_models),
+            'players_count': len(players)
         })
         
     except Exception as e:
