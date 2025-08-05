@@ -150,14 +150,23 @@ async def handle_brainrot_alert(request):
         # Si no hay canal, buscar automáticamente un canal apropiado
         if not channel:
             logger.info("🔍 Buscando canal apropiado automáticamente...")
+            logger.info(f"🔍 Servidores conectados: {len(bot.guilds)}")
             
             # Buscar en todos los servidores del bot
             for guild in bot.guilds:
                 logger.info(f"📊 Buscando en servidor: {guild.name} ({guild.id})")
+                logger.info(f"📊 Canales de texto disponibles: {len(guild.text_channels)}")
                 
                 for text_channel in guild.text_channels:
+                    logger.info(f"🔍 Revisando canal: {text_channel.name} (ID: {text_channel.id})")
+                    
                     # Verificar permisos de envío
-                    if not text_channel.permissions_for(guild.me).send_messages:
+                    permissions = text_channel.permissions_for(guild.me)
+                    can_send = permissions.send_messages
+                    logger.info(f"🔐 Permisos en {text_channel.name}: enviar_mensajes={can_send}")
+                    
+                    if not can_send:
+                        logger.info(f"❌ Sin permisos para enviar en: {text_channel.name}")
                         continue
                     
                     # Buscar el canal específico: ︰🧪・test・bot
@@ -179,6 +188,7 @@ async def handle_brainrot_alert(request):
                     
                     # Buscar canales alternativos si no encuentra el específico
                     channel_name_lower = text_channel.name.lower()
+                    logger.info(f"🔍 Nombre del canal en minúsculas: '{channel_name_lower}'")
                     
                     # Prioridad: canales con "brainrot" en el nombre
                     if 'brainrot' in channel_name_lower and not channel:
@@ -189,20 +199,27 @@ async def handle_brainrot_alert(request):
                     elif 'test' in channel_name_lower and 'bot' in channel_name_lower and not channel:
                         channel = text_channel
                         logger.info(f"🔧 Canal TEST-BOT alternativo encontrado: {channel.name} en {guild.name}")
+                    
+                    # Tercera prioridad: cualquier canal con permisos válidos
+                    elif not channel:
+                        channel = text_channel
+                        logger.info(f"📝 Canal por defecto seleccionado: {channel.name} en {guild.name}")
                 
+                # Si encontramos el canal específico, salir del bucle
                 if channel and channel.name == "︰🧪・test・bot":
+                    logger.info(f"🎯 Canal específico encontrado, saliendo del bucle de búsqueda")
+                    break
+                
+                # Si encontramos algún canal, también salir
+                if channel:
+                    logger.info(f"📝 Canal alternativo encontrado, saliendo del bucle de búsqueda")
                     break
             
-            # Si aún no hay canal, usar el primer canal disponible del primer servidor
-            if not channel:
-                for guild in bot.guilds:
-                    for text_channel in guild.text_channels:
-                        if text_channel.permissions_for(guild.me).send_messages:
-                            channel = text_channel
-                            logger.info(f"📝 Usando canal por defecto: {channel.name} en {guild.name}")
-                            break
-                    if channel:
-                        break
+            # Log final del estado de la búsqueda
+            if channel:
+                logger.info(f"✅ Canal seleccionado finalmente: {channel.name} (ID: {channel.id}) en {channel.guild.name}")
+            else:
+                logger.error(f"❌ No se encontró ningún canal después de revisar {len(bot.guilds)} servidores")
         
         # Si definitivamente no hay canal disponible
         if not channel:
