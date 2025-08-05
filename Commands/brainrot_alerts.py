@@ -145,7 +145,6 @@ async def handle_brainrot_alert(request):
             return web.json_response({'error': 'Alert channel not found'}, status=404)
         
         # Procesar TODOS los datos del servidor
-        players = data.get('players', [])
         place_name = data.get('placeName', 'Desconocido')
         player_count = data.get('playerCount', 0)
         max_players = data.get('maxPlayers', 50)
@@ -178,17 +177,6 @@ async def handle_brainrot_alert(request):
         
         if len(found_models) > 8:
             models_text += f"*... y {len(found_models) - 8} modelos más*\n"
-        
-        # Lista de jugadores en el servidor
-        players_text = ""
-        for i, player in enumerate(players[:10], 1):  # Máximo 10 jugadores
-            player_name = player.get('name', 'Desconocido')
-            player_display = player.get('displayName', player_name)
-            player_id = player.get('userId', 'N/A')
-            players_text += f"**{i}.** `{player_display}` (ID: {player_id})\n"
-        
-        if len(players) > 10:
-            players_text += f"*... y {len(players) - 10} jugadores más*\n"
         
         # Crear embed épico con colores grises
         embed = discord.Embed(
@@ -228,12 +216,16 @@ async def handle_brainrot_alert(request):
             inline=True
         )
         
-        if players_text:
-            embed.add_field(
-                name="<:1000182614:1396049500375875646> **JUGADORES EN SERVIDOR** ({})".format(len(players)),
-                value=players_text,
-                inline=False
-            )
+        embed.add_field(
+            name="<:1000182614:1396049500375875646> **ESTADO DEL SERVIDOR**",
+            value=(
+                f"• **Jugadores Conectados:** `{player_count}`\n"
+                f"• **Capacidad Máxima:** `{max_players}`\n"
+                f"• **Espacios Disponibles:** `{max_players - player_count}`\n"
+                f"• **Ocupación:** `{round((player_count/max_players)*100, 1)}%`"
+            ),
+            inline=False
+        )
         
         embed.add_field(
             name="<:verify:1396087763388072006> **ACCESO DIRECTO**",
@@ -264,7 +256,8 @@ async def handle_brainrot_alert(request):
             'message': 'Alert sent successfully',
             'channel': channel.name,
             'models_count': len(found_models),
-            'players_count': len(players)
+            'player_count': player_count,
+            'server_capacity': f"{player_count}/{max_players}"
         })
         
     except Exception as e:
