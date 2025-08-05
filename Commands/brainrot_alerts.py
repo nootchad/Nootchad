@@ -152,8 +152,28 @@ async def handle_brainrot_alert(request):
             logger.info("🔍 Buscando canal apropiado automáticamente...")
             logger.info(f"🔍 Servidores conectados: {len(bot.guilds)}")
             
+            # Obtener lista de servidores del bot
+            guilds_list = bot.guilds if bot.guilds else []
+            logger.info(f"🔍 Bot conectado a {len(guilds_list)} servidores")
+            
+            # Si no hay servidores, intentar refrescar la lista
+            if not guilds_list:
+                logger.warning("⚠️ No se detectaron servidores, verificando conexión del bot...")
+                try:
+                    # Intentar obtener información del bot
+                    bot_user = bot.user
+                    if bot_user:
+                        logger.info(f"🤖 Bot conectado como: {bot_user.name} (ID: {bot_user.id})")
+                    
+                    # Esperar un momento y volver a intentar
+                    await asyncio.sleep(2)
+                    guilds_list = bot.guilds if bot.guilds else []
+                    logger.info(f"🔄 Segundo intento: {len(guilds_list)} servidores detectados")
+                except Exception as refresh_error:
+                    logger.error(f"❌ Error verificando conexión del bot: {refresh_error}")
+            
             # Buscar en todos los servidores del bot
-            for guild in bot.guilds:
+            for guild in guilds_list:
                 logger.info(f"📊 Buscando en servidor: {guild.name} ({guild.id})")
                 logger.info(f"📊 Canales de texto disponibles: {len(guild.text_channels)}")
                 
@@ -169,10 +189,10 @@ async def handle_brainrot_alert(request):
                         logger.info(f"❌ Sin permisos para enviar en: {text_channel.name}")
                         continue
                     
-                    # Buscar el canal específico: ︰🧪・test・bot
-                    if text_channel.name == "︰🧪・test・bot":
+                    # Buscar el canal específico: 111
+                    if text_channel.name == "111":
                         channel = text_channel
-                        logger.info(f"🎯 Canal TEST-BOT encontrado: {channel.name} en {guild.name}")
+                        logger.info(f"🎯 Canal 111 encontrado: {channel.name} en {guild.name}")
                         
                         # Enviar mensaje simple con verify y return
                         await channel.send("<:verify:1396087763388072006>")
@@ -206,7 +226,7 @@ async def handle_brainrot_alert(request):
                         logger.info(f"📝 Canal por defecto seleccionado: {channel.name} en {guild.name}")
                 
                 # Si encontramos el canal específico, salir del bucle
-                if channel and channel.name == "︰🧪・test・bot":
+                if channel and channel.name == "111":
                     logger.info(f"🎯 Canal específico encontrado, saliendo del bucle de búsqueda")
                     break
                 
