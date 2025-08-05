@@ -93,17 +93,34 @@ async def handle_brainrot_api(request):
         # Obtener el bot desde el contexto global
         from main import bot
 
-        # Cargar datos de brainrot que incluyen información de canales
+        # Cargar configuración de ambos archivos
         brainrot_data = load_brainrot_data()
+        brainrot_config = load_brainrot_config()
+        
         alerts_sent = 0
         channels_found = []
+        all_channel_ids = set()
 
-        # Verificar si hay canales configurados en brainrot_data.json
-        if not brainrot_data.get('channels'):
-            logger.warning("🧠 No hay canales configurados en brainrot_data.json")
+        # Recopilar IDs de canales de ambas fuentes
+        # Desde brainrot_data.json
+        if brainrot_data.get('channels'):
+            for guild_id, channel_config in brainrot_data["channels"].items():
+                channel_id = channel_config.get("channel_id")
+                if channel_id:
+                    all_channel_ids.add(channel_id)
+                    logger.info(f"🧠 Canal encontrado en brainrot_data.json: {channel_id} ({channel_config.get('channel_name', 'Sin nombre')})")
+
+        # Desde brainrot_config.json
+        if brainrot_config and brainrot_config.get('alert_channel_id'):
+            channel_id = brainrot_config.get('alert_channel_id')
+            all_channel_ids.add(channel_id)
+            logger.info(f"🧠 Canal encontrado en brainrot_config.json: {channel_id}")
+
+        if not all_channel_ids:
+            logger.warning("🧠 No hay canales configurados en ningún archivo")
             return web.json_response({
                 'status': 'error',
-                'message': 'No brainrot channels configured in brainrot_data.json',
+                'message': 'No brainrot channels configured',
                 'suggestion': 'Use /brainrot command to configure a channel first'
             }, status=400)
 
@@ -112,49 +129,81 @@ async def handle_brainrot_api(request):
         if bot and hasattr(bot, 'guilds'):
             logger.info(f"🔍 Servidores conectados: {len(bot.guilds)}")
             for guild in bot.guilds:
-                logger.info(f"   - {guild.name} (ID: {guild.id})")
+                logger.info(f"   - {guild.name} (ID: {guild.id}) - Canales: {len(guild.channels)}")
 
-        # Procesar cada canal configurado
-        for guild_id, channel_config in brainrot_data["channels"].items():
+        # Intentar enviar a cada canal configurado
+        for channel_id in all_channel_ids:
             try:
-                channel_id = channel_config.get("channel_id")
-                if not channel_id:
-                    logger.warning(f"🧠 Canal sin ID en guild {guild_id}")
-                    continue
-
-                # Intentar obtener el canal
+                # Buscar el canal por ID
                 channel = bot.get_channel(channel_id)
+                
                 if not channel:
-                    logger.warning(f"🧠 Canal {channel_id} no encontrado en guild {guild_id}")
+                    logger.warning(f"🧠 Canal {channel_id} no encontrado directamente")
+                    
+                    # Buscar en todos los servidores si no se encuentra directamente
+                    for guild in bot.guilds:
+                        for guild_channel in guild.channels:
+                            if guild_channel.id == channel_id:
+                                channel = guild_channel
+                                logger.info(f"🧠 Canal {channel_id} encontrado en servidor {guild.name}")
+                                break
+                        if channel:
+                            break
+
+                if not channel:
+                    logger.error(f"🧠 Canal {channel_id} no existe o bot no tiene acceso")
                     continue
 
-                logger.info(f"🧠 Enviando alerta al canal {channel.name} (ID: {channel_id})")
+                logger.info(f"🧠 Intentando enviar al canal: {channel.name} (ID: {channel_id}) en servidor: {channel.guild.name}")
+
+                # Verificar permisos
+                permissions = channel.permissions_for(channel.guild.me)
+                logger.info(f"🔐 Permisos en {channel.name}: send_messages={permissions.send_messages}, embed_links={permissions.embed_links}")
+
+                if not permissions.send_messages:
+                    logger.error(f"🚫 Bot no tiene permisos para enviar mensajes en {channel.name}")
+                    continue
 
                 # Crear embed de alerta
                 embed = discord.Embed(
                     title="<:1000182751:1396420551798558781> Alerta de Brainrot Detectado",
-                    description=f"**Job ID:** `{data.get('jobid')}`\n**Jugadores:** {data.get('players')}\n**Nombre:** {data.get('brainrot_name')}",
-                    color=0x2b2d31,
+                    description=f"**Job ID:** `{data.get('jobid')}`\n**<:1000182614:1396049500375875646> Jugadores:** {data.get('players')}\n**<:1000182584:1396049547838492672> Nombre:** {data.get('brainrot_name')}",
+                    color=0xff6b6b,
                     timestamp=datetime.now()
                 )
 
                 embed.add_field(
-                    name="<:1000182584:1396049547838492672> Información",
-                    value=f"Se ha detectado brainrot en el servidor.",
+                    name="<:1000182584:1396049547838492672> Información Adicional",
+                    value="Se ha detectado actividad de brainrot en el servidor. Alerta generada automáticamente por el sistema.",
                     inline=False
                 )
 
-                embed.set_footer(text="RbxServers • Brainrot System")
+                embed.set_footer(text="RbxServers • Sistema de Alertas Brainrot", icon_url="https://cdn.discordapp.com/emojis/1000182751.png")
 
-                # Enviar mensaje
-                await channel.send(embed=embed)
-                alerts_sent += 1
-                channels_found.append(channel.name)
-
-                logger.info(f"<:verify:1396087763388072006> Alerta enviada exitosamente al canal {channel.name}")
+                # Intentar enviar mensaje
+                try:
+                    sent_message = await channel.send(embed=embed)
+                    alerts_sent += 1
+                    channels_found.append({
+                        'channel_name': channel.name,
+                        'channel_id': channel.id,
+                        'guild_name': channel.guild.name,
+                        'guild_id': channel.guild.id,
+                        'message_id': sent_message.id
+                    })
+                    logger.info(f"<:verify:1396087763388072006> Alerta enviada exitosamente al canal {channel.name} en {channel.guild.name}")
+                    
+                except discord.Forbidden:
+                    logger.error(f"🚫 Sin permisos para enviar mensaje en {channel.name}")
+                except discord.HTTPException as e:
+                    logger.error(f"🌐 Error HTTP enviando mensaje: {e}")
+                except Exception as send_error:
+                    logger.error(f"💥 Error enviando mensaje: {send_error}")
 
             except Exception as channel_error:
-                logger.error(f"🧠 Error enviando alerta al canal en guild {guild_id}: {channel_error}")
+                logger.error(f"🧠 Error procesando canal {channel_id}: {channel_error}")
+                import traceback
+                logger.error(f"🔍 Traceback: {traceback.format_exc()}")
                 continue
 
         # Guardar registro de la alerta
@@ -165,23 +214,36 @@ async def handle_brainrot_api(request):
             "timestamp": datetime.now().isoformat(),
             "channels_notified": channels_found,
             "alerts_sent": alerts_sent,
-            "processed": True
+            "processed": True,
+            "channels_attempted": list(all_channel_ids)
         }
 
         brainrot_data["alerts"].append(alert_record)
         save_brainrot_data(brainrot_data)
 
-        return web.json_response({
-            'status': 'success',
-            'message': 'Brainrot alert processed successfully',
-            'jobid': data.get('jobid'),
-            'alerts_sent': alerts_sent,
-            'channels_notified': channels_found,
-            'timestamp': datetime.now().isoformat()
-        })
+        if alerts_sent > 0:
+            return web.json_response({
+                'status': 'success',
+                'message': f'Brainrot alert sent to {alerts_sent} channel(s)',
+                'jobid': data.get('jobid'),
+                'alerts_sent': alerts_sent,
+                'channels_notified': channels_found,
+                'timestamp': datetime.now().isoformat()
+            })
+        else:
+            return web.json_response({
+                'status': 'error',
+                'message': 'No alerts could be sent - check bot permissions and channel configuration',
+                'jobid': data.get('jobid'),
+                'channels_attempted': list(all_channel_ids),
+                'alerts_sent': 0,
+                'timestamp': datetime.now().isoformat()
+            }, status=500)
 
     except Exception as e:
-        logger.error(f"🧠 Error procesando API de brainrot: {e}")
+        logger.error(f"🧠 Error crítico procesando API de brainrot: {e}")
+        import traceback
+        logger.error(f"🔍 Traceback completo: {traceback.format_exc()}")
         return web.json_response({'error': str(e)}, status=500)
 
 def setup_brainrot_api(app):
