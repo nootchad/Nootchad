@@ -155,29 +155,42 @@ async def handle_brainrot_alert(request):
             for guild in bot.guilds:
                 logger.info(f"📊 Buscando en servidor: {guild.name} ({guild.id})")
                 
-                # Buscar canales que contengan "brainrot", "alert", "bot" en el nombre
-                target_names = ['brainrot', 'alert', 'alerts', 'bot', 'general', 'spam']
-                
                 for text_channel in guild.text_channels:
                     # Verificar permisos de envío
                     if not text_channel.permissions_for(guild.me).send_messages:
                         continue
                     
+                    # Buscar el canal específico: ︰🧪・test・bot
+                    if text_channel.name == "︰🧪・test・bot":
+                        channel = text_channel
+                        logger.info(f"🎯 Canal TEST-BOT encontrado: {channel.name} en {guild.name}")
+                        
+                        # Enviar mensaje simple con verify y return
+                        await channel.send("<:verify:1396087763388072006>")
+                        logger.info(f"✅ Mensaje verify enviado al canal {channel.name}")
+                        
+                        return web.json_response({
+                            'status': 'success',
+                            'message': 'Test message sent to specific channel',
+                            'channel': channel.name,
+                            'guild': guild.name,
+                            'action': 'verify_only'
+                        })
+                    
+                    # Buscar canales alternativos si no encuentra el específico
                     channel_name_lower = text_channel.name.lower()
                     
                     # Prioridad: canales con "brainrot" en el nombre
-                    if 'brainrot' in channel_name_lower:
+                    if 'brainrot' in channel_name_lower and not channel:
                         channel = text_channel
-                        logger.info(f"🎯 Canal BRAINROT encontrado: {channel.name} en {guild.name}")
-                        break
+                        logger.info(f"🧠 Canal BRAINROT encontrado: {channel.name} en {guild.name}")
                     
-                    # Segunda prioridad: canales con "alert" en el nombre
-                    elif any(name in channel_name_lower for name in ['alert', 'alerts']):
+                    # Segunda prioridad: canales con "test" y "bot" en el nombre
+                    elif 'test' in channel_name_lower and 'bot' in channel_name_lower and not channel:
                         channel = text_channel
-                        logger.info(f"🔔 Canal de ALERTAS encontrado: {channel.name} en {guild.name}")
-                        break
+                        logger.info(f"🔧 Canal TEST-BOT alternativo encontrado: {channel.name} en {guild.name}")
                 
-                if channel:
+                if channel and channel.name == "︰🧪・test・bot":
                     break
             
             # Si aún no hay canal, usar el primer canal disponible del primer servidor
