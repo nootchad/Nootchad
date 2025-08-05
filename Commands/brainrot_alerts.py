@@ -131,18 +131,91 @@ async def handle_brainrot_alert(request):
         
         # RECARGAR CONFIGURACIÓN CADA VEZ
         config = load_brainrot_config()
-        if not config or not config.get('alert_channel_id'):
-            logger.warning("🧠 No hay canal configurado para alertas de Brainrot")
-            return web.json_response({'error': 'No alert channel configured'}, status=400)
         
         # Obtener el bot desde el contexto global
         from main import bot
         
-        channel_id = config.get('alert_channel_id')
-        channel = bot.get_channel(channel_id)
+        channel = None
+        
+        # Si hay configuración, intentar obtener el canal
+        if config and config.get('alert_channel_id'):
+            channel_id = config.get('alert_channel_id')
+            channel = bot.get_channel(channel_id)
+            
+            if channel:
+                logger.info(f"🧠 Canal configurado encontrado: {channel.name} (ID: {channel_id})")
+            else:
+                logger.warning(f"🧠 Canal configurado no encontrado: {channel_id}")
+        
+        # Si no hay canal, buscar automáticamente un canal apropiado
         if not channel:
-            logger.error(f"🧠 Canal de alertas no encontrado: {channel_id}")
-            return web.json_response({'error': 'Alert channel not found'}, status=404)
+            logger.info("🔍 Buscando canal apropiado automáticamente...")
+            
+            # Buscar en todos los servidores del bot
+            for guild in bot.guilds:
+                logger.info(f"📊 Buscando en servidor: {guild.name} ({guild.id})")
+                
+                # Buscar canales que contengan "brainrot", "alert", "bot" en el nombre
+                target_names = ['brainrot', 'alert', 'alerts', 'bot', 'general', 'spam']
+                
+                for text_channel in guild.text_channels:
+                    # Verificar permisos de envío
+                    if not text_channel.permissions_for(guild.me).send_messages:
+                        continue
+                    
+                    channel_name_lower = text_channel.name.lower()
+                    
+                    # Prioridad: canales con "brainrot" en el nombre
+                    if 'brainrot' in channel_name_lower:
+                        channel = text_channel
+                        logger.info(f"🎯 Canal BRAINROT encontrado: {channel.name} en {guild.name}")
+                        break
+                    
+                    # Segunda prioridad: canales con "alert" en el nombre
+                    elif any(name in channel_name_lower for name in ['alert', 'alerts']):
+                        channel = text_channel
+                        logger.info(f"🔔 Canal de ALERTAS encontrado: {channel.name} en {guild.name}")
+                        break
+                
+                if channel:
+                    break
+            
+            # Si aún no hay canal, usar el primer canal disponible del primer servidor
+            if not channel:
+                for guild in bot.guilds:
+                    for text_channel in guild.text_channels:
+                        if text_channel.permissions_for(guild.me).send_messages:
+                            channel = text_channel
+                            logger.info(f"📝 Usando canal por defecto: {channel.name} en {guild.name}")
+                            break
+                    if channel:
+                        break
+        
+        # Si definitivamente no hay canal disponible
+        if not channel:
+            logger.error("🚫 No se encontró ningún canal válido para alertas")
+            return web.json_response({'error': 'No valid channel found for alerts'}, status=404)
+        
+        # Actualizar configuración automáticamente si se encontró un canal diferente
+        if not config or config.get('alert_channel_id') != channel.id:
+            logger.info(f"🔄 Actualizando configuración automáticamente: {channel.name} (ID: {channel.id})")
+            
+            new_config = {
+                'alert_channel_id': channel.id,
+                'guild_id': channel.guild.id,
+                'configured_at': datetime.now().isoformat(),
+                'configured_by': 'auto_system',
+                'auto_configured': True,
+                'channel_name': channel.name,
+                'guild_name': channel.guild.name
+            }
+            
+            with open('brainrot_config.json', 'w', encoding='utf-8') as f:
+                json.dump(new_config, f, indent=2)
+            
+            logger.info(f"✅ Configuración actualizada automáticamente: {channel.name}")
+        
+        logger.info(f"🎯 Canal final seleccionado: {channel.name} (ID: {channel.id}) en {channel.guild.name}")
         
         # Procesar TODOS los datos del servidor
         place_name = data.get('placeName', 'Desconocido')
@@ -242,6 +315,22 @@ async def handle_brainrot_alert(request):
         embed.set_footer(
             text=f"Detectado el {datetime.now().strftime('%H:%M:%S')} | Sistema automático RbxServers"
         )
+        
+        # Verificar si el canal fue configurado automáticamente y notificarlo
+        was_auto_configured = config and config.get('auto_configured', False)
+        
+        if was_auto_configured:
+            auto_notice = discord.Embed(
+                title="<:1000182751:1396420551798558781> Canal Configurado Automáticamente",
+                description=f"El sistema configuró automáticamente este canal ({channel.mention}) para recibir alertas de Brainrot God.",
+                color=0x2b2d31
+            )
+            auto_notice.add_field(
+                name="<:verify:1396087763388072006> **Configuración:**",
+                value=f"• **Canal:** {channel.mention}\n• **Servidor:** {channel.guild.name}\n• **Configurado:** Automáticamente por el sistema",
+                inline=False
+            )
+            await channel.send(embed=auto_notice)
         
         # Enviar alerta con @everyone
         await channel.send(
