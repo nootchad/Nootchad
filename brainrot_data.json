@@ -4,9 +4,83 @@
       "channel_id": 1402203025342201928,
       "channel_name": "111",
       "guild_name": "RbxServersBot",
-      "configured_at": "2025-08-05T08:24:00.894456",
+      "configured_at": "2025-08-05T08:41:53.457577",
       "configured_by": "916070251895091241"
     }
   },
-  "alerts": []
+  "alerts": [
+    {
+      "jobid": "test-job-1754383199",
+      "players": 7,
+      "brainrot_name": "🧠 Test Brainrot God Ultimate",
+      "timestamp": "2025-08-05T08:39:59.392284",
+      "channels_notified": [],
+      "alerts_sent": 0,
+      "processed": true
+    },
+    {
+      "jobid": "multi-test-1-1754383199",
+      "players": 3,
+      "brainrot_name": "🧠 Multi Test Brainrot Alpha",
+      "timestamp": "2025-08-05T08:39:59.475450",
+      "channels_notified": [],
+      "alerts_sent": 0,
+      "processed": true
+    },
+    {
+      "jobid": "multi-test-2-1754383199",
+      "players": 12,
+      "brainrot_name": "🧠 Multi Test Brainrot Beta",
+      "timestamp": "2025-08-05T08:40:01.507183",
+      "channels_notified": [],
+      "alerts_sent": 0,
+      "processed": true
+    },
+    {
+      "jobid": "multi-test-3-1754383199",
+      "players": 8,
+      "brainrot_name": "🧠 Multi Test Brainrot Gamma",
+      "timestamp": "2025-08-05T08:40:03.524956",
+      "channels_notified": [],
+      "alerts_sent": 0,
+      "processed": true
+    },
+    {
+      "jobid": "test-job-1754383249",
+      "players": 7,
+      "brainrot_name": "🧠 Test Brainrot God Ultimate",
+      "timestamp": "2025-08-05T08:40:49.097364",
+      "channels_notified": [],
+      "alerts_sent": 0,
+      "processed": true
+    },
+    {
+      "jobid": "multi-test-1-1754383249",
+      "players": 3,
+      "brainrot_name": "🧠 Multi Test Brainrot Alpha",
+      "timestamp": "2025-08-05T08:40:49.115077",
+      "channels_notified": [],
+      "alerts_sent": 0,
+      "processed": true
+    },
+    {
+      "jobid": "multi-test-2-1754383249",
+      "players": 12,
+      "brainrot_name": "🧠 Multi Test Brainrot Beta",
+      "timestamp": "2025-08-05T08:40:51.130093",
+      "channels_notified": [],
+      "alerts_sent": 0,
+      "processed": true
+    },
+    {
+      "jobid": "multi-test-3-1754383249",
+      "players": 8,
+      "brainrot_name": "🧠 Multi Test Brainrot Gamma",
+      "timestamp": "2025-08-05T08:40:53.145868",
+      "channels_notified": [],
+      "alerts_sent": 0,
+      "processed": true
+    }
+  ],
+  "last_updated": "2025-08-05T08:41:53.457586"
 }
