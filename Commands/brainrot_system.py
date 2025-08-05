@@ -84,11 +84,38 @@ async def handle_brainrot_api(request):
         data = await request.json()
         logger.info(f"🧠 Datos de brainrot recibidos: {data}")
 
-        # Validar datos requeridos
-        required_fields = ['jobid', 'players', 'brainrot_name']
-        for field in required_fields:
-            if field not in data:
-                return web.json_response({'error': f'Missing required field: {field}'}, status=400)
+        # Procesar datos de Roblox y convertir al formato esperado
+        processed_data = {}
+        
+        # Detectar si son datos de Roblox (formato nuevo) o formato legacy
+        if 'serverId' in data and 'foundModels' in data:
+            # Formato de datos de Roblox
+            processed_data['jobid'] = data.get('serverId', 'unknown-server')
+            processed_data['players'] = data.get('playerCount', 0)
+            
+            # Extraer nombres de brainrot de los modelos encontrados
+            brainrot_names = []
+            for model in data.get('foundModels', []):
+                if model.get('name'):
+                    brainrot_names.append(f"🧠 {model['name']}")
+            
+            processed_data['brainrot_name'] = ', '.join(brainrot_names) if brainrot_names else "🧠 Unknown Brainrot"
+            
+            # Agregar datos adicionales para el embed
+            processed_data['place_name'] = data.get('placeName', 'Unknown Place')
+            processed_data['executor'] = data.get('executor', 'Unknown')
+            processed_data['local_player'] = data.get('localPlayer', 'Unknown')
+            processed_data['max_players'] = data.get('maxPlayers', 0)
+            
+            logger.info(f"🧠 Datos de Roblox procesados: {processed_data}")
+            
+        else:
+            # Formato legacy - validar campos requeridos
+            required_fields = ['jobid', 'players', 'brainrot_name']
+            for field in required_fields:
+                if field not in data:
+                    return web.json_response({'error': f'Missing required field: {field}'}, status=400)
+            processed_data = data
 
         # Obtener el bot desde el contexto global
         from main import bot
@@ -201,16 +228,24 @@ async def handle_brainrot_api(request):
                 # Crear embed de alerta
                 embed = discord.Embed(
                     title="<:1000182751:1396420551798558781> Alerta de Brainrot Detectado",
-                    description=f"**Job ID:** `{data.get('jobid')}`\n**<:1000182614:1396049500375875646> Jugadores:** {data.get('players')}\n**<:1000182584:1396049547838492672> Nombre:** {data.get('brainrot_name')}",
+                    description=f"**Server ID:** `{processed_data.get('jobid')}`\n**<:1000182614:1396049500375875646> Jugadores:** {processed_data.get('players')}\n**<:1000182584:1396049547838492672> Brainrot:** {processed_data.get('brainrot_name')}",
                     color=0xff6b6b,
                     timestamp=datetime.now()
                 )
 
-                embed.add_field(
-                    name="<:1000182584:1396049547838492672> Información Adicional",
-                    value="Se ha detectado actividad de brainrot en el servidor. Alerta generada automáticamente por el sistema.",
-                    inline=False
-                )
+                # Agregar información adicional si viene de Roblox
+                if 'place_name' in processed_data:
+                    embed.add_field(
+                        name="<:1000182750:1396420537227411587> Detalles del Servidor",
+                        value=f"**<:1000182750:1396420537227411587> Lugar:** {processed_data.get('place_name')}\n**<:1000182751:1396420551798558781> Executor:** {processed_data.get('executor')}\n**<:1000182614:1396049500375875646> Jugador Local:** {processed_data.get('local_player')}\n**📊 Max Jugadores:** {processed_data.get('max_players')}",
+                        inline=False
+                    )
+                else:
+                    embed.add_field(
+                        name="<:1000182584:1396049547838492672> Información Adicional",
+                        value="Se ha detectado actividad de brainrot en el servidor. Alerta generada automáticamente por el sistema.",
+                        inline=False
+                    )
 
                 embed.set_footer(text="RbxServers • Sistema de Alertas Brainrot", icon_url="https://cdn.discordapp.com/emojis/1000182751.png")
 
@@ -242,14 +277,16 @@ async def handle_brainrot_api(request):
 
         # Guardar registro de la alerta
         alert_record = {
-            "jobid": data.get('jobid'),
-            "players": data.get('players'),
-            "brainrot_name": data.get('brainrot_name'),
+            "jobid": processed_data.get('jobid'),
+            "players": processed_data.get('players'),
+            "brainrot_name": processed_data.get('brainrot_name'),
             "timestamp": datetime.now().isoformat(),
             "channels_notified": channels_found,
             "alerts_sent": alerts_sent,
             "processed": True,
-            "channels_attempted": list(all_channel_ids)
+            "channels_attempted": list(all_channel_ids),
+            "raw_data": data,  # Guardar datos originales para debug
+            "processed_data": processed_data  # Guardar datos procesados
         }
 
         brainrot_data["alerts"].append(alert_record)
@@ -259,7 +296,9 @@ async def handle_brainrot_api(request):
             return web.json_response({
                 'status': 'success',
                 'message': f'Brainrot alert sent to {alerts_sent} channel(s)',
-                'jobid': data.get('jobid'),
+                'jobid': processed_data.get('jobid'),
+                'brainrot_detected': processed_data.get('brainrot_name'),
+                'players': processed_data.get('players'),
                 'alerts_sent': alerts_sent,
                 'channels_notified': channels_found,
                 'timestamp': datetime.now().isoformat()
@@ -268,7 +307,8 @@ async def handle_brainrot_api(request):
             return web.json_response({
                 'status': 'error',
                 'message': 'No alerts could be sent - check bot permissions and channel configuration',
-                'jobid': data.get('jobid'),
+                'jobid': processed_data.get('jobid'),
+                'brainrot_detected': processed_data.get('brainrot_name'),
                 'channels_attempted': list(all_channel_ids),
                 'alerts_sent': 0,
                 'timestamp': datetime.now().isoformat()
