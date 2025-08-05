@@ -260,15 +260,20 @@ def setup_commands(bot):
                 inline=False
             )
 
-            # 2. Listar todos los servidores donde está el bot
+            # 2. Listar todos los servidores donde está el bot con detalles
             if bot.guilds:
                 servers_info = []
                 for guild in bot.guilds:
-                    servers_info.append(f"• **{guild.name}** (ID: `{guild.id}`) - {len(guild.channels)} canales")
+                    text_channels = len(guild.text_channels)
+                    voice_channels = len(guild.voice_channels)
+                    total_members = len(guild.members) if guild.members else "N/A"
+                    servers_info.append(f"• **{guild.name}** (ID: `{guild.id}`)")
+                    servers_info.append(f"  └ Canales de texto: {text_channels}, Voz: {voice_channels}")
+                    servers_info.append(f"  └ Miembros: {total_members}")
                 
-                servers_text = "\n".join(servers_info[:5])  # Máximo 5 servidores
-                if len(servers_info) > 5:
-                    servers_text += f"\n• Y {len(servers_info) - 5} servidores más..."
+                servers_text = "\n".join(servers_info[:15])  # Mostrar más detalles
+                if len(servers_info) > 15:
+                    servers_text += f"\n• Y más información disponible..."
                 
                 embed.add_field(
                     name="<:1000182750:1396420537227411587> **Servidores Conectados**",
@@ -386,7 +391,24 @@ def setup_commands(bot):
             except Exception as alerts_error:
                 logger.error(f"Error procesando alertas: {alerts_error}")
 
-            # 6. URL de la API
+            # 6. Listado de TODOS los canales de texto disponibles para debug
+            all_text_channels = []
+            for guild in bot.guilds:
+                for text_channel in guild.text_channels:
+                    all_text_channels.append(f"• **{text_channel.name}** (ID: `{text_channel.id}`) - {guild.name}")
+            
+            if all_text_channels:
+                channels_text = "\n".join(all_text_channels[:10])  # Primeros 10 canales
+                if len(all_text_channels) > 10:
+                    channels_text += f"\n• Y {len(all_text_channels) - 10} canales más..."
+                
+                embed.add_field(
+                    name="<:1000182584:1396049547838492672> **Todos los Canales de Texto Disponibles**",
+                    value=channels_text,
+                    inline=False
+                )
+
+            # 7. URL de la API
             embed.add_field(
                 name="<:1000182584:1396049547838492672> **API Information**",
                 value="• **Endpoint:** `/api/brainrot`\n• **Método:** POST\n• **Estado:** Activo",

@@ -131,6 +131,11 @@ async def handle_brainrot_api(request):
             for guild in bot.guilds:
                 logger.info(f"   - {guild.name} (ID: {guild.id}) - Canales: {len(guild.channels)}")
         
+        # Debug detallado de conexión del bot
+        logger.info(f"🤖 Bot conectado a {len(bot.guilds)} servidores:")
+        for guild in bot.guilds:
+            logger.info(f"   - {guild.name} (ID: {guild.id}) - {len(guild.channels)} canales")
+        
         # Si el bot no está en ningún servidor, devolver error específico
         if not bot.guilds:
             logger.error(f"🚫 ERROR CRÍTICO: El bot no está unido a ningún servidor de Discord")
@@ -145,33 +150,42 @@ async def handle_brainrot_api(request):
         # Intentar enviar a cada canal configurado
         for channel_id in all_channel_ids:
             try:
-                # Buscar el canal por ID
+                logger.info(f"🔍 Intentando acceder al canal ID: {channel_id}")
+                
+                # Método 1: Buscar directamente con bot.get_channel()
                 channel = bot.get_channel(channel_id)
                 
-                if not channel:
-                    logger.warning(f"🧠 Canal {channel_id} no encontrado directamente")
+                if channel:
+                    logger.info(f"✅ Canal encontrado directamente: {channel.name} en {channel.guild.name}")
+                else:
+                    logger.warning(f"⚠️ Canal {channel_id} no encontrado con get_channel(), buscando manualmente...")
                     
-                    # Buscar en todos los servidores si no se encuentra directamente
-                    found_in_guild = False
+                    # Método 2: Buscar manualmente en todos los servidores
+                    found_channel = None
                     for guild in bot.guilds:
-                        logger.info(f"🔍 Buscando canal {channel_id} en servidor {guild.name} (ID: {guild.id})")
-                        for guild_channel in guild.channels:
+                        logger.debug(f"🔍 Buscando en servidor: {guild.name} (ID: {guild.id})")
+                        
+                        # Buscar en canales de texto
+                        for guild_channel in guild.text_channels:
+                            logger.debug(f"   - Revisando canal: {guild_channel.name} (ID: {guild_channel.id})")
                             if guild_channel.id == channel_id:
-                                channel = guild_channel
-                                logger.info(f"✅ Canal {channel_id} encontrado en servidor {guild.name}")
-                                found_in_guild = True
+                                found_channel = guild_channel
+                                logger.info(f"✅ Canal {channel_id} encontrado manualmente: {guild_channel.name} en {guild.name}")
                                 break
-                        if found_in_guild:
+                        
+                        if found_channel:
                             break
                     
-                    if not found_in_guild:
-                        logger.error(f"🚫 Canal {channel_id} NO encontrado en ningún servidor donde está el bot")
-                        # Listar servidores disponibles para debug
-                        available_servers = [f"{g.name} (ID: {g.id})" for g in bot.guilds]
-                        logger.error(f"🔍 Servidores disponibles: {available_servers}")
-
+                    channel = found_channel
+                
                 if not channel:
-                    logger.error(f"🧠 Canal {channel_id} no existe o bot no está en ese servidor")
+                    logger.error(f"🚫 Canal {channel_id} NO encontrado en ningún servidor")
+                    # Listar todos los canales disponibles para debug
+                    logger.error(f"🔍 Canales disponibles:")
+                    for guild in bot.guilds:
+                        logger.error(f"   Servidor {guild.name}:")
+                        for text_channel in guild.text_channels:
+                            logger.error(f"     - {text_channel.name} (ID: {text_channel.id})")
                     continue
 
                 logger.info(f"🧠 Intentando enviar al canal: {channel.name} (ID: {channel_id}) en servidor: {channel.guild.name}")
