@@ -15,12 +15,57 @@ from datetime import datetime
 API_URL = "https://d4fd3aaf-ad36-4cf1-97b5-c43adc2ac8be-00-2ek8xdxqm6wcw.worf.replit.dev"
 BRAINROT_ENDPOINT = "/api/brainrot"
 
+def check_bot_status():
+    """Verificar si el bot está conectado y en servidores"""
+    try:
+        response = requests.get(
+            url=f"{API_URL}/api/bot-status",
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            is_connected = data.get('status') == 'online'
+            guild_count = data.get('guilds', 0)
+            
+            print(f"🤖 Estado del bot: {'Conectado' if is_connected else 'Desconectado'}")
+            print(f"🏠 Servidores conectados: {guild_count}")
+            
+            if not is_connected:
+                print("❌ El bot no está conectado a Discord")
+                return False
+            
+            if guild_count == 0:
+                print("❌ El bot no está en ningún servidor")
+                print("💡 Asegúrate de que el bot esté en el servidor donde está el canal configurado")
+                return False
+            
+            print("✅ Bot conectado y en servidores")
+            return True
+        else:
+            print(f"❌ Error obteniendo estado del bot: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error verificando estado del bot: {e}")
+        return False
+
 def test_brainrot_new_api():
     """Probar la nueva API de brainrot del sistema Commands/brainrot_system.py"""
     print("🧠 === PRUEBA DE NUEVA API DE BRAINROT ===")
     print(f"📡 Endpoint: {API_URL}{BRAINROT_ENDPOINT}")
     print(f"🎯 Canal configurado en brainrot_config.json")
     print("=" * 60)
+    
+    # Verificar estado del bot primero
+    print("🔍 Verificando estado del bot...")
+    if not check_bot_status():
+        print("\n❌ PRUEBA CANCELADA")
+        print("🔧 Para continuar:")
+        print("1. Asegúrate de que el bot esté ejecutándose (workflow activo)")
+        print("2. Verifica que el bot esté en el servidor Discord correcto")
+        print("3. Confirma que el canal configurado existe y es accesible")
+        return False
     
     # Datos de prueba para la nueva API
     test_data = {
@@ -186,23 +231,29 @@ if __name__ == "__main__":
     verify_configuration()
     
     # Realizar prueba principal
-    test_brainrot_new_api()
-    
-    # Realizar pruebas múltiples
-    test_multiple_requests()
+    if test_brainrot_new_api():
+        # Solo hacer pruebas múltiples si la principal fue exitosa
+        test_multiple_requests()
+    else:
+        print("\n🛑 Pruebas múltiples omitidas debido a problemas de conexión")
     
     print("\n📋 RESUMEN DE PRUEBAS:")
-    print("1. ✅ Prueba principal completada")
-    print("2. ✅ Pruebas múltiples completadas")
-    print("3. ✅ Verificación de configuración completada")
+    print("1. ✅ Verificación de configuración completada")
+    print("2. ✅ Verificación de estado del bot completada")
+    print("3. ✅ Pruebas de API completadas (si el bot estaba conectado)")
     
     print("\n🔍 INSTRUCCIONES PARA VERIFICAR:")
     print("1. Ve al canal Discord configurado en brainrot_config.json")
     print("2. Busca los embeds de alerta con los datos de prueba")
     print("3. Si ves los embeds = ✅ API funcionando correctamente")
-    print("4. Si no ves nada = ❌ Verificar logs del bot y configuración")
+    print("4. Si no ves nada = ❌ Bot no conectado o sin permisos")
     
-    print("\n🔧 Para debug adicional:")
-    print("- Revisa los logs del bot en la consola")
-    print("- Verifica que el canal ID sea correcto")
-    print("- Asegúrate de que el bot tenga permisos para enviar mensajes")
+    print("\n🔧 PASOS PARA EJECUTAR CORRECTAMENTE:")
+    print("1. Asegúrate de que el workflow 'Run .replit entrypoint' esté ejecutándose")
+    print("2. Verifica que el bot aparezca online en Discord")
+    print("3. Confirma que el bot esté en el servidor donde está el canal")
+    print("4. Luego ejecuta este script de prueba")
+    
+    print("\n💡 ALTERNATIVA RECOMENDADA:")
+    print("- Usa el comando /brainrot-test directamente en Discord")
+    print("- Es más confiable porque el bot ya está conectado")
