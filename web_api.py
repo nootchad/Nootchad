@@ -429,19 +429,35 @@ class WebAPI:
             if not self.verify_auth(request):
                 return web.json_response({'error': 'Unauthorized'}, status=401)
 
+            # Obtener el bot desde el contexto global
+            from main import bot
+            
             # Estado de scripts de Roblox conectados
             connected_scripts = self.remote_control.get_connected_scripts()
             active_commands = len([cmd for cmd in self.remote_control.active_commands.values() if cmd['status'] == 'pending'])
 
+            # Obtener información de servidores del bot
+            guild_count = len(bot.guilds) if bot and bot.guilds else 0
+            guild_names = [guild.name for guild in bot.guilds] if bot and bot.guilds else []
+            total_members = sum(len(guild.members) for guild in bot.guilds) if bot and bot.guilds else 0
+            
             response_data = {
-                'status': 'success',
+                'status': 'online' if bot and bot.is_ready() else 'offline',
                 'bot_status': {
-                    'is_online': True,
-                    'uptime_start': datetime.now().isoformat(),  # Aprox, podrías guardarlo al inicio
-                    'discord_connected': True,
+                    'is_online': bot.is_ready() if bot else False,
+                    'uptime_start': datetime.now().isoformat(),
+                    'discord_connected': bot.is_ready() if bot else False,
+                    'guilds': guild_count,
+                    'guild_names': guild_names[:10],  # Primeros 10 servidores
+                    'total_members': total_members,
                     'roblox_scripts_connected': len(connected_scripts),
                     'active_commands': active_commands,
-                    'remote_control_port': 8080
+                    'remote_control_port': 8080,
+                    'bot_user': {
+                        'name': bot.user.name if bot and bot.user else 'Unknown',
+                        'id': str(bot.user.id) if bot and bot.user else 'Unknown',
+                        'discriminator': bot.user.discriminator if bot and bot.user else 'Unknown'
+                    } if bot and bot.user else None
                 },
                 'system_stats': {
                     'verified_users': len(self.verification_system.verified_users),
