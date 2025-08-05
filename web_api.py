@@ -103,8 +103,12 @@ class WebAPI:
             from Commands.brainrot_system import setup_brainrot_api
             setup_brainrot_api(app)
             logger.info("🧠 Nueva API de Brainrot integrada exitosamente")
+        except ImportError as ie:
+            logger.error(f"🧠 Error importando módulo brainrot_system: {ie}")
         except Exception as e:
             logger.error(f"🧠 Error integrando nueva API de Brainrot: {e}")
+            import traceback
+            logger.error(f"🧠 Traceback: {traceback.format_exc()}")
 
         # Rutas para analytics
         app.router.add_post('/api/web-analytics', self.receive_web_analytics)

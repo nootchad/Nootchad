@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -80,25 +79,25 @@ async def handle_brainrot_api(request):
         # Verificar método
         if request.method != 'POST':
             return web.json_response({'error': 'Method not allowed'}, status=405)
-        
+
         # Leer datos
         data = await request.json()
         logger.info(f"🧠 Datos de brainrot recibidos: {data}")
-        
+
         # Validar datos requeridos
         required_fields = ['jobid', 'players', 'brainrot_name']
         for field in required_fields:
             if field not in data:
                 return web.json_response({'error': f'Missing required field: {field}'}, status=400)
-        
+
         # Obtener el bot desde el contexto global
         from main import bot
-        
+
         # Cargar datos de brainrot que incluyen información de canales
         brainrot_data = load_brainrot_data()
         alerts_sent = 0
         channels_found = []
-        
+
         # Verificar si hay canales configurados en brainrot_data.json
         if not brainrot_data.get('channels'):
             logger.warning("🧠 No hay canales configurados en brainrot_data.json")
@@ -107,102 +106,58 @@ async def handle_brainrot_api(request):
                 'message': 'No brainrot channels configured in brainrot_data.json',
                 'suggestion': 'Use /brainrot command to configure a channel first'
             }, status=400)
-        
+
         # Debug del bot y servidores conectados
-        logger.info(f"🔍 Bot conectado: {bot.is_ready()}")
-        logger.info(f"🔍 Servidores conectados: {len(bot.guilds)}")
-        
-        if len(bot.guilds) == 0:
-            logger.error("🧠 Bot no está conectado a ningún servidor Discord")
-            return web.json_response({
-                'status': 'error',
-                'message': 'Bot is not connected to any Discord servers',
-                'debug': {
-                    'bot_ready': bot.is_ready(),
-                    'servers_connected': 0
-                }
-            }, status=503)
-        
-        # Iterar por cada canal configurado en brainrot_data.json
-        for guild_id, channel_info in brainrot_data['channels'].items():
-            channel_id = channel_info.get('channel_id')
-            channel_name = channel_info.get('channel_name', 'Unknown')
-            guild_name = channel_info.get('guild_name', 'Unknown Server')
-            
-            logger.info(f"🔍 Buscando canal: {channel_name} (ID: {channel_id}) en servidor: {guild_name}")
-            
-            # Buscar el canal
-            channel = bot.get_channel(channel_id)
-            
-            if not channel:
-                logger.warning(f"❌ Canal {channel_name} (ID: {channel_id}) no encontrado en {guild_name}")
-                
-                # Debug detallado para este servidor específico
-                guild = bot.get_guild(int(guild_id))
-                if guild:
-                    logger.info(f"🏠 Servidor encontrado: {guild.name} con {len(guild.channels)} canales")
-                    text_channels = [ch for ch in guild.channels if hasattr(ch, 'send')]
-                    logger.info(f"📺 Canales de texto disponibles en {guild.name}:")
-                    for ch in text_channels[:10]:  # Mostrar hasta 10 canales
-                        logger.info(f"   📍 {ch.name} (ID: {ch.id})")
-                else:
-                    logger.warning(f"🏠 Servidor {guild_name} (ID: {guild_id}) no encontrado")
-                
-                continue
-            
-            logger.info(f"✅ Canal encontrado: {channel.name} en servidor {channel.guild.name}")
-            channels_found.append({
-                'name': channel.name,
-                'id': channel.id,
-                'guild': channel.guild.name
-            })
-        
-        # Crear embed de alerta para este canal
-            embed = discord.Embed(
-                title="<:1000182751:1396420551798558781> **Alerta de Brainrot Detectado**",
-                description=f"Se ha detectado un **brainrot** en el sistema de monitoreo.",
-                color=0x2b2d31,
-                timestamp=datetime.now()
-            )
-            
-            embed.add_field(
-                name="<:1000182584:1396049547838492672> **Información del Job**",
-                value=f"• **Job ID:** `{data.get('jobid')}`\n• **Jugadores:** {data.get('players')}\n• **Nombre Brainrot:** {data.get('brainrot_name')}",
-                inline=False
-            )
-            
-            embed.add_field(
-                name="<:1000182657:1396060091366637669> **Información de Detección**",
-                value=f"• **Detectado:** {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}\n• **Canal:** {channel.mention}\n• **Servidor:** {channel.guild.name}",
-                inline=False
-            )
-            
-            embed.set_footer(text="Sistema de Brainrot - RbxServers")
-            
-            # Enviar mensaje
+        logger.info(f"🔍 Bot conectado: {bot is not None}")
+        if bot and hasattr(bot, 'guilds'):
+            logger.info(f"🔍 Servidores conectados: {len(bot.guilds)}")
+            for guild in bot.guilds:
+                logger.info(f"   - {guild.name} (ID: {guild.id})")
+
+        # Procesar cada canal configurado
+        for guild_id, channel_config in brainrot_data["channels"].items():
             try:
+                channel_id = channel_config.get("channel_id")
+                if not channel_id:
+                    logger.warning(f"🧠 Canal sin ID en guild {guild_id}")
+                    continue
+
+                # Intentar obtener el canal
+                channel = bot.get_channel(channel_id)
+                if not channel:
+                    logger.warning(f"🧠 Canal {channel_id} no encontrado en guild {guild_id}")
+                    continue
+
+                logger.info(f"🧠 Enviando alerta al canal {channel.name} (ID: {channel_id})")
+
+                # Crear embed de alerta
+                embed = discord.Embed(
+                    title="<:1000182751:1396420551798558781> Alerta de Brainrot Detectado",
+                    description=f"**Job ID:** `{data.get('jobid')}`\n**Jugadores:** {data.get('players')}\n**Nombre:** {data.get('brainrot_name')}",
+                    color=0x2b2d31,
+                    timestamp=datetime.now()
+                )
+
+                embed.add_field(
+                    name="<:1000182584:1396049547838492672> Información",
+                    value=f"Se ha detectado brainrot en el servidor.",
+                    inline=False
+                )
+
+                embed.set_footer(text="RbxServers • Brainrot System")
+
+                # Enviar mensaje
                 await channel.send(embed=embed)
                 alerts_sent += 1
-                logger.info(f"🧠 Alerta enviada al canal {channel.name} en {channel.guild.name}")
-            except Exception as e:
-                logger.error(f"🧠 Error enviando alerta a {channel.name}: {e}")
-        
-        # Verificar si se enviaron alertas
-        if alerts_sent == 0:
-            return web.json_response({
-                'status': 'error',
-                'message': f'No se pudo enviar alertas a ningún canal configurado',
-                'debug': {
-                    'channels_configured': len(brainrot_data['channels']),
-                    'channels_found': channels_found,
-                    'bot_guilds': [f"{g.name} (ID: {g.id})" for g in bot.guilds]
-                }
-            }, status=404)
-        
-        # Guardar alerta en datos
-        if "alerts" not in brainrot_data:
-            brainrot_data["alerts"] = []
-        
+                channels_found.append(channel.name)
+
+                logger.info(f"<:verify:1396087763388072006> Alerta enviada exitosamente al canal {channel.name}")
+
+            except Exception as channel_error:
+                logger.error(f"🧠 Error enviando alerta al canal en guild {guild_id}: {channel_error}")
+                continue
+
+        # Guardar registro de la alerta
         alert_record = {
             "jobid": data.get('jobid'),
             "players": data.get('players'),
@@ -212,10 +167,10 @@ async def handle_brainrot_api(request):
             "alerts_sent": alerts_sent,
             "processed": True
         }
-        
+
         brainrot_data["alerts"].append(alert_record)
         save_brainrot_data(brainrot_data)
-        
+
         return web.json_response({
             'status': 'success',
             'message': 'Brainrot alert processed successfully',
@@ -224,7 +179,7 @@ async def handle_brainrot_api(request):
             'channels_notified': channels_found,
             'timestamp': datetime.now().isoformat()
         })
-        
+
     except Exception as e:
         logger.error(f"🧠 Error procesando API de brainrot: {e}")
         return web.json_response({'error': str(e)}, status=500)
@@ -232,10 +187,10 @@ async def handle_brainrot_api(request):
 def setup_brainrot_api(app):
     """Configurar endpoint de la API de brainrot"""
     logger.info("🧠 Configurando API de brainrot...")
-    
+
     # Registrar endpoint POST
     app.router.add_post('/api/brainrot', handle_brainrot_api)
-    
+
     # Registrar endpoint OPTIONS para CORS
     async def handle_options(request):
         return web.Response(
@@ -245,20 +200,20 @@ def setup_brainrot_api(app):
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization'
             }
         )
-    
+
     app.router.add_options('/api/brainrot', handle_options)
-    
+
     logger.info("🧠 API de brainrot configurada exitosamente")
 
 def setup_commands(bot):
     """Función requerida para configurar comandos de brainrot"""
-    
+
     @bot.tree.command(name="brainrot", description="[OWNER] Configurar canal para alertas de brainrot")
     async def brainrot_command(interaction: discord.Interaction, canal: discord.TextChannel):
         """Configurar canal donde se enviarán las alertas de brainrot"""
         try:
             user_id = str(interaction.user.id)
-            
+
             # Verificar que solo el owner pueda usar este comando
             if user_id != DISCORD_OWNER_ID:
                 embed = discord.Embed(
@@ -268,16 +223,16 @@ def setup_commands(bot):
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
-            
+
             await interaction.response.defer(ephemeral=True)
-            
+
             # Cargar datos existentes de brainrot
             brainrot_data = load_brainrot_data()
-            
+
             # Agregar/actualizar el canal en brainrot_data.json
             if "channels" not in brainrot_data:
                 brainrot_data["channels"] = {}
-            
+
             guild_id = str(interaction.guild.id)
             brainrot_data["channels"][guild_id] = {
                 "channel_id": canal.id,
@@ -286,10 +241,10 @@ def setup_commands(bot):
                 "configured_at": datetime.now().isoformat(),
                 "configured_by": user_id
             }
-            
+
             # Guardar en brainrot_data.json
             data_saved = save_brainrot_data(brainrot_data)
-            
+
             # También mantener la configuración legacy en brainrot_config.json
             config = {
                 "alert_channel_id": canal.id,
@@ -298,7 +253,7 @@ def setup_commands(bot):
                 "configured_by": user_id
             }
             config_saved = save_brainrot_config(config)
-            
+
             # Verificar que ambos se guardaron correctamente
             if data_saved and config_saved:
                 embed = discord.Embed(
@@ -306,26 +261,26 @@ def setup_commands(bot):
                     description=f"El canal {canal.mention} ha sido configurado para recibir alertas de **brainrot**.",
                     color=0x2b2d31
                 )
-                
+
                 # Mostrar estadísticas de canales configurados
                 total_channels = len(brainrot_data["channels"])
-                
+
                 embed.add_field(
                     name="<:1000182584:1396049547838492672> **Configuración Activa**",
                     value=f"• **Canal:** {canal.mention}\n• **Servidor:** {interaction.guild.name}\n• **API Endpoint:** `/api/brainrot`\n• **Total Canales:** {total_channels}",
                     inline=False
                 )
-                
+
                 embed.add_field(
-                    name="<:1000182751:1396420551798558781> **Datos Recibidos**",
+                    name="<:1000182751:1396420770904932372> **Datos Recibidos**",
                     value="• **Job ID:** Identificador del trabajo\n• **Jugadores:** Número total de jugadores\n• **Nombre Brainrot:** Nombre del brainrot encontrado",
                     inline=False
                 )
-                
+
                 embed.set_footer(text="Sistema configurado correctamente")
-                
+
                 await interaction.followup.send(embed=embed)
-                
+
                 # Enviar mensaje de confirmación al canal configurado
                 test_embed = discord.Embed(
                     title="<:1000182751:1396420551798558781> Canal de Brainrot Activo",
@@ -333,19 +288,19 @@ def setup_commands(bot):
                     color=0x2b2d31,
                     timestamp=datetime.now()
                 )
-                
+
                 test_embed.add_field(
                     name="<:1000182584:1396049547838492672> **Estado**",
                     value="• **Sistema:** Activo\n• **Configurado por:** <:1000182644:1396049313481625611> Owner\n• **Endpoint:** `/api/brainrot`",
                     inline=False
                 )
-                
+
                 test_embed.set_footer(text="Sistema de Brainrot - RbxServers")
-                
+
                 await canal.send(embed=test_embed)
-                
+
                 logger.info(f"<:verify:1396087763388072006> Canal de brainrot configurado: {canal.name} (ID: {canal.id})")
-                
+
             else:
                 embed = discord.Embed(
                     title="<:1000182563:1396420770904932372> Error",
@@ -353,16 +308,16 @@ def setup_commands(bot):
                     color=0x2b2d31
                 )
                 await interaction.followup.send(embed=embed)
-                
+
         except Exception as e:
             logger.error(f"<:1000182563:1396420770904932372> Error en comando brainrot: {e}")
-            
+
             embed = discord.Embed(
                 title="<:1000182563:1396420770904932372> Error",
                 description="Ocurrió un error al configurar el canal de brainrot.",
                 color=0x2b2d31
             )
-            
+
             if not interaction.response.is_done():
                 await interaction.response.send_message(embed=embed, ephemeral=True)
             else:
