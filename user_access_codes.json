@@ -1,5 +1,15 @@
 {
-  "codes": {},
-  "last_updated": "2025-08-04T23:04:02.318167",
-  "total_codes": 0
+  "codes": {
+    "mxQX2t8JFf8v": {
+      "user_id": "916070251895091241",
+      "created_at": 1754120006.403077,
+      "expires_at": 1754206406.4030771,
+      "uses": 28,
+      "max_uses": 50,
+      "active": true,
+      "last_used": 1754130384.114479
+    }
+  },
+  "last_updated": "2025-08-02T10:26:24.114484",
+  "total_codes": 1
 }

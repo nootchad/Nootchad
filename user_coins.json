@@ -210,7 +210,7 @@
         {
           "type": "spend",
           "amount": 20,
-          "reason": "Compra r\u00e1pida: izan",
+          "reason": "Compra rápida: izan",
           "timestamp": "2025-07-14T09:38:12.212480",
           "balance_after": 209
         },
@@ -919,7 +919,7 @@
         {
           "type": "spend",
           "amount": 20,
-          "reason": "Compra r\u00e1pida: izan",
+          "reason": "Compra rápida: izan",
           "timestamp": "2025-07-26T03:52:14.941073",
           "balance_after": 4
         },
@@ -1114,8 +1114,8 @@
       ]
     },
     "859456753577623554": {
-      "balance": 20,
-      "total_earned": 20,
+      "balance": 15,
+      "total_earned": 15,
       "transactions": [
         {
           "type": "earn",
@@ -1137,13 +1137,6 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-22T07:34:26.040290",
           "balance_after": 15
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-08-05T08:24:50.045104",
-          "balance_after": 20
         }
       ]
     },
@@ -2283,6 +2276,6 @@
       ]
     }
   },
-  "last_updated": "2025-08-05T08:24:50.045115",
+  "last_updated": "2025-07-30T23:54:58.148053",
   "total_users": 60
 }
