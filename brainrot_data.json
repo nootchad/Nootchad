@@ -1,5 +1,12 @@
-
 {
-  "channels": {},
+  "channels": {
+    "1393431866903760937": {
+      "channel_id": 1402203025342201928,
+      "channel_name": "111",
+      "guild_name": "RbxServersBot",
+      "configured_at": "2025-08-05T08:24:00.894456",
+      "configured_by": "916070251895091241"
+    }
+  },
   "alerts": []
 }
