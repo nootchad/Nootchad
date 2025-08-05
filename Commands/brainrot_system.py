@@ -130,6 +130,17 @@ async def handle_brainrot_api(request):
             logger.info(f"🔍 Servidores conectados: {len(bot.guilds)}")
             for guild in bot.guilds:
                 logger.info(f"   - {guild.name} (ID: {guild.id}) - Canales: {len(guild.channels)}")
+        
+        # Si el bot no está en ningún servidor, devolver error específico
+        if not bot.guilds:
+            logger.error(f"🚫 ERROR CRÍTICO: El bot no está unido a ningún servidor de Discord")
+            return web.json_response({
+                'status': 'error',
+                'message': 'Bot is not connected to any Discord servers',
+                'error_type': 'bot_not_in_servers',
+                'solution': 'Add the bot to the Discord server where the brainrot channel is located',
+                'timestamp': datetime.now().isoformat()
+            }, status=500)
 
         # Intentar enviar a cada canal configurado
         for channel_id in all_channel_ids:
@@ -141,17 +152,26 @@ async def handle_brainrot_api(request):
                     logger.warning(f"🧠 Canal {channel_id} no encontrado directamente")
                     
                     # Buscar en todos los servidores si no se encuentra directamente
+                    found_in_guild = False
                     for guild in bot.guilds:
+                        logger.info(f"🔍 Buscando canal {channel_id} en servidor {guild.name} (ID: {guild.id})")
                         for guild_channel in guild.channels:
                             if guild_channel.id == channel_id:
                                 channel = guild_channel
-                                logger.info(f"🧠 Canal {channel_id} encontrado en servidor {guild.name}")
+                                logger.info(f"✅ Canal {channel_id} encontrado en servidor {guild.name}")
+                                found_in_guild = True
                                 break
-                        if channel:
+                        if found_in_guild:
                             break
+                    
+                    if not found_in_guild:
+                        logger.error(f"🚫 Canal {channel_id} NO encontrado en ningún servidor donde está el bot")
+                        # Listar servidores disponibles para debug
+                        available_servers = [f"{g.name} (ID: {g.id})" for g in bot.guilds]
+                        logger.error(f"🔍 Servidores disponibles: {available_servers}")
 
                 if not channel:
-                    logger.error(f"🧠 Canal {channel_id} no existe o bot no tiene acceso")
+                    logger.error(f"🧠 Canal {channel_id} no existe o bot no está en ese servidor")
                     continue
 
                 logger.info(f"🧠 Intentando enviar al canal: {channel.name} (ID: {channel_id}) en servidor: {channel.guild.name}")

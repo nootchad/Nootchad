@@ -205,3 +205,209 @@ def setup_commands(bot):
                 await interaction.response.send_message(embed=embed, ephemeral=True)
             else:
                 await interaction.followup.send(embed=embed, ephemeral=True)
+<line_number>1</line_number>
+"""
+Debug específico para el sistema de brainrot
+Permite verificar la conectividad y configuración del bot
+"""
+
+import discord
+from discord.ext import commands
+import json
+import logging
+from datetime import datetime
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+DISCORD_OWNER_ID = "916070251895091241"
+
+def setup_commands(bot):
+    """Configurar comandos de debug para brainrot"""
+    
+    @bot.tree.command(name="brainrot-debug", description="[OWNER] Debug completo del sistema de brainrot")
+    async def brainrot_debug_command(interaction: discord.Interaction):
+        """Debug completo del sistema de brainrot con información detallada"""
+        try:
+            user_id = str(interaction.user.id)
+
+            # Verificar que solo el owner pueda usar este comando
+            if user_id != DISCORD_OWNER_ID:
+                embed = discord.Embed(
+                    title="<:1000182563:1396420770904932372> Acceso Denegado",
+                    description="Este comando solo puede ser usado por el <:1000182644:1396049313481625611> owner del bot.",
+                    color=0xff0000
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            await interaction.response.defer(ephemeral=True)
+
+            # Crear embed principal
+            embed = discord.Embed(
+                title="<:1000182751:1396420551798558781> Debug Completo de Brainrot",
+                description="Información detallada del sistema de alertas de brainrot",
+                color=0x00ff88,
+                timestamp=datetime.now()
+            )
+
+            # 1. Estado de conexión del bot
+            bot_status = "🟢 Conectado" if bot.is_ready() else "🔴 Desconectado"
+            servers_count = len(bot.guilds) if bot.guilds else 0
+            
+            embed.add_field(
+                name="<:1000182584:1396049547838492672> **Estado del Bot**",
+                value=f"• **Estado:** {bot_status}\n• **Servidores:** {servers_count}\n• **Latencia:** {round(bot.latency * 1000)}ms",
+                inline=False
+            )
+
+            # 2. Listar todos los servidores donde está el bot
+            if bot.guilds:
+                servers_info = []
+                for guild in bot.guilds:
+                    servers_info.append(f"• **{guild.name}** (ID: `{guild.id}`) - {len(guild.channels)} canales")
+                
+                servers_text = "\n".join(servers_info[:5])  # Máximo 5 servidores
+                if len(servers_info) > 5:
+                    servers_text += f"\n• Y {len(servers_info) - 5} servidores más..."
+                
+                embed.add_field(
+                    name="<:1000182750:1396420537227411587> **Servidores Conectados**",
+                    value=servers_text,
+                    inline=False
+                )
+
+            # 3. Configuración de canales de brainrot
+            try:
+                # Cargar desde brainrot_data.json
+                brainrot_data = {}
+                if Path('brainrot_data.json').exists():
+                    with open('brainrot_data.json', 'r', encoding='utf-8') as f:
+                        brainrot_data = json.load(f)
+
+                # Cargar desde brainrot_config.json
+                brainrot_config = {}
+                if Path('brainrot_config.json').exists():
+                    with open('brainrot_config.json', 'r', encoding='utf-8') as f:
+                        brainrot_config = json.load(f)
+
+                config_info = []
+                
+                # Información de brainrot_data.json
+                if brainrot_data.get('channels'):
+                    config_info.append("**📂 brainrot_data.json:**")
+                    for guild_id, channel_config in brainrot_data['channels'].items():
+                        channel_id = channel_config.get('channel_id')
+                        channel_name = channel_config.get('channel_name', 'Sin nombre')
+                        guild_name = channel_config.get('guild_name', 'Sin nombre')
+                        config_info.append(f"  • Canal: **{channel_name}** (ID: `{channel_id}`)")
+                        config_info.append(f"    Servidor: {guild_name}")
+                
+                # Información de brainrot_config.json
+                if brainrot_config.get('alert_channel_id'):
+                    config_info.append("**📂 brainrot_config.json:**")
+                    config_info.append(f"  • Canal ID: `{brainrot_config['alert_channel_id']}`")
+                    config_info.append(f"  • Guild ID: `{brainrot_config.get('guild_id', 'No configurado')}`")
+
+                if config_info:
+                    embed.add_field(
+                        name="<:1000182584:1396049547838492672> **Configuración de Canales**",
+                        value="\n".join(config_info),
+                        inline=False
+                    )
+                else:
+                    embed.add_field(
+                        name="<:1000182563:1396420770904932372> **Configuración de Canales**",
+                        value="❌ No hay canales configurados",
+                        inline=False
+                    )
+
+            except Exception as config_error:
+                embed.add_field(
+                    name="<:1000182563:1396420770904932372> **Error de Configuración**",
+                    value=f"Error leyendo configuración: {config_error}",
+                    inline=False
+                )
+
+            # 4. Verificar acceso a canales específicos
+            channels_to_check = []
+            
+            # Recopilar IDs de canales configurados
+            if brainrot_data.get('channels'):
+                for channel_config in brainrot_data['channels'].values():
+                    if channel_config.get('channel_id'):
+                        channels_to_check.append(channel_config['channel_id'])
+            
+            if brainrot_config.get('alert_channel_id'):
+                channels_to_check.append(brainrot_config['alert_channel_id'])
+            
+            # Eliminar duplicados
+            channels_to_check = list(set(channels_to_check))
+            
+            if channels_to_check:
+                channel_status = []
+                for channel_id in channels_to_check:
+                    channel = bot.get_channel(channel_id)
+                    if channel:
+                        permissions = channel.permissions_for(channel.guild.me)
+                        status_icon = "<:verify:1396087763388072006>" if permissions.send_messages else "<:1000182563:1396420770904932372>"
+                        channel_status.append(f"{status_icon} **{channel.name}** (ID: `{channel_id}`)")
+                        channel_status.append(f"   └ Servidor: {channel.guild.name}")
+                        channel_status.append(f"   └ Ver canal: {'✅' if permissions.view_channel else '❌'}")
+                        channel_status.append(f"   └ Enviar mensajes: {'✅' if permissions.send_messages else '❌'}")
+                        channel_status.append(f"   └ Embeds: {'✅' if permissions.embed_links else '❌'}")
+                    else:
+                        channel_status.append(f"<:1000182563:1396420770904932372> **Canal no encontrado** (ID: `{channel_id}`)")
+                        channel_status.append(f"   └ El bot no está en el servidor del canal")
+                
+                embed.add_field(
+                    name="<:1000182750:1396420537227411587> **Acceso a Canales**",
+                    value="\n".join(channel_status),
+                    inline=False
+                )
+
+            # 5. Estadísticas de alertas recientes
+            try:
+                if brainrot_data.get('alerts'):
+                    recent_alerts = brainrot_data['alerts'][-5:]  # Últimas 5 alertas
+                    alerts_info = []
+                    
+                    for alert in recent_alerts:
+                        job_id = alert.get('jobid', 'Sin ID')[:15]
+                        timestamp = alert.get('timestamp', 'Sin fecha')[:16]
+                        alerts_sent = alert.get('alerts_sent', 0)
+                        alerts_info.append(f"• **{job_id}** - {timestamp} - {alerts_sent} enviadas")
+                    
+                    embed.add_field(
+                        name="<:1000182657:1396060091366637669> **Alertas Recientes**",
+                        value="\n".join(alerts_info) if alerts_info else "Sin alertas recientes",
+                        inline=False
+                    )
+
+            except Exception as alerts_error:
+                logger.error(f"Error procesando alertas: {alerts_error}")
+
+            # 6. URL de la API
+            embed.add_field(
+                name="<:1000182584:1396049547838492672> **API Information**",
+                value="• **Endpoint:** `/api/brainrot`\n• **Método:** POST\n• **Estado:** Activo",
+                inline=False
+            )
+
+            await interaction.followup.send(embed=embed)
+
+        except Exception as e:
+            logger.error(f"Error en brainrot-debug: {e}")
+            
+            error_embed = discord.Embed(
+                title="<:1000182563:1396420770904932372> Error en Debug",
+                description=f"Ocurrió un error durante el debug: {str(e)}",
+                color=0xff0000
+            )
+            
+            if not interaction.response.is_done():
+                await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            else:
+                await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+    logger.info("✅ Comandos de debug de brainrot configurados")
+    return True
