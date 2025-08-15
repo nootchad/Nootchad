@@ -1,30 +1,9 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 249,
-      "total_earned": 309,
+      "balance": 251,
+      "total_earned": 311,
       "transactions": [
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T05:22:54.202662",
-          "balance_after": 95
-        },
-        {
-          "type": "earn",
-          "amount": 10,
-          "reason": "Usar comando /scripts",
-          "timestamp": "2025-07-09T05:23:16.680471",
-          "balance_after": 105
-        },
-        {
-          "type": "earn",
-          "amount": 5,
-          "reason": "Usar comando del bot",
-          "timestamp": "2025-07-09T05:25:30.983821",
-          "balance_after": 110
-        },
         {
           "type": "earn",
           "amount": 10,
@@ -210,7 +189,7 @@
         {
           "type": "spend",
           "amount": 20,
-          "reason": "Compra rápida: izan",
+          "reason": "Compra r\u00e1pida: izan",
           "timestamp": "2025-07-14T09:38:12.212480",
           "balance_after": 209
         },
@@ -371,6 +350,13 @@
           "quantity": 1,
           "timestamp": "2025-08-02T10:28:22.590931",
           "description": "Compra: 1x izan"
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando /say",
+          "timestamp": "2025-08-10T07:25:48.400955",
+          "balance_after": 251
         }
       ]
     },
@@ -919,7 +905,7 @@
         {
           "type": "spend",
           "amount": 20,
-          "reason": "Compra rápida: izan",
+          "reason": "Compra r\u00e1pida: izan",
           "timestamp": "2025-07-26T03:52:14.941073",
           "balance_after": 4
         },
@@ -1305,8 +1291,8 @@
       ]
     },
     "1323109586894459002": {
-      "balance": 5,
-      "total_earned": 5,
+      "balance": 10,
+      "total_earned": 10,
       "transactions": [
         {
           "type": "earn",
@@ -1314,6 +1300,13 @@
           "reason": "Usar comando del bot",
           "timestamp": "2025-07-23T00:56:53.137497",
           "balance_after": 5
+        },
+        {
+          "type": "earn",
+          "amount": 5,
+          "reason": "Usar comando del bot",
+          "timestamp": "2025-08-15T00:34:57.677437",
+          "balance_after": 10
         }
       ]
     },
@@ -2276,6 +2269,6 @@
       ]
     }
   },
-  "last_updated": "2025-07-30T23:54:58.148053",
+  "last_updated": "2025-08-15T00:34:57.677449",
   "total_users": 60
 }
