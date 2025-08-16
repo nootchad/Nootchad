@@ -271,10 +271,10 @@ def find_and_click_friend(driver, friend_name):
         logger.error(f"❌ Error buscando amigo {friend_name}: {e}")
         return False
 
-def send_message_to_friend(driver, message):
-    """Enviar mensaje en el chat abierto"""
+def send_message_to_friend(driver, message, count=1):
+    """Enviar mensaje(s) en el chat abierto"""
     try:
-        logger.info(f"💬 Enviando mensaje: {message[:50]}...")
+        logger.info(f"💬 Enviando {count} mensaje(s): {message[:50]}...")
 
         wait = WebDriverWait(driver, 15)
 
@@ -301,23 +301,37 @@ def send_message_to_friend(driver, message):
             logger.error("❌ No se pudo encontrar el campo de entrada de mensaje")
             return False
 
-        # Limpiar el campo y escribir el mensaje
-        message_input.clear()
-        time.sleep(0.5)
-        message_input.send_keys(message)
-        time.sleep(1)
+        # Enviar múltiples mensajes
+        for i in range(count):
+            try:
+                # Limpiar el campo y escribir el mensaje
+                message_input.clear()
+                time.sleep(0.5)
+                
+                # Si hay múltiples mensajes, agregar número
+                final_message = message if count == 1 else f"{message} ({i+1}/{count})"
+                message_input.send_keys(final_message)
+                time.sleep(1)
 
-        # Enviar el mensaje presionando Enter
-        from selenium.webdriver.common.keys import Keys
-        message_input.send_keys(Keys.RETURN)
+                # Enviar el mensaje presionando Enter
+                from selenium.webdriver.common.keys import Keys
+                message_input.send_keys(Keys.RETURN)
 
-        logger.info("✅ Mensaje enviado exitosamente")
-        time.sleep(2)  # Esperar confirmación
+                logger.info(f"✅ Mensaje {i+1}/{count} enviado exitosamente")
+                
+                # Esperar entre mensajes (excepto el último)
+                if i < count - 1:
+                    time.sleep(2)
+                    
+            except Exception as e:
+                logger.error(f"❌ Error enviando mensaje {i+1}/{count}: {e}")
+                return False
 
+        time.sleep(2)  # Esperar confirmación final
         return True
 
     except Exception as e:
-        logger.error(f"❌ Error enviando mensaje: {e}")
+        logger.error(f"❌ Error enviando mensajes: {e}")
         return False
 
 def setup_commands(bot):
@@ -326,7 +340,7 @@ def setup_commands(bot):
     """
 
     @bot.tree.command(name="rmessages", description="[OWNER ONLY] Hacer scrape de mensajes en Roblox con VNC visible")
-    async def rmessages_command(interaction: discord.Interaction, friend_name: str = None, text_message: str = None):
+    async def rmessages_command(interaction: discord.Interaction, friend_name: str = None, text_message: str = None, message_count: int = 1):
         """Comando para hacer scrape de mensajes en Roblox"""
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
@@ -334,7 +348,7 @@ def setup_commands(bot):
         # Verificar que solo el owner o delegados puedan usar este comando
         if not is_owner_or_delegated(user_id):
             embed = discord.Embed(
-                title="❌ Acceso Denegado",
+                title="<:1000182563:1396420770904932372> Acceso Denegado",
                 description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
                 color=0xff0000
             )
@@ -348,11 +362,21 @@ def setup_commands(bot):
         discord_message = None  # Inicializar discord_message
 
         try:
+            # Validar cantidad de mensajes
+            if message_count < 1 or message_count > 10:
+                embed = discord.Embed(
+                    title="<:1000182563:1396420770904932372> Cantidad Inválida",
+                    description="La cantidad de mensajes debe ser entre 1 y 10.",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+
             # Obtener cookie de Roblox
             cookie = get_roblox_cookie()
             if not cookie:
                 embed = discord.Embed(
-                    title="❌ Cookie No Disponible",
+                    title="<:1000182563:1396420770904932372> Cookie No Disponible",
                     description="No se encontró una cookie válida de Roblox en las variables de entorno.",
                     color=0xff0000
                 )
@@ -361,31 +385,32 @@ def setup_commands(bot):
 
             # Crear embed inicial
             initial_embed = discord.Embed(
-                title="🤖 Iniciando Scrape de Mensajes de Roblox",
+                title="<:1000182644:1396049313481625611> Iniciando Scrape de Mensajes de Roblox",
                 description="Configurando navegador con VNC visible...",
                 color=0xffaa00
             )
-            initial_embed.add_field(name="🍪 Cookie", value="✅ Disponible", inline=True)
-            initial_embed.add_field(name="🖥️ VNC", value="✅ Headless False", inline=True)
-            initial_embed.add_field(name="⏳ Estado", value="Iniciando...", inline=True)
+            initial_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:verify:1396087763388072006> Disponible", inline=True)
+            initial_embed.add_field(name="<:1000182182:1396049500375875646> VNC", value="<:verify:1396087763388072006> Headless False", inline=True)
+            initial_embed.add_field(name="<:1000182751:1396420563358060574> Estado", value="Iniciando...", inline=True)
 
             if friend_name and text_message:
-                initial_embed.add_field(name="👤 Amigo", value=friend_name, inline=True)
-                initial_embed.add_field(name="💬 Mensaje", value=f"{text_message[:30]}{'...' if len(text_message) > 30 else ''}", inline=True)
+                initial_embed.add_field(name="<:1000182185:1396049487289737276> Amigo", value=friend_name, inline=True)
+                initial_embed.add_field(name="<:1000182183:1396049495531741194> Mensaje", value=f"{text_message[:30]}{'...' if len(text_message) > 30 else ''}", inline=True)
+                initial_embed.add_field(name="<:1000182646:1396420611395694633> Cantidad", value=f"{message_count} mensaje{'s' if message_count > 1 else ''}", inline=True)
             else:
-                initial_embed.add_field(name="🎯 Modo", value="Solo abrir chat", inline=True)
+                initial_embed.add_field(name="<:1000182184:1396049490863218698> Modo", value="Solo abrir chat", inline=True)
 
             discord_message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
 
             # Crear driver con VNC visible
             progress_embed = discord.Embed(
-                title="🤖 Scrape de Mensajes de Roblox",
+                title="<:1000182644:1396049313481625611> Scrape de Mensajes de Roblox",
                 description="Creando driver de Chrome...",
                 color=0xffaa00
             )
-            progress_embed.add_field(name="🖥️ VNC", value="✅ Modo visible activado", inline=True)
-            progress_embed.add_field(name="🌐 Navegador", value="🔄 Configurando...", inline=True)
-            progress_embed.add_field(name="🍪 Cookie", value="⏳ Pendiente", inline=True)
+            progress_embed.add_field(name="<:1000182182:1396049500375875646> VNC", value="<:verify:1396087763388072006> Modo visible activado", inline=True)
+            progress_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:1000182751:1396420563358060574> Configurando...", inline=True)
+            progress_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:1000182751:1396420563358060574> Pendiente", inline=True)
 
             await discord_message.edit(embed=progress_embed)
 
@@ -394,8 +419,8 @@ def setup_commands(bot):
                 driver = create_roblox_driver()
 
                 # Actualizar progreso
-                progress_embed.add_field(name="🌐 Navegador", value="✅ Creado", inline=True)
-                progress_embed.add_field(name="🍪 Cookie", value="🔄 Aplicando...", inline=True)
+                progress_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:verify:1396087763388072006> Creado", inline=True)
+                progress_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:1000182751:1396420563358060574> Aplicando...", inline=True)
                 await discord_message.edit(embed=progress_embed)
 
                 # Aplicar cookie
@@ -405,13 +430,13 @@ def setup_commands(bot):
 
                 # Actualizar progreso
                 progress_embed = discord.Embed(
-                    title="🤖 Scrape de Mensajes de Roblox",
+                    title="<:1000182644:1396049313481625611> Scrape de Mensajes de Roblox",
                     description="Navegando a Roblox y buscando elemento del chat...",
                     color=0xffaa00
                 )
-                progress_embed.add_field(name="🌐 Navegador", value="✅ Activo", inline=True)
-                progress_embed.add_field(name="🍪 Cookie", value="✅ Aplicada", inline=True)
-                progress_embed.add_field(name="🎯 Chat", value="🔄 Buscando...", inline=True)
+                progress_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:verify:1396087763388072006> Activo", inline=True)
+                progress_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:verify:1396087763388072006> Aplicada", inline=True)
+                progress_embed.add_field(name="<:1000182184:1396049490863218698> Chat", value="<:1000182751:1396420563358060574> Buscando...", inline=True)
 
                 await discord_message.edit(embed=progress_embed)
 
@@ -427,14 +452,14 @@ def setup_commands(bot):
                     if friend_name and text_message:
                         # Actualizar progreso
                         friend_embed = discord.Embed(
-                            title="🤖 Scrape de Mensajes de Roblox",
+                            title="<:1000182644:1396049313481625611> Scrape de Mensajes de Roblox",
                             description=f"Chat abierto exitosamente. Buscando amigo: **{friend_name}**...",
                             color=0xffaa00
                         )
-                        friend_embed.add_field(name="🌐 Navegador", value="✅ Activo", inline=True)
-                        friend_embed.add_field(name="🍪 Cookie", value="✅ Aplicada", inline=True)
-                        friend_embed.add_field(name="🎯 Chat", value="✅ Abierto", inline=True)
-                        friend_embed.add_field(name="👤 Amigo", value="🔍 Buscando...", inline=True)
+                        friend_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:verify:1396087763388072006> Activo", inline=True)
+                        friend_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:verify:1396087763388072006> Aplicada", inline=True)
+                        friend_embed.add_field(name="<:1000182184:1396049490863218698> Chat", value="<:verify:1396087763388072006> Abierto", inline=True)
+                        friend_embed.add_field(name="<:1000182185:1396049487289737276> Amigo", value="<:1000182751:1396420563358060574> Buscando...", inline=True)
 
                         await discord_message.edit(embed=friend_embed)
 
@@ -444,32 +469,34 @@ def setup_commands(bot):
                         if friend_found:
                             # Actualizar progreso
                             message_embed = discord.Embed(
-                                title="🤖 Scrape de Mensajes de Roblox",
-                                description=f"Amigo **{friend_name}** encontrado. Enviando mensaje...",
+                                title="<:1000182644:1396049313481625611> Scrape de Mensajes de Roblox",
+                                description=f"Amigo **{friend_name}** encontrado. Enviando {message_count} mensaje{'s' if message_count > 1 else ''}...",
                                 color=0xffaa00
                             )
-                            message_embed.add_field(name="👤 Amigo", value="✅ Encontrado", inline=True)
-                            message_embed.add_field(name="💬 Mensaje", value="🔄 Enviando...", inline=True)
+                            message_embed.add_field(name="<:1000182185:1396049487289737276> Amigo", value="<:verify:1396087763388072006> Encontrado", inline=True)
+                            message_embed.add_field(name="<:1000182183:1396049495531741194> Mensaje", value="<:1000182751:1396420563358060574> Enviando...", inline=True)
+                            message_embed.add_field(name="<:1000182646:1396420611395694633> Cantidad", value=f"{message_count} mensaje{'s' if message_count > 1 else ''}", inline=True)
 
                             await discord_message.edit(embed=message_embed)
 
-                            # Enviar mensaje
-                            message_sent = send_message_to_friend(driver, text_message)
+                            # Enviar mensaje(s)
+                            message_sent = send_message_to_friend(driver, text_message, message_count)
 
                             if message_sent:
                                 # Éxito completo
                                 success_embed = discord.Embed(
-                                    title="✅ Mensaje Enviado Exitosamente",
-                                    description=f"Se envió el mensaje a **{friend_name}** en Roblox.",
+                                    title="<:verify:1396087763388072006> Mensaje(s) Enviado(s) Exitosamente",
+                                    description=f"Se envió {'el mensaje' if message_count == 1 else f'{message_count} mensajes'} a **{friend_name}** en Roblox.",
                                     color=0x00ff88
                                 )
-                                success_embed.add_field(name="🌐 Navegador", value="✅ Activo y visible", inline=True)
-                                success_embed.add_field(name="🍪 Cookie", value="✅ Aplicada correctamente", inline=True)
-                                success_embed.add_field(name="🎯 Chat", value="✅ Abierto", inline=True)
-                                success_embed.add_field(name="👤 Amigo", value=f"✅ {friend_name}", inline=True)
-                                success_embed.add_field(name="💬 Mensaje", value="✅ Enviado", inline=True)
+                                success_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:verify:1396087763388072006> Activo y visible", inline=True)
+                                success_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:verify:1396087763388072006> Aplicada correctamente", inline=True)
+                                success_embed.add_field(name="<:1000182184:1396049490863218698> Chat", value="<:verify:1396087763388072006> Abierto", inline=True)
+                                success_embed.add_field(name="<:1000182185:1396049487289737276> Amigo", value=f"<:verify:1396087763388072006> {friend_name}", inline=True)
+                                success_embed.add_field(name="<:1000182183:1396049495531741194> Mensaje", value="<:verify:1396087763388072006> Enviado", inline=True)
+                                success_embed.add_field(name="<:1000182646:1396420611395694633> Cantidad", value=f"{message_count} mensaje{'s' if message_count > 1 else ''}", inline=True)
                                 success_embed.add_field(
-                                    name="📝 Contenido",
+                                    name="<:1000182182:1396049500375875646> Contenido",
                                     value=f"```{text_message[:100]}{'...' if len(text_message) > 100 else ''}```",
                                     inline=False
                                 )
@@ -478,25 +505,25 @@ def setup_commands(bot):
                             else:
                                 # Error enviando mensaje
                                 error_embed = discord.Embed(
-                                    title="❌ Error Enviando Mensaje",
-                                    description=f"No se pudo enviar el mensaje a **{friend_name}**.",
+                                    title="<:1000182563:1396420770904932372> Error Enviando Mensaje",
+                                    description=f"No se pudo enviar {'el mensaje' if message_count == 1 else f'los {message_count} mensajes'} a **{friend_name}**.",
                                     color=0xff0000
                                 )
-                                error_embed.add_field(name="👤 Amigo", value="✅ Encontrado", inline=True)
-                                error_embed.add_field(name="💬 Mensaje", value="❌ Error al enviar", inline=True)
+                                error_embed.add_field(name="<:1000182185:1396049487289737276> Amigo", value="<:verify:1396087763388072006> Encontrado", inline=True)
+                                error_embed.add_field(name="<:1000182183:1396049495531741194> Mensaje", value="<:1000182563:1396420770904932372> Error al enviar", inline=True)
 
                                 await discord_message.edit(embed=error_embed)
                         else:
                             # Error encontrando amigo
                             error_embed = discord.Embed(
-                                title="❌ Amigo No Encontrado",
+                                title="<:1000182563:1396420770904932372> Amigo No Encontrado",
                                 description=f"No se pudo encontrar al amigo: **{friend_name}**",
                                 color=0xff0000
                             )
-                            error_embed.add_field(name="🎯 Chat", value="✅ Abierto", inline=True)
-                            error_embed.add_field(name="👤 Amigo", value="❌ No encontrado", inline=True)
+                            error_embed.add_field(name="<:1000182184:1396049490863218698> Chat", value="<:verify:1396087763388072006> Abierto", inline=True)
+                            error_embed.add_field(name="<:1000182185:1396049487289737276> Amigo", value="<:1000182563:1396420770904932372> No encontrado", inline=True)
                             error_embed.add_field(
-                                name="💡 Posibles causas",
+                                name="<:1000182750:1396420537227411587> Posibles causas",
                                 value="• El nombre no coincide exactamente\n• El amigo no está en línea\n• No están en la lista de amigos",
                                 inline=False
                             )
@@ -506,21 +533,21 @@ def setup_commands(bot):
                     else:
                         # Solo abrir chat sin enviar mensaje
                         success_embed = discord.Embed(
-                            title="✅ Scrape de Mensajes Completado",
+                            title="<:verify:1396087763388072006> Scrape de Mensajes Completado",
                             description="Se hizo click exitosamente en el elemento del chat de Roblox.",
                             color=0x00ff88
                         )
-                        success_embed.add_field(name="🌐 Navegador", value="✅ Activo y visible", inline=True)
-                        success_embed.add_field(name="🍪 Cookie", value="✅ Aplicada correctamente", inline=True)
-                        success_embed.add_field(name="🎯 Chat", value="✅ Click exitoso", inline=True)
+                        success_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:verify:1396087763388072006> Activo y visible", inline=True)
+                        success_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:verify:1396087763388072006> Aplicada correctamente", inline=True)
+                        success_embed.add_field(name="<:1000182184:1396049490863218698> Chat", value="<:verify:1396087763388072006> Click exitoso", inline=True)
                         success_embed.add_field(
-                            name="💡 Información",
+                            name="<:1000182750:1396420537227411587> Información",
                             value="El navegador sigue activo para que puedas ver la página en VNC. Se cerrará automáticamente en 60 segundos.",
                             inline=False
                         )
                         success_embed.add_field(
-                            name="🔧 Uso Avanzado",
-                            value="Para enviar mensajes usa: `/rmessages friend_name:NombreAmigo message:Tu mensaje`",
+                            name="<:1000182644:1396049313481625611> Uso Avanzado",
+                            value="Para enviar mensajes usa: `/rmessages friend_name:NombreAmigo text_message:Tu mensaje message_count:5`",
                             inline=False
                         )
 
@@ -533,15 +560,15 @@ def setup_commands(bot):
                 else:
                     # Error en el click
                     error_embed = discord.Embed(
-                        title="❌ Error en Click del Chat",
+                        title="<:1000182563:1396420770904932372> Error en Click del Chat",
                         description="No se pudo hacer click en el elemento del chat.",
                         color=0xff0000
                     )
-                    error_embed.add_field(name="🌐 Navegador", value="✅ Activo", inline=True)
-                    error_embed.add_field(name="🍪 Cookie", value="✅ Aplicada", inline=True)
-                    error_embed.add_field(name="🎯 Chat", value="❌ No encontrado", inline=True)
+                    error_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:verify:1396087763388072006> Activo", inline=True)
+                    error_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:verify:1396087763388072006> Aplicada", inline=True)
+                    error_embed.add_field(name="<:1000182184:1396049490863218698> Chat", value="<:1000182563:1396420770904932372> No encontrado", inline=True)
                     error_embed.add_field(
-                        name="💡 Posibles causas",
+                        name="<:1000182750:1396420537227411587> Posibles causas",
                         value="• Elemento del chat no está presente\n• Página no cargó completamente\n• Selectores han cambiado",
                         inline=False
                     )
@@ -563,17 +590,17 @@ def setup_commands(bot):
             logger.error(f"Error en comando /rmessages: {e}")
 
             error_embed = discord.Embed(
-                title="❌ Error en Scrape de Mensajes",
+                title="<:1000182563:1396420770904932372> Error en Scrape de Mensajes",
                 description=f"Ocurrió un error durante el proceso de scraping.",
                 color=0xff0000
             )
             error_embed.add_field(
-                name="🔍 Detalles del Error",
+                name="<:1000182751:1396420563358060574> Detalles del Error",
                 value=f"```{str(e)[:200]}```",
                 inline=False
             )
             error_embed.add_field(
-                name="💡 Recomendaciones",
+                name="<:1000182750:1396420537227411587> Recomendaciones",
                 value="• Verificar que la cookie de Roblox sea válida\n• Intentar nuevamente en unos minutos\n• Verificar conexión a internet",
                 inline=False
             )
