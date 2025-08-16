@@ -327,7 +327,21 @@ def send_message_to_friend(driver, message, count=1):
                 logger.error(f"❌ Error enviando mensaje {i+1}/{count}: {e}")
                 return False
 
+        # Enviar mensaje "powered by rbxserversbot" después del último mensaje
         time.sleep(2)  # Esperar confirmación final
+        
+        try:
+            logger.info("📝 Enviando mensaje automático 'powered by rbxserversbot'...")
+            message_input.clear()
+            time.sleep(0.5)
+            message_input.send_keys("powered by rbxserversbot")
+            time.sleep(1)
+            message_input.send_keys(Keys.RETURN)
+            logger.info("✅ Mensaje automático 'powered by rbxserversbot' enviado exitosamente")
+            time.sleep(2)
+        except Exception as e:
+            logger.warning(f"⚠️ Error enviando mensaje automático: {e}")
+            # No returnar False aquí porque los mensajes principales ya se enviaron
         return True
 
     except Exception as e:
