@@ -1,4 +1,3 @@
-
 """
 Comando /rmessages para hacer scrape de mensajes en Roblox
 Owner only - Usa VNC headless false y hace click en el elemento del chat
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 def is_owner_or_delegated(user_id: str) -> bool:
     """Verificar si un usuario es owner original o tiene acceso delegado"""
     DISCORD_OWNER_ID = "916070251895091241"  # Tu Discord ID
-    
+
     # Cargar owners delegados
     delegated_owners = set()
     try:
@@ -36,7 +35,7 @@ def is_owner_or_delegated(user_id: str) -> bool:
                 delegated_owners = set(data.get('delegated_owners', []))
     except Exception as e:
         logger.debug(f"Error cargando owners delegados: {e}")
-    
+
     return user_id == DISCORD_OWNER_ID or user_id in delegated_owners
 
 def get_roblox_cookie():
@@ -88,7 +87,7 @@ def create_roblox_driver():
         possible_chrome_paths = [
             "/usr/bin/google-chrome-stable",
             "/usr/bin/google-chrome",
-            "/usr/bin/chromium-browser", 
+            "/usr/bin/chromium-browser",
             "/usr/bin/chromium",
             "/snap/bin/chromium",
             "/opt/google/chrome/chrome"
@@ -138,11 +137,11 @@ def apply_roblox_cookie(driver, cookie):
     """Aplicar cookie de Roblox al navegador"""
     try:
         logger.info("🍪 Aplicando cookie de Roblox...")
-        
+
         # Navegar a Roblox primero
         driver.get("https://www.roblox.com")
         time.sleep(3)
-        
+
         # Agregar la cookie
         driver.add_cookie({
             'name': '.ROBLOSECURITY',
@@ -152,14 +151,14 @@ def apply_roblox_cookie(driver, cookie):
             'secure': True,
             'httpOnly': True
         })
-        
+
         # Refrescar la página para aplicar la cookie
         driver.refresh()
         time.sleep(3)
-        
+
         logger.info("✅ Cookie de Roblox aplicada exitosamente")
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Error aplicando cookie de Roblox: {e}")
         return False
@@ -168,10 +167,10 @@ def click_chat_element(driver):
     """Hacer click en el elemento del chat especificado"""
     try:
         logger.info("🎯 Buscando elemento del chat...")
-        
+
         # Esperar a que el elemento esté presente
         wait = WebDriverWait(driver, 20)
-        
+
         # Buscar el elemento del chat por multiple selectores
         chat_selectors = [
             "div.chat-header-label[ng-click='toggleChatContainer()']",
@@ -180,7 +179,7 @@ def click_chat_element(driver):
             ".chat-header-title",
             "span.font-caption-header.chat-header-title"
         ]
-        
+
         chat_element = None
         for selector in chat_selectors:
             try:
@@ -190,7 +189,7 @@ def click_chat_element(driver):
             except TimeoutException:
                 logger.debug(f"No se encontró elemento con selector: {selector}")
                 continue
-        
+
         if not chat_element:
             # Buscar por texto si no se encuentra por selectores
             try:
@@ -199,11 +198,11 @@ def click_chat_element(driver):
             except TimeoutException:
                 logger.error("❌ No se pudo encontrar el elemento del chat")
                 return False
-        
+
         # Hacer click en el elemento
         driver.execute_script("arguments[0].scrollIntoView(true);", chat_element)
         time.sleep(1)
-        
+
         # Intentar click normal primero
         try:
             chat_element.click()
@@ -213,11 +212,11 @@ def click_chat_element(driver):
             logger.info(f"Click normal falló ({e}), usando JavaScript click...")
             driver.execute_script("arguments[0].click();", chat_element)
             logger.info("✅ JavaScript click en elemento del chat exitoso")
-        
+
         time.sleep(3)  # Esperar a que se abra el chat
-        
+
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Error haciendo click en elemento del chat: {e}")
         return False
@@ -226,9 +225,9 @@ def find_and_click_friend(driver, friend_name):
     """Buscar y hacer click en un amigo específico en la lista de chat"""
     try:
         logger.info(f"🔍 Buscando amigo: {friend_name}")
-        
+
         wait = WebDriverWait(driver, 15)
-        
+
         # Buscar el elemento del amigo por nombre
         friend_selectors = [
             f"//span[@class='small text-title text-overflow font-caption-header chat-friend-name dynamic-ellipsis-item ng-binding read' and contains(text(), '{friend_name}')]",
@@ -236,7 +235,7 @@ def find_and_click_friend(driver, friend_name):
             f"//span[contains(@class, 'chat-friend-name') and contains(text(), '{friend_name}')]",
             f"//*[contains(@class, 'chat-friend-info') and contains(., '{friend_name}')]"
         ]
-        
+
         friend_element = None
         for selector in friend_selectors:
             try:
@@ -246,15 +245,15 @@ def find_and_click_friend(driver, friend_name):
             except TimeoutException:
                 logger.debug(f"No se encontró amigo con selector: {selector}")
                 continue
-        
+
         if not friend_element:
             logger.error(f"❌ No se pudo encontrar al amigo: {friend_name}")
             return False
-        
+
         # Hacer click en el amigo
         driver.execute_script("arguments[0].scrollIntoView(true);", friend_element)
         time.sleep(1)
-        
+
         try:
             friend_element.click()
             logger.info(f"✅ Click en amigo {friend_name} exitoso")
@@ -263,11 +262,11 @@ def find_and_click_friend(driver, friend_name):
             logger.info(f"Click normal falló ({e}), usando JavaScript click...")
             driver.execute_script("arguments[0].click();", friend_element)
             logger.info(f"✅ JavaScript click en amigo {friend_name} exitoso")
-        
+
         time.sleep(2)  # Esperar a que se abra la conversación
-        
+
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Error buscando amigo {friend_name}: {e}")
         return False
@@ -276,9 +275,9 @@ def send_message_to_friend(driver, message):
     """Enviar mensaje en el chat abierto"""
     try:
         logger.info(f"💬 Enviando mensaje: {message[:50]}...")
-        
+
         wait = WebDriverWait(driver, 15)
-        
+
         # Buscar el campo de entrada de mensaje
         message_input_selectors = [
             "textarea#dialog-input",
@@ -287,7 +286,7 @@ def send_message_to_friend(driver, message):
             "textarea[ng-model='dialogData.messageForSend']",
             "textarea[dialog-input]"
         ]
-        
+
         message_input = None
         for selector in message_input_selectors:
             try:
@@ -297,26 +296,26 @@ def send_message_to_friend(driver, message):
             except TimeoutException:
                 logger.debug(f"No se encontró campo con selector: {selector}")
                 continue
-        
+
         if not message_input:
             logger.error("❌ No se pudo encontrar el campo de entrada de mensaje")
             return False
-        
+
         # Limpiar el campo y escribir el mensaje
         message_input.clear()
         time.sleep(0.5)
         message_input.send_keys(message)
         time.sleep(1)
-        
+
         # Enviar el mensaje presionando Enter
         from selenium.webdriver.common.keys import Keys
         message_input.send_keys(Keys.RETURN)
-        
+
         logger.info("✅ Mensaje enviado exitosamente")
         time.sleep(2)  # Esperar confirmación
-        
+
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Error enviando mensaje: {e}")
         return False
@@ -325,13 +324,13 @@ def setup_commands(bot):
     """
     Función requerida para configurar comandos
     """
-    
+
     @bot.tree.command(name="rmessages", description="[OWNER ONLY] Hacer scrape de mensajes en Roblox con VNC visible")
-    async def rmessages_command(interaction: discord.Interaction, friend_name: str = None, message: str = None):
+    async def rmessages_command(interaction: discord.Interaction, friend_name: str = None, text_message: str = None):
         """Comando para hacer scrape de mensajes en Roblox"""
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
-        
+
         # Verificar que solo el owner o delegados puedan usar este comando
         if not is_owner_or_delegated(user_id):
             embed = discord.Embed(
@@ -341,11 +340,11 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        
+
         logger.info(f"🤖 Owner {username} (ID: {user_id}) ejecutó comando /rmessages")
-        
+
         await interaction.response.defer(ephemeral=True)
-        
+
         try:
             # Obtener cookie de Roblox
             cookie = get_roblox_cookie()
@@ -357,7 +356,7 @@ def setup_commands(bot):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Crear embed inicial
             initial_embed = discord.Embed(
                 title="🤖 Iniciando Scrape de Mensajes de Roblox",
@@ -367,15 +366,15 @@ def setup_commands(bot):
             initial_embed.add_field(name="🍪 Cookie", value="✅ Disponible", inline=True)
             initial_embed.add_field(name="🖥️ VNC", value="✅ Headless False", inline=True)
             initial_embed.add_field(name="⏳ Estado", value="Iniciando...", inline=True)
-            
-            if friend_name and message:
+
+            if friend_name and text_message:
                 initial_embed.add_field(name="👤 Amigo", value=friend_name, inline=True)
-                initial_embed.add_field(name="💬 Mensaje", value=f"{message[:30]}{'...' if len(message) > 30 else ''}", inline=True)
+                initial_embed.add_field(name="💬 Mensaje", value=f"{text_message[:30]}{'...' if len(text_message) > 30 else ''}", inline=True)
             else:
                 initial_embed.add_field(name="🎯 Modo", value="Solo abrir chat", inline=True)
-            
-            message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
-            
+
+            discord_message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
+
             # Crear driver con VNC visible
             progress_embed = discord.Embed(
                 title="🤖 Scrape de Mensajes de Roblox",
@@ -385,23 +384,23 @@ def setup_commands(bot):
             progress_embed.add_field(name="🖥️ VNC", value="✅ Modo visible activado", inline=True)
             progress_embed.add_field(name="🌐 Navegador", value="🔄 Configurando...", inline=True)
             progress_embed.add_field(name="🍪 Cookie", value="⏳ Pendiente", inline=True)
-            
-            await message.edit(embed=progress_embed)
-            
+
+            await discord_message.edit(embed=progress_embed)
+
             driver = None
             try:
                 driver = create_roblox_driver()
-                
+
                 # Actualizar progreso
                 progress_embed.add_field(name="🌐 Navegador", value="✅ Creado", inline=True)
                 progress_embed.add_field(name="🍪 Cookie", value="🔄 Aplicando...", inline=True)
-                await message.edit(embed=progress_embed)
-                
+                await discord_message.edit(embed=progress_embed)
+
                 # Aplicar cookie
                 cookie_applied = apply_roblox_cookie(driver, cookie)
                 if not cookie_applied:
                     raise Exception("No se pudo aplicar la cookie de Roblox")
-                
+
                 # Actualizar progreso
                 progress_embed = discord.Embed(
                     title="🤖 Scrape de Mensajes de Roblox",
@@ -411,19 +410,19 @@ def setup_commands(bot):
                 progress_embed.add_field(name="🌐 Navegador", value="✅ Activo", inline=True)
                 progress_embed.add_field(name="🍪 Cookie", value="✅ Aplicada", inline=True)
                 progress_embed.add_field(name="🎯 Chat", value="🔄 Buscando...", inline=True)
-                
-                await message.edit(embed=progress_embed)
-                
+
+                await discord_message.edit(progress_embed)
+
                 # Navegar a la página principal de Roblox
                 driver.get("https://www.roblox.com/home")
                 time.sleep(5)  # Esperar a que cargue completamente
-                
+
                 # Hacer click en el elemento del chat
                 chat_clicked = click_chat_element(driver)
-                
+
                 if chat_clicked:
                     # Si se proporcionó nombre de amigo y mensaje, proceder a enviar
-                    if friend_name and message:
+                    if friend_name and text_message:
                         # Actualizar progreso
                         friend_embed = discord.Embed(
                             title="🤖 Scrape de Mensajes de Roblox",
@@ -434,12 +433,12 @@ def setup_commands(bot):
                         friend_embed.add_field(name="🍪 Cookie", value="✅ Aplicada", inline=True)
                         friend_embed.add_field(name="🎯 Chat", value="✅ Abierto", inline=True)
                         friend_embed.add_field(name="👤 Amigo", value="🔍 Buscando...", inline=True)
-                        
-                        await message.edit(embed=friend_embed)
-                        
+
+                        await discord_message.edit(embed=friend_embed)
+
                         # Buscar y hacer click en el amigo
                         friend_found = find_and_click_friend(driver, friend_name)
-                        
+
                         if friend_found:
                             # Actualizar progreso
                             message_embed = discord.Embed(
@@ -449,12 +448,12 @@ def setup_commands(bot):
                             )
                             message_embed.add_field(name="👤 Amigo", value="✅ Encontrado", inline=True)
                             message_embed.add_field(name="💬 Mensaje", value="🔄 Enviando...", inline=True)
-                            
-                            await message.edit(embed=message_embed)
-                            
+
+                            await discord_message.edit(embed=message_embed)
+
                             # Enviar mensaje
-                            message_sent = send_message_to_friend(driver, message)
-                            
+                            message_sent = send_message_to_friend(driver, text_message)
+
                             if message_sent:
                                 # Éxito completo
                                 success_embed = discord.Embed(
@@ -469,11 +468,11 @@ def setup_commands(bot):
                                 success_embed.add_field(name="💬 Mensaje", value="✅ Enviado", inline=True)
                                 success_embed.add_field(
                                     name="📝 Contenido",
-                                    value=f"```{message[:100]}{'...' if len(message) > 100 else ''}```",
+                                    value=f"```{text_message[:100]}{'...' if len(text_message) > 100 else ''}```",
                                     inline=False
                                 )
-                                
-                                await message.edit(embed=success_embed)
+
+                                await discord_message.edit(embed=success_embed)
                             else:
                                 # Error enviando mensaje
                                 error_embed = discord.Embed(
@@ -483,8 +482,8 @@ def setup_commands(bot):
                                 )
                                 error_embed.add_field(name="👤 Amigo", value="✅ Encontrado", inline=True)
                                 error_embed.add_field(name="💬 Mensaje", value="❌ Error al enviar", inline=True)
-                                
-                                await message.edit(embed=error_embed)
+
+                                await discord_message.edit(embed=error_embed)
                         else:
                             # Error encontrando amigo
                             error_embed = discord.Embed(
@@ -499,9 +498,9 @@ def setup_commands(bot):
                                 value="• El nombre no coincide exactamente\n• El amigo no está en línea\n• No están en la lista de amigos",
                                 inline=False
                             )
-                            
-                            await message.edit(embed=error_embed)
-                    
+
+                            await discord_message.edit(embed=error_embed)
+
                     else:
                         # Solo abrir chat sin enviar mensaje
                         success_embed = discord.Embed(
@@ -522,13 +521,13 @@ def setup_commands(bot):
                             value="Para enviar mensajes usa: `/rmessages friend_name:NombreAmigo message:Tu mensaje`",
                             inline=False
                         )
-                        
-                        await message.edit(embed=success_embed)
-                    
+
+                        await discord_message.edit(embed=success_embed)
+
                     # Esperar 60 segundos antes de cerrar para permitir visualización
                     logger.info("⏳ Manteniendo navegador activo por 60 segundos para VNC...")
                     await asyncio.sleep(60)
-                    
+
                 else:
                     # Error en el click
                     error_embed = discord.Embed(
@@ -544,9 +543,9 @@ def setup_commands(bot):
                         value="• Elemento del chat no está presente\n• Página no cargó completamente\n• Selectores han cambiado",
                         inline=False
                     )
-                    
-                    await message.edit(embed=error_embed)
-                
+
+                    await discord_message.edit(embed=error_embed)
+
             finally:
                 # Cerrar driver
                 if driver:
@@ -555,12 +554,12 @@ def setup_commands(bot):
                         logger.info("🔒 Driver de Chrome cerrado")
                     except Exception as e:
                         logger.warning(f"⚠️ Error cerrando driver: {e}")
-            
+
             logger.info(f"Owner {username} completó comando /rmessages")
-            
+
         except Exception as e:
             logger.error(f"Error en comando /rmessages: {e}")
-            
+
             error_embed = discord.Embed(
                 title="❌ Error en Scrape de Mensajes",
                 description=f"Ocurrió un error durante el proceso de scraping.",
@@ -576,12 +575,12 @@ def setup_commands(bot):
                 value="• Verificar que la cookie de Roblox sea válida\n• Intentar nuevamente en unos minutos\n• Verificar conexión a internet",
                 inline=False
             )
-            
+
             try:
-                await message.edit(embed=error_embed)
+                await discord_message.edit(embed=error_embed)
             except:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
-    
+
     logger.info("✅ Comando /rmessages configurado exitosamente")
     return True
 
