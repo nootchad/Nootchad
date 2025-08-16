@@ -1,0 +1,282 @@
+[
+  {
+    "timestamp": "2025-08-15T00:47:47.887572",
+    "autor": {
+      "id": "916070251895091241",
+      "username": ".pesopluma",
+      "display_name": "peso un chingo / 991hz"
+    },
+    "texto": "Buscamos colaboradores para hacer crecer RbxServers\n\nSi tienes un servidor de Roblox o conoces a alguien que pueda añadir nuestro bot RbxServers, esta es tu oportunidad de ganar Robux.\n\n**¿Qué buscamos?**\n\n• Dueños de servidores de Roblox que quieran agregar nuestro bot.\n\n• Moderadores o administradores con contactos para lograr que el bot se agregue en más servidores.\n\n\n**Cómo ganarás Robux**\n\n• Por cada servidor agregado, recibirás Robux según la cantidad de miembros que tenga.\n\n• Por cada usuario verificado en un servidor donde hayas logrado que se instale el bot, ganarás 5 Robux.\n\n\n**¿Qué ganamos nosotros?**\n\n• Más miembros y actividad en la comunidad.\n\n• Mayor reconocimiento y visibilidad para el bot.\n\n• Potenciales donadores y usuarios premium.\n\n\nCuando logres que el bot sea agregado a un servidor, envía la evidencia en el canal de media o abre un ticket para que podamos registrarlo. Si quieres ver los permisos que pide el bot/agregar el bot, usa este link: https://discord.com/oauth2/authorize?client_id=1388660674573631549&permissions=137439283200&integration_type=0&scope=bot+applications.commands",
+    "estadisticas": {
+      "exitosos": 28,
+      "fallidos": 16,
+      "total": 44
+    },
+    "usuarios_procesados": [
+      {
+        "discord_id": "1321008136504479777",
+        "username": "maksimka046144",
+        "roblox_username": "RbxServersBot3",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1385909533905387581",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "OhDr4pzy29",
+        "status": "error"
+      },
+      {
+        "discord_id": "1345807924538249289",
+        "username": "jonygl00_77357",
+        "roblox_username": "IceCube_13142",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "859456753577623554",
+        "username": "adam_noob",
+        "roblox_username": "fjhdedd",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1083348361899413575",
+        "username": "holamfks",
+        "roblox_username": "El_papatero23",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1194472549623529528",
+        "username": "ferraton904",
+        "roblox_username": "Ferraton904",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1348850482118131733",
+        "username": "nootchad",
+        "roblox_username": "dtbuyet",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "965676912204718191",
+        "username": "ellieee_6",
+        "roblox_username": "ivexdd",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1346949562836979792",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "santigamer_pro7",
+        "status": "error"
+      },
+      {
+        "discord_id": "958046748599795853",
+        "username": "immaci",
+        "roblox_username": "MaciGamer_YT",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "850429884061057035",
+        "username": "itsmarrz_",
+        "roblox_username": "xkittylovermy",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1010674217559269386",
+        "username": "rip_liam",
+        "roblox_username": "liamsantino19",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1323109586894459002",
+        "username": "urie03488",
+        "roblox_username": "lisauriro2020",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "958044500167634964",
+        "username": "jbrand70",
+        "roblox_username": "jbrand70",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1279547009392705587",
+        "username": ".bajowest",
+        "roblox_username": "ulise959",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1263213717873758341",
+        "username": "tadeomzt",
+        "roblox_username": "tadeodekiller",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1396234961782308916",
+        "username": "zambombazo01_05131",
+        "roblox_username": "GIOGIO_CMOON",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1398026609469952132",
+        "username": "adamlaafou111_35744",
+        "roblox_username": "ADAMA10108",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "930665052984471594",
+        "username": "llllollll_753",
+        "roblox_username": "diego_noseQ",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1205945127369969774",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "Likenoobs_yeah",
+        "status": "error"
+      },
+      {
+        "discord_id": "1393059424658002041",
+        "username": "beast035810",
+        "roblox_username": "JAJAJAk12336",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1277934342211113005",
+        "username": "minifares_20317",
+        "roblox_username": "MiniFares123",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "777523479029219368",
+        "username": "brexitf",
+        "roblox_username": "fares96531",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1290175251505872922",
+        "username": "willian.23.",
+        "roblox_username": "rd3467has",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1025186227940511774",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "soy_god21",
+        "status": "error"
+      },
+      {
+        "discord_id": "1396733628343386207",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "tupadrinoytfree1",
+        "status": "error"
+      },
+      {
+        "discord_id": "1174825301461712910",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "Tokioelpana06",
+        "status": "error"
+      },
+      {
+        "discord_id": "1068237070721613855",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "m4t557u7",
+        "status": "error"
+      },
+      {
+        "discord_id": "777213933517144125",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "Josuechitolin69",
+        "status": "error"
+      },
+      {
+        "discord_id": "1194082726949687441",
+        "username": "cobijas__82780",
+        "roblox_username": "jos_ackerman1",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1348618931585159268",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "derryk231",
+        "status": "error"
+      },
+      {
+        "discord_id": "737741864157053039",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "Caapi89",
+        "status": "error"
+      },
+      {
+        "discord_id": "667767965789454342",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "HUGOGGXD70002",
+        "status": "error"
+      },
+      {
+        "discord_id": "1198818306728132649",
+        "username": "keilermaricon",
+        "roblox_username": "el_papuswazapi",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1263195830576484516",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "ETARRALOV3R",
+        "status": "error"
+      },
+      {
+        "discord_id": "943954006923968522",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "el_jeremypro",
+        "status": "error"
+      },
+      {
+        "discord_id": "1392316120643408042",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "AAAHD_YT",
+        "status": "error"
+      },
+      {
+        "discord_id": "1389006673376575649",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "anselmo_Lives",
+        "status": "error"
+      },
+      {
+        "discord_id": "1321517327019147264",
+        "username": "Error: 403 Forbidden (error code: 50007): Cannot send mes",
+        "roblox_username": "picoAyudaMeBanearon",
+        "status": "error"
+      },
+      {
+        "discord_id": "1305778754018218017",
+        "username": "ww.cn",
+        "roblox_username": "PurpleGuyYoutubexD",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "930246109945811006",
+        "username": "allen8111",
+        "roblox_username": "Allenguadalupe",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1398981471821369375",
+        "username": "adamadmaadma111",
+        "roblox_username": "ADAMLAAFOU",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1093893613798293544",
+        "username": "titooqe10",
+        "roblox_username": "victoegsj",
+        "status": "enviado"
+      },
+      {
+        "discord_id": "1143043080933625977",
+        "username": "fabiooalejos",
+        "roblox_username": "whoofax",
+        "status": "enviado"
+      }
+    ]
+  }
+]
