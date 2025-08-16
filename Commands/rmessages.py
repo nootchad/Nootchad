@@ -345,6 +345,8 @@ def setup_commands(bot):
 
         await interaction.response.defer(ephemeral=True)
 
+        discord_message = None  # Inicializar discord_message
+
         try:
             # Obtener cookie de Roblox
             cookie = get_roblox_cookie()
@@ -577,7 +579,10 @@ def setup_commands(bot):
             )
 
             try:
-                await discord_message.edit(embed=error_embed)
+                if discord_message is not None:
+                    await discord_message.edit(embed=error_embed)
+                else:
+                    await interaction.followup.send(embed=error_embed, ephemeral=True)
             except:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
 
