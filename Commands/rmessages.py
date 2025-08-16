@@ -307,7 +307,7 @@ def send_message_to_friend(driver, message, count=1):
                 # Limpiar el campo y escribir el mensaje
                 message_input.clear()
                 time.sleep(0.5)
-                
+
                 # Si hay múltiples mensajes, agregar número
                 final_message = message if count == 1 else f"{message} ({i+1}/{count})"
                 message_input.send_keys(final_message)
@@ -318,11 +318,11 @@ def send_message_to_friend(driver, message, count=1):
                 message_input.send_keys(Keys.RETURN)
 
                 logger.info(f"✅ Mensaje {i+1}/{count} enviado exitosamente")
-                
+
                 # Esperar entre mensajes (excepto el último)
                 if i < count - 1:
                     time.sleep(2)
-                    
+
             except Exception as e:
                 logger.error(f"❌ Error enviando mensaje {i+1}/{count}: {e}")
                 return False
@@ -490,7 +490,7 @@ def setup_commands(bot):
                                     color=0x00ff88
                                 )
                                 success_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:verify:1396087763388072006> Activo y visible", inline=True)
-                                success_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:verify:1396087763388072006> Aplicada correctamente", inline=True)
+                                success_embed.add_field(name="🍪 Cookie", value="<:verify:1396087763388072006> Aplicada correctamente", inline=True)
                                 success_embed.add_field(name="<:1000182184:1396049490863218698> Chat", value="<:verify:1396087763388072006> Abierto", inline=True)
                                 success_embed.add_field(name="<:1000182185:1396049487289737276> Amigo", value=f"<:verify:1396087763388072006> {friend_name}", inline=True)
                                 success_embed.add_field(name="<:1000182183:1396049495531741194> Mensaje", value="<:verify:1396087763388072006> Enviado", inline=True)
@@ -538,7 +538,7 @@ def setup_commands(bot):
                             color=0x00ff88
                         )
                         success_embed.add_field(name="<:1000182186:1396049484424847361> Navegador", value="<:verify:1396087763388072006> Activo y visible", inline=True)
-                        success_embed.add_field(name="<:1000182752:1396420559478947844> Cookie", value="<:verify:1396087763388072006> Aplicada correctamente", inline=True)
+                        success_embed.add_field(name="🍪 Cookie", value="<:verify:1396087763388072006> Aplicada correctamente", inline=True)
                         success_embed.add_field(name="<:1000182184:1396049490863218698> Chat", value="<:verify:1396087763388072006> Click exitoso", inline=True)
                         success_embed.add_field(
                             name="<:1000182750:1396420537227411587> Información",
