@@ -413,7 +413,7 @@ def setup_commands(bot):
                 progress_embed.add_field(name="🍪 Cookie", value="✅ Aplicada", inline=True)
                 progress_embed.add_field(name="🎯 Chat", value="🔄 Buscando...", inline=True)
 
-                await discord_message.edit(progress_embed)
+                await discord_message.edit(embed=progress_embed)
 
                 # Navegar a la página principal de Roblox
                 driver.get("https://www.roblox.com/home")
