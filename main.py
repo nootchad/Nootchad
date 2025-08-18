@@ -2623,46 +2623,34 @@ class VIPServerScraper:
             return False
 
     def create_driver(self):
-        """Create Chrome driver with Replit-compatible configuration and NopeCHA extension"""
+        """Create Chrome driver with Replit-compatible configuration (headless only)"""
         try:
-            logger.info("🚀 Creating Chrome driver for Replit with NopeCHA extension...")
+            logger.info("🚀 Creating Chrome driver for Replit in headless mode...")
 
             chrome_options = Options()
             chrome_options.add_argument("--headless")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
-            # NO deshabilitar extensiones ya que necesitamos NopeCHA
-            # chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-extensions")
             chrome_options.add_argument("--disable-web-security")
             chrome_options.add_argument("--disable-features=VizDisplayCompositor")
             chrome_options.add_argument("--disable-logging")
             chrome_options.add_argument("--window-size=1920,1080")
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-            chrome_options.add_argument("--remote-debugging-port=9222")
             chrome_options.add_argument("--disable-background-timer-throttling")
             chrome_options.add_argument("--disable-backgrounding-occluded-windows")
             chrome_options.add_argument("--disable-renderer-backgrounding")
             
-            # Cargar extensión NopeCHA desde la carpeta Recordings
-            nopecha_extension_path = os.path.abspath("./Recordings")
-            if os.path.exists(nopecha_extension_path):
-                chrome_options.add_argument(f"--load-extension={nopecha_extension_path}")
-                # Permitir extensiones no empaquetadas y deshabilitar algunas protecciones
-                chrome_options.add_argument("--disable-extensions-except=" + nopecha_extension_path)
-                chrome_options.add_argument("--enable-automation")
-                chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-                logger.info(f"✅ NopeCHA extension loaded from: {nopecha_extension_path}")
-            else:
-                logger.warning("⚠️ NopeCHA extension directory not found, continuing without extension")
+            
 
             # Disable images for faster loading but enable cookies for Roblox
             prefs = {
                 "profile.managed_default_content_settings.images": 2,
                 "profile.default_content_setting_values.notifications": 2,
                 "profile.managed_default_content_settings.stylesheets": 2,
-                "profile.managed_default_content_settings.cookies": 1,  # HABILITADO: Permitir cookies
+                "profile.managed_default_content_settings.cookies": 1,
                 "profile.managed_default_content_settings.javascript": 1,
                 "profile.managed_default_content_settings.plugins": 2,
                 "profile.managed_default_content_settings.popups": 2,
@@ -2740,10 +2728,7 @@ class VIPServerScraper:
             else:
                 logger.warning("⚠️ No se pudieron aplicar cookies de Roblox - verificar alt.txt")
 
-            # Configurar NopeCHA si está disponible
-            self.configure_nopecha_extension(driver)
-
-            logger.info("✅ Chrome driver created successfully")
+            logger.info("✅ Chrome driver created successfully (headless mode)")
             return driver
 
         except Exception as e:
