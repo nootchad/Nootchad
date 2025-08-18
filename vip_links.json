@@ -1,15 +1,16 @@
 {
   "scraping_stats": {
-    "total_scraped": 1232,
-    "successful_extractions": 1020,
+    "total_scraped": 1244,
+    "successful_extractions": 1032,
     "failed_extractions": 212,
-    "last_scrape_time": "2025-08-15T00:37:05.750834",
-    "scrape_duration": 127.82,
-    "servers_per_minute": 2.3
+    "last_scrape_time": "2025-08-16T23:58:49.123287",
+    "scrape_duration": 73.9,
+    "servers_per_minute": 1.6
   },
   "game_categories": {
-    "2753915549": "other"
+    "2753915549": "other",
+    "9224601490": "action"
   },
-  "last_updated": "2025-08-15T00:37:05.752672",
+  "last_updated": "2025-08-16T23:58:49.125640",
   "note": "This file now only contains general stats and categories. User data is in user_game_servers.json"
 }
