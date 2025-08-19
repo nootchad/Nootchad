@@ -57,8 +57,14 @@ def create_roblox_driver():
         logger.info("🚀 Creando driver de Chrome para Roblox (VNC headless false)...")
 
         chrome_options = Options()
-        # NO usar headless - queremos que sea visible para VNC
-        # chrome_options.add_argument("--headless")
+        # NOTA: Este comando requiere modo visible y no funcionará en hosting web sin VNC
+        # Para hosting web, usar modo headless:
+        import os
+        force_headless = os.getenv('FORCE_HEADLESS', 'false').lower() == 'true'
+        
+        if force_headless:
+            chrome_options.add_argument("--headless=new")
+            logger.info("🔧 Modo headless forzado por variable FORCE_HEADLESS")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")

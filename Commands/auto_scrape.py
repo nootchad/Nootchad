@@ -400,7 +400,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
         }
 
 async def scrape_vip_links_optimized(game_id, user_id):
-    """Optimized scraping function for auto_scrape"""
+    """Optimized scraping function for auto_scrape - SIEMPRE headless para hosting web"""
     from main import scraper
 
     # Set user ID
@@ -411,10 +411,10 @@ async def scrape_vip_links_optimized(game_id, user_id):
 
     # Limit to 3 servers para auto_scrape (más rápido)
     server_links = server_links[:3]
-    logger.info(f"🎯 Processing {len(server_links)} server links (limited to 3 for auto_scrape)...")
+    logger.info(f"🎯 Processing {len(server_links)} server links (limited to 3 for auto_scrape - HEADLESS MODE)...")
 
-    # Initialize WebDriver (keep this outside the loop if possible for efficiency)
-    driver = scraper.get_driver()
+    # Initialize WebDriver con configuración headless forzada
+    driver = scraper.get_driver_headless_forced()  # Usar método específico para headless
 
     extracted_count = 0
 
@@ -429,7 +429,7 @@ async def scrape_vip_links_optimized(game_id, user_id):
 
     # Close the WebDriver after processing all links
     scraper.close_driver(driver)
-    logger.info(f"✅ Extracted {extracted_count} VIP links")
+    logger.info(f"✅ Extracted {extracted_count} VIP links (HEADLESS MODE)")
     return extracted_count
 
 def get_user_existing_servers(user_id: str) -> list:
