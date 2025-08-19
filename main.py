@@ -17,7 +17,9 @@ import json
 
 import discord
 from discord.ext import commands
-
+# env
+from dotenv import load_dotenv
+load_dotenv()
 # Import new systems
 from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
