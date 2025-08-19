@@ -54,6 +54,15 @@ discord_logger.setLevel(logging.INFO)
 user_logger = logging.getLogger('user_interactions')
 user_logger.setLevel(logging.INFO)
 
+#verificar token
+BOT_TOKEN = os .getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    logger.error("no hay token")
+    logger.error("agrega el token en el archivo .env")
+    exit(1)
+else:
+    logger.info("token cargado correctamente:{BOT_TOKEN[:10]}..."))
+
 # Roblox verification settings
 ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
 FOLLOWERS_FILE = "followers.json"
