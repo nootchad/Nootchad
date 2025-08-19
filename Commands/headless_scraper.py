@@ -1,4 +1,3 @@
-
 """
 Comando de scraping headless optimizado para hosting web
 Alternativa a /scrape que funciona sin VNC usando solo modo headless
@@ -26,7 +25,7 @@ def setup_commands(bot):
     ):
         """
         Comando de scraping headless optimizado para hosting web
-        
+
         Args:
             juego: Nombre o ID del juego de Roblox
             cantidad: Cantidad de servidores a obtener (1-5, default: 3)
@@ -41,7 +40,7 @@ def setup_commands(bot):
 
         # Verificar autenticación usando el sistema correcto
         user_id = str(interaction.user.id)
-        
+
         # Verificar si está baneado
         if roblox_verification.is_user_banned(user_id):
             embed = discord.Embed(
@@ -51,7 +50,7 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
-        
+
         # Verificar si está verificado
         if not roblox_verification.is_user_verified(user_id):
             embed = discord.Embed(
@@ -208,7 +207,7 @@ def setup_commands(bot):
 
         except Exception as e:
             logger.error(f"❌ Error en comando headscrape para {username}: {e}")
-            
+
             error_embed = discord.Embed(
                 title="❌ Error en Headless Scrape",
                 description="Ocurrió un error durante el scraping headless.",
@@ -219,7 +218,7 @@ def setup_commands(bot):
                 value="• Intenta nuevamente en unos minutos\n• Usa `/scrape` como alternativa\n• Reporta si el problema persiste",
                 inline=False
             )
-            
+
             try:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
             except:
@@ -230,9 +229,9 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
     Ejecutar scraping completamente en modo headless
     """
     from main import scraper
-    
+
     start_time = time.time()
-    
+
     try:
         logger.info(f"🚀 Iniciando headless scraping para usuario {user_id}: {target_amount} servidores de juego {game_id}")
 
@@ -248,15 +247,23 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
         progress_embed.add_field(name="🎯 Juego", value=f"```{game_name}```", inline=True)
         progress_embed.add_field(name="⚡ Modo", value="```Headless```", inline=True)
         progress_embed.add_field(name="📊 Estado", value="```Buscando servidores...```", inline=True)
-        
+
         try:
             await message.edit(embed=progress_embed)
-        except:
-            pass
+        except discord.NotFound:
+            logger.warning("⚠️ Mensaje expirado durante scraping")
+            return {
+                'success': False,
+                'error': 'Mensaje de Discord expirado durante el proceso',
+                'servers': [],
+                'duration': time.time() - start_time
+            }
+        except Exception as edit_error:
+            logger.debug(f"Error actualizando mensaje: {edit_error}")
 
         # Crear driver headless
         driver = scraper.create_driver()
-        
+
         if not driver:
             return {
                 'success': False,
@@ -268,7 +275,7 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
         try:
             # Obtener enlaces de servidores con timeout reducido
             server_links = scraper.get_server_links(driver, game_id)
-            
+
             if not server_links:
                 return {
                     'success': False,
@@ -279,17 +286,24 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
 
             # Limitar cantidad de servidores a procesar
             server_links = server_links[:min(target_amount + 2, 7)]  # Procesar algunos extra por si fallan
-            
+
             logger.info(f"📊 Procesando {len(server_links)} enlaces de servidores en modo headless")
 
             # Actualizar progreso: Extrayendo VIP links
-            progress_embed.set_field_at(2, name="📊 Estado", value="```Extrayendo VIP links...```", inline=True)
             progress_embed.description = f"**Paso 2/3:** Extrayendo VIP links de {len(server_links)} servidores"
-            
             try:
                 await message.edit(embed=progress_embed)
-            except:
-                pass
+            except discord.NotFound:
+                logger.warning("⚠️ Mensaje expirado durante scraping")
+                return {
+                    'success': False,
+                    'error': 'Mensaje de Discord expirado durante el proceso',
+                    'servers': [],
+                    'duration': time.time() - start_time
+                }
+            except Exception as edit_error:
+                logger.debug(f"Error actualizando mensaje: {edit_error}")
+
 
             extracted_links = []
             processed_count = 0
@@ -298,11 +312,11 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
             for server_url in server_links:
                 if len(extracted_links) >= target_amount:
                     break
-                    
+
                 try:
                     # Timeout reducido para headless
                     vip_link = scraper.extract_vip_link(driver, server_url, game_id)
-                    
+
                     if vip_link and vip_link not in extracted_links:
                         extracted_links.append(vip_link)
                         logger.info(f"✅ VIP link extraído: {len(extracted_links)}/{target_amount}")
@@ -314,8 +328,17 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
                         progress_embed.description = f"**Paso 2/3:** Procesados {processed_count}/{len(server_links)} servidores - Encontrados {len(extracted_links)}"
                         try:
                             await message.edit(embed=progress_embed)
-                        except:
-                            pass
+                        except discord.NotFound:
+                            logger.warning("⚠️ Mensaje expirado durante scraping")
+                            return {
+                                'success': False,
+                                'error': 'Mensaje de Discord expirado durante el proceso',
+                                'servers': [],
+                                'duration': time.time() - start_time
+                            }
+                        except Exception as edit_error:
+                            logger.debug(f"Error actualizando mensaje: {edit_error}")
+
 
                     # Pausa mínima entre requests
                     await asyncio.sleep(0.5)
@@ -334,21 +357,30 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
         # Actualizar progreso: Guardando resultados
         progress_embed.description = f"**Paso 3/3:** Guardando {len(extracted_links)} servidores VIP"
         progress_embed.set_field_at(2, name="📊 Estado", value="```Guardando...```", inline=True)
-        
+
         try:
             await message.edit(embed=progress_embed)
-        except:
-            pass
+        except discord.NotFound:
+            logger.warning("⚠️ Mensaje expirado durante scraping")
+            return {
+                'success': False,
+                'error': 'Mensaje de Discord expirado durante el proceso',
+                'servers': [],
+                'duration': time.time() - start_time
+            }
+        except Exception as edit_error:
+            logger.debug(f"Error actualizando mensaje: {edit_error}")
+
 
         # Guardar servidores si se encontraron
         if extracted_links:
             save_success = scraper.save_servers_directly_to_new_format(user_id, extracted_links)
-            
+
             if not save_success:
                 logger.warning(f"⚠️ No se pudieron guardar los servidores para usuario {user_id}")
 
         total_duration = time.time() - start_time
-        
+
         logger.info(f"✅ Headless scraping completado: {len(extracted_links)} servidores en {total_duration:.1f}s")
 
         return {
