@@ -35,7 +35,7 @@ def setup_commands(bot):
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
 
         # Importar módulos necesarios desde main.py
-        from main import check_verification, scraper, search_game_by_name
+        from main import check_verification, scraper
 
         # Verificar autenticación
         if not await check_verification(interaction, defer_response=True):
@@ -76,7 +76,8 @@ def setup_commands(bot):
                 game_id = juego
                 game_name = f"Juego ID {game_id}"
             else:
-                search_results = search_game_by_name(juego)
+                # Usar la función de búsqueda del scraper
+                search_results = await scraper.search_game_by_name(juego)
                 if not search_results:
                     embed = discord.Embed(
                         title="❌ Juego No Encontrado",
@@ -227,33 +228,8 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
         except:
             pass
 
-        # Obtener enlaces de servidores con timeout reducido
-        server_links = scraper.get_server_links(game_id)
-        
-        if not server_links:
-            return {
-                'success': False,
-                'error': f'No se encontraron servidores para el juego {game_name}',
-                'servers': [],
-                'duration': time.time() - start_time
-            }
-
-        # Limitar cantidad de servidores a procesar
-        server_links = server_links[:min(target_amount + 2, 7)]  # Procesar algunos extra por si fallan
-        
-        logger.info(f"📊 Procesando {len(server_links)} enlaces de servidores en modo headless")
-
-        # Actualizar progreso: Extrayendo VIP links
-        progress_embed.set_field_at(2, name="📊 Estado", value="```Extrayendo VIP links...```", inline=True)
-        progress_embed.description = f"**Paso 2/3:** Extrayendo VIP links de {len(server_links)} servidores"
-        
-        try:
-            await message.edit(embed=progress_embed)
-        except:
-            pass
-
-        # Inicializar WebDriver en modo headless forzado
-        driver = scraper.get_driver_headless_forced()
+        # Crear driver headless
+        driver = scraper.create_driver()
         
         if not driver:
             return {
@@ -263,44 +239,71 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
                 'duration': time.time() - start_time
             }
 
-        extracted_links = []
-        processed_count = 0
-
-        # Procesar enlaces con timeout reducido
-        for server_url in server_links:
-            if len(extracted_links) >= target_amount:
-                break
-                
-            try:
-                # Timeout reducido para headless
-                vip_link = scraper.extract_vip_link_headless_optimized(driver, server_url, game_id)
-                
-                if vip_link and vip_link not in extracted_links:
-                    extracted_links.append(vip_link)
-                    logger.info(f"✅ VIP link extraído: {len(extracted_links)}/{target_amount}")
-
-                processed_count += 1
-
-                # Actualizar progreso cada 2 servidores
-                if processed_count % 2 == 0:
-                    progress_embed.description = f"**Paso 2/3:** Procesados {processed_count}/{len(server_links)} servidores - Encontrados {len(extracted_links)}"
-                    try:
-                        await message.edit(embed=progress_embed)
-                    except:
-                        pass
-
-                # Pausa mínima entre requests
-                await asyncio.sleep(0.5)
-
-            except Exception as e:
-                logger.warning(f"⚠️ Error procesando servidor {server_url}: {e}")
-                continue
-
-        # Cerrar driver
         try:
-            scraper.close_driver(driver)
-        except:
-            pass
+            # Obtener enlaces de servidores con timeout reducido
+            server_links = scraper.get_server_links(driver, game_id)
+            
+            if not server_links:
+                return {
+                    'success': False,
+                    'error': f'No se encontraron servidores para el juego {game_name}',
+                    'servers': [],
+                    'duration': time.time() - start_time
+                }
+
+            # Limitar cantidad de servidores a procesar
+            server_links = server_links[:min(target_amount + 2, 7)]  # Procesar algunos extra por si fallan
+            
+            logger.info(f"📊 Procesando {len(server_links)} enlaces de servidores en modo headless")
+
+            # Actualizar progreso: Extrayendo VIP links
+            progress_embed.set_field_at(2, name="📊 Estado", value="```Extrayendo VIP links...```", inline=True)
+            progress_embed.description = f"**Paso 2/3:** Extrayendo VIP links de {len(server_links)} servidores"
+            
+            try:
+                await message.edit(embed=progress_embed)
+            except:
+                pass
+
+            extracted_links = []
+            processed_count = 0
+
+            # Procesar enlaces con timeout reducido
+            for server_url in server_links:
+                if len(extracted_links) >= target_amount:
+                    break
+                    
+                try:
+                    # Timeout reducido para headless
+                    vip_link = scraper.extract_vip_link(driver, server_url, game_id)
+                    
+                    if vip_link and vip_link not in extracted_links:
+                        extracted_links.append(vip_link)
+                        logger.info(f"✅ VIP link extraído: {len(extracted_links)}/{target_amount}")
+
+                    processed_count += 1
+
+                    # Actualizar progreso cada 2 servidores
+                    if processed_count % 2 == 0:
+                        progress_embed.description = f"**Paso 2/3:** Procesados {processed_count}/{len(server_links)} servidores - Encontrados {len(extracted_links)}"
+                        try:
+                            await message.edit(embed=progress_embed)
+                        except:
+                            pass
+
+                    # Pausa mínima entre requests
+                    await asyncio.sleep(0.5)
+
+                except Exception as e:
+                    logger.warning(f"⚠️ Error procesando servidor {server_url}: {e}")
+                    continue
+
+        finally:
+            # Cerrar driver
+            try:
+                driver.quit()
+            except:
+                pass
 
         # Actualizar progreso: Guardando resultados
         progress_embed.description = f"**Paso 3/3:** Guardando {len(extracted_links)} servidores VIP"
