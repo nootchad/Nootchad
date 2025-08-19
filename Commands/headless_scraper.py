@@ -34,11 +34,37 @@ def setup_commands(bot):
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
 
-        # Importar módulos necesarios desde main.py
-        from main import check_verification, scraper
+        # Obtener referencias globales desde el bot
+        import main
+        scraper = main.scraper
+        roblox_verification = main.roblox_verification
 
-        # Verificar autenticación
-        if not await check_verification(interaction, defer_response=True):
+        # Verificar autenticación usando el sistema correcto
+        user_id = str(interaction.user.id)
+        
+        # Verificar si está baneado
+        if roblox_verification.is_user_banned(user_id):
+            embed = discord.Embed(
+                title="🚫 Usuario Baneado",
+                description="Estás baneado y no puedes usar comandos del bot.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+        
+        # Verificar si está verificado
+        if not roblox_verification.is_user_verified(user_id):
+            embed = discord.Embed(
+                title="🔒 Verificación Requerida",
+                description="Debes verificarte para usar este comando.",
+                color=0xffaa00
+            )
+            embed.add_field(
+                name="📝 Cómo verificarse:",
+                value="Usa `/verify [tu_nombre_roblox]` para verificarte",
+                inline=False
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
         try:
