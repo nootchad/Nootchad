@@ -13709,7 +13709,7 @@ async def main():
     logger.info("🚀 Starting VIP Server Scraper Bot...")
 
     # Start the bot
-    discord_token = os.getenv('DISCORD_TOKEN')
+    discord_token = os.getenv('BOT_TOKEN')
     if not discord_token:
         logger.error("❌ DISCORD_TOKEN not found in environment variables")
         return
