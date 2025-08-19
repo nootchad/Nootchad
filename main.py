@@ -55,13 +55,21 @@ user_logger = logging.getLogger('user_interactions')
 user_logger.setLevel(logging.INFO)
 
 #verificar token
-BOT_TOKEN = os .getenv('BOT_TOKEN')
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
-    logger.error("no hay token")
-    logger.error("agrega el token en el archivo .env")
+    logger.error("❌ BOT_TOKEN no encontrado en variables de entorno")
+    logger.error("💡 Asegúrate de configurar BOT_TOKEN en las variables de entorno")
+    logger.error("🔧 Puedes configurarlo en el panel de Replit o en un archivo .env")
     exit(1)
-else:
-    logger.info(f"token cargado correctamente: {BOT_TOKEN[:10]}...")
+
+# Validar que el token tenga el formato correcto
+if not BOT_TOKEN.startswith(('MTM4', 'MTE', 'MTI', 'MTQ', 'MTO', 'MTA')):
+    logger.error("❌ El token no parece válido (no tiene el formato correcto de Discord)")
+    logger.error(f"🔍 Token encontrado: {BOT_TOKEN[:20]}...")
+    logger.error("💡 Verifica que copiaste el token completo desde Discord Developer Portal")
+    exit(1)
+
+logger.info(f"✅ Token cargado correctamente: {BOT_TOKEN[:10]}...")
 
 # Roblox verification settings
 ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
