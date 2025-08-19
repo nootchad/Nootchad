@@ -33,13 +33,13 @@ def setup_commands(bot):
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
 
+        # Defer la respuesta inmediatamente para evitar timeouts
+        await interaction.response.defer(ephemeral=True)
+
         # Obtener referencias globales desde el bot
         import main
         scraper = main.scraper
         roblox_verification = main.roblox_verification
-
-        # Verificar autenticación usando el sistema correcto
-        user_id = str(interaction.user.id)
 
         # Verificar si está baneado
         if roblox_verification.is_user_banned(user_id):
@@ -250,16 +250,9 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
 
         try:
             await message.edit(embed=progress_embed)
-        except discord.NotFound:
-            logger.warning("⚠️ Mensaje expirado durante scraping")
-            return {
-                'success': False,
-                'error': 'Mensaje de Discord expirado durante el proceso',
-                'servers': [],
-                'duration': time.time() - start_time
-            }
         except Exception as edit_error:
-            logger.debug(f"Error actualizando mensaje: {edit_error}")
+            logger.debug(f"Error actualizando mensaje (ignorado): {edit_error}")
+            # Continuar sin actualizar mensaje
 
         # Crear driver headless
         driver = scraper.create_driver()
@@ -293,16 +286,9 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
             progress_embed.description = f"**Paso 2/3:** Extrayendo VIP links de {len(server_links)} servidores"
             try:
                 await message.edit(embed=progress_embed)
-            except discord.NotFound:
-                logger.warning("⚠️ Mensaje expirado durante scraping")
-                return {
-                    'success': False,
-                    'error': 'Mensaje de Discord expirado durante el proceso',
-                    'servers': [],
-                    'duration': time.time() - start_time
-                }
             except Exception as edit_error:
-                logger.debug(f"Error actualizando mensaje: {edit_error}")
+                logger.debug(f"Error actualizando mensaje (ignorado): {edit_error}")
+                # Continuar sin actualizar mensaje
 
 
             extracted_links = []
@@ -328,16 +314,9 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
                         progress_embed.description = f"**Paso 2/3:** Procesados {processed_count}/{len(server_links)} servidores - Encontrados {len(extracted_links)}"
                         try:
                             await message.edit(embed=progress_embed)
-                        except discord.NotFound:
-                            logger.warning("⚠️ Mensaje expirado durante scraping")
-                            return {
-                                'success': False,
-                                'error': 'Mensaje de Discord expirado durante el proceso',
-                                'servers': [],
-                                'duration': time.time() - start_time
-                            }
                         except Exception as edit_error:
-                            logger.debug(f"Error actualizando mensaje: {edit_error}")
+                            logger.debug(f"Error actualizando mensaje (ignorado): {edit_error}")
+                            # Continuar sin actualizar mensaje
 
 
                     # Pausa mínima entre requests
@@ -360,16 +339,9 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
 
         try:
             await message.edit(embed=progress_embed)
-        except discord.NotFound:
-            logger.warning("⚠️ Mensaje expirado durante scraping")
-            return {
-                'success': False,
-                'error': 'Mensaje de Discord expirado durante el proceso',
-                'servers': [],
-                'duration': time.time() - start_time
-            }
         except Exception as edit_error:
-            logger.debug(f"Error actualizando mensaje: {edit_error}")
+            logger.debug(f"Error actualizando mensaje final (ignorado): {edit_error}")
+            # Continuar sin actualizar mensaje
 
 
         # Guardar servidores si se encontraron
