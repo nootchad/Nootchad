@@ -54,12 +54,12 @@ discord_logger.setLevel(logging.INFO)
 user_logger = logging.getLogger('user_interactions')
 user_logger.setLevel(logging.INFO)
 
-#verificar token
+# Verificar token - solo cargar desde .env
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
-    logger.error("❌ BOT_TOKEN no encontrado en variables de entorno")
-    logger.error("💡 Asegúrate de configurar BOT_TOKEN en las variables de entorno")
-    logger.error("🔧 Puedes configurarlo en el panel de Replit o en un archivo .env")
+    logger.error("❌ BOT_TOKEN no encontrado en archivo .env")
+    logger.error("💡 Asegúrate de tener un archivo .env con BOT_TOKEN=tu_token_aqui")
+    logger.error("🔧 El archivo .env debe estar en la raíz del proyecto")
     exit(1)
 
 # Validar que el token tenga el formato correcto
