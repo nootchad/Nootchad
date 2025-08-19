@@ -254,8 +254,8 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
             logger.debug(f"Error actualizando mensaje (ignorado): {edit_error}")
             # Continuar sin actualizar mensaje
 
-        # Crear driver headless
-        driver = scraper.create_driver()
+        # Crear driver completamente headless sin VNC
+        driver = create_headless_driver()
 
         if not driver:
             return {
@@ -266,8 +266,8 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
             }
 
         try:
-            # Obtener enlaces de servidores con timeout reducido
-            server_links = scraper.get_server_links(driver, game_id)
+            # Obtener enlaces de servidores con método headless puro
+            server_links = get_server_links_headless(driver, game_id)
 
             if not server_links:
                 return {
@@ -300,8 +300,8 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
                     break
 
                 try:
-                    # Timeout reducido para headless
-                    vip_link = scraper.extract_vip_link(driver, server_url, game_id)
+                    # Extracción VIP headless pura
+                    vip_link = extract_vip_link_headless(driver, server_url, game_id)
 
                     if vip_link and vip_link not in extracted_links:
                         extracted_links.append(vip_link)
@@ -370,6 +370,189 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
             'servers': [],
             'duration': time.time() - start_time
         }
+
+def get_server_links_headless(driver, game_id, max_retries=2):
+    """Obtener enlaces de servidores en modo headless puro"""
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.common.exceptions import TimeoutException, WebDriverException
+    
+    url = f"https://rbxservers.xyz/games/{game_id}"
+    
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"🔍 Obteniendo enlaces de servidores headless (intento {attempt + 1}/{max_retries})")
+            
+            driver.get(url)
+            
+            # Wait reducido para hosting web
+            wait = WebDriverWait(driver, 10)  # Reducido de 20 a 10
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href^='/servers/']")))
+            
+            server_elements = driver.find_elements(By.CSS_SELECTOR, "a[href^='/servers/']")
+            server_links = []
+            
+            for el in server_elements:
+                link = el.get_attribute("href")
+                if link and link not in server_links:
+                    server_links.append(link)
+            
+            logger.info(f"✅ Encontrados {len(server_links)} enlaces de servidores (headless)")
+            return server_links
+            
+        except TimeoutException:
+            logger.warning(f"⏰ Timeout headless en intento {attempt + 1}")
+            if attempt == max_retries - 1:
+                logger.error("❌ Todos los intentos headless fallaron")
+                return []
+            await asyncio.sleep(2)
+        except WebDriverException as e:
+            logger.error(f"🚫 Error WebDriver headless en intento {attempt + 1}: {e}")
+            if attempt == max_retries - 1:
+                return []
+            await asyncio.sleep(2)
+    
+    return []
+
+def extract_vip_link_headless(driver, server_url, game_id):
+    """Extraer VIP link en modo headless puro"""
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.common.exceptions import TimeoutException
+    
+    try:
+        driver.get(server_url)
+        
+        # Wait reducido para hosting web
+        wait = WebDriverWait(driver, 10)  # Reducido de 15 a 10
+        vip_input = wait.until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//input[@type='text' and contains(@value, 'https://')]")
+            )
+        )
+        
+        vip_link = vip_input.get_attribute("value")
+        if vip_link and vip_link.startswith("https://"):
+            logger.debug(f"✅ VIP link extraído headless: {vip_link[:50]}...")
+            return vip_link
+            
+    except TimeoutException:
+        logger.debug(f"⏰ No VIP link encontrado headless en {server_url}")
+    except Exception as e:
+        logger.debug(f"❌ Error extrayendo VIP link headless: {e}")
+    
+    return None
+
+def create_headless_driver():
+    """Crear driver Chrome completamente headless para hosting web sin VNC"""
+    try:
+        from selenium import webdriver
+        from selenium.webdriver.chrome.options import Options
+        from selenium.webdriver.chrome.service import Service
+        from pathlib import Path
+        
+        logger.info("🚀 Creando driver Chrome headless puro (sin VNC)")
+        
+        chrome_options = Options()
+        
+        # CONFIGURACIÓN HEADLESS FORZADA (sin VNC)
+        chrome_options.add_argument("--headless=new")  # Nuevo modo headless
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-web-security")
+        chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+        chrome_options.add_argument("--disable-logging")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        chrome_options.add_argument("--disable-background-timer-throttling")
+        chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+        chrome_options.add_argument("--disable-renderer-backgrounding")
+        chrome_options.add_argument("--virtual-time-budget=5000")  # Optimización para headless
+        chrome_options.add_argument("--disable-ipc-flooding-protection")
+        
+        # Configuración adicional para hosting web
+        chrome_options.add_argument("--no-first-run")
+        chrome_options.add_argument("--no-default-browser-check")
+        chrome_options.add_argument("--disable-default-apps")
+        chrome_options.add_argument("--disable-popup-blocking")
+        chrome_options.add_argument("--disable-translate")
+        chrome_options.add_argument("--disable-background-networking")
+        
+        # Deshabilitar imágenes para velocidad
+        prefs = {
+            "profile.managed_default_content_settings.images": 2,
+            "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.stylesheets": 2,
+            "profile.managed_default_content_settings.cookies": 1,
+            "profile.managed_default_content_settings.javascript": 1,
+            "profile.managed_default_content_settings.plugins": 2,
+            "profile.managed_default_content_settings.popups": 2,
+            "profile.managed_default_content_settings.geolocation": 2,
+            "profile.managed_default_content_settings.media_stream": 2,
+        }
+        chrome_options.add_experimental_option("prefs", prefs)
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        
+        # Buscar binario de Chrome para hosting web
+        possible_chrome_paths = [
+            "/usr/bin/google-chrome-stable",
+            "/usr/bin/google-chrome",
+            "/usr/bin/chromium-browser", 
+            "/usr/bin/chromium",
+            "/snap/bin/chromium",
+            "/opt/google/chrome/chrome"
+        ]
+        
+        chrome_binary = None
+        for path in possible_chrome_paths:
+            if Path(path).exists():
+                chrome_binary = path
+                break
+        
+        if chrome_binary:
+            chrome_options.binary_location = chrome_binary
+            logger.info(f"🔧 Usando Chrome binary: {chrome_binary}")
+        
+        # Crear driver con configuración mínima y robusta
+        try:
+            # Intento 1: Driver básico
+            driver = webdriver.Chrome(options=chrome_options)
+            logger.info("✅ Driver headless creado exitosamente")
+        except Exception as e:
+            logger.warning(f"⚠️ Intento básico falló: {e}")
+            
+            # Intento 2: Configuración ultra-mínima
+            minimal_options = Options()
+            minimal_options.add_argument("--headless=new")
+            minimal_options.add_argument("--no-sandbox")
+            minimal_options.add_argument("--disable-dev-shm-usage")
+            minimal_options.add_argument("--disable-gpu")
+            
+            driver = webdriver.Chrome(options=minimal_options)
+            logger.info("✅ Driver headless creado con configuración mínima")
+        
+        # Configuración de timeouts optimizada para hosting web
+        driver.set_page_load_timeout(20)  # Reducido de 30 a 20
+        driver.implicitly_wait(5)  # Reducido de 10 a 5
+        
+        # Ocultar propiedades de webdriver
+        try:
+            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        except Exception as e:
+            logger.debug(f"No se pudo ocultar webdriver property: {e}")
+        
+        logger.info("✅ Driver Chrome headless puro listo (sin VNC)")
+        return driver
+        
+    except Exception as e:
+        logger.error(f"❌ Error creando driver headless: {e}")
+        raise Exception(f"Falló la creación del driver headless: {e}")
 
 def cleanup_commands(bot):
     """Función de limpieza opcional"""
