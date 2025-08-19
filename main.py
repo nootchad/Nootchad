@@ -19,7 +19,7 @@ import discord
 from discord.ext import commands
 # env
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv()  # Esto carga el archivo .env
 # Import new systems
 from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
@@ -61,7 +61,7 @@ if not BOT_TOKEN:
     logger.error("agrega el token en el archivo .env")
     exit(1)
 else:
-    logger.info("token cargado correctamente:{BOT_TOKEN[:10]}..."))
+    logger.info(f"token cargado correctamente: {BOT_TOKEN[:10]}...")
 
 # Roblox verification settings
 ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
