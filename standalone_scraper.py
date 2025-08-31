@@ -144,10 +144,10 @@ class StandaloneScraper:
         except Exception as e:
             logger.error(f"❌ Error guardando cookies: {e}")
 
-    def create_driver(self):
-        """Crear driver de Chrome optimizado para scraping independiente"""
+    def create_driver(self, retry_count: int = 0, max_retries: int = 3):
+        """Crear driver de Chrome optimizado para scraping independiente con reintentos automáticos"""
         try:
-            logger.info("🚀 Creando driver Chrome para scraping independiente...")
+            logger.info(f"Creating Chrome driver for independent scraping... (Attempt {retry_count + 1}/{max_retries + 1})")
             
             chrome_options = Options()
             
@@ -163,6 +163,15 @@ class StandaloneScraper:
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             
+            # Argumentos adicionales para mayor estabilidad
+            chrome_options.add_argument("--disable-background-timer-throttling")
+            chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+            chrome_options.add_argument("--disable-renderer-backgrounding")
+            chrome_options.add_argument("--disable-features=TranslateUI")
+            chrome_options.add_argument("--disable-default-apps")
+            chrome_options.add_argument("--no-first-run")
+            chrome_options.add_argument("--disable-component-update")
+            
             # Configuración para velocidad
             prefs = {
                 "profile.managed_default_content_settings.images": 2,  # Deshabilitar imágenes
@@ -175,17 +184,29 @@ class StandaloneScraper:
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
 
-            # Crear driver
+            # Crear driver con timeout más corto para detectar errores rápido
             driver = webdriver.Chrome(options=chrome_options)
+            
+            # Probar que el driver funciona correctamente
             driver.set_page_load_timeout(30)
             driver.implicitly_wait(10)
             
-            logger.info("✅ Driver Chrome creado exitosamente")
+            # Hacer una prueba rápida navegando a una página simple
+            driver.get("about:blank")
+            
+            logger.info(f"Chrome driver created successfully on attempt {retry_count + 1}")
             return driver
             
-        except Exception as e:
-            logger.error(f"❌ Error creando driver: {e}")
-            raise Exception(f"No se pudo crear el driver de Chrome: {e}")
+        except (WebDriverException, Exception) as e:
+            logger.warning(f"Driver creation failed on attempt {retry_count + 1}: {e}")
+            
+            if retry_count < max_retries:
+                logger.info(f"Retrying driver creation... ({retry_count + 1}/{max_retries})")
+                time.sleep(2)  # Pausa antes del reintento
+                return self.create_driver(retry_count + 1, max_retries)
+            else:
+                logger.error(f"Failed to create driver after {max_retries + 1} attempts")
+                raise Exception(f"Could not create Chrome driver after {max_retries + 1} attempts: {e}")
 
     def load_cookies_to_driver(self, driver):
         """Cargar cookies de Roblox al driver"""
@@ -292,13 +313,13 @@ class StandaloneScraper:
             logger.error(f"❌ Error extrayendo VIP link de {server_url}: {e}")
             return None
 
-    async def scrape_servers(self, target_amount: int = 10) -> List[str]:
-        """Ejecutar scraping completo de servidores"""
+    async def scrape_servers(self, target_amount: int = 10, retry_count: int = 0, max_retries: int = 2) -> List[str]:
+        """Ejecutar scraping completo de servidores con reintentos automáticos"""
         try:
             self.stats['start_time'] = time.time()
-            logger.info(f"🎯 Iniciando scraping independiente para {target_amount} servidores del juego {self.game_id}")
+            logger.info(f"Starting independent scraping for {target_amount} servers of game {self.game_id} (Attempt {retry_count + 1}/{max_retries + 1})")
             
-            # Crear driver
+            # Crear driver con reintentos automáticos
             driver = self.create_driver()
             
             try:
@@ -328,12 +349,28 @@ class StandaloneScraper:
                         processed += 1
                         logger.info(f"🔍 Procesando servidor {processed}/{len(server_links)}")
                         
-                        vip_link = self.extract_vip_link(driver, server_url)
+                        # Intentar extraer VIP link con reintentos para errores de Selenium
+                        vip_link = None
+                        extraction_attempts = 0
+                        max_extraction_attempts = 2
+                        
+                        while extraction_attempts < max_extraction_attempts and not vip_link:
+                            try:
+                                vip_link = self.extract_vip_link(driver, server_url)
+                                if vip_link:
+                                    break
+                            except (WebDriverException, TimeoutException) as selenium_error:
+                                extraction_attempts += 1
+                                if extraction_attempts < max_extraction_attempts:
+                                    logger.warning(f"Selenium error on extraction attempt {extraction_attempts}, retrying...")
+                                    time.sleep(1)
+                                else:
+                                    logger.error(f"Failed to extract after {max_extraction_attempts} attempts: {selenium_error}")
                         
                         if vip_link and vip_link not in extracted_servers:
                             extracted_servers.append(vip_link)
                             self.stats['successful_extractions'] += 1
-                            logger.info(f"✅ Servidor {len(extracted_servers)}/{target_amount} extraído")
+                            logger.info(f"Server {len(extracted_servers)}/{target_amount} extracted")
                         else:
                             self.stats['failed_extractions'] += 1
                             
@@ -358,8 +395,15 @@ class StandaloneScraper:
                 except:
                     pass
                     
-        except Exception as e:
-            logger.error(f"❌ Error crítico en scraping: {e}")
+        except (WebDriverException, Exception) as e:
+            logger.error(f"Critical error in scraping attempt {retry_count + 1}: {e}")
+            
+            # Si es un error de Selenium y aún tenemos reintentos disponibles
+            if retry_count < max_retries and ("selenium" in str(e).lower() or "chrome" in str(e).lower() or "webdriver" in str(e).lower()):
+                logger.info(f"Selenium error detected, retrying... ({retry_count + 1}/{max_retries})")
+                time.sleep(3)  # Pausa antes del reintento
+                return await self.scrape_servers(target_amount, retry_count + 1, max_retries)
+            
             return []
         finally:
             self.stats['end_time'] = time.time()

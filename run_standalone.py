@@ -55,6 +55,12 @@ async def quick_scrape(game_id: str = "109983668079237", amount: int = 10):
             
     except Exception as e:
         logger.error(f"Error in quick scraping: {e}")
+        
+        # Si es error de Selenium, informar sobre reintentos automáticos
+        if "selenium" in str(e).lower() or "chrome" in str(e).lower() or "webdriver" in str(e).lower():
+            print("Selenium error detected - framework has automatic retry system")
+            print("The system will automatically retry up to 3 times")
+        
         return False
 
 if __name__ == "__main__":
