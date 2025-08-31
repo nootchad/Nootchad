@@ -37,10 +37,10 @@ def setup_commands(bot):
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
 
         # Importar módulos necesarios
-        from main import check_verification, scraper, roblox_verification, OWNER_USER_ID, delegated_owners
+        from main import check_verification, scraper, roblox_verification, DISCORD_OWNER_ID, delegated_owners
 
         # Verificar que sea owner
-        if user_id != OWNER_USER_ID and user_id not in delegated_owners:
+        if user_id != DISCORD_OWNER_ID and user_id not in delegated_owners:
             embed = discord.Embed(
                 title="❌ Acceso Denegado",
                 description="Este comando es solo para owners del bot.",
