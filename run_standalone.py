@@ -10,6 +10,22 @@ import sys
 import logging
 from standalone_scraper import StandaloneScraper
 
+# ASCII Header
+print("""
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║    ██╗  ██╗███████╗███████╗██╗███████╗    ███████╗██████╗  █████╗ ██████╗    ║
+║    ██║  ██║██╔════╝██╔════╝██║╚══███╔╝    ██╔════╝██╔══██╗██╔══██╗██╔══██╗   ║
+║    ███████║█████╗  ███████╗██║  ███╔╝     ███████╗██████╔╝███████║██████╔╝   ║
+║    ██╔══██║██╔══╝  ╚════██║██║ ███╔╝      ╚════██║██╔══██╗██╔══██║██╔═══╝    ║
+║    ██║  ██║███████╗███████║██║███████╗    ███████║██║  ██║██║  ██║██║        ║
+║    ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝╚══════╝    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝        ║
+║                                                                              ║
+║           This system was made by hesiz, any similar system is a copy        ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+""")
+
 # Configurar logging simple
 logging.basicConfig(
     level=logging.INFO,
@@ -20,9 +36,9 @@ logger = logging.getLogger(__name__)
 async def quick_scrape(game_id: str = "109983668079237", amount: int = 10):
     """Función rápida para scraping independiente"""
     try:
-        print(f"🚀 Iniciando scraping rápido...")
-        print(f"🎮 Juego: {game_id}")
-        print(f"🎯 Cantidad: {amount} servidores")
+        print(f"Starting quick scraping...")
+        print(f"Game: {game_id}")
+        print(f"Amount: {amount} servers")
         print("-" * 40)
         
         # Crear y ejecutar scraper
@@ -30,15 +46,15 @@ async def quick_scrape(game_id: str = "109983668079237", amount: int = 10):
         success = await scraper.run_full_scraping(amount)
         
         if success:
-            print("✅ Scraping completado exitosamente")
-            print(f"📤 Datos enviados a Vercel API")
+            print("Scraping completed successfully")
+            print(f"Data sent to Vercel API")
             return True
         else:
-            print("❌ Scraping falló")
+            print("Scraping failed")
             return False
             
     except Exception as e:
-        logger.error(f"❌ Error en scraping rápido: {e}")
+        logger.error(f"Error in quick scraping: {e}")
         return False
 
 if __name__ == "__main__":
@@ -53,14 +69,14 @@ if __name__ == "__main__":
         try:
             AMOUNT = int(sys.argv[2])
         except ValueError:
-            print(f"⚠️ Cantidad inválida: {sys.argv[2]}, usando {AMOUNT}")
+            print(f"Invalid amount: {sys.argv[2]}, using {AMOUNT}")
     
     # Ejecutar
     success = asyncio.run(quick_scrape(GAME_ID, AMOUNT))
     
     if success:
-        print("\n🎉 Framework ejecutado exitosamente")
+        print("\nFramework executed successfully")
         sys.exit(0)
     else:
-        print("\n❌ Framework falló")
+        print("\nFramework failed")
         sys.exit(1)
