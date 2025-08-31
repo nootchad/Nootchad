@@ -10,6 +10,7 @@ import asyncio
 import aiohttp
 import json
 import time
+import requests
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ def setup_commands(bot):
         interaction: discord.Interaction,
         cantidad: int,
         game_id: str,
-        api_url: str = "https://example-api.com/receive-servers"
+        api_url: str = "https://v0-discord-bot-api-snowy.vercel.app/api/data"
     ):
         """
         Comando owner para scraping y envío a API externa
@@ -270,40 +271,50 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
         return []
 
 async def send_to_external_api(api_url: str, data: dict):
-    """Enviar datos a API externa"""
+    """Enviar datos a API externa usando requests"""
     try:
+        import requests
+        
         logger.info(f"🌐 Enviando datos a API: {api_url}")
         
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                'Content-Type': 'application/json',
-                'User-Agent': 'RbxServers-OwnerScrape/1.0'
-            }
-            
-            timeout = aiohttp.ClientTimeout(total=30)
-            
-            async with session.post(
-                api_url, 
-                json=data, 
+        # Usar la URL por defecto si no se especifica otra
+        if api_url == "https://example-api.com/receive-servers":
+            api_url = "https://v0-discord-bot-api-snowy.vercel.app/api/data"
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'RbxServers-OwnerScrape/1.0'
+        }
+        
+        # Ejecutar en un hilo separado para evitar bloquear el loop asyncio
+        import asyncio
+        import functools
+        
+        def sync_request():
+            return requests.post(
+                api_url,
+                json=data,
                 headers=headers,
-                timeout=timeout
-            ) as response:
-                
-                response_text = await response.text()
-                
-                if response.status == 200:
-                    try:
-                        response_data = await response.json()
-                    except:
-                        response_data = {"raw_response": response_text}
-                    
-                    logger.info(f"✅ API respondió exitosamente: {response.status}")
-                    return True, response_data
-                else:
-                    logger.error(f"❌ API respondió con error: {response.status} - {response_text}")
-                    return False, {"error": f"HTTP {response.status}", "response": response_text}
+                timeout=30
+            )
+        
+        # Ejecutar la petición síncrona en un executor
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, sync_request)
+        
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+            except:
+                response_data = {"raw_response": response.text}
+            
+            logger.info(f"✅ API respondió exitosamente: {response.status_code}")
+            return True, response_data
+        else:
+            logger.error(f"❌ API respondió con error: {response.status_code} - {response.text}")
+            return False, {"error": f"HTTP {response.status_code}", "response": response.text}
 
-    except asyncio.TimeoutError:
+    except requests.Timeout:
         logger.error(f"❌ Timeout enviando a API: {api_url}")
         return False, {"error": "Timeout", "message": "La API no respondió en 30 segundos"}
     except Exception as e:
