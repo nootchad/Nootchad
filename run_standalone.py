@@ -43,6 +43,10 @@ async def quick_scrape(game_id: str = "109983668079237", amount: int = 10):
         
         # Crear y ejecutar scraper
         scraper = StandaloneScraper(game_id)
+        
+        # Verificar que las cookies se cargaron correctamente
+        print(f"Cookies loaded: {len(scraper.roblox_cookies.get('roblox.com', {}))}")
+        
         success = await scraper.run_full_scraping(amount)
         
         if success:

@@ -90,8 +90,8 @@ class StandaloneScraper:
             with open(cookiesnew_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # Buscar patrones de cookies de Roblox en el contenido
-            cookie_pattern = r'_\|WARNING:.*?\|_([A-Za-z0-9]+\.[A-Za-z0-9\-_]+)'
+            # Buscar patrones de cookies de Roblox con el patrón correcto
+            cookie_pattern = r'_\|WARNING:.*?\|_([A-Z0-9]+\.[A-Za-z0-9\-_]+)'
             import re
             cookie_matches = re.findall(cookie_pattern, content)
 
@@ -161,7 +161,7 @@ class StandaloneScraper:
             
             chrome_options = Options()
             
-            # Configuración headless robusta
+            # Configuración headless robusta para hosting
             chrome_options.add_argument("--headless=new")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
@@ -175,6 +175,9 @@ class StandaloneScraper:
             chrome_options.add_argument("--window-size=1920,1080")
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            chrome_options.add_argument("--remote-debugging-port=9222")
+            chrome_options.add_argument("--disable-features=VizDisplayCompositor,VizServiceDisplay")
+            chrome_options.add_argument("--single-process")
             
             # Argumentos adicionales para estabilidad en entornos de hosting
             chrome_options.add_argument("--disable-background-timer-throttling")
@@ -600,6 +603,14 @@ class StandaloneScraper:
             logger.info(f"🎮 Juego: {self.game_id}")
             logger.info(f"🎯 Meta: {target_servers} servidores")
             logger.info(f"🌐 API destino: {self.api_url}")
+            logger.info(f"🍪 Cookies disponibles: {len(self.roblox_cookies.get('roblox.com', {}))}")
+            
+            # Verificar si las cookies están vacías
+            if not self.roblox_cookies.get('roblox.com'):
+                logger.warning("⚠️ No hay cookies de Roblox cargadas. Intentando extraer de Cookiesnew.md...")
+                extracted = self.extract_cookies_from_cookiesnew()
+                logger.info(f"🍪 Cookies extraídas: {extracted}")
+            
             logger.info("=" * 60)
             
             # Paso 1: Scraping
