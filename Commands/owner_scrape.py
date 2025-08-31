@@ -52,11 +52,11 @@ def setup_commands(bot):
         await interaction.response.defer(ephemeral=True)
 
         try:
-            # Validar parámetros
-            if cantidad <= 0 or cantidad > 50:
+            # Validar parámetros - límite más alto para owner
+            if cantidad <= 0 or cantidad > 100:
                 embed = discord.Embed(
                     title="❌ Cantidad Inválida",
-                    description="La cantidad debe estar entre 1 y 50 servidores.",
+                    description="La cantidad debe estar entre 1 y 100 servidores para comandos de owner.",
                     color=0xff0000
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -218,13 +218,15 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
             # Obtener enlaces de servidores
             server_links = scraper.get_server_links(driver, game_id)
 
-            # Limitar a la cantidad solicitada
-            server_links = server_links[:cantidad * 2]  # Obtener más para compensar fallos
+            # Para owner scrape, obtener más enlaces para compensar fallos
+            # Multiplicar por 3 para tener suficientes enlaces candidatos
+            max_links_to_fetch = min(cantidad * 3, 100)  # Máximo 100 enlaces para evitar sobrecarga
+            server_links = server_links[:max_links_to_fetch]
 
-            logger.info(f"🎯 Procesando {len(server_links)} enlaces de servidores...")
+            logger.info(f"🎯 Procesando hasta {len(server_links)} enlaces de servidores para obtener {cantidad} servidores...")
 
             # Actualizar progreso
-            progress_embed.set_field_at(0, name="📊 Estado", value=f"Procesando {len(server_links)} enlaces...", inline=False)
+            progress_embed.set_field_at(0, name="📊 Estado", value=f"Procesando {len(server_links)} enlaces para obtener {cantidad} servidores...", inline=False)
             try:
                 await message.edit(embed=progress_embed)
             except:
@@ -232,34 +234,45 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
 
             extracted_servers = []
             processed = 0
+            failed_extractions = 0
 
             for server_url in server_links:
                 if len(extracted_servers) >= cantidad:
+                    logger.info(f"✅ Meta alcanzada: {cantidad} servidores extraídos exitosamente")
                     break
 
                 try:
-                    # Extraer enlace VIP
+                    processed += 1
+                    logger.info(f"🔍 Procesando servidor {processed}/{len(server_links)}: {server_url}")
+                    
+                    # Extraer enlace VIP con timeout personalizado para owner
                     vip_link = scraper.extract_vip_link(driver, server_url, game_id)
                     if vip_link:
                         extracted_servers.append(vip_link)
-                        processed += 1
+                        logger.info(f"✅ Servidor {len(extracted_servers)}/{cantidad} extraído exitosamente")
 
-                        # Actualizar progreso cada 5 servidores
-                        if processed % 5 == 0:
+                        # Actualizar progreso cada 3 servidores (más frecuente para owner)
+                        if len(extracted_servers) % 3 == 0 or len(extracted_servers) == cantidad:
                             progress_embed.set_field_at(
                                 0, 
                                 name="📊 Estado", 
-                                value=f"Obtenidos: {len(extracted_servers)}/{cantidad} servidores...", 
+                                value=f"✅ Obtenidos: {len(extracted_servers)}/{cantidad} servidores (Procesados: {processed}/{len(server_links)})", 
                                 inline=False
                             )
                             try:
                                 await message.edit(embed=progress_embed)
                             except:
                                 pass
+                    else:
+                        failed_extractions += 1
+                        logger.warning(f"⚠️ No se pudo extraer VIP link de {server_url}")
 
                 except Exception as e:
+                    failed_extractions += 1
                     logger.error(f"❌ Error procesando {server_url}: {e}")
                     continue
+
+            logger.info(f"📊 Resultados finales: {len(extracted_servers)} servidores extraídos, {failed_extractions} fallos, {processed} procesados total")
 
         finally:
             # Cerrar WebDriver
