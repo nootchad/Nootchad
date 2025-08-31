@@ -1,0 +1,32 @@
+{
+  "game_id": "109983668079237",
+  "scraped_at": "2025-08-31T06:46:05.443933",
+  "total_servers": 15,
+  "servers": [
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=28713337075028208821421579375337",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=86654650600617267720893090425010",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=93583813114399783817798716819672",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=67788018899305570212908604260591",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13324787877248017383790522327607",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=34495877287461803915383649009454",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=23347145741897175945912123845473",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=14631944169476207405692275381791",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=36017335280342209560950966471737",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=79246992599606222262557963970008",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=17977118382692226896716575712324",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=24413794032141868971952412477321",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=84054436811860998524456381570176",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=91870994455856392879771823770565",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=82745320600390466875387061310878"
+  ],
+  "stats": {
+    "start_time": 1756622628.1529207,
+    "end_time": 1756622765.0045073,
+    "total_servers_found": 30,
+    "successful_extractions": 15,
+    "failed_extractions": 0,
+    "api_send_success": true,
+    "duration": 136.8515865802765
+  },
+  "framework": "StandaloneScraper"
+}
