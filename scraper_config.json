@@ -1,0 +1,48 @@
+
+{
+  "framework_config": {
+    "name": "StandaloneScraper",
+    "version": "1.0",
+    "description": "Framework independiente de scraping para RbxServers"
+  },
+  "default_settings": {
+    "game_id": "109983668079237",
+    "target_servers": 15,
+    "max_retry_attempts": 3,
+    "timeout_seconds": 30,
+    "delay_between_extractions": {
+      "min": 1,
+      "max": 3
+    }
+  },
+  "api_settings": {
+    "vercel_api_url": "https://v0-discord-bot-api-snowy.vercel.app/api/data",
+    "timeout": 30,
+    "retry_attempts": 2,
+    "headers": {
+      "Content-Type": "application/json",
+      "User-Agent": "RbxServers-StandaloneScraper/1.0",
+      "X-Framework": "standalone"
+    }
+  },
+  "selenium_config": {
+    "headless": true,
+    "window_size": "1920x1080",
+    "disable_images": true,
+    "disable_extensions": true,
+    "page_load_timeout": 30,
+    "implicit_wait": 10
+  },
+  "logging": {
+    "level": "INFO",
+    "save_to_file": true,
+    "file_name": "standalone_scraper.log",
+    "max_log_files": 5
+  },
+  "cookies": {
+    "source_file": "roblox_cookies.json",
+    "fallback_source": "Cookiesnew.md",
+    "auto_extract": true,
+    "domain": "roblox.com"
+  }
+}
