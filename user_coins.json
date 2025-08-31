@@ -1,16 +1,9 @@
 {
   "user_coins": {
     "916070251895091241": {
-      "balance": 255,
-      "total_earned": 315,
+      "balance": 257,
+      "total_earned": 317,
       "transactions": [
-        {
-          "type": "earn",
-          "amount": 10,
-          "reason": "Usar comando /scripts",
-          "timestamp": "2025-07-09T05:28:10.524440",
-          "balance_after": 135
-        },
         {
           "type": "earn",
           "amount": 5,
@@ -357,6 +350,13 @@
           "reason": "Usar comando /say",
           "timestamp": "2025-08-16T23:59:36.390881",
           "balance_after": 255
+        },
+        {
+          "type": "earn",
+          "amount": 2,
+          "reason": "Usar comando /say",
+          "timestamp": "2025-08-31T05:58:52.405794",
+          "balance_after": 257
         }
       ]
     },
@@ -2290,6 +2290,6 @@
       ]
     }
   },
-  "last_updated": "2025-08-16T23:59:36.390905",
+  "last_updated": "2025-08-31T05:58:52.405809",
   "total_users": 60
 }
