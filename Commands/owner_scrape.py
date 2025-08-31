@@ -207,8 +207,12 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
         temp_user_id = "owner_scrape_temp"
         scraper.current_user_id = temp_user_id
 
-        # Obtener enlaces de servidores
-        server_links = scraper.get_server_links(game_id)
+        # Inicializar WebDriver
+        driver = scraper.create_driver()
+        
+        try:
+            # Obtener enlaces de servidores
+            server_links = scraper.get_server_links(driver, game_id)
         
         # Limitar a la cantidad solicitada
         server_links = server_links[:cantidad * 2]  # Obtener más para compensar fallos
@@ -222,42 +226,41 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
         except:
             pass
 
-        # Inicializar WebDriver
-        driver = scraper.get_driver_headless_forced()
-        
         extracted_servers = []
-        processed = 0
+            processed = 0
 
-        for server_url in server_links:
-            if len(extracted_servers) >= cantidad:
-                break
-                
-            try:
-                # Extraer enlace VIP
-                vip_link = scraper.extract_vip_link(driver, server_url, game_id)
-                if vip_link:
-                    extracted_servers.append(vip_link)
-                    processed += 1
+            for server_url in server_links:
+                if len(extracted_servers) >= cantidad:
+                    break
                     
-                    # Actualizar progreso cada 5 servidores
-                    if processed % 5 == 0:
-                        progress_embed.set_field_at(
-                            0, 
-                            name="📊 Estado", 
-                            value=f"Obtenidos: {len(extracted_servers)}/{cantidad} servidores...", 
-                            inline=False
-                        )
-                        try:
-                            await message.edit(embed=progress_embed)
-                        except:
-                            pass
+                try:
+                    # Extraer enlace VIP
+                    vip_link = scraper.extract_vip_link(driver, server_url, game_id)
+                    if vip_link:
+                        extracted_servers.append(vip_link)
+                        processed += 1
+                        
+                        # Actualizar progreso cada 5 servidores
+                        if processed % 5 == 0:
+                            progress_embed.set_field_at(
+                                0, 
+                                name="📊 Estado", 
+                                value=f"Obtenidos: {len(extracted_servers)}/{cantidad} servidores...", 
+                                inline=False
+                            )
+                            try:
+                                await message.edit(embed=progress_embed)
+                            except:
+                                pass
 
-            except Exception as e:
-                logger.error(f"❌ Error procesando {server_url}: {e}")
-                continue
+                except Exception as e:
+                    logger.error(f"❌ Error procesando {server_url}: {e}")
+                    continue
 
-        # Cerrar WebDriver
-        scraper.close_driver(driver)
+        finally:
+            # Cerrar WebDriver
+            if driver:
+                driver.quit()
         
         # Limpiar datos temporales
         if temp_user_id in scraper.links_by_user:
