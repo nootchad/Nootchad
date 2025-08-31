@@ -1,4 +1,3 @@
-
 """
 Comando /ownerscrape - Owner only
 Comando para hacer scraping y enviar datos a API externa
@@ -27,7 +26,7 @@ def setup_commands(bot):
     ):
         """
         Comando owner para scraping y envío a API externa
-        
+
         Args:
             cantidad: Cantidad de servidores a obtener
             game_id: ID del juego de Roblox
@@ -174,19 +173,60 @@ def setup_commands(bot):
                 await message.edit(embed=error_embed)
 
         except Exception as e:
-            logger.error(f"Error en comando ownerscrape para {username}: {e}")
-            embed = discord.Embed(
+            logger.error(f"Error en comando ownerscrape: {e}")
+            error_embed = discord.Embed(
                 title="❌ Error Interno",
-                description="Ocurrió un error durante el owner scrape. Revisa los logs.",
+                description=f"Ocurrió un error durante el scraping.",
                 color=0xff0000
             )
-            embed.add_field(name="Error", value=str(e)[:500], inline=False)
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}```", inline=False)
+            error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+    # Registrar el comando manualmente
+    from discord import app_commands
+
+    # Crear el comando slash
+    ownerscrape_slash = app_commands.Command(
+        name="ownerscrape",
+        description="[OWNER ONLY] Hacer scraping y enviar datos a API externa",
+        callback=ownerscrape_command
+    )
+
+    # Agregar parámetros
+    ownerscrape_slash.add_parameter(
+        name="cantidad",
+        description="Cantidad de servidores a obtener",
+        type=app_commands.AppCommandOptionType.integer,
+        required=True
+    )
+
+    ownerscrape_slash.add_parameter(
+        name="game_id", 
+        description="ID del juego de Roblox",
+        type=app_commands.AppCommandOptionType.string,
+        required=True
+    )
+
+    ownerscrape_slash.add_parameter(
+        name="api_url",
+        description="URL de la API donde enviar los datos",
+        type=app_commands.AppCommandOptionType.string,
+        required=False,
+        default="https://v0-discord-bot-api-snowy.vercel.app/api/data"
+    )
+
+    # Agregar el comando al tree
+    bot.tree.add_command(ownerscrape_slash)
+
+    logger.info("✅ Comando /ownerscrape registrado correctamente")
+    return True
+
 
 async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord.Interaction, message: discord.WebhookMessage):
     """Ejecutar el scraping para owner"""
     from main import scraper
-    
+
     try:
         logger.info(f"🔄 Iniciando owner scrape para juego {game_id}: {cantidad} servidores")
 
@@ -209,14 +249,14 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
 
         # Inicializar WebDriver
         driver = scraper.create_driver()
-        
+
         try:
             # Obtener enlaces de servidores
             server_links = scraper.get_server_links(driver, game_id)
-        
+
         # Limitar a la cantidad solicitada
         server_links = server_links[:cantidad * 2]  # Obtener más para compensar fallos
-        
+
         logger.info(f"🎯 Procesando {len(server_links)} enlaces de servidores...")
 
         # Actualizar progreso
@@ -227,41 +267,41 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
             pass
 
         extracted_servers = []
-            processed = 0
+        processed = 0
 
-            for server_url in server_links:
-                if len(extracted_servers) >= cantidad:
-                    break
-                    
-                try:
-                    # Extraer enlace VIP
-                    vip_link = scraper.extract_vip_link(driver, server_url, game_id)
-                    if vip_link:
-                        extracted_servers.append(vip_link)
-                        processed += 1
-                        
-                        # Actualizar progreso cada 5 servidores
-                        if processed % 5 == 0:
-                            progress_embed.set_field_at(
-                                0, 
-                                name="📊 Estado", 
-                                value=f"Obtenidos: {len(extracted_servers)}/{cantidad} servidores...", 
-                                inline=False
-                            )
-                            try:
-                                await message.edit(embed=progress_embed)
-                            except:
-                                pass
+        for server_url in server_links:
+            if len(extracted_servers) >= cantidad:
+                break
 
-                except Exception as e:
-                    logger.error(f"❌ Error procesando {server_url}: {e}")
-                    continue
+            try:
+                # Extraer enlace VIP
+                vip_link = scraper.extract_vip_link(driver, server_url, game_id)
+                if vip_link:
+                    extracted_servers.append(vip_link)
+                    processed += 1
+
+                    # Actualizar progreso cada 5 servidores
+                    if processed % 5 == 0:
+                        progress_embed.set_field_at(
+                            0, 
+                            name="📊 Estado", 
+                            value=f"Obtenidos: {len(extracted_servers)}/{cantidad} servidores...", 
+                            inline=False
+                        )
+                        try:
+                            await message.edit(embed=progress_embed)
+                        except:
+                            pass
+
+            except Exception as e:
+                logger.error(f"❌ Error procesando {server_url}: {e}")
+                continue
 
         finally:
             # Cerrar WebDriver
             if driver:
                 driver.quit()
-        
+
         # Limpiar datos temporales
         if temp_user_id in scraper.links_by_user:
             del scraper.links_by_user[temp_user_id]
@@ -277,22 +317,22 @@ async def send_to_external_api(api_url: str, data: dict):
     """Enviar datos a API externa usando requests"""
     try:
         import requests
-        
+
         logger.info(f"🌐 Enviando datos a API: {api_url}")
-        
+
         # Usar la URL por defecto si no se especifica otra
         if api_url == "https://example-api.com/receive-servers":
             api_url = "https://v0-discord-bot-api-snowy.vercel.app/api/data"
-        
+
         headers = {
             'Content-Type': 'application/json',
             'User-Agent': 'RbxServers-OwnerScrape/1.0'
         }
-        
+
         # Ejecutar en un hilo separado para evitar bloquear el loop asyncio
         import asyncio
         import functools
-        
+
         def sync_request():
             return requests.post(
                 api_url,
@@ -300,28 +340,28 @@ async def send_to_external_api(api_url: str, data: dict):
                 headers=headers,
                 timeout=30
             )
-        
+
         # Ejecutar la petición síncrona en un executor
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(None, sync_request)
-        
+
         if response.status_code == 200:
             try:
                 response_data = response.json()
             except:
                 response_data = {"raw_response": response.text}
-            
-            logger.info(f"✅ API respondió exitosamente: {response.status_code}")
+
+            logger.info(f"✅ API responded successfully: {response.status_code}")
             return True, response_data
         else:
-            logger.error(f"❌ API respondió con error: {response.status_code} - {response.text}")
+            logger.error(f"❌ API responded with error: {response.status_code} - {response.text}")
             return False, {"error": f"HTTP {response.status_code}", "response": response.text}
 
     except requests.Timeout:
-        logger.error(f"❌ Timeout enviando a API: {api_url}")
+        logger.error(f"❌ Timeout sending to API: {api_url}")
         return False, {"error": "Timeout", "message": "La API no respondió en 30 segundos"}
     except Exception as e:
-        logger.error(f"❌ Error enviando a API: {e}")
+        logger.error(f"❌ Error sending to API: {e}")
         return False, {"error": str(e), "type": type(e).__name__}
 
 async def get_game_info(game_id: str):
@@ -329,7 +369,7 @@ async def get_game_info(game_id: str):
     try:
         async with aiohttp.ClientSession() as session:
             url = f"https://games.roblox.com/v1/games?universeIds={game_id}"
-            
+
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
@@ -337,10 +377,98 @@ async def get_game_info(game_id: str):
                     if games:
                         return games[0]
     except Exception as e:
-        logger.error(f"Error obteniendo info del juego {game_id}: {e}")
-    
+        logger.error(f"Error obtaining game info {game_id}: {e}")
+
     return {"name": f"Juego {game_id}", "id": game_id}
 
 def cleanup_commands(bot):
     """Función de limpieza opcional"""
     pass
+```{game_name}```", inline=True)
+            initial_embed.add_field(name="🆔 ID", value=f"```{game_id}```", inline=True)
+            initial_embed.add_field(name="📊 Cantidad", value=f"```{cantidad}```", inline=True)
+            initial_embed.add_field(name="🌐 API URL", value=f"```{api_url[:50]}...```", inline=False)
+            initial_embed.add_field(name="⏱️ Estado", value="Iniciando scraping...", inline=False)
+
+            message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
+
+            # Ejecutar scraping
+            scraped_servers = await execute_owner_scrape(game_id, cantidad, interaction, message)
+
+            if not scraped_servers:
+                error_embed = discord.Embed(
+                    title="❌ Error en Scraping",
+                    description="No se pudieron obtener servidores del juego especificado.",
+                    color=0xff0000
+                )
+                await message.edit(embed=error_embed)
+                return
+
+            # Preparar datos para API
+            api_data = {
+                "game_name": game_name,
+                "game_id": game_id,
+                "total_servers": len(scraped_servers),
+                "scraped_at": datetime.now().isoformat(),
+                "scraped_by": {
+                    "user_id": user_id,
+                    "username": username
+                },
+                "servers": scraped_servers
+            }
+
+            # Enviar a API externa
+            success, response_data = await send_to_external_api(api_url, api_data)
+
+            if success:
+                # Éxito
+                success_embed = discord.Embed(
+                    title="✅ Owner Scrape Completado",
+                    description=f"Se obtuvieron **{len(scraped_servers)}** servidores y se enviaron exitosamente a la API.",
+                    color=0x00ff88
+                )
+                success_embed.add_field(name="🎮 Juego", value=game_name, inline=True)
+                success_embed.add_field(name="📊 Servidores", value=str(len(scraped_servers)), inline=True)
+                success_embed.add_field(name="🌐 API", value="✅ Enviado", inline=True)
+                success_embed.add_field(
+                    name="📋 Respuesta API",
+                    value=f"```{str(response_data)[:100]}...```",
+                    inline=False
+                )
+                success_embed.add_field(
+                    name="🔗 Enlaces de Ejemplo",
+                    value=f"```{scraped_servers[0][:50]}...```" if scraped_servers else "Sin servidores",
+                    inline=False
+                )
+
+                await message.edit(embed=success_embed)
+
+                # Log del owner scrape
+                logger.info(f"Owner scrape completado por {username}: {len(scraped_servers)} servidores de {game_name} enviados a {api_url}")
+
+            else:
+                # Error enviando a API
+                error_embed = discord.Embed(
+                    title="⚠️ Scraping Exitoso - Error en API",
+                    description=f"Se obtuvieron **{len(scraped_servers)}** servidores pero falló el envío a la API.",
+                    color=0xffaa00
+                )
+                error_embed.add_field(name="🎮 Juego", value=game_name, inline=True)
+                error_embed.add_field(name="📊 Servidores", value=str(len(scraped_servers)), inline=True)
+                error_embed.add_field(name="🌐 API", value="❌ Error", inline=True)
+                error_embed.add_field(
+                    name="❌ Error API",
+                    value=f"```{str(response_data)[:200]}...```",
+                    inline=False
+                )
+
+                await message.edit(embed=error_embed)
+
+        except Exception as e:
+            logger.error(f"Error en comando ownerscrape: {e}")
+            error_embed = discord.Embed(
+                title="❌ Error Interno",
+                description=f"Ocurrió un error durante el scraping.",
+                color=0xff0000
+            )
+            error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}
