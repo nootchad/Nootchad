@@ -73,9 +73,9 @@ async def quick_scrape(game_id: str = "109983668079237", amount: int = 10):
         return False
 
 if __name__ == "__main__":
-    # Configuración por defecto
+    # Configuración por defecto (optimizada para múltiples User-Agents)
     GAME_ID = "109983668079237"
-    AMOUNT = 10
+    AMOUNT = 50  # Aumentado para aprovechar rotación de User-Agents
     
     # Leer argumentos
     if len(sys.argv) > 1:

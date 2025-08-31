@@ -47,6 +47,19 @@ class StandaloneScraper:
         self.roblox_cookies = {}
         self.scraped_servers = []
         
+        # Sistema de rotación de User-Agents para bypass de límites
+        self.user_agents = [
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/119.0",
+            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/120.0"
+        ]
+        self.current_user_agent_index = 0
+        
         # Estadísticas de scraping
         self.stats = {
             'start_time': None,
@@ -55,11 +68,20 @@ class StandaloneScraper:
             'successful_extractions': 0,
             'failed_extractions': 0,
             'api_send_success': False,
-            'duration': 0
+            'duration': 0,
+            'user_agents_used': 0,
+            'server_rounds': 0
         }
         
         logger.info(f"🚀 Framework de scraping independiente inicializado para juego {game_id}")
+        logger.info(f"🔄 Sistema de rotación User-Agent: {len(self.user_agents)} agentes disponibles")
         self.load_roblox_cookies()
+
+    def get_next_user_agent(self) -> str:
+        """Obtener el siguiente User-Agent de la rotación"""
+        user_agent = self.user_agents[self.current_user_agent_index]
+        self.current_user_agent_index = (self.current_user_agent_index + 1) % len(self.user_agents)
+        return user_agent
 
     def load_roblox_cookies(self):
         """Cargar cookies de Roblox desde archivo"""
@@ -174,7 +196,10 @@ class StandaloneScraper:
             chrome_options.add_argument("--disable-system-font-check")
             chrome_options.add_argument("--window-size=1920,1080")
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            # Usar User-Agent rotativo para bypass de límites
+            current_user_agent = self.get_next_user_agent()
+            chrome_options.add_argument(f"--user-agent={current_user_agent}")
+            logger.info(f"🔄 Usando User-Agent {self.current_user_agent_index}/{len(self.user_agents)}: {current_user_agent[:60]}...")
             
             # Argumentos adicionales para estabilidad en entornos de hosting
             chrome_options.add_argument("--disable-background-timer-throttling")
@@ -359,14 +384,149 @@ class StandaloneScraper:
             logger.error(f"❌ Error extrayendo VIP link de {server_url}: {e}")
             return None
 
+    async def scrape_servers_single_round(self, driver, max_servers: int = 30) -> List[str]:
+        """Scraping de una ronda con un User-Agent específico"""
+        try:
+            # Cargar cookies de Roblox
+            cookies_loaded = self.load_cookies_to_driver(driver)
+            logger.info(f"🍪 {cookies_loaded} cookies de Roblox aplicadas")
+            
+            # Obtener enlaces de servidores
+            server_links = self.get_server_links(driver, max_servers)
+            
+            if not server_links:
+                logger.error("❌ No se encontraron enlaces de servidores en esta ronda")
+                return []
+            
+            # Extraer VIP links
+            extracted_servers = []
+            processed = 0
+            
+            for server_url in server_links:
+                try:
+                    processed += 1
+                    logger.info(f"🔍 Procesando servidor {processed}/{len(server_links)}")
+                    
+                    # Intentar extraer VIP link con reintentos robustos para errores de Selenium
+                    vip_link = None
+                    extraction_attempts = 0
+                    max_extraction_attempts = 3
+                    
+                    while extraction_attempts < max_extraction_attempts and not vip_link:
+                        try:
+                            vip_link = self.extract_vip_link(driver, server_url)
+                            if vip_link:
+                                break
+                        except (WebDriverException, TimeoutException) as selenium_error:
+                            extraction_attempts += 1
+                            error_msg = str(selenium_error).lower()
+                            
+                            if extraction_attempts < max_extraction_attempts:
+                                wait_time = extraction_attempts  # 1s, 2s, 3s...
+                                logger.warning(f"Selenium error on extraction attempt {extraction_attempts}, waiting {wait_time}s before retry...")
+                                
+                                # Si es un error crítico de Chrome, reiniciar driver
+                                if any(keyword in error_msg for keyword in ['chrome', 'session', 'disconnected', 'crashed']):
+                                    logger.warning("Critical Chrome error detected, may need driver restart")
+                                    try:
+                                        # Intentar recuperar el driver
+                                        driver.get("about:blank")
+                                    except:
+                                        logger.error("Driver appears to be broken, cannot continue")
+                                        break
+                                
+                                time.sleep(wait_time)
+                            else:
+                                logger.error(f"Failed to extract after {max_extraction_attempts} attempts: {selenium_error}")
+                        except Exception as other_error:
+                            logger.error(f"Non-Selenium error during extraction: {other_error}")
+                            break
+                    
+                    if vip_link and vip_link not in extracted_servers:
+                        extracted_servers.append(vip_link)
+                        self.stats['successful_extractions'] += 1
+                        logger.info(f"Server {len(extracted_servers)} extracted in this round")
+                    else:
+                        self.stats['failed_extractions'] += 1
+                        
+                    # Pausa entre extracciones
+                    time.sleep(random.uniform(1, 3))
+                    
+                except Exception as e:
+                    self.stats['failed_extractions'] += 1
+                    logger.error(f"❌ Error procesando {server_url}: {e}")
+                    continue
+            
+            logger.info(f"📊 Ronda completada: {len(extracted_servers)} servidores extraídos de {processed} procesados")
+            return extracted_servers
+            
+        except Exception as e:
+            logger.error(f"❌ Error en ronda de scraping: {e}")
+            return []
+
     async def scrape_servers(self, target_amount: int = 10, retry_count: int = 0, max_retries: int = 2) -> List[str]:
-        """Ejecutar scraping completo de servidores con reintentos automáticos"""
+        """Ejecutar scraping completo con múltiples rondas y User-Agents rotativos"""
         try:
             self.stats['start_time'] = time.time()
-            logger.info(f"Starting independent scraping for {target_amount} servers of game {self.game_id} (Attempt {retry_count + 1}/{max_retries + 1})")
+            logger.info(f"Starting multi-round scraping for {target_amount} servers of game {self.game_id} (Attempt {retry_count + 1}/{max_retries + 1})")
             
-            # Crear driver con reintentos automáticos
-            driver = self.create_driver()
+            all_extracted_servers = []
+            max_rounds = min(4, (target_amount // 15) + 1)  # Máximo 4 rondas, calculado basado en target
+            
+            logger.info(f"🔄 Planificadas {max_rounds} rondas con diferentes User-Agents")
+            
+            for round_num in range(max_rounds):
+                if len(all_extracted_servers) >= target_amount:
+                    logger.info(f"✅ Meta alcanzada con {len(all_extracted_servers)} servidores")
+                    break
+                
+                logger.info(f"🎯 === RONDA {round_num + 1}/{max_rounds} ===")
+                
+                # Crear driver con nuevo User-Agent para cada ronda
+                driver = self.create_driver()
+                
+                try:
+                    # Scraping de esta ronda (máximo 30 servidores por ronda)
+                    round_servers = await self.scrape_servers_single_round(driver, max_servers=30)
+                    
+                    # Filtrar duplicados antes de agregar
+                    new_servers = [server for server in round_servers if server not in all_extracted_servers]
+                    all_extracted_servers.extend(new_servers)
+                    
+                    logger.info(f"🆕 Ronda {round_num + 1}: {len(new_servers)} servidores nuevos ({len(round_servers) - len(new_servers)} duplicados)")
+                    logger.info(f"📊 Total acumulado: {len(all_extracted_servers)} servidores")
+                    
+                    self.stats['server_rounds'] = round_num + 1
+                    self.stats['user_agents_used'] = round_num + 1
+                    
+                    # Si no se obtuvieron servidores nuevos, no continuar
+                    if not new_servers and round_num > 0:
+                        logger.info(f"⏹️ No se obtuvieron servidores nuevos en ronda {round_num + 1}, finalizando")
+                        break
+                    
+                    # Pausa entre rondas para evitar rate limiting
+                    if round_num < max_rounds - 1:
+                        wait_time = random.uniform(3, 8)
+                        logger.info(f"⏱️ Pausa entre rondas: {wait_time:.1f} segundos")
+                        time.sleep(wait_time)
+                        
+                finally:
+                    # Cerrar driver de esta ronda
+                    try:
+                        driver.quit()
+                        logger.info(f"🔒 Driver ronda {round_num + 1} cerrado")
+                    except:
+                        pass
+            
+            self.stats['total_servers_found'] = len(all_extracted_servers)
+            self.scraped_servers = all_extracted_servers
+            
+            logger.info(f"🎉 Scraping multi-ronda completado:")
+            logger.info(f"   • Rondas ejecutadas: {self.stats['server_rounds']}")
+            logger.info(f"   • User-Agents usados: {self.stats['user_agents_used']}")
+            logger.info(f"   • Total servidores únicos: {len(all_extracted_servers)}")
+            
+            return all_extracted_servers
             
             try:
                 # Cargar cookies de Roblox
@@ -459,15 +619,15 @@ class StandaloneScraper:
                     pass
                     
         except (WebDriverException, Exception) as e:
-            logger.error(f"Critical error in scraping attempt {retry_count + 1}: {e}")
+            logger.error(f"Critical error in multi-round scraping attempt {retry_count + 1}: {e}")
             
             # Si es un error de Selenium y aún tenemos reintentos disponibles
             if retry_count < max_retries and ("selenium" in str(e).lower() or "chrome" in str(e).lower() or "webdriver" in str(e).lower()):
-                logger.info(f"Selenium error detected, retrying... ({retry_count + 1}/{max_retries})")
-                time.sleep(3)  # Pausa antes del reintento
+                logger.info(f"Selenium error detected, retrying multi-round scraping... ({retry_count + 1}/{max_retries})")
+                time.sleep(5)  # Pausa más larga antes del reintento completo
                 return await self.scrape_servers(target_amount, retry_count + 1, max_retries)
             
-            return []
+            return all_extracted_servers if 'all_extracted_servers' in locals() else []
         finally:
             self.stats['end_time'] = time.time()
             if self.stats['start_time']:
@@ -531,7 +691,13 @@ class StandaloneScraper:
                     "framework": "StandaloneScraper",
                     "automated": True,
                     "cookies_used": len(self.roblox_cookies.get('roblox.com', {})),
-                    "extraction_success_rate": f"{(self.stats['successful_extractions'] / max(self.stats['total_servers_found'], 1)) * 100:.1f}%"
+                    "extraction_success_rate": f"{(self.stats['successful_extractions'] / max(self.stats['total_servers_found'], 1)) * 100:.1f}%",
+                    "user_agent_rotation": {
+                        "enabled": True,
+                        "rounds_executed": self.stats.get('server_rounds', 1),
+                        "user_agents_used": self.stats.get('user_agents_used', 1),
+                        "avg_servers_per_round": f"{self.stats['total_servers_found'] / max(self.stats.get('server_rounds', 1), 1):.1f}"
+                    }
                 }
             }
             
@@ -631,11 +797,14 @@ class StandaloneScraper:
             logger.info("📊 RESUMEN FINAL DEL FRAMEWORK INDEPENDIENTE")
             logger.info(f"🎮 Juego procesado: {self.game_id}")
             logger.info(f"⏱️ Duración total: {self.stats['duration']:.1f} segundos")
+            logger.info(f"🔄 Rondas de User-Agent: {self.stats.get('server_rounds', 1)}")
+            logger.info(f"🎭 User-Agents utilizados: {self.stats.get('user_agents_used', 1)}")
             logger.info(f"🔍 Servidores encontrados: {self.stats['total_servers_found']}")
             logger.info(f"✅ Extracciones exitosas: {self.stats['successful_extractions']}")
             logger.info(f"❌ Extracciones fallidas: {self.stats['failed_extractions']}")
             logger.info(f"🌐 Envío a API: {'✅ Exitoso' if self.stats['api_send_success'] else '❌ Fallido'}")
             logger.info(f"📈 Tasa de éxito: {(self.stats['successful_extractions'] / max(self.stats['total_servers_found'], 1)) * 100:.1f}%")
+            logger.info(f"🎯 Promedio por ronda: {self.stats['total_servers_found'] / max(self.stats.get('server_rounds', 1), 1):.1f} servidores")
             logger.info("=" * 60)
             
             return success
