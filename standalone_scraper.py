@@ -144,14 +144,24 @@ class StandaloneScraper:
         except Exception as e:
             logger.error(f"❌ Error guardando cookies: {e}")
 
-    def create_driver(self, retry_count: int = 0, max_retries: int = 3):
-        """Crear driver de Chrome optimizado para scraping independiente con reintentos automáticos"""
+    def create_driver(self, retry_count: int = 0, max_retries: int = 5):
+        """Crear driver de Chrome optimizado con manejo robusto de errores de Selenium"""
+        driver = None
         try:
-            logger.info(f"Creating Chrome driver for independent scraping... (Attempt {retry_count + 1}/{max_retries + 1})")
+            logger.info(f"Creating Chrome driver... (Attempt {retry_count + 1}/{max_retries + 1})")
+            
+            # Limpiar procesos Chrome previos si es necesario
+            if retry_count > 0:
+                try:
+                    import subprocess
+                    subprocess.run(['pkill', '-f', 'chrome'], capture_output=True, timeout=5)
+                    time.sleep(1)
+                except:
+                    pass
             
             chrome_options = Options()
             
-            # Configuración headless optimizada
+            # Configuración headless robusta
             chrome_options.add_argument("--headless=new")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
@@ -159,50 +169,86 @@ class StandaloneScraper:
             chrome_options.add_argument("--disable-extensions")
             chrome_options.add_argument("--disable-web-security")
             chrome_options.add_argument("--disable-logging")
+            chrome_options.add_argument("--disable-crash-reporter")
+            chrome_options.add_argument("--disable-in-process-stack-traces")
+            chrome_options.add_argument("--disable-system-font-check")
             chrome_options.add_argument("--window-size=1920,1080")
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             
-            # Argumentos adicionales para mayor estabilidad
+            # Argumentos adicionales para estabilidad en entornos de hosting
             chrome_options.add_argument("--disable-background-timer-throttling")
             chrome_options.add_argument("--disable-backgrounding-occluded-windows")
             chrome_options.add_argument("--disable-renderer-backgrounding")
-            chrome_options.add_argument("--disable-features=TranslateUI")
+            chrome_options.add_argument("--disable-features=TranslateUI,VizDisplayCompositor")
             chrome_options.add_argument("--disable-default-apps")
             chrome_options.add_argument("--no-first-run")
             chrome_options.add_argument("--disable-component-update")
+            chrome_options.add_argument("--disable-background-networking")
+            chrome_options.add_argument("--disable-sync")
+            chrome_options.add_argument("--metrics-recording-only")
+            chrome_options.add_argument("--no-report-upload")
             
-            # Configuración para velocidad
+            # Configuración optimizada para velocidad
             prefs = {
-                "profile.managed_default_content_settings.images": 2,  # Deshabilitar imágenes
+                "profile.managed_default_content_settings.images": 2,
                 "profile.default_content_setting_values.notifications": 2,
                 "profile.managed_default_content_settings.stylesheets": 2,
                 "profile.managed_default_content_settings.cookies": 1,
                 "profile.managed_default_content_settings.javascript": 1,
+                "profile.managed_default_content_settings.plugins": 2,
+                "profile.managed_default_content_settings.popups": 2,
+                "profile.managed_default_content_settings.geolocation": 2,
+                "profile.managed_default_content_settings.media_stream": 2
             }
             chrome_options.add_experimental_option("prefs", prefs)
-            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
 
-            # Crear driver con timeout más corto para detectar errores rápido
+            # Crear driver con manejo mejorado de errores
             driver = webdriver.Chrome(options=chrome_options)
             
-            # Probar que el driver funciona correctamente
-            driver.set_page_load_timeout(30)
-            driver.implicitly_wait(10)
+            # Configurar timeouts más conservadores
+            driver.set_page_load_timeout(45)
+            driver.implicitly_wait(15)
             
-            # Hacer una prueba rápida navegando a una página simple
-            driver.get("about:blank")
-            
-            logger.info(f"Chrome driver created successfully on attempt {retry_count + 1}")
-            return driver
+            # Probar navegación básica con manejo de errores
+            try:
+                driver.get("about:blank")
+                # Verificar que el driver responde
+                _ = driver.title
+                logger.info(f"Chrome driver created and tested successfully on attempt {retry_count + 1}")
+                return driver
+            except Exception as nav_error:
+                logger.warning(f"Driver created but navigation test failed: {nav_error}")
+                if driver:
+                    try:
+                        driver.quit()
+                    except:
+                        pass
+                raise nav_error
             
         except (WebDriverException, Exception) as e:
+            error_msg = str(e).lower()
             logger.warning(f"Driver creation failed on attempt {retry_count + 1}: {e}")
             
-            if retry_count < max_retries:
-                logger.info(f"Retrying driver creation... ({retry_count + 1}/{max_retries})")
-                time.sleep(2)  # Pausa antes del reintento
+            # Limpiar driver si se creó parcialmente
+            if driver:
+                try:
+                    driver.quit()
+                except:
+                    pass
+            
+            # Decidir si reintentar basado en el tipo de error
+            should_retry = (
+                retry_count < max_retries and 
+                any(keyword in error_msg for keyword in ['chrome', 'selenium', 'webdriver', 'connection', 'timeout'])
+            )
+            
+            if should_retry:
+                wait_time = min(3 * (retry_count + 1), 10)  # Backoff exponencial limitado
+                logger.info(f"Selenium error detected, waiting {wait_time}s before retry...")
+                time.sleep(wait_time)
                 return self.create_driver(retry_count + 1, max_retries)
             else:
                 logger.error(f"Failed to create driver after {max_retries + 1} attempts")
@@ -349,10 +395,10 @@ class StandaloneScraper:
                         processed += 1
                         logger.info(f"🔍 Procesando servidor {processed}/{len(server_links)}")
                         
-                        # Intentar extraer VIP link con reintentos para errores de Selenium
+                        # Intentar extraer VIP link con reintentos robustos para errores de Selenium
                         vip_link = None
                         extraction_attempts = 0
-                        max_extraction_attempts = 2
+                        max_extraction_attempts = 3
                         
                         while extraction_attempts < max_extraction_attempts and not vip_link:
                             try:
@@ -361,11 +407,28 @@ class StandaloneScraper:
                                     break
                             except (WebDriverException, TimeoutException) as selenium_error:
                                 extraction_attempts += 1
+                                error_msg = str(selenium_error).lower()
+                                
                                 if extraction_attempts < max_extraction_attempts:
-                                    logger.warning(f"Selenium error on extraction attempt {extraction_attempts}, retrying...")
-                                    time.sleep(1)
+                                    wait_time = extraction_attempts  # 1s, 2s, 3s...
+                                    logger.warning(f"Selenium error on extraction attempt {extraction_attempts}, waiting {wait_time}s before retry...")
+                                    
+                                    # Si es un error crítico de Chrome, reiniciar driver
+                                    if any(keyword in error_msg for keyword in ['chrome', 'session', 'disconnected', 'crashed']):
+                                        logger.warning("Critical Chrome error detected, may need driver restart")
+                                        try:
+                                            # Intentar recuperar el driver
+                                            driver.get("about:blank")
+                                        except:
+                                            logger.error("Driver appears to be broken, cannot continue")
+                                            break
+                                    
+                                    time.sleep(wait_time)
                                 else:
                                     logger.error(f"Failed to extract after {max_extraction_attempts} attempts: {selenium_error}")
+                            except Exception as other_error:
+                                logger.error(f"Non-Selenium error during extraction: {other_error}")
+                                break
                         
                         if vip_link and vip_link not in extracted_servers:
                             extracted_servers.append(vip_link)
