@@ -88,8 +88,48 @@ def setup_commands(bot):
                 try:
                     data = response.json()
                     
-                    # Verificar estructura de respuesta
-                    if "servers" in data and isinstance(data["servers"], list):
+                    # Verificar estructura de respuesta - manejar nueva respuesta de API
+                    if data.get("success") == False:
+                        # API responde con éxito = False cuando no hay datos
+                        # No se encontraron servidores
+                        no_servers_embed = discord.Embed(
+                            title="🔍 Sin Servidores Disponibles",
+                            description=data.get("message", "No se encontraron servidores en nuestra base de datos para este juego."),
+                            color=0x6c757d
+                        )
+                        
+                        no_servers_embed.add_field(
+                            name="🎮 ID del Juego",
+                            value=f"`{game_id}`",
+                            inline=True
+                        )
+                        
+                        no_servers_embed.add_field(
+                            name="📊 Servidores Encontrados",
+                            value="`0`",
+                            inline=True
+                        )
+                        
+                        no_servers_embed.add_field(
+                            name="💡 Sugerencia",
+                            value="• Verifica que el ID del juego sea correcto\n• El juego podría no tener servidores VIP\n• Intenta con otro ID de juego",
+                            inline=False
+                        )
+                        
+                        no_servers_embed.add_field(
+                            name="⏰ Consultado",
+                            value=f"<t:{int(datetime.now().timestamp())}:R>",
+                            inline=True
+                        )
+                        
+                        no_servers_embed.set_footer(text="RbxServers • API Externa v0-discord-bot-api")
+                        
+                        await message.edit(embed=no_servers_embed)
+                        
+                        logger.info(f"⚠️ Owner {username} no encontró servidores para juego {game_id} - API respondió: {data.get('message', 'Sin mensaje')}")
+                        return
+                    
+                    elif "servers" in data and isinstance(data["servers"], list):
                         servers = data["servers"]
                         
                         if servers:
