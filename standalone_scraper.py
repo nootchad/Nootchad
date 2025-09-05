@@ -16,6 +16,7 @@ from typing import List, Optional, Dict
 import random
 import sys
 import os
+import threading
 
 # Selenium imports
 from selenium import webdriver
@@ -45,6 +46,19 @@ class StandaloneScraper:
         self.cookies_file = "roblox_cookies.json"
         self.roblox_cookies = {}
         self.scraped_servers = []
+
+        # User Agents para rotación
+        self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Mobile/15E148 Safari/604.1",
+            "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+        ]
+        self.current_user_agent = self.user_agents[0]
+        self.server_count_since_ua_change = 0
+        self.server_change_interval = 30 # Cambiar cada 30 servidores
 
         # Estadísticas de scraping
         self.stats = {
@@ -143,6 +157,14 @@ class StandaloneScraper:
         except Exception as e:
             logger.error(f"❌ Error guardando cookies: {e}")
 
+    def update_user_agent(self):
+        """Actualiza el User-Agent actual a uno nuevo de la lista"""
+        if len(self.user_agents) > 1:
+            self.current_user_agent = random.choice(self.user_agents)
+            logger.info(f"🔄 User-Agent actualizado a: {self.current_user_agent}")
+        else:
+            logger.warning("⚠️ Solo hay un User-Agent disponible, no se puede rotar.")
+
     def create_driver(self, retry_count: int = 0, max_retries: int = 5):
         """Crear driver de Chrome optimizado con manejo robusto de errores de Selenium"""
         driver = None
@@ -173,7 +195,8 @@ class StandaloneScraper:
             chrome_options.add_argument("--disable-system-font-check")
             chrome_options.add_argument("--window-size=1920,1080")
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            # Utilizar el User-Agent rotativo
+            chrome_options.add_argument(f"--user-agent={self.current_user_agent}")
             chrome_options.add_argument("--remote-debugging-port=9222")
             chrome_options.add_argument("--disable-features=VizDisplayCompositor,VizServiceDisplay")
             chrome_options.add_argument("--single-process")
@@ -439,6 +462,12 @@ class StandaloneScraper:
                         else:
                             self.stats['failed_extractions'] += 1
 
+                        # Actualizar User-Agent si se alcanza el intervalo
+                        self.server_count_since_ua_change += 1
+                        if self.server_count_since_ua_change >= self.server_change_interval:
+                            self.update_user_agent()
+                            self.server_count_since_ua_change = 0 # Reset counter
+
                         # Pausa entre extracciones
                         time.sleep(random.uniform(1, 3))
 
@@ -492,7 +521,7 @@ class StandaloneScraper:
         try:
             url = f"https://games.roblox.com/v1/games?universeIds={self.game_id}"
             headers = {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
+                'User-Agent': self.current_user_agent # Usar el user agent actual
             }
 
             response = requests.get(url, headers=headers, timeout=10)
@@ -552,7 +581,7 @@ class StandaloneScraper:
             # Headers para la petición
             headers = {
                 'Content-Type': 'application/json',
-                'User-Agent': 'RbxServers-StandaloneScraper/1.0',
+                'User-Agent': self.current_user_agent, # Usar el user agent actual
                 'X-Framework': 'standalone'
             }
 
