@@ -81,15 +81,14 @@ class StandaloneScraper:
                 with open(self.cookies_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.roblox_cookies = data.get('cookies', {})
-                    logger.info(f"✅ Cargadas cookies de Roblox para {len(self.roblox_cookies)} dominios")
+                    logger.info(f"Cargadas cookies de Roblox para {len(self.roblox_cookies)} dominios")
             else:
-                logger.warning(f"⚠️ Archivo de cookies {self.cookies_file} no encontrado")
-                self.roblox_cookies = {}
+                logger.warning(f"Archivo de cookies {self.cookies_file} no encontrado")
 
                 # Intentar cargar desde Cookiesnew.md
                 self.extract_cookies_from_cookiesnew()
         except Exception as e:
-            logger.error(f"❌ Error cargando cookies: {e}")
+            logger.error(f"Error cargando cookies: {e}")
             self.roblox_cookies = {}
 
     def extract_cookies_from_cookiesnew(self):
@@ -97,7 +96,7 @@ class StandaloneScraper:
         try:
             cookiesnew_path = Path("Cookiesnew.md")
             if not cookiesnew_path.exists():
-                logger.warning("⚠️ Archivo Cookiesnew.md no encontrado")
+                logger.warning("Archivo Cookiesnew.md no encontrado")
                 return 0
 
             with open(cookiesnew_path, "r", encoding="utf-8") as f:
@@ -131,14 +130,14 @@ class StandaloneScraper:
 
                 # Guardar cookies extraídas
                 self.save_roblox_cookies()
-                logger.info(f"✅ Cookie extraída de Cookiesnew.md y guardada")
+                logger.info("Cookie extraída de Cookiesnew.md y guardada")
                 return 1
             else:
-                logger.warning("⚠️ No se encontraron cookies válidas en Cookiesnew.md")
+                logger.warning("No se encontraron cookies válidas en Cookiesnew.md")
                 return 0
 
         except Exception as e:
-            logger.error(f"❌ Error extrayendo cookies de Cookiesnew.md: {e}")
+            logger.error(f"Error extrayendo cookies de Cookiesnew.md: {e}")
             return 0
 
     def save_roblox_cookies(self):
@@ -152,18 +151,18 @@ class StandaloneScraper:
 
             with open(self.cookies_file, 'w', encoding='utf-8') as f:
                 json.dump(cookies_data, f, indent=2)
-            logger.info(f"✅ Cookies guardadas en {self.cookies_file}")
+            logger.info(f"Cookies guardadas en {self.cookies_file}")
 
         except Exception as e:
-            logger.error(f"❌ Error guardando cookies: {e}")
+            logger.error(f"Error guardando cookies: {e}")
 
     def update_user_agent(self):
         """Actualiza el User-Agent actual a uno nuevo de la lista"""
         if len(self.user_agents) > 1:
             self.current_user_agent = random.choice(self.user_agents)
-            logger.info(f"🔄 User-Agent actualizado a: {self.current_user_agent}")
+            logger.info(f"User-Agent actualizado a: {self.current_user_agent}")
         else:
-            logger.warning("⚠️ Solo hay un User-Agent disponible, no se puede rotar.")
+            logger.warning("Solo hay un User-Agent disponible, no se puede rotar.")
 
     def create_driver(self, retry_count: int = 0, max_retries: int = 5):
         """Crear driver de Chrome optimizado con manejo robusto de errores de Selenium"""
@@ -283,11 +282,11 @@ class StandaloneScraper:
         """Cargar cookies de Roblox al driver"""
         try:
             if 'roblox.com' not in self.roblox_cookies or not self.roblox_cookies['roblox.com']:
-                logger.warning("⚠️ No hay cookies de Roblox disponibles")
+                logger.warning("No hay cookies de Roblox disponibles")
                 return 0
 
             # Navegar a Roblox primero
-            logger.info("🌐 Navegando a roblox.com para aplicar cookies...")
+            logger.info("Navegando a roblox.com para aplicar cookies...")
             driver.get("https://www.roblox.com")
             time.sleep(2)
 
@@ -305,28 +304,28 @@ class StandaloneScraper:
 
                     driver.add_cookie(cookie_dict)
                     cookies_loaded += 1
-                    logger.info(f"✅ Cookie aplicada: {cookie_name}")
+                    logger.info(f"Cookie aplicada: {cookie_name}")
 
                 except Exception as e:
-                    logger.warning(f"⚠️ Error aplicando cookie {cookie_name}: {e}")
+                    logger.warning(f"Error aplicando cookie {cookie_name}: {e}")
 
             if cookies_loaded > 0:
-                logger.info("🔄 Refrescando página para aplicar cookies...")
+                logger.info("Refrescando página para aplicar cookies...")
                 driver.refresh()
                 time.sleep(3)
 
-            logger.info(f"🍪 {cookies_loaded} cookies aplicadas exitosamente")
+            logger.info(f"{cookies_loaded} cookies aplicadas exitosamente")
             return cookies_loaded
 
         except Exception as e:
-            logger.error(f"❌ Error cargando cookies al driver: {e}")
+            logger.error(f"Error cargando cookies al driver: {e}")
             return 0
 
     def get_server_links(self, driver, max_servers: int = 20) -> List[str]:
         """Obtener enlaces de servidores desde rbxservers.xyz"""
         try:
             url = f"https://rbxservers.xyz/games/{self.game_id}"
-            logger.info(f"🔍 Obteniendo enlaces de servidores de: {url}")
+            logger.info(f"Obteniendo enlaces de servidores de: {url}")
 
             driver.get(url)
 
@@ -346,17 +345,17 @@ class StandaloneScraper:
                 if len(server_links) >= max_servers:
                     break
 
-            logger.info(f"✅ Encontrados {len(server_links)} enlaces de servidores")
+            logger.info(f"Encontrados {len(server_links)} enlaces de servidores")
             return server_links
 
         except Exception as e:
-            logger.error(f"❌ Error obteniendo enlaces de servidores: {e}")
+            logger.error(f"Error obteniendo enlaces de servidores: {e}")
             return []
 
     def extract_vip_link(self, driver, server_url: str) -> Optional[str]:
         """Extraer link VIP de una página específica de servidor"""
         try:
-            logger.debug(f"🔍 Extrayendo VIP de: {server_url}")
+            logger.debug(f"Extrayendo VIP de: {server_url}")
 
             driver.get(server_url)
 
@@ -371,17 +370,17 @@ class StandaloneScraper:
             vip_link = vip_input.get_attribute("value")
 
             if vip_link and vip_link.startswith("https://www.roblox.com/games/"):
-                logger.debug(f"✅ VIP link extraído: {vip_link[:50]}...")
+                logger.debug(f"VIP link extraído: {vip_link[:50]}...")
                 return vip_link
             else:
-                logger.debug(f"⚠️ Link inválido encontrado: {vip_link}")
+                logger.debug(f"Link inválido encontrado: {vip_link}")
                 return None
 
         except TimeoutException:
-            logger.debug(f"⏰ Timeout - No se encontró VIP link en {server_url}")
+            logger.debug(f"Timeout - No se encontró VIP link en {server_url}")
             return None
         except Exception as e:
-            logger.error(f"❌ Error extrayendo VIP link de {server_url}: {e}")
+            logger.error(f"Error extrayendo VIP link de {server_url}: {e}")
             return None
 
     async def scrape_servers(self, target_amount: int = 10, retry_count: int = 0, max_retries: int = 2) -> List[str]:
@@ -396,13 +395,13 @@ class StandaloneScraper:
             try:
                 # Cargar cookies de Roblox
                 cookies_loaded = self.load_cookies_to_driver(driver)
-                logger.info(f"🍪 {cookies_loaded} cookies de Roblox aplicadas")
+                logger.info(f"{cookies_loaded} cookies de Roblox aplicadas")
 
                 # Obtener enlaces de servidores
                 server_links = self.get_server_links(driver, target_amount * 2)  # Obtener extras por si fallan
 
                 if not server_links:
-                    logger.error("❌ No se encontraron enlaces de servidores")
+                    logger.error("No se encontraron enlaces de servidores")
                     return []
 
                 self.stats['total_servers_found'] = len(server_links)
@@ -413,12 +412,12 @@ class StandaloneScraper:
 
                 for server_url in server_links:
                     if len(extracted_servers) >= target_amount:
-                        logger.info(f"✅ Meta alcanzada: {target_amount} servidores extraídos")
+                        logger.info(f"Meta alcanzada: {target_amount} servidores extraídos")
                         break
 
                     try:
                         processed += 1
-                        logger.info(f"🔍 Procesando servidor {processed}/{len(server_links)}")
+                        logger.info(f"Procesando servidor {processed}/{len(server_links)}")
 
                         # Intentar extraer VIP link con reintentos robustos para errores de Selenium
                         vip_link = None
@@ -473,7 +472,7 @@ class StandaloneScraper:
 
                     except Exception as e:
                         self.stats['failed_extractions'] += 1
-                        logger.error(f"❌ Error procesando {server_url}: {e}")
+                        logger.error(f"Error procesando {server_url}: {e}")
                         continue
 
                 # Validar que los servidores sean enlaces válidos de Roblox
@@ -481,15 +480,15 @@ class StandaloneScraper:
                 invalid_count = len(extracted_servers) - len(valid_servers)
 
                 if invalid_count > 0:
-                    logger.warning(f"⚠️ Se encontraron {invalid_count} enlaces inválidos, usando solo {len(valid_servers)} válidos")
+                    logger.warning(f"Se encontraron {invalid_count} enlaces inválidos, usando solo {len(valid_servers)} válidos")
 
                 if not valid_servers:
-                    logger.error("❌ No se obtuvieron servidores válidos. Terminando proceso.")
+                    logger.error("No se obtuvieron servidores válidos. Terminando proceso.")
                     self.stats['api_send_success'] = False
                     return []
 
                 self.scraped_servers = valid_servers
-                logger.info(f"✅ PASO 1 COMPLETADO: {len(valid_servers)} servidores válidos obtenidos")
+                logger.info(f"PASO 1 COMPLETADO: {len(valid_servers)} servidores válidos obtenidos")
 
                 return valid_servers
 
@@ -497,7 +496,7 @@ class StandaloneScraper:
                 # Cerrar driver
                 try:
                     driver.quit()
-                    logger.info("🔒 Driver cerrado exitosamente")
+                    logger.info("Driver cerrado exitosamente")
                 except:
                     pass
 
@@ -531,10 +530,10 @@ class StandaloneScraper:
                 games = data.get('data', [])
                 if games:
                     game_info = games[0]
-                    logger.info(f"🎮 Información del juego obtenida: {game_info.get('name', 'Sin nombre')}")
+                    logger.info(f"Información del juego obtenida: {game_info.get('name', 'Sin nombre')}")
                     return game_info
 
-            logger.warning(f"⚠️ No se pudo obtener info del juego {self.game_id}")
+            logger.warning(f"No se pudo obtener info del juego {self.game_id}")
             return {
                 'name': f'Juego {self.game_id}',
                 'id': self.game_id,
@@ -542,7 +541,7 @@ class StandaloneScraper:
             }
 
         except Exception as e:
-            logger.error(f"❌ Error obteniendo info del juego: {e}")
+            logger.error(f"Error obteniendo info del juego: {e}")
             return {
                 'name': f'Juego {self.game_id}',
                 'id': self.game_id,
@@ -552,7 +551,7 @@ class StandaloneScraper:
     async def send_to_vercel_api(self, servers: List[str]) -> tuple[bool, Dict]:
         """Enviar servidores a la API de Vercel"""
         try:
-            logger.info(f"🌐 Enviando {len(servers)} servidores a API de Vercel: {self.api_url}")
+            logger.info(f"Enviando {len(servers)} servidores a API de Vercel: {self.api_url}")
 
             # Obtener información del juego
             game_info = await self.get_game_info()
@@ -599,20 +598,20 @@ class StandaloneScraper:
                 except:
                     response_data = {"raw_response": response.text}
 
-                logger.info(f"✅ Datos enviados exitosamente a API de Vercel: {response.status_code}")
+                logger.info(f"Datos enviados exitosamente a API de Vercel: {response.status_code}")
                 self.stats['api_send_success'] = True
                 return True, response_data
             else:
-                logger.error(f"❌ API responded with error: {response.status_code} - {response.text}")
+                logger.error(f"API responded with error: {response.status_code} - {response.text}")
                 self.stats['api_send_success'] = False # Ensure api_send_success is false on API error
                 return False, {"error": f"HTTP {response.status_code}", "response": response.text}
 
         except requests.Timeout:
-            logger.error(f"❌ Timeout enviando a API de Vercel")
+            logger.error(f"Timeout enviando a API de Vercel")
             self.stats['api_send_success'] = False
             return False, {"error": "Timeout", "message": "La API no respondió en 30 segundos"}
         except Exception as e:
-            logger.error(f"❌ Error enviando a API de Vercel: {e}")
+            logger.error(f"Error enviando a API de Vercel: {e}")
             self.stats['api_send_success'] = False
             return False, {"error": str(e), "type": type(e).__name__}
 
@@ -637,74 +636,74 @@ class StandaloneScraper:
             with open(results_file, 'w', encoding='utf-8') as f:
                 json.dump(results_data, f, indent=2, ensure_ascii=False)
 
-            logger.info(f"💾 Resultados guardados en: {results_file}")
+            logger.info(f"Resultados guardados en: {results_file}")
 
         except Exception as e:
-            logger.error(f"❌ Error guardando resultados: {e}")
+            logger.error(f"Error guardando resultados: {e}")
 
     async def run_full_scraping(self, target_servers: int = 10):
         """Ejecutar proceso completo de scraping y envío a API"""
         try:
             logger.info("=" * 60)
-            logger.info(f"🚀 INICIANDO FRAMEWORK INDEPENDIENTE DE SCRAPING")
-            logger.info(f"🎮 Juego: {self.game_id}")
-            logger.info(f"🎯 Meta: {target_servers} servidores")
-            logger.info(f"🌐 API destino: {self.api_url}")
-            logger.info(f"🍪 Cookies disponibles: {len(self.roblox_cookies.get('roblox.com', {}))}")
+            logger.info("INICIANDO FRAMEWORK INDEPENDIENTE DE SCRAPING")
+            logger.info(f"Juego: {self.game_id}")
+            logger.info(f"Meta: {target_servers} servidores")
+            logger.info(f"API destino: {self.api_url}")
+            logger.info(f"Cookies disponibles: {len(self.roblox_cookies.get('roblox.com', {}))}")
 
             # Verificar si las cookies están vacías
             if not self.roblox_cookies.get('roblox.com'):
-                logger.warning("⚠️ No hay cookies de Roblox cargadas. Intentando extraer de Cookiesnew.md...")
+                logger.warning("No hay cookies de Roblox cargadas. Intentando extraer de Cookiesnew.md...")
                 extracted = self.extract_cookies_from_cookiesnew()
-                logger.info(f"🍪 Cookies extraídas: {extracted}")
+                logger.info(f"Cookies extraídas: {extracted}")
 
             logger.info("=" * 60)
 
             # Paso 1: Scraping
-            logger.info("📡 PASO 1: Ejecutando scraping de servidores...")
+            logger.info("Ejecutando scraping de servidores...")
             scraped_servers = await self.scrape_servers(target_servers)
 
             # El scraping ya valida los servidores y actualiza self.scraped_servers
             # y self.stats['api_send_success']
 
             if not self.scraped_servers: # Check if scraped_servers is empty after validation
-                logger.error("❌ No se obtuvieron servidores válidos para enviar. Terminando proceso.")
+                logger.error("No se obtuvieron servidores válidos para enviar. Terminando proceso.")
                 return False
 
-            logger.info(f"✅ PASO 1 COMPLETADO: {len(self.scraped_servers)} servidores válidos obtenidos")
+            logger.info(f"PASO 1 COMPLETADO: {len(self.scraped_servers)} servidores válidos obtenidos")
 
             # Paso 2: Envío a API
-            logger.info("🌐 PASO 2: Enviando datos a API de Vercel...")
+            logger.info("Enviando datos a API de Vercel...")
             success, response_data = await self.send_to_vercel_api(self.scraped_servers)
 
             if success:
-                logger.info("✅ PASO 2 COMPLETADO: Datos enviados exitosamente a Vercel")
+                logger.info("PASO 2 COMPLETADO: Datos enviados exitosamente a Vercel")
             else:
-                logger.error(f"❌ PASO 2 FALLIDO: Error enviando a API - {response_data}")
+                logger.error(f"PASO 2 FALLIDO: Error enviando a API - {response_data}")
 
             # Paso 3: Guardar resultados localmente
-            logger.info("💾 PASO 3: Guardando resultados localmente...")
+            logger.info("Guardando resultados localmente...")
             self.save_results(self.scraped_servers)
-            logger.info("✅ PASO 3 COMPLETADO: Resultados guardados")
+            logger.info("PASO 3 COMPLETADO: Resultados guardados")
 
             # Resumen final
             logger.info("=" * 60)
-            logger.info("📊 RESUMEN FINAL DEL FRAMEWORK INDEPENDIENTE")
-            logger.info(f"🎮 Juego procesado: {self.game_id}")
-            logger.info(f"⏱️ Duración total: {self.stats['duration']:.1f} segundos")
-            logger.info(f"🔍 Servidores encontrados: {self.stats['total_servers_found']}")
-            logger.info(f"✅ Extracciones exitosas: {self.stats['successful_extractions']}")
-            logger.info(f"❌ Extracciones fallidas: {self.stats['failed_extractions']}")
-            logger.info(f"🌐 Envío a API: {'✅ Exitoso' if self.stats['api_send_success'] else '❌ Fallido'}")
+            logger.info("RESUMEN FINAL DEL FRAMEWORK INDEPENDIENTE")
+            logger.info(f"Juego procesado: {self.game_id}")
+            logger.info(f"Duración total: {self.stats['duration']:.1f} segundos")
+            logger.info(f"Servidores encontrados: {self.stats['total_servers_found']}")
+            logger.info(f"Extracciones exitosas: {self.stats['successful_extractions']}")
+            logger.info(f"Extracciones fallidas: {self.stats['failed_extractions']}")
+            logger.info(f"Envío a API: {'Exitoso' if self.stats['api_send_success'] else 'Fallido'}")
             # Avoid division by zero if no servers were found
             success_rate = (self.stats['successful_extractions'] / max(1, self.stats['total_servers_found'])) * 100 if self.stats['total_servers_found'] > 0 else 0
-            logger.info(f"📈 Tasa de éxito: {success_rate:.1f}%")
+            logger.info(f"Tasa de éxito: {success_rate:.1f}%")
             logger.info("=" * 60)
 
             return success
 
         except Exception as e:
-            logger.error(f"❌ Error crítico en proceso completo: {e}")
+            logger.error(f"Error crítico en proceso completo: {e}")
             return False
 
 async def main():
@@ -721,7 +720,7 @@ async def main():
             try:
                 TARGET_SERVERS = int(sys.argv[2])
             except ValueError:
-                logger.warning(f"⚠️ Cantidad inválida: {sys.argv[2]}, usando {TARGET_SERVERS}")
+                logger.warning(f"Cantidad inválida: {sys.argv[2]}, usando {TARGET_SERVERS}")
 
         # Crear framework
         scraper = StandaloneScraper(GAME_ID)
@@ -730,25 +729,25 @@ async def main():
         success = await scraper.run_full_scraping(TARGET_SERVERS)
 
         if success:
-            logger.info("🎉 Framework independiente ejecutado exitosamente")
+            logger.info("Framework independiente ejecutado exitosamente")
             return 0
         else:
-            logger.error("❌ Framework independiente falló")
+            logger.error("Framework independiente falló")
             return 1
 
     except KeyboardInterrupt:
-        logger.info("⏹️ Framework detenido por el usuario")
+        logger.info("Framework detenido por el usuario")
         return 0
     except Exception as e:
-        logger.error(f"❌ Error crítico en main: {e}")
+        logger.error(f"Error crítico en main: {e}")
         return 1
 
 if __name__ == "__main__":
-    print("🤖 Framework Independiente de Scraping RbxServers")
+    print("Framework Independiente de Scraping RbxServers")
     print("=" * 50)
-    print("📋 Uso:")
+    print("Uso:")
     print("  python3 standalone_scraper.py [game_id] [cantidad]")
-    print("📋 Ejemplo:")
+    print("Ejemplo:")
     print("  python3 standalone_scraper.py 109983668079237 15")
     print("=" * 50)
 
