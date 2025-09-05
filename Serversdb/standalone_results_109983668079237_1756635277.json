@@ -1,0 +1,32 @@
+{
+  "game_id": "109983668079237",
+  "scraped_at": "2025-08-31T10:14:37.837316",
+  "total_servers": 15,
+  "servers": [
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=05595118809739613080331512431744",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=89537892034140937712057296736032",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=12393185823909830813706373788279",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=42201945451501206558362710872211",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=11859531478149716487474048492333",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=46235360287900932180279219098514",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=92245409387304584643582409784746",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=88436461924591180005909573788197",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=37742582863029107102981167643663",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=05936613145853819928441240357330",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=89626914736697188667345314905247",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=10296457868278824330239335864745",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=13017732472601565705022093719808",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=60439427475835297269213807104570",
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=05281637416131960019647942488853"
+  ],
+  "stats": {
+    "start_time": 1756635105.5736923,
+    "end_time": 1756635277.1123872,
+    "total_servers_found": 30,
+    "successful_extractions": 15,
+    "failed_extractions": 0,
+    "api_send_success": true,
+    "duration": 171.53869485855103
+  },
+  "framework": "StandaloneScraper"
+}

@@ -1,0 +1,18 @@
+{
+  "game_id": "109983668079237",
+  "scraped_at": "2025-08-31T09:03:11.386909",
+  "total_servers": 1,
+  "servers": [
+    "https://www.roblox.com/games/109983668079237?privateServerLinkCode=05595118809739613080331512431744"
+  ],
+  "stats": {
+    "start_time": 1756630969.1608531,
+    "end_time": 1756630990.4580705,
+    "total_servers_found": 2,
+    "successful_extractions": 1,
+    "failed_extractions": 0,
+    "api_send_success": false,
+    "duration": 21.29721736907959
+  },
+  "framework": "StandaloneScraper"
+}
