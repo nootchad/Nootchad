@@ -599,7 +599,11 @@ class StandaloneScraper:
                 'framework': 'StandaloneScraper'
             }
 
-            results_file = f"standalone_results_{self.game_id}_{int(time.time())}.json"
+            # Crear carpeta Serversdb si no existe
+            serversdb_dir = Path("Serversdb")
+            serversdb_dir.mkdir(exist_ok=True)
+
+            results_file = serversdb_dir / f"standalone_results_{self.game_id}_{int(time.time())}.json"
 
             with open(results_file, 'w', encoding='utf-8') as f:
                 json.dump(results_data, f, indent=2, ensure_ascii=False)
