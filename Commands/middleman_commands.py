@@ -117,8 +117,9 @@ class MiddlemanApplicationModal(discord.ui.Modal):
     async def notify_admins_new_application(self, bot, application_id: int, user: discord.User):
         """Notificar a administradores sobre nueva aplicación usando webhook"""
         try:
-            # Usar webhook de Discord
-            webhook_url = "https://discord.com/api/webhooks/1415669876160462881/F4wOtymuOcKXp3Nc_WXrYqV-OiybtjFQbt3NCmSqmKdu4hk6mIjPAxWrGOogjruYNRYj"
+            # Usar webhook de Discord desde variables de entorno
+            import os
+            webhook_url = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/1415669876160462881/F4wOtymuOcKXp3Nc_WXrYqV-OiybtjFQbt3NCmSqmKdu4hk6mIjPAxWrGOogjruYNRYj")
             
             import aiohttp
             from discord import Webhook

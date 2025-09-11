@@ -167,22 +167,49 @@ class MiddlemanSystem:
         self.setup_supabase()
         
     def setup_database(self):
-        """Configurar conexión a Supabase PostgreSQL"""
-        database_url = os.getenv('DATABASE_URL')
-        if not database_url:
-            logger.error("DATABASE_URL no encontrada")
-            return
-        
+        """Configurar conexión a Supabase PostgreSQL correctamente"""
         try:
-            self.engine = create_engine(database_url)
+            # Usar variables de Supabase para construir la URL de PostgreSQL
+            supabase_url = os.getenv("SUPABASE_URL", "")
+            supabase_key = os.getenv("SUPABASE_KEY", "")
+            
+            if not supabase_url or not supabase_key:
+                logger.error("SUPABASE_URL o SUPABASE_KEY no encontrada en variables de entorno")
+                return
+            
+            # Extraer host de SUPABASE_URL (https://xxx.supabase.co -> xxx)
+            import re
+            host_match = re.search(r'https://([^.]+)\.supabase\.co', supabase_url)
+            if not host_match:
+                logger.error("No se pudo extraer host de SUPABASE_URL")
+                return
+                
+            project_id = host_match.group(1)
+            
+            # Construir URL de PostgreSQL para Supabase
+            # Formato estándar de Supabase: postgresql://postgres:[PASSWORD]@db.[PROJECT_ID].supabase.co:5432/postgres
+            database_url = f"postgresql://postgres:{supabase_key}@db.{project_id}.supabase.co:5432/postgres"
+            
+            # Crear engine con configuración específica para Supabase
+            self.engine = create_engine(
+                database_url,
+                pool_pre_ping=True,
+                pool_recycle=300,
+                echo=False
+            )
+            
+            # Crear tablas
+            Base.metadata.create_all(bind=self.engine)
+            
+            # Configurar SessionLocal
             self.SessionLocal = sessionmaker(bind=self.engine)
             
-            # Crear todas las tablas
-            Base.metadata.create_all(bind=self.engine)
-            logger.info("Base de datos de middleman configurada exitosamente")
+            logger.info("✅ Base de datos PostgreSQL configurada exitosamente")
             
         except Exception as e:
-            logger.error(f"Error configurando base de datos: {e}")
+            logger.error(f"Error configurando base de datos PostgreSQL: {e}")
+            self.engine = None
+            self.SessionLocal = None
     
     def setup_supabase(self):
         """Configurar cliente de Supabase para storage y funciones"""
@@ -206,131 +233,136 @@ class MiddlemanSystem:
     def create_application(self, discord_user_id: str, discord_username: str, 
                           roblox_username: str, experience: str, why_middleman: str,
                           availability: str, additional_info: str = "", image_urls: List[str] = None):
-        """Crear nueva aplicación de middleman"""
-        if not self.SessionLocal:
+        """Crear nueva aplicación de middleman usando Supabase client"""
+        if not self.supabase_client:
             return {"success": False, "error": "Sistema de base de datos no disponible"}
             
-        db = self.get_db()
         try:
             # Verificar si ya tiene una aplicación pendiente
-            existing = db.query(MiddlemanApplication).filter(
-                MiddlemanApplication.discord_user_id == discord_user_id,
-                MiddlemanApplication.status == ApplicationStatus.PENDING.value
-            ).first()
+            existing_check = self.supabase_client.table("middleman_applications").select("id").eq("discord_user_id", discord_user_id).eq("status", "pending").execute()
             
-            if existing:
+            if existing_check.data:
                 return {"success": False, "error": "Ya tienes una aplicación pendiente"}
             
-            application = MiddlemanApplication(
-                discord_user_id=discord_user_id,
-                discord_username=discord_username,
-                roblox_username=roblox_username,
-                experience=experience,
-                why_middleman=why_middleman,
-                availability=availability,
-                additional_info=additional_info,
-                image_urls=json.dumps(image_urls or [])
-            )
+            # Crear nueva aplicación
+            application_data = {
+                "discord_user_id": discord_user_id,
+                "discord_username": discord_username,
+                "roblox_username": roblox_username,
+                "experience": experience,
+                "why_middleman": why_middleman,
+                "availability": availability,
+                "additional_info": additional_info,
+                "image_urls": json.dumps(image_urls or []),
+                "status": "pending",
+                "submitted_at": datetime.utcnow().isoformat()
+            }
             
-            db.add(application)
-            db.commit()
+            result = self.supabase_client.table("middleman_applications").insert(application_data).execute()
             
-            logger.info(f"Nueva aplicación de middleman creada por {discord_username} (ID: {application.id})")
-            return {"success": True, "application_id": application.id}
+            if result.data:
+                application_id = result.data[0]["id"]
+                logger.info(f"Nueva aplicación de middleman creada por {discord_username} (ID: {application_id})")
+                return {"success": True, "application_id": application_id}
+            else:
+                return {"success": False, "error": "No se pudo crear la aplicación"}
             
         except Exception as e:
-            db.rollback()
             logger.error(f"Error creando aplicación: {e}")
             return {"success": False, "error": str(e)}
-        finally:
-            db.close()
     
     def get_application(self, application_id: int):
-        """Obtener aplicación por ID"""
-        db = self.get_db()
+        """Obtener aplicación por ID usando Supabase client"""
+        if not self.supabase_client:
+            return None
+            
         try:
-            return db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).first()
-        finally:
-            db.close()
+            result = self.supabase_client.table("middleman_applications").select("*").eq("id", application_id).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            logger.error(f"Error obteniendo aplicación: {e}")
+            return None
     
     def approve_application(self, application_id: int, admin_id: str, admin_notes: str = ""):
-        """Aprobar aplicación y crear perfil de middleman"""
-        if not self.SessionLocal:
+        """Aprobar aplicación y crear perfil de middleman usando Supabase client"""
+        if not self.supabase_client:
             return {"success": False, "error": "Sistema de base de datos no disponible"}
             
-        db = self.get_db()
         try:
-            application = db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).first()
+            # Obtener aplicación
+            application = self.get_application(application_id)
             
             if not application:
                 return {"success": False, "error": "Aplicación no encontrada"}
             
-            if application.status != ApplicationStatus.PENDING.value:
+            if application["status"] != "pending":
                 return {"success": False, "error": "La aplicación ya fue procesada"}
             
-            # Actualizar aplicación usando update()
-            db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).update({
-                MiddlemanApplication.status: ApplicationStatus.APPROVED.value,
-                MiddlemanApplication.reviewed_at: datetime.utcnow(),
-                MiddlemanApplication.reviewed_by: admin_id,
-                MiddlemanApplication.admin_notes: admin_notes
-            })
+            # Actualizar aplicación
+            update_data = {
+                "status": "approved",
+                "reviewed_at": datetime.utcnow().isoformat(),
+                "reviewed_by": admin_id,
+                "admin_notes": admin_notes
+            }
+            
+            self.supabase_client.table("middleman_applications").update(update_data).eq("id", application_id).execute()
             
             # Crear perfil de middleman
-            profile = MiddlemanProfile(
-                discord_user_id=application.discord_user_id,
-                discord_username=application.discord_username,
-                roblox_username=application.roblox_username,
-                bio=f"Experiencia: {application.experience[:200]}..."
-            )
+            profile_data = {
+                "discord_user_id": application["discord_user_id"],
+                "discord_username": application["discord_username"],
+                "roblox_username": application["roblox_username"],
+                "bio": f"Experiencia: {application['experience'][:200]}...",
+                "is_active": True,
+                "created_at": datetime.utcnow().isoformat(),
+                "last_active": datetime.utcnow().isoformat()
+            }
             
-            db.add(profile)
-            db.commit()
+            profile_result = self.supabase_client.table("middleman_profiles").insert(profile_data).execute()
             
-            logger.info(f"Aplicación {application_id} aprobada por admin {admin_id}")
-            return {"success": True, "profile_id": profile.id}
+            if profile_result.data:
+                profile_id = profile_result.data[0]["id"]
+                logger.info(f"Aplicación {application_id} aprobada por admin {admin_id}")
+                return {"success": True, "profile_id": profile_id}
+            else:
+                return {"success": False, "error": "No se pudo crear el perfil"}
             
         except Exception as e:
-            db.rollback()
             logger.error(f"Error aprobando aplicación: {e}")
             return {"success": False, "error": str(e)}
-        finally:
-            db.close()
     
     def reject_application(self, application_id: int, admin_id: str, admin_notes: str = ""):
-        """Rechazar aplicación"""
-        if not self.SessionLocal:
+        """Rechazar aplicación usando Supabase client"""
+        if not self.supabase_client:
             return {"success": False, "error": "Sistema de base de datos no disponible"}
             
-        db = self.get_db()
         try:
-            application = db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).first()
+            # Obtener aplicación
+            application = self.get_application(application_id)
             
             if not application:
                 return {"success": False, "error": "Aplicación no encontrada"}
             
-            if application.status != ApplicationStatus.PENDING.value:
+            if application["status"] != "pending":
                 return {"success": False, "error": "La aplicación ya fue procesada"}
             
-            # Actualizar aplicación usando update()
-            db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).update({
-                MiddlemanApplication.status: ApplicationStatus.REJECTED.value,
-                MiddlemanApplication.reviewed_at: datetime.utcnow(),
-                MiddlemanApplication.reviewed_by: admin_id,
-                MiddlemanApplication.admin_notes: admin_notes
-            })
+            # Actualizar aplicación
+            update_data = {
+                "status": "rejected",
+                "reviewed_at": datetime.utcnow().isoformat(),
+                "reviewed_by": admin_id,
+                "admin_notes": admin_notes
+            }
             
-            db.commit()
+            self.supabase_client.table("middleman_applications").update(update_data).eq("id", application_id).execute()
             
             logger.info(f"Aplicación {application_id} rechazada por admin {admin_id}")
             return {"success": True}
             
         except Exception as e:
-            db.rollback()
             logger.error(f"Error rechazando aplicación: {e}")
             return {"success": False, "error": str(e)}
-        finally:
-            db.close()
     
     def get_active_middlemans(self, limit: int = 50):
         """Obtener middlemans activos ordenados por rating"""
