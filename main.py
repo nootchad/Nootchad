@@ -136,16 +136,7 @@ class RobloxRemoteControl:
         self.app.router.add_get('/api/music-callback', self.handle_music_callback_get)
         self.app.router.add_get('/api/music-status', self.handle_music_status)
         
-        # Configurar webhook de middleman si está disponible
-        try:
-            if self.bot and hasattr(self.bot, 'middleman_system') and self.bot.middleman_system:
-                from middleman_webhook import setup_middleman_webhook
-                setup_middleman_webhook(self.app, self.bot, self.bot.middleman_system)
-                logger.info("🕸️ Webhook de middleman configurado")
-            else:
-                logger.warning("⚠️ Sistema de middleman no disponible para webhook")
-        except Exception as e:
-            logger.error(f"❌ Error configurando webhook de middleman: {e}")
+        # Middleman funciona directamente con comandos de Discord - no necesita webhook HTTP
         
         try:
             self.runner = web.AppRunner(self.app)
@@ -3709,18 +3700,18 @@ async def on_ready():
         logger.warning("⚠️ API key de CAPTCHA (CAPTCHA2) no encontrada en variables de entorno")
         logger.warning("⚠️ Los CAPTCHAs no podrán resolverse automáticamente")
     
-    # Inicializar servidor web para control remoto
+    # Inicializar servidor web para control remoto (solo para funciones de Roblox)
     try:
-        # PRIMERO: Reasignar remote_control con el bot configurado
+        # Reasignar remote_control con el bot configurado
         remote_control.__init__(bot)
         logger.info("🔧 Remote control reinicializado con bot")
         
-        # SEGUNDO: Configurar API web después de tener el bot
+        # Configurar API web después de tener el bot
         global web_api_system
         web_api_system = setup_web_api(remote_control.app, roblox_verification, scraper, remote_control)
         logger.info("🌐 API web configurada para acceso externo desde páginas web")
         
-        # TERCERO: Configurar APIs de códigos de acceso
+        # Configurar APIs de códigos de acceso
         try:
             from apis import setup_user_access_api
             user_access_api, access_code_system = setup_user_access_api(remote_control.app)
@@ -3728,7 +3719,7 @@ async def on_ready():
         except Exception as e:
             logger.error(f"❌ Error configurando API de códigos de acceso: {e}")
         
-        # FINALMENTE: Iniciar el servidor web
+        # Iniciar el servidor web
         await remote_control.start_web_server()
         logger.info(f"🌐 Sistema de control remoto de Roblox iniciado en puerto {REMOTE_CONTROL_PORT}")
         
