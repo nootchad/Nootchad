@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy.sql import func
 import discord
 from discord.ext import commands
+from supabase import create_client, Client
 
 logger = logging.getLogger(__name__)
 
@@ -161,10 +162,12 @@ class MiddlemanSystem:
         self.bot = bot
         self.engine = None
         self.SessionLocal = None
+        self.supabase_client = None
         self.setup_database()
+        self.setup_supabase()
         
     def setup_database(self):
-        """Configurar conexión a Supabase"""
+        """Configurar conexión a Supabase PostgreSQL"""
         database_url = os.getenv('DATABASE_URL')
         if not database_url:
             logger.error("DATABASE_URL no encontrada")
@@ -181,20 +184,38 @@ class MiddlemanSystem:
         except Exception as e:
             logger.error(f"Error configurando base de datos: {e}")
     
+    def setup_supabase(self):
+        """Configurar cliente de Supabase para storage y funciones"""
+        supabase_url = os.getenv('SUPABASE_URL')
+        supabase_key = os.getenv('SUPABASE_KEY')
+        
+        if not supabase_url or not supabase_key:
+            logger.error("SUPABASE_URL o SUPABASE_KEY no encontradas")
+            return
+        
+        try:
+            self.supabase_client = create_client(supabase_url, supabase_key)
+            logger.info("Cliente de Supabase configurado exitosamente")
+        except Exception as e:
+            logger.error(f"Error configurando cliente de Supabase: {e}")
+    
     def get_db(self) -> Session:
         """Obtener sesión de base de datos"""
         return self.SessionLocal()
     
     def create_application(self, discord_user_id: str, discord_username: str, 
                           roblox_username: str, experience: str, why_middleman: str,
-                          availability: str, additional_info: str = None, image_urls: List[str] = None):
+                          availability: str, additional_info: str = "", image_urls: List[str] = None):
         """Crear nueva aplicación de middleman"""
+        if not self.SessionLocal:
+            return {"success": False, "error": "Sistema de base de datos no disponible"}
+            
         db = self.get_db()
         try:
             # Verificar si ya tiene una aplicación pendiente
             existing = db.query(MiddlemanApplication).filter(
                 MiddlemanApplication.discord_user_id == discord_user_id,
-                MiddlemanApplication.status.in_([ApplicationStatus.PENDING.value])
+                MiddlemanApplication.status == ApplicationStatus.PENDING.value
             ).first()
             
             if existing:
@@ -232,8 +253,11 @@ class MiddlemanSystem:
         finally:
             db.close()
     
-    def approve_application(self, application_id: int, admin_id: str, admin_notes: str = None):
+    def approve_application(self, application_id: int, admin_id: str, admin_notes: str = ""):
         """Aprobar aplicación y crear perfil de middleman"""
+        if not self.SessionLocal:
+            return {"success": False, "error": "Sistema de base de datos no disponible"}
+            
         db = self.get_db()
         try:
             application = db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).first()
@@ -244,11 +268,13 @@ class MiddlemanSystem:
             if application.status != ApplicationStatus.PENDING.value:
                 return {"success": False, "error": "La aplicación ya fue procesada"}
             
-            # Actualizar aplicación
-            application.status = ApplicationStatus.APPROVED.value
-            application.reviewed_at = datetime.utcnow()
-            application.reviewed_by = admin_id
-            application.admin_notes = admin_notes
+            # Actualizar aplicación usando update()
+            db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).update({
+                MiddlemanApplication.status: ApplicationStatus.APPROVED.value,
+                MiddlemanApplication.reviewed_at: datetime.utcnow(),
+                MiddlemanApplication.reviewed_by: admin_id,
+                MiddlemanApplication.admin_notes: admin_notes
+            })
             
             # Crear perfil de middleman
             profile = MiddlemanProfile(
@@ -271,8 +297,11 @@ class MiddlemanSystem:
         finally:
             db.close()
     
-    def reject_application(self, application_id: int, admin_id: str, admin_notes: str):
+    def reject_application(self, application_id: int, admin_id: str, admin_notes: str = ""):
         """Rechazar aplicación"""
+        if not self.SessionLocal:
+            return {"success": False, "error": "Sistema de base de datos no disponible"}
+            
         db = self.get_db()
         try:
             application = db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).first()
@@ -283,10 +312,13 @@ class MiddlemanSystem:
             if application.status != ApplicationStatus.PENDING.value:
                 return {"success": False, "error": "La aplicación ya fue procesada"}
             
-            application.status = ApplicationStatus.REJECTED.value
-            application.reviewed_at = datetime.utcnow()
-            application.reviewed_by = admin_id
-            application.admin_notes = admin_notes
+            # Actualizar aplicación usando update()
+            db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).update({
+                MiddlemanApplication.status: ApplicationStatus.REJECTED.value,
+                MiddlemanApplication.reviewed_at: datetime.utcnow(),
+                MiddlemanApplication.reviewed_by: admin_id,
+                MiddlemanApplication.admin_notes: admin_notes
+            })
             
             db.commit()
             
@@ -311,9 +343,12 @@ class MiddlemanSystem:
             db.close()
     
     def add_rating(self, middleman_discord_id: str, rater_discord_id: str, 
-                   rater_username: str, rating: int, comment: str = None, 
-                   trade_description: str = None):
+                   rater_username: str, rating: int, comment: str = "", 
+                   trade_description: str = ""):
         """Añadir calificación a middleman"""
+        if not self.SessionLocal:
+            return {"success": False, "error": "Sistema de base de datos no disponible"}
+            
         db = self.get_db()
         try:
             # Encontrar middleman
@@ -368,14 +403,19 @@ class MiddlemanSystem:
             total = sum(r.rating for r in ratings)
             average = total / len(ratings)
             
-            middleman = db.query(MiddlemanProfile).filter(MiddlemanProfile.id == middleman_id).first()
-            middleman.rating_average = round(average, 2)
-            middleman.rating_count = len(ratings)
+            # Usar update() en lugar de asignar directamente
+            db.query(MiddlemanProfile).filter(MiddlemanProfile.id == middleman_id).update({
+                MiddlemanProfile.rating_average: round(average, 2),
+                MiddlemanProfile.rating_count: len(ratings)
+            })
     
     def create_report(self, target_discord_id: str, reporter_discord_id: str,
                      reporter_username: str, category: str, description: str,
                      evidence_urls: List[str] = None):
         """Crear reporte contra middleman"""
+        if not self.SessionLocal:
+            return {"success": False, "error": "Sistema de base de datos no disponible"}
+            
         db = self.get_db()
         try:
             # Encontrar middleman
@@ -392,7 +432,7 @@ class MiddlemanSystem:
                 reporter_username=reporter_username,
                 category=category,
                 description=description,
-                evidence_urls=json.dumps(evidence_urls or [])
+                evidence_urls=json.dumps(evidence_urls if evidence_urls else [])
             )
             
             db.add(report)
@@ -410,6 +450,9 @@ class MiddlemanSystem:
     
     def get_pending_applications(self, limit: int = 20):
         """Obtener aplicaciones pendientes"""
+        if not self.SessionLocal:
+            return []
+            
         db = self.get_db()
         try:
             return db.query(MiddlemanApplication).filter(
@@ -420,6 +463,9 @@ class MiddlemanSystem:
     
     def get_open_reports(self, limit: int = 20):
         """Obtener reportes abiertos"""
+        if not self.SessionLocal:
+            return []
+            
         db = self.get_db()
         try:
             return db.query(MiddlemanReport).filter(
@@ -427,6 +473,59 @@ class MiddlemanSystem:
             ).order_by(MiddlemanReport.created_at.asc()).limit(limit).all()
         finally:
             db.close()
+    
+    def get_active_middlemans(self, limit: int = 50):
+        """Obtener middlemans activos ordenados por rating"""
+        if not self.SessionLocal:
+            return []
+            
+        db = self.get_db()
+        try:
+            return db.query(MiddlemanProfile).filter(
+                MiddlemanProfile.is_active == True
+            ).order_by(MiddlemanProfile.rating_average.desc()).limit(limit).all()
+        finally:
+            db.close()
+    
+    def get_application(self, application_id: int):
+        """Obtener aplicación por ID"""
+        if not self.SessionLocal:
+            return None
+            
+        db = self.get_db()
+        try:
+            return db.query(MiddlemanApplication).filter(MiddlemanApplication.id == application_id).first()
+        finally:
+            db.close()
+    
+    async def upload_image(self, image_data: bytes, filename: str, folder: str = "middleman") -> Optional[str]:
+        """Subir imagen a Supabase Storage"""
+        if not self.supabase_client:
+            logger.error("Cliente de Supabase no disponible")
+            return None
+            
+        try:
+            # Crear bucket si no existe
+            try:
+                self.supabase_client.storage.create_bucket(folder)
+            except:
+                pass  # Bucket ya existe
+            
+            # Subir imagen
+            file_path = f"{folder}/{filename}"
+            response = self.supabase_client.storage.from_(folder).upload(file_path, image_data)
+            
+            if hasattr(response, 'error') and response.error:
+                logger.error(f"Error subiendo imagen: {response.error}")
+                return None
+            
+            # Obtener URL pública
+            public_url = self.supabase_client.storage.from_(folder).get_public_url(file_path)
+            return public_url
+            
+        except Exception as e:
+            logger.error(f"Error subiendo imagen a Supabase: {e}")
+            return None
 
 # Función para configurar el sistema
 def setup_middleman_system(bot):

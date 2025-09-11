@@ -25,6 +25,7 @@ from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
 from report_system import ServerReportSystem
 from rbxserversbot import setup_roblox_control_commands
+from middleman_system import setup_middleman_system
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -133,6 +134,15 @@ class RobloxRemoteControl:
         self.app.router.add_post('/api/music-callback', self.handle_music_callback)
         self.app.router.add_get('/api/music-callback', self.handle_music_callback_get)
         self.app.router.add_get('/api/music-status', self.handle_music_status)
+        
+        # Configurar webhook de middleman si está disponible
+        try:
+            if hasattr(bot, 'middleman_system') and bot.middleman_system:
+                from middleman_webhook import setup_middleman_webhook
+                setup_middleman_webhook(self.app, bot, bot.middleman_system)
+                logger.info("🕸️ Webhook de middleman configurado")
+        except Exception as e:
+            logger.error(f"❌ Error configurando webhook de middleman: {e}")
         
         try:
             self.runner = web.AppRunner(self.app)
@@ -3876,6 +3886,14 @@ async def on_ready():
         logger.info("🎵 Sistema de generación de música configurado")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de música: {e}")
+
+    # Setup middleman system
+    global middleman_system
+    try:
+        middleman_system = setup_middleman_system(bot)
+        logger.info("💼 Sistema de middleman configurado exitosamente")
+    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de middleman: {e}")
 
     # Load dynamic commands from Commands folder
     await load_commands_from_folder(bot)
