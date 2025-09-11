@@ -6,3 +6,5 @@ selenium>=4.33.0
 webdriver-manager>=4.0.0
 aiohttp>=3.8.0
 requests
+psycopg2-binary
+sqlalchemy
