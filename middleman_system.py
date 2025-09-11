@@ -163,53 +163,46 @@ class MiddlemanSystem:
         self.engine = None
         self.SessionLocal = None
         self.supabase_client = None
-        self.setup_database()
-        self.setup_supabase()
+        self.setup_supabase()  # Primero configurar Supabase client
+        self.setup_database()  # Luego verificar/crear tablas
         
     def setup_database(self):
-        """Configurar conexión a Supabase PostgreSQL correctamente"""
+        """Crear tablas necesarias usando Supabase client"""
         try:
-            # Usar variables de Supabase para construir la URL de PostgreSQL
-            supabase_url = os.getenv("SUPABASE_URL", "")
-            supabase_key = os.getenv("SUPABASE_KEY", "")
-            
-            if not supabase_url or not supabase_key:
-                logger.error("SUPABASE_URL o SUPABASE_KEY no encontrada en variables de entorno")
-                return
-            
-            # Extraer host de SUPABASE_URL (https://xxx.supabase.co -> xxx)
-            import re
-            host_match = re.search(r'https://([^.]+)\.supabase\.co', supabase_url)
-            if not host_match:
-                logger.error("No se pudo extraer host de SUPABASE_URL")
+            if not self.supabase_client:
+                logger.error("Cliente de Supabase no disponible")
                 return
                 
-            project_id = host_match.group(1)
-            
-            # Construir URL de PostgreSQL para Supabase
-            # Formato estándar de Supabase: postgresql://postgres:[PASSWORD]@db.[PROJECT_ID].supabase.co:5432/postgres
-            database_url = f"postgresql://postgres:{supabase_key}@db.{project_id}.supabase.co:5432/postgres"
-            
-            # Crear engine con configuración específica para Supabase
-            self.engine = create_engine(
-                database_url,
-                pool_pre_ping=True,
-                pool_recycle=300,
-                echo=False
-            )
-            
-            # Crear tablas
-            Base.metadata.create_all(bind=self.engine)
-            
-            # Configurar SessionLocal
-            self.SessionLocal = sessionmaker(bind=self.engine)
-            
-            logger.info("✅ Base de datos PostgreSQL configurada exitosamente")
+            # Crear tablas usando raw SQL a través de Supabase
+            self._create_tables_if_not_exist()
+            logger.info("✅ Tablas de base de datos verificadas/creadas exitosamente")
             
         except Exception as e:
-            logger.error(f"Error configurando base de datos PostgreSQL: {e}")
-            self.engine = None
-            self.SessionLocal = None
+            logger.error(f"Error configurando base de datos: {e}")
+            
+    def _create_tables_if_not_exist(self):
+        """Crear las tablas necesarias si no existen - las tablas deben crearse manualmente en Supabase Dashboard"""
+        try:
+            # Verificar si la tabla ya existe intentando hacer una query
+            try:
+                result = self.supabase_client.table("middleman_applications").select("id").limit(1).execute()
+                logger.info("✅ Tablas de middleman ya existen")
+                return True
+            except Exception as e:
+                if "PGRST205" in str(e) or "Could not find the table" in str(e):
+                    logger.warning("⚠️ Tablas de middleman NO existen - deben crearse manualmente en Supabase Dashboard")
+                    logger.warning("📋 Necesitas crear estas tablas en Supabase:")
+                    logger.warning("   - middleman_applications")
+                    logger.warning("   - middleman_profiles")
+                    logger.warning("   - middleman_ratings")
+                    logger.warning("   - middleman_reports")
+                    return False
+                else:
+                    raise e
+            
+        except Exception as e:
+            logger.error(f"Error verificando tablas: {e}")
+            return False
     
     def setup_supabase(self):
         """Configurar cliente de Supabase para storage y funciones"""

@@ -119,7 +119,10 @@ class MiddlemanApplicationModal(discord.ui.Modal):
         try:
             # Usar webhook de Discord desde variables de entorno
             import os
-            webhook_url = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/1415669876160462881/F4wOtymuOcKXp3Nc_WXrYqV-OiybtjFQbt3NCmSqmKdu4hk6mIjPAxWrGOogjruYNRYj")
+            webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+            if not webhook_url:
+                logger.warning("⚠️ DISCORD_WEBHOOK_URL no configurada - notificaciones de admin deshabilitadas")
+                return
             
             import aiohttp
             from discord import Webhook

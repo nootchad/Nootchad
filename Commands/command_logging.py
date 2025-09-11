@@ -446,8 +446,7 @@ def setup_commands(bot):
             command_logger.increment_command_count(guild_id)
 
             command_name = command.qualified_name if command else "unknown"
-            # Enviar a API de Vercel
-            await command_logger.send_to_vercel_api(interaction, command_name)
+            # Log local - no enviar a APIs externas
 
             # Crear embed del log
             embed = discord.Embed(
@@ -510,8 +509,7 @@ def setup_commands(bot):
         try:
             command_name = interaction.command.qualified_name if interaction.command else "unknown"
 
-            # Enviar a API de Vercel indicando que falló
-            await command_logger.send_to_vercel_api(interaction, command_name, success=False)
+            # Log error local - no enviar a APIs externas
 
             logger.info(f"❌ Comando fallido enviado a API Vercel: {command_name}")
 
