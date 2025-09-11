@@ -115,14 +115,16 @@ class MiddlemanApplicationModal(discord.ui.Modal):
             await interaction.response.send_message(embed=embed, ephemeral=True)
     
     async def notify_admins_new_application(self, bot, application_id: int, user: discord.User):
-        """Notificar a administradores sobre nueva aplicación"""
+        """Notificar a administradores sobre nueva aplicación usando webhook"""
         try:
-            # Canal de notificaciones admin (configurable)
-            admin_channel_id = 1234567890  # Cambiar por ID real del canal admin
+            # Usar webhook de Discord
+            webhook_url = "https://discord.com/api/webhooks/1415669876160462881/F4wOtymuOcKXp3Nc_WXrYqV-OiybtjFQbt3NCmSqmKdu4hk6mIjPAxWrGOogjruYNRYj"
             
-            channel = bot.get_channel(admin_channel_id)
-            if not channel:
-                return
+            import aiohttp
+            from discord import Webhook
+            
+            async with aiohttp.ClientSession() as session:
+                webhook = Webhook.from_url(webhook_url, session=session)
             
             embed = discord.Embed(
                 title="Nueva Aplicación de Middleman",
@@ -135,11 +137,11 @@ class MiddlemanApplicationModal(discord.ui.Modal):
             
             embed.add_field(
                 name="Acciones",
-                value=f"Usa `/middleman review {application_id}` para revisar la aplicación",
+                value=f"Usa `/middleman_review {application_id}` para revisar la aplicación",
                 inline=False
             )
             
-            await channel.send(embed=embed)
+            await webhook.send(embed=embed)
             
         except Exception as e:
             logger.error(f"Error notificando nueva aplicación: {e}")
