@@ -9,3 +9,5 @@ requests
 psycopg2-binary
 sqlalchemy
 supabase
+asyncpg
+supabase
