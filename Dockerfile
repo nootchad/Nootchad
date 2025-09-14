@@ -52,10 +52,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8080/ || exit 1
 
-# Copiar y configurar script de entrada
-COPY --chown=app:app docker-entrypoint.sh /app/
-RUN chmod +x /app/docker-entrypoint.sh \
-    && dos2unix /app/docker-entrypoint.sh || true
-
-# Comando para ejecutar la aplicación
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# Comando para ejecutar la aplicación directamente
+CMD ["python", "main.py"]

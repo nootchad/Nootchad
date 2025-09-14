@@ -1,9 +1,8 @@
-
-# Archivos de Git
+# Git
 .git
 .gitignore
 
-# Archivos de Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -70,3 +69,12 @@ replit.nix
 # Archivos de desarrollo
 test_*.py
 debug_*.py
+
+# Shell scripts (no necesarios en contenedor)
+*.sh
+
+# Archivos de desarrollo
+docker-compose.override.yml
+*.md
+curl_examples.sh
+quick_scrape.sh
