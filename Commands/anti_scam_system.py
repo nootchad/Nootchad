@@ -392,6 +392,16 @@ def setup_commands(bot):
     """Función requerida para configurar comandos del sistema anti-scam"""
     
     @bot.tree.command(name="reportscammer", description="Reportar un usuario por actividades de scam")
+    @discord.app_commands.describe(
+        user_id="ID del usuario de Discord a reportar",
+        server="Selecciona 'este' para el servidor actual o escribe el ID de otro servidor",
+        reason="Motivo del reporte (ej: estafa, scam, etc.)",
+        evidence="Evidencia del comportamiento (enlaces, capturas, descripción)"
+    )
+    @discord.app_commands.choices(server=[
+        discord.app_commands.Choice(name="🏠 Este servidor", value="este"),
+        discord.app_commands.Choice(name="🌐 Otro servidor (escribir ID)", value="otro")
+    ])
     async def reportscammer_command(
         interaction: discord.Interaction,
         user_id: str,
@@ -422,18 +432,36 @@ def setup_commands(bot):
                 return
             
             # Determinar server_id
-            if server.lower() == "este" or server.lower() == "actual":
+            if server.lower() == "este":
                 if interaction.guild:
                     server_id = str(interaction.guild.id)
                     server_name = interaction.guild.name
                 else:
                     embed = discord.Embed(
                         title="❌ Error de Servidor",
-                        description="No se puede usar 'este' servidor en mensajes privados.",
+                        description="No se puede usar 'este servidor' en mensajes privados.",
                         color=0xff0000
                     )
                     await interaction.followup.send(embed=embed, ephemeral=True)
                     return
+            elif server.lower() == "otro":
+                embed = discord.Embed(
+                    title="❌ ID de Servidor Requerido",
+                    description="Has seleccionado 'Otro servidor'. Por favor, ejecuta el comando nuevamente y proporciona el ID del servidor en lugar de 'otro'.",
+                    color=0xff9900
+                )
+                embed.add_field(
+                    name="💡 Cómo obtener el ID del servidor:",
+                    value="1. Ve al servidor de Discord\n2. Clic derecho en el nombre del servidor\n3. Selecciona 'Copiar ID del servidor'\n4. Usa ese ID en lugar de 'otro'",
+                    inline=False
+                )
+                embed.add_field(
+                    name="📋 Ejemplo de uso:",
+                    value="`/reportscammer user_id:123456789 server:987654321098765432 reason:estafa evidence:descripción`",
+                    inline=False
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
             else:
                 try:
                     server_id = str(int(server))  # Validar que sea numérico
@@ -443,8 +471,13 @@ def setup_commands(bot):
                 except ValueError:
                     embed = discord.Embed(
                         title="❌ ID de Servidor Inválido",
-                        description="El ID de servidor debe ser numérico o usar 'este' para el servidor actual.",
+                        description="El ID de servidor debe ser numérico. Usa la opción 'Este servidor' para el servidor actual.",
                         color=0xff0000
+                    )
+                    embed.add_field(
+                        name="💡 Opciones disponibles:",
+                        value="• Selecciona '🏠 Este servidor' para reportar en el servidor actual\n• Selecciona '🌐 Otro servidor' y luego proporciona el ID numérico",
+                        inline=False
                     )
                     await interaction.followup.send(embed=embed, ephemeral=True)
                     return
