@@ -222,7 +222,7 @@ def setup_commands(bot):
                     color=0xff0000
                 )
                 embed.add_field(
-                    name="✅ Ejemplos válidos:",
+                    name="<:verify:1396087763388072006> Ejemplos válidos:",
                     value="• `09:30` (9:30 AM)\n• `14:45` (2:45 PM)\n• `23:00` (11:00 PM)",
                     inline=False
                 )
@@ -260,7 +260,7 @@ def setup_commands(bot):
                 )
                 embed.add_field(
                     name="🎮 **Configuración**",
-                    value=f"• **Juego ID:** `{game_id}`\n• **Hora:** `{hora}` (24h)\n• **Cantidad:** {cantidad} servidores\n• **Estado:** Activo ✅",
+                    value=f"• **Juego ID:** `{game_id}`\n• **Hora:** `{hora}` (24h)\n• **Cantidad:** {cantidad} servidores\n• **Estado:** Activo <:verify:1396087763388072006>",
                     inline=False
                 )
                 embed.add_field(
@@ -295,7 +295,7 @@ def setup_commands(bot):
             if user_schedulers:
                 scheduler_list = ""
                 for scheduler in user_schedulers[:5]:  # Mostrar máximo 5
-                    status = "✅" if scheduler['active'] else "⏸️"
+                    status = "<:verify:1396087763388072006>" if scheduler['active'] else "⏸️"
                     scheduler_list += f"{status} `{scheduler['game_id']}` - {scheduler['time']} ({scheduler['quantity']} servidores)\n"
                 
                 embed.add_field(

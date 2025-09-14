@@ -189,6 +189,9 @@ def setup_commands(bot):
                 await interaction.response.send_message(embed=error_embed, ephemeral=True)
             else:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
+    
+    logger.info("<:verify:1396087763388072006> Comando /donacion configurado exitosamente")
+    return True
 
 async def get_roblox_user_id(username: str):
     """Obtener ID de usuario de Roblox mediante username"""
@@ -304,8 +307,6 @@ async def check_user_has_gamepass(user_id: str, gamepass_id: str):
         logger.error(f"Error crítico verificando gamepass: {e}")
         return None
 
-    logger.info("✅ Comando /donacion configurado exitosamente")
-    return True
 
 def cleanup_commands(bot):
     """Función opcional para limpiar comandos al recargar"""

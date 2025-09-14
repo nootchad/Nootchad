@@ -1,5 +1,4 @@
-
-<old_str>"""
+"""
 Comando para generar códigos de acceso temporal para APIs externas
 """
 import discord
@@ -79,7 +78,7 @@ def setup_commands(bot):
                 
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 
-                logger.info(f"✅ Código generado exitosamente para {username}: {access_code}")
+                logger.info(f"<:verify:1396087763388072006> Código generado exitosamente para {username}: {access_code}")
                 
             else:
                 embed = discord.Embed(
@@ -155,11 +154,10 @@ def setup_commands(bot):
         
         logger.info(f"Usuario {interaction.user.name} consultó información de códigos de acceso")
     
-    logger.info("✅ Comandos de códigos de acceso configurados")
+    logger.info("<:verify:1396087763388072006> Comandos de códigos de acceso configurados")
     return True
 
 # Función opcional de limpieza
 def cleanup_commands(bot):
     """Función opcional para limpiar comandos al recargar"""
-    pass</old_str>
-<new_str># ARCHIVO ELIMINADO - Comandos de códigos de acceso movidos al sistema principal</new_str>
+    pass
