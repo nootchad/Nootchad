@@ -660,9 +660,37 @@ def setup_commands(bot):
                         ping_message = f"🚨 **SCAMMER CONFIRMADO** 🚨\n\n<@{user_id}> - {len(confirmed_reports)} reportes confirmados"
                         if pending_reports:
                             ping_message += f" + {len(pending_reports)} pendientes"
+                        
+                        # Agregar detalles de los reportes confirmados más recientes
+                        ping_message += "\n\n📋 **Reportes confirmados:**"
+                        for i, report in enumerate(confirmed_reports[:3], 1):  # Mostrar hasta 3 reportes
+                            try:
+                                report_date = datetime.fromisoformat(report['created_at']).strftime("%d/%m/%Y")
+                            except:
+                                report_date = "Fecha desconocida"
+                            
+                            ping_message += f"\n• **{i}.** {report['reason'][:50]}{'...' if len(report['reason']) > 50 else ''} *(Reportado: {report_date})*"
+                        
+                        if len(confirmed_reports) > 3:
+                            ping_message += f"\n• *Y {len(confirmed_reports) - 3} reportes más...*"
+                            
                     elif pending_reports:
                         # Solo reportes pendientes
                         ping_message = f"⚠️ **USUARIO CON REPORTES PENDIENTES** ⚠️\n\n<@{user_id}> - {len(pending_reports)} reportes pendientes de revisión"
+                        
+                        # Agregar detalles de los reportes pendientes más recientes
+                        ping_message += "\n\n📋 **Reportes pendientes:**"
+                        for i, report in enumerate(pending_reports[:3], 1):  # Mostrar hasta 3 reportes
+                            try:
+                                report_date = datetime.fromisoformat(report['created_at']).strftime("%d/%m/%Y")
+                            except:
+                                report_date = "Fecha desconocida"
+                            
+                            ping_message += f"\n• **{i}.** {report['reason'][:50]}{'...' if len(report['reason']) > 50 else ''} *(Reportado: {report_date})*"
+                        
+                        if len(pending_reports) > 3:
+                            ping_message += f"\n• *Y {len(pending_reports) - 3} reportes más...*"
+                            
                     else:
                         # Solo reportes descartados
                         ping_message = f"ℹ️ **REPORTES DESCARTADOS** ℹ️\n\n<@{user_id}> - {len(dismissed_reports)} reportes descartados (no es scammer)"
@@ -692,12 +720,46 @@ def setup_commands(bot):
                         # Priorizar usuarios confirmados
                         scammer_pings = [f"<@{user}>" for user in confirmed_users]
                         ping_message = "🚨 **SCAMMERS CONFIRMADOS EN ESTE SERVIDOR** 🚨\n\n" + " ".join(scammer_pings)
+                        
+                        # Agregar detalles de reportes confirmados
+                        ping_message += "\n\n📋 **Detalles de reportes confirmados:**"
+                        for user_id in confirmed_users[:5]:  # Mostrar hasta 5 usuarios
+                            user_reports = [r for r in recent_reports if r['reported_user_id'] == user_id and r['status'] == 'confirmed']
+                            if user_reports:
+                                latest_report = max(user_reports, key=lambda x: x.get('timestamp', 0))
+                                try:
+                                    report_date = datetime.fromisoformat(latest_report['created_at']).strftime("%d/%m/%Y")
+                                except:
+                                    report_date = "Fecha desconocida"
+                                
+                                ping_message += f"\n• <@{user_id}>: {latest_report['reason'][:40]}{'...' if len(latest_report['reason']) > 40 else ''} *({report_date})*"
+                        
+                        if len(confirmed_users) > 5:
+                            ping_message += f"\n• *Y {len(confirmed_users) - 5} usuarios más...*"
+                            
                         await interaction.followup.send(ping_message, ephemeral=False)
                         return
                     elif pending_users:
                         # Mostrar usuarios con reportes pendientes si no hay confirmados
                         scammer_pings = [f"<@{user}>" for user in pending_users]
                         ping_message = "⚠️ **USUARIOS CON REPORTES PENDIENTES EN ESTE SERVIDOR** ⚠️\n\n" + " ".join(scammer_pings)
+                        
+                        # Agregar detalles de reportes pendientes
+                        ping_message += "\n\n📋 **Detalles de reportes pendientes:**"
+                        for user_id in pending_users[:5]:  # Mostrar hasta 5 usuarios
+                            user_reports = [r for r in recent_reports if r['reported_user_id'] == user_id and r['status'] == 'pending']
+                            if user_reports:
+                                latest_report = max(user_reports, key=lambda x: x.get('timestamp', 0))
+                                try:
+                                    report_date = datetime.fromisoformat(latest_report['created_at']).strftime("%d/%m/%Y")
+                                except:
+                                    report_date = "Fecha desconocida"
+                                
+                                ping_message += f"\n• <@{user_id}>: {latest_report['reason'][:40]}{'...' if len(latest_report['reason']) > 40 else ''} *({report_date})*"
+                        
+                        if len(pending_users) > 5:
+                            ping_message += f"\n• *Y {len(pending_users) - 5} usuarios más...*"
+                            
                         await interaction.followup.send(ping_message, ephemeral=False)
                         return
 
