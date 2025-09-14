@@ -653,14 +653,19 @@ def setup_commands(bot):
                     # Usuario tiene reportes - HACER PING DIRECTO
                     confirmed_reports = [r for r in result['reports'] if r['status'] == 'confirmed']
                     pending_reports = [r for r in result['reports'] if r['status'] == 'pending']
-
-                    # Mensaje simple con ping
-                    ping_message = f"🚨 **SCAMMER DETECTADO** 🚨\n\n<@{user_id}>"
+                    dismissed_reports = [r for r in result['reports'] if r['status'] == 'dismissed']
 
                     if confirmed_reports:
-                        ping_message += f" - {len(confirmed_reports)} reportes confirmados"
+                        # Reportes confirmados - SCAMMER CONFIRMADO
+                        ping_message = f"🚨 **SCAMMER CONFIRMADO** 🚨\n\n<@{user_id}> - {len(confirmed_reports)} reportes confirmados"
+                        if pending_reports:
+                            ping_message += f" + {len(pending_reports)} pendientes"
                     elif pending_reports:
-                        ping_message += f" - {len(pending_reports)} reportes pendientes"
+                        # Solo reportes pendientes
+                        ping_message = f"⚠️ **USUARIO CON REPORTES PENDIENTES** ⚠️\n\n<@{user_id}> - {len(pending_reports)} reportes pendientes de revisión"
+                    else:
+                        # Solo reportes descartados
+                        ping_message = f"ℹ️ **REPORTES DESCARTADOS** ℹ️\n\n<@{user_id}> - {len(dismissed_reports)} reportes descartados (no es scammer)"
 
                     await interaction.followup.send(ping_message, ephemeral=False)
                     return
@@ -679,15 +684,24 @@ def setup_commands(bot):
                 recent_reports = anti_scam_system.get_server_recent_reports(server_id, limit=10)
 
                 if recent_reports:
-                    # Extraer usuarios únicos reportados
-                    reported_users = list(set([r['reported_user_id'] for r in recent_reports if r['status'] == 'confirmed']))
-                    if reported_users:
-                        scammer_pings = [f"<@{user}>" for user in reported_users]
-                        ping_message = "🚨 **SCAMMERS EN ESTE SERVIDOR** 🚨\n\n" + " ".join(scammer_pings)
+                    # Extraer usuarios únicos reportados (confirmados Y pendientes)
+                    confirmed_users = list(set([r['reported_user_id'] for r in recent_reports if r['status'] == 'confirmed']))
+                    pending_users = list(set([r['reported_user_id'] for r in recent_reports if r['status'] == 'pending']))
+                    
+                    if confirmed_users:
+                        # Priorizar usuarios confirmados
+                        scammer_pings = [f"<@{user}>" for user in confirmed_users]
+                        ping_message = "🚨 **SCAMMERS CONFIRMADOS EN ESTE SERVIDOR** 🚨\n\n" + " ".join(scammer_pings)
+                        await interaction.followup.send(ping_message, ephemeral=False)
+                        return
+                    elif pending_users:
+                        # Mostrar usuarios con reportes pendientes si no hay confirmados
+                        scammer_pings = [f"<@{user}>" for user in pending_users]
+                        ping_message = "⚠️ **USUARIOS CON REPORTES PENDIENTES EN ESTE SERVIDOR** ⚠️\n\n" + " ".join(scammer_pings)
                         await interaction.followup.send(ping_message, ephemeral=False)
                         return
 
-                await interaction.followup.send("No hay scammers confirmados en este servidor.", ephemeral=False)
+                await interaction.followup.send("No hay reportes de scammers en este servidor.", ephemeral=False)
                 return
 
         except Exception as e:
