@@ -17,9 +17,22 @@ import json
 
 import discord
 from discord.ext import commands
-# env
+# env - Carga mejorada para Railway y otros entornos
 from dotenv import load_dotenv
-load_dotenv()  # Esto carga el archivo .env si existe
+import sys
+
+# Cargar variables de entorno con prioridad: Railway > archivo .env > sistema
+try:
+    # Intentar cargar .env si existe (para desarrollo local)
+    load_dotenv(override=False)  # No sobrescribir variables del sistema
+    
+    # Railway y otros proveedores de hosting automáticamente cargan variables
+    # Las variables del sistema tienen prioridad sobre las del archivo .env
+    
+    logger.info("✅ Variables de entorno cargadas correctamente")
+except Exception as env_error:
+    logger.warning(f"⚠️ Error cargando .env (esto es normal en Railway): {env_error}")
+    # Continuar de todas formas, Railway proporciona las variables directamente
 # Import new systems
 from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
@@ -55,16 +68,27 @@ discord_logger.setLevel(logging.INFO)
 user_logger = logging.getLogger('user_interactions')
 user_logger.setLevel(logging.INFO)
 
-# Verificar token - cargar desde variables de entorno del sistema o archivo .env
-BOT_TOKEN = os.getenv('BOT_TOKEN')
+# Verificar token - cargar desde variables de entorno (Railway automáticamente las proporciona)
+BOT_TOKEN = os.getenv('BOT_TOKEN') or os.getenv('DISCORD_TOKEN')  # Railway puede usar ambos nombres
 if not BOT_TOKEN:
     logger.error("❌ BOT_TOKEN no encontrado en variables de entorno")
-    logger.error("💡 En Railway, configura BOT_TOKEN en las variables de entorno del deployment")
+    logger.error("💡 En Railway:")
+    logger.error("   1. Ve a tu proyecto en Railway")
+    logger.error("   2. Ve a la pestaña 'Variables'")
+    logger.error("   3. Agrega BOT_TOKEN con tu token de Discord")
     logger.error("🔧 En desarrollo local, asegúrate de tener un archivo .env con BOT_TOKEN=tu_token_aqui")
-    logger.error("🌐 Variables de entorno disponibles:")
-    for key in os.environ.keys():
-        if 'TOKEN' in key or 'BOT' in key:
-            logger.error(f"  - {key}: {'***' if key == 'BOT_TOKEN' else 'disponible'}")
+    logger.error("🌐 Variables de entorno detectadas:")
+    token_vars = [key for key in os.environ.keys() if 'TOKEN' in key.upper() or 'BOT' in key.upper() or 'DISCORD' in key.upper()]
+    if token_vars:
+        for key in token_vars:
+            logger.error(f"  - {key}: {'***' if 'TOKEN' in key.upper() else 'disponible'}")
+    else:
+        logger.error("  - No se encontraron variables relacionadas con tokens")
+    
+    # En Railway, las variables pueden tardar un momento en cargarse
+    if 'RAILWAY_ENVIRONMENT' in os.environ or 'RAILWAY_PROJECT_ID' in os.environ:
+        logger.error("🚂 Detectado entorno Railway - verifica que BOT_TOKEN esté configurado en el dashboard")
+    
     exit(1)
 
 # Validar que el token tenga el formato correcto
@@ -73,6 +97,18 @@ if not BOT_TOKEN.startswith(('MTM4', 'MTE', 'MTI', 'MTQ', 'MTO', 'MTA')):
     logger.error(f"🔍 Token encontrado: {BOT_TOKEN[:20]}...")
     logger.error("💡 Verifica que copiaste el token completo desde Discord Developer Portal")
     exit(1)
+
+# Detectar entorno de ejecución
+if 'RAILWAY_ENVIRONMENT' in os.environ:
+    logger.info("🚂 Ejecutándose en Railway")
+    logger.info(f"📦 Proyecto: {os.getenv('RAILWAY_PROJECT_NAME', 'No detectado')}")
+    logger.info(f"🌍 Entorno: {os.getenv('RAILWAY_ENVIRONMENT', 'No detectado')}")
+elif 'REPL_SLUG' in os.environ:
+    logger.info("🔧 Ejecutándose en Replit")
+elif 'HEROKU_APP_NAME' in os.environ:
+    logger.info("🟣 Ejecutándose en Heroku")
+else:
+    logger.info("💻 Ejecutándose en entorno local/desconocido")
 
 logger.info(f"✅ Token cargado correctamente: {BOT_TOKEN[:10]}...")
 
@@ -3183,14 +3219,21 @@ class VIPServerScraper:
                         
                         # GUARDADO AUTOMÁTICO EN BLOB STORAGE
                         try:
-                            from blob_storage_manager import blob_manager
-                            blob_success = await blob_manager.save_user_servers(self.current_user_id, current_servers)
-                            if blob_success:
-                                logger.info(f"☁️ BLOB: Servidor #{new_links_count} guardado automáticamente en Blob Storage")
-                            else:
-                                logger.warning(f"⚠️ BLOB: No se pudo guardar servidor #{new_links_count} en Blob Storage")
+                            async def save_to_blob():
+                                try:
+                                    from blob_storage_manager import blob_manager
+                                    blob_success = await blob_manager.save_user_servers(self.current_user_id, current_servers)
+                                    if blob_success:
+                                        logger.info(f"☁️ BLOB: Servidor #{new_links_count} guardado automáticamente en Blob Storage")
+                                    else:
+                                        logger.warning(f"⚠️ BLOB: No se pudo guardar servidor #{new_links_count} en Blob Storage")
+                                except Exception as e:
+                                    logger.error(f"❌ BLOB ERROR: {e}")
+                            
+                            # Ejecutar de forma asíncrona sin bloquear
+                            asyncio.create_task(save_to_blob())
                         except Exception as blob_error:
-                            logger.error(f"❌ BLOB ERROR: {blob_error}")
+                            logger.error(f"❌ Error creando tarea de guardado en blob: {blob_error}")
                         
                     elif vip_link:
                         logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
@@ -3246,14 +3289,21 @@ class VIPServerScraper:
                 
                 # GUARDADO AUTOMÁTICO FINAL EN BLOB STORAGE
                 try:
-                    from blob_storage_manager import blob_manager
-                    blob_final_success = await blob_manager.save_user_servers(self.current_user_id, user_servers)
-                    if blob_final_success:
-                        logger.info(f"☁️ BLOB FINAL: {len(user_servers)} servidores guardados automáticamente en Blob Storage")
-                    else:
-                        logger.warning(f"⚠️ BLOB FINAL: No se pudieron guardar {len(user_servers)} servidores en Blob Storage")
+                    async def save_final_to_blob():
+                        try:
+                            from blob_storage_manager import blob_manager
+                            blob_final_success = await blob_manager.save_user_servers(self.current_user_id, user_servers)
+                            if blob_final_success:
+                                logger.info(f"☁️ BLOB FINAL: {len(user_servers)} servidores guardados automáticamente en Blob Storage")
+                            else:
+                                logger.warning(f"⚠️ BLOB FINAL: No se pudieron guardar {len(user_servers)} servidores en Blob Storage")
+                        except Exception as e:
+                            logger.error(f"❌ BLOB FINAL ERROR: {e}")
+                    
+                    # Ejecutar de forma asíncrona sin bloquear
+                    asyncio.create_task(save_final_to_blob())
                 except Exception as blob_final_error:
-                    logger.error(f"❌ BLOB FINAL ERROR: {blob_final_error}")
+                    logger.error(f"❌ Error creando tarea de guardado final en blob: {blob_final_error}")
             
             # Guardar solo datos generales (stats y categorías) en vip_links.json
             try:
