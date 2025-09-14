@@ -62,16 +62,24 @@ class BlobStorageManager:
             return None
     
     async def download_json(self, filename: str) -> Optional[dict]:
-        """Descargar datos JSON desde Blob Storage"""
+        """Descargar datos JSON desde Blob Storage usando URL real"""
         try:
+            # Primero obtener la URL real del archivo
+            file_map = await self.list_files_with_urls()
+            real_url = file_map.get(filename)
+            
+            if not real_url:
+                logger.info(f"⚠️ Archivo no encontrado en Blob: {filename}")
+                return None
+            
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.base_url}/{filename}") as response:
+                async with session.get(real_url) as response:
                     if response.status == 200:
                         data = await response.json()
                         logger.info(f"✅ Datos descargados desde Blob: {filename}")
                         return data
                     elif response.status == 404:
-                        logger.info(f"⚠️ Archivo no encontrado en Blob: {filename}")
+                        logger.info(f"⚠️ Archivo no encontrado en URL: {real_url}")
                         return None
                     else:
                         logger.error(f"❌ Error descargando {filename}: {response.status}")
@@ -82,7 +90,12 @@ class BlobStorageManager:
             return None
     
     async def list_files(self) -> List[str]:
-        """Listar archivos en Blob Storage"""
+        """Listar archivos en Blob Storage - solo nombres para compatibilidad"""
+        file_map = await self.list_files_with_urls()
+        return list(file_map.keys())
+    
+    async def list_files_with_urls(self) -> Dict[str, str]:
+        """Listar archivos con sus URLs reales"""
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
@@ -92,16 +105,22 @@ class BlobStorageManager:
                     if response.status == 200:
                         data = await response.json()
                         files = data.get('blobs', [])
-                        filenames = [blob.get('pathname', '') for blob in files]
-                        logger.info(f"📋 {len(filenames)} archivos encontrados en Blob Storage")
-                        return filenames
+                        # Crear mapeo de nombre -> URL real
+                        file_map = {}
+                        for blob in files:
+                            pathname = blob.get('pathname', '')
+                            url = blob.get('url', '')
+                            if pathname and url:
+                                file_map[pathname] = url
+                        logger.info(f"📋 {len(file_map)} archivos encontrados en Blob Storage")
+                        return file_map
                     else:
                         logger.error(f"❌ Error listando archivos: {response.status}")
-                        return []
+                        return {}
         
         except Exception as e:
             logger.error(f"❌ Error listando archivos: {e}")
-            return []
+            return {}
     
     async def delete_file(self, filename: str) -> bool:
         """Eliminar archivo de Blob Storage"""
