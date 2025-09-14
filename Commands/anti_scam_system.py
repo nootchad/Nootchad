@@ -593,171 +593,130 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @bot.tree.command(name="checkscammers", description="Verificar historial de reportes de scam")
+    @bot.tree.command(name="checkscammers", description="Verificar reportes de scam en el servidor")
     async def checkscammers_command(interaction: discord.Interaction, user_id: str = None):
-        """Comando para verificar reportes de scammers"""
+        """Comando para verificar reportes de scammers con integración a Supabase"""
         # Verificar autenticación
         from main import check_verification
         if not await check_verification(interaction, defer_response=True):
             return
 
         try:
+            # Importar cliente de Supabase
+            from supabase_client import supabase_manager
+            
             if user_id:
                 # Verificar usuario específico
                 try:
-                    user_id = str(int(user_id))  # Validar que sea numérico
+                    user_id_int = int(user_id)
                 except ValueError:
-                    embed = discord.Embed(
-                        title="❌ ID de Usuario Inválido",
-                        description="El ID de usuario debe ser numérico.",
-                        color=0xff0000
-                    )
-                    await interaction.followup.send(embed=embed, ephemeral=True)
+                    await interaction.followup.send("❌ ID de usuario inválido. Debe ser numérico.", ephemeral=True)
                     return
 
-                # Obtener historial del usuario
-                result = anti_scam_system.get_user_reports(user_id)
-
-                if not result['found']:
-                    embed = discord.Embed(
-                        title="✅ Usuario Limpio",
-                        description=f"No se encontraron reportes para el usuario `{user_id}`.",
-                        color=0x00aa55
-                    )
-                    embed.add_field(
-                        name="👤 Usuario Verificado:",
-                        value=f"`{user_id}`",
-                        inline=True
-                    )
-                    embed.add_field(
-                        name="📊 Estado:",
-                        value="Sin reportes",
-                        inline=True
-                    )
-                    embed.set_footer(text="Sistema Anti-Scam RbxServers")
-
-                    await interaction.followup.send(embed=embed)
-                    return
-
-                # Usuario tiene reportes - HACER PING DIRECTO
-                stats = result['stats']
-                reports = result['reports']
-
-                # Crear mensaje de alerta con ping
-                ping_message = f"🚨 **SCAMMER DETECTADO** 🚨\n\n"
-                ping_message += f"<@{user_id}> **HA SIDO REPORTADO POR ACTIVIDADES DE SCAM**\n\n"
-
-                # Agregar estadísticas básicas
-                if stats['is_escalated']:
-                    ping_message += f"🔴 **ALTO RIESGO** - {stats['confirmed_reports']} reportes confirmados\n"
-                elif stats['confirmed_reports'] > 0:
-                    ping_message += f"🟡 **RIESGO MODERADO** - {stats['confirmed_reports']} reportes confirmados\n"
-                else:
-                    ping_message += f"🟡 **BAJO RIESGO** - {stats['pending_reports']} reportes pendientes\n"
-
-                ping_message += f"📊 **Total de reportes:** {stats['total_reports']}\n"
-                ping_message += f"🌍 **Servidores afectados:** {stats['cross_server_count']}\n"
-                ping_message += f"🎯 **Puntuación de riesgo:** {stats['risk_score']} puntos\n\n"
-
-                # Agregar reportes más recientes (solo los más importantes)
-                recent_reports = reports[:2]  # Solo los 2 más recientes
-                if recent_reports:
-                    ping_message += "📋 **Reportes recientes:**\n"
-                    for i, report in enumerate(recent_reports, 1):
-                        report_time = datetime.fromisoformat(report['timestamp'])
-                        status_emoji = {"pending": "⏳", "confirmed": "✅", "dismissed": "❌"}.get(report['status'], "❓")
-
-                        ping_message += f"**{i}.** {status_emoji} {report['reason'][:60]}\n"
-                        ping_message += f"   📅 <t:{int(report_time.timestamp())}:R>\n"
-                        ping_message += f"   🆔 `{report['report_id']}`\n\n"
-
-                if stats['is_escalated']:
-                    ping_message += "⚠️ **ADVERTENCIA: Este usuario ha alcanzado el umbral de riesgo alto. Se recomienda precaución extrema en cualquier interacción.**"
-
-                # Enviar mensaje con ping (NO ephemeral para que todos lo vean)
-                await interaction.followup.send(ping_message, ephemeral=False)
-                return
+                # Buscar reportes en Supabase
+                try:
+                    if not supabase_manager.connected:
+                        await supabase_manager.initialize()
+                    
+                    if supabase_manager.db_pool:
+                        async with supabase_manager.db_pool.acquire() as conn:
+                            reports = await conn.fetch("""
+                                SELECT reported_user_id, status, description, created_at, severity
+                                FROM scam_reports 
+                                WHERE reported_user_id = $1 
+                                ORDER BY created_at DESC
+                                LIMIT 10
+                            """, user_id_int)
+                            
+                            if reports:
+                                # Usuario tiene reportes - HACER PING DIRECTO SIN EMBED
+                                confirmed_reports = [r for r in reports if r['status'] == 'confirmed']
+                                pending_reports = [r for r in reports if r['status'] == 'pending']
+                                
+                                # Mensaje simple con ping
+                                ping_message = f"🚨 **SCAMMER DETECTADO** 🚨\n\n<@{user_id}>"
+                                
+                                if confirmed_reports:
+                                    ping_message += f" - {len(confirmed_reports)} reportes confirmados"
+                                elif pending_reports:
+                                    ping_message += f" - {len(pending_reports)} reportes pendientes"
+                                
+                                await interaction.followup.send(ping_message, ephemeral=False)
+                                return
+                            else:
+                                # No hay reportes para este usuario específico
+                                await interaction.followup.send(f"No hay reportes para el usuario {user_id}", ephemeral=True)
+                                return
+                                
+                except Exception as db_error:
+                    logger.error(f"Error consultando Supabase: {db_error}")
+                    # Fallback al sistema JSON local
+                    result = anti_scam_system.get_user_reports(user_id)
+                    if result['found']:
+                        await interaction.followup.send(f"🚨 **SCAMMER DETECTADO** 🚨\n\n<@{user_id}>", ephemeral=False)
+                        return
+                    else:
+                        await interaction.followup.send(f"No hay reportes para el usuario {user_id}", ephemeral=True)
+                        return
             else:
-                # Mostrar reportes recientes del servidor actual
+                # Verificar servidor actual
                 if not interaction.guild:
-                    embed = discord.Embed(
-                        title="❌ Error",
-                        description="Debes ejecutar este comando en un servidor para ver reportes recientes.",
-                        color=0xff0000
-                    )
-                    await interaction.followup.send(embed=embed, ephemeral=True)
+                    await interaction.followup.send("❌ Debes ejecutar este comando en un servidor.", ephemeral=True)
                     return
 
-                server_id = str(interaction.guild.id)
-                recent_reports = anti_scam_system.get_server_recent_reports(server_id, limit=10)
-
-                if not recent_reports:
-                    embed = discord.Embed(
-                        title="✅ Servidor Seguro",
-                        description=f"No hay reportes recientes en **{interaction.guild.name}**.",
-                        color=0x00aa55
-                    )
-                    embed.add_field(
-                        name="📊 Estado del Servidor:",
-                        value="Sin reportes de scam registrados",
-                        inline=True
-                    )
-                    embed.set_footer(text="Sistema Anti-Scam RbxServers")
-
-                    await interaction.followup.send(embed=embed)
+                server_id = interaction.guild.id
+                
+                # Buscar reportes en el servidor actual usando Supabase
+                try:
+                    if not supabase_manager.connected:
+                        await supabase_manager.initialize()
+                    
+                    if supabase_manager.db_pool:
+                        async with supabase_manager.db_pool.acquire() as conn:
+                            # Buscar reportes confirmados en este servidor (asumiendo que tenemos server_id en reportes)
+                            scammers = await conn.fetch("""
+                                SELECT DISTINCT reported_user_id, COUNT(*) as report_count
+                                FROM scam_reports 
+                                WHERE status = 'confirmed'
+                                GROUP BY reported_user_id
+                                ORDER BY report_count DESC
+                                LIMIT 10
+                            """)
+                            
+                            if scammers:
+                                # Hacer ping a todos los scammers encontrados
+                                scammer_pings = []
+                                for scammer in scammers:
+                                    scammer_pings.append(f"<@{scammer['reported_user_id']}>")
+                                
+                                ping_message = "🚨 **SCAMMERS EN ESTE SERVIDOR** 🚨\n\n" + " ".join(scammer_pings)
+                                await interaction.followup.send(ping_message, ephemeral=False)
+                                return
+                            else:
+                                # No hay scammers en la base de datos
+                                await interaction.followup.send("No hay scammers en este server...", ephemeral=False)
+                                return
+                                
+                except Exception as db_error:
+                    logger.error(f"Error consultando servidor en Supabase: {db_error}")
+                    # Fallback al sistema JSON local
+                    recent_reports = anti_scam_system.get_server_recent_reports(str(server_id), limit=10)
+                    
+                    if recent_reports:
+                        # Extraer usuarios únicos reportados
+                        reported_users = list(set([r['reported_id'] for r in recent_reports if r['status'] == 'confirmed']))
+                        if reported_users:
+                            scammer_pings = [f"<@{user}>" for user in reported_users]
+                            ping_message = "🚨 **SCAMMERS EN ESTE SERVIDOR** 🚨\n\n" + " ".join(scammer_pings)
+                            await interaction.followup.send(ping_message, ephemeral=False)
+                            return
+                    
+                    await interaction.followup.send("No hay scammers en este server...", ephemeral=False)
                     return
-
-                # Mostrar reportes recientes del servidor
-                embed = discord.Embed(
-                    title="📋 Reportes Recientes del Servidor",
-                    description=f"Últimos reportes de scam en **{interaction.guild.name}**",
-                    color=0x5c5c5c
-                )
-
-                reports_text = ""
-                for i, report in enumerate(recent_reports[:5], 1):  # Solo mostrar 5
-                    report_time = datetime.fromisoformat(report['timestamp'])
-                    status_emoji = {"pending": "⏳", "confirmed": "✅", "dismissed": "❌"}.get(report['status'], "❓")
-
-                    reports_text += f"**{i}.** {status_emoji} Usuario: `{report['reported_id']}`\n"
-                    reports_text += f"   📝 {report['reason'][:40]}{'...' if len(report['reason']) > 40 else ''}\n"
-                    reports_text += f"   📅 <t:{int(report_time.timestamp())}:R>\n"
-                    reports_text += f"   🆔 `{report['report_id']}`\n\n"
-
-                embed.add_field(
-                    name="📋 Reportes:",
-                    value=reports_text,
-                    inline=False
-                )
-
-                # Estadísticas del servidor
-                pending_count = sum(1 for r in recent_reports if r['status'] == 'pending')
-                confirmed_count = sum(1 for r in recent_reports if r['status'] == 'confirmed')
-
-                embed.add_field(
-                    name="📊 Estadísticas:",
-                    value=f"• **Total mostrados:** {len(recent_reports[:5])}\n• **Pendientes:** {pending_count}\n• **Confirmados:** {confirmed_count}",
-                    inline=True
-                )
-
-                embed.add_field(
-                    name="💡 Información:",
-                    value="Usa `/checkscammers <user_id>` para ver el historial completo de un usuario específico.",
-                    inline=True
-                )
-
-                embed.set_footer(text=f"Servidor: {interaction.guild.name} • Sistema Anti-Scam RbxServers")
-
-            await interaction.followup.send(embed=embed)
 
         except Exception as e:
             logger.error(f"❌ Error en comando checkscammers: {e}")
-            embed = discord.Embed(
-                title="❌ Error Interno",
-                description="Ocurrió un error al verificar los reportes.",
-                color=0xff0000
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await interaction.followup.send("❌ Error interno al verificar reportes.", ephemeral=True)
 
     @bot.tree.command(name="confirmreport", description="[OWNER ONLY] Confirmar un reporte de scam")
     async def confirmreport_command(interaction: discord.Interaction, report_id: str):
