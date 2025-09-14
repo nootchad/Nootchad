@@ -61,3 +61,4 @@ externalPort = 80
 
 [agent]
 expertMode = true
+integrations = ["flask_supabase:1.0.0"]
