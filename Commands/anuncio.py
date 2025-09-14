@@ -132,7 +132,7 @@ def setup_commands(bot):
 
             # Embed de resultado final
             embed_resultado = discord.Embed(
-                title="✅ Anuncio Enviado",
+                title="<:verify:1396087763388072006> Anuncio Enviado",
                 description="El anuncio ha sido procesado y enviado.",
                 color=0x00ff88
             )
@@ -247,7 +247,7 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed_error, ephemeral=True)
     
-    logger.info("✅ Comandos de anuncios configurados exitosamente")
+    logger.info("<:verify:1396087763388072006> Comandos de anuncios configurados exitosamente")
     return True
 
 async def obtener_usuarios_verificados():
