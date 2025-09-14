@@ -131,7 +131,7 @@ def setup_commands(bot):
 
                 # Confirmar éxito
                 success_embed = discord.Embed(
-                    title="✅ Auto Scrape Completado",
+                    title="<:verify:1396087763388072006> Auto Scrape Completado",
                     description=f"Se obtuvieron **{len(result['servers'])}** servidores exitosamente.",
                     color=0x00ff88
                 )
@@ -276,11 +276,11 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                         if new_servers_this_game:
                             save_success = save_server_immediately(user_id, new_servers_this_game)
                             if save_success:
-                                logger.info(f"✅ {len(new_servers_this_game)} servidores nuevos de juego {current_game_id} guardados en user_game_servers.json")
+                                logger.info(f"<:verify:1396087763388072006> {len(new_servers_this_game)} servidores nuevos de juego {current_game_id} guardados en user_game_servers.json")
                             else:
                                 logger.warning(f"⚠️ No se pudieron guardar {len(new_servers_this_game)} servidores nuevos")
 
-                        logger.info(f"✅ Juego {current_game_id}: {added_this_game} servidores nuevos agregados")
+                        logger.info(f"<:verify:1396087763388072006> Juego {current_game_id}: {added_this_game} servidores nuevos agregados")
                     else:
                         logger.warning(f"⚠️ No se encontraron servidores para juego {current_game_id}")
 
@@ -364,7 +364,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                 break
 
         # Verificar guardado final (ya se guardaron durante el proceso)
-        logger.info(f"✅ PROCESO COMPLETADO: {len(all_servers)} servidores procesados en total")
+        logger.info(f"<:verify:1396087763388072006> PROCESO COMPLETADO: {len(all_servers)} servidores procesados en total")
 
         total_duration = time.time() - start_time
 
@@ -378,7 +378,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                 'cooldowns_applied': cooldowns_applied
             }
 
-        logger.info(f"✅ Auto scrape completado para {username}: {len(all_servers)} servidores en {total_duration:.1f}s con {cooldowns_applied} cooldowns")
+        logger.info(f"<:verify:1396087763388072006> Auto scrape completado para {username}: {len(all_servers)} servidores en {total_duration:.1f}s con {cooldowns_applied} cooldowns")
 
         return {
             'success': True,
@@ -429,7 +429,7 @@ async def scrape_vip_links_optimized(game_id, user_id):
 
     # Close the WebDriver after processing all links
     scraper.close_driver(driver)
-    logger.info(f"✅ Extracted {extracted_count} VIP links (HEADLESS MODE)")
+    logger.info(f"<:verify:1396087763388072006> Extracted {extracted_count} VIP links (HEADLESS MODE)")
     return extracted_count
 
 def get_user_existing_servers(user_id: str) -> list:
@@ -556,7 +556,7 @@ async def send_servers_file(user: discord.User, servers: list, games: list):
             content += f"{i:2d}. {server}\n"
 
         content += "\n" + "=" * 50 + "\n"
-        content += "✅ Archivo generado automáticamente por RbxServers Bot\n"
+        content += "<:verify:1396087763388072006> Archivo generado automáticamente por RbxServers Bot\n"
         content += "💡 Usa estos enlaces para unirte a servidores VIP de Roblox\n"
         content += "⚠️ Algunos enlaces pueden expirar con el tiempo\n"
         content += "🔄 Scraping realizado con cooldowns automáticos cada 5 servidores\n"
@@ -587,7 +587,7 @@ async def send_servers_file(user: discord.User, servers: list, games: list):
             inline=False
         )
         embed.add_field(
-            name="✅ Guardado:",
+            name="<:verify:1396087763388072006> Guardado:",
             value="Los servidores están guardados en tu perfil",
             inline=False
         )
