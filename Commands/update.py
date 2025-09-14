@@ -125,7 +125,7 @@ def setup_commands(bot):
             else:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
     
-    logger.info("✅ Comando /update configurado exitosamente")
+    logger.info("<:verify:1396087763388072006> Comando /update configurado exitosamente")
     return True
 
 def cleanup_commands(bot):
