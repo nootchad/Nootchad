@@ -7,7 +7,9 @@ import os
 import json
 import asyncio
 import logging
-from datetime import datetime, timezone
+import ssl
+import re
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any, Union
 import asyncpg
 from supabase import create_client, Client
@@ -26,8 +28,156 @@ class SupabaseManager:
         self.db_pool: Optional[asyncpg.Pool] = None
         self.connected = False
         
+        # Configuración de robustez
+        self.max_retries = 3
+        self.retry_delay = 1.0
+        self.connection_timeout = 10.0
+        self.command_timeout = 30.0
+        self.pool_max_inactive_connection_lifetime = 300.0  # 5 minutos
+    
+    def _create_ssl_context(self) -> Optional[ssl.SSLContext]:
+        """Crear contexto SSL seguro para conexiones"""
+        try:
+            # Usar configuración SSL segura por defecto
+            context = ssl.create_default_context()
+            # MANTENER verificación de certificados habilitada para seguridad
+            context.check_hostname = True
+            context.verify_mode = ssl.CERT_REQUIRED
+            return context
+        except Exception as e:
+            logger.warning(f"⚠️ Error creando contexto SSL: {e}")
+            # Fallar de manera segura - mejor sin SSL que con SSL inseguro
+            return None
+    
+    def parse_datetime_robust(self, datetime_str: str) -> Optional[datetime]:
+        """Parsing robusto de fechas con múltiples formatos"""
+        if not datetime_str or not isinstance(datetime_str, str):
+            return None
+        
+        # Limpiar la cadena
+        datetime_str = datetime_str.strip()
+        if not datetime_str:
+            return None
+        
+        # Lista de formatos de fecha compatibles
+        formats = [
+            "%Y-%m-%dT%H:%M:%S.%f%z",      # ISO 8601 con microsegundos y timezone
+            "%Y-%m-%dT%H:%M:%S%z",         # ISO 8601 con timezone
+            "%Y-%m-%dT%H:%M:%S.%fZ",       # ISO 8601 con Z
+            "%Y-%m-%dT%H:%M:%SZ",          # ISO 8601 con Z sin microsegundos
+            "%Y-%m-%dT%H:%M:%S.%f",        # ISO 8601 sin timezone
+            "%Y-%m-%dT%H:%M:%S",           # ISO 8601 básico
+            "%Y-%m-%d %H:%M:%S.%f",        # Formato SQL con microsegundos
+            "%Y-%m-%d %H:%M:%S",           # Formato SQL básico
+            "%Y-%m-%d",                    # Solo fecha
+        ]
+        
+        # Reemplazar Z por +00:00 para compatibilidad
+        datetime_str = datetime_str.replace('Z', '+00:00')
+        
+        for fmt in formats:
+            try:
+                dt = datetime.strptime(datetime_str, fmt)
+                # Si no tiene timezone, asumir UTC
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt
+            except ValueError:
+                continue
+        
+        # Intentar con datetime.fromisoformat como último recurso
+        try:
+            return datetime.fromisoformat(datetime_str)
+        except ValueError:
+            pass
+        
+        logger.warning(f"⚠️ No se pudo parsear fecha: {datetime_str}")
+        return None
+    
+    def validate_user_id(self, user_id: Any) -> Optional[int]:
+        """Validar y convertir user_id a entero"""
+        try:
+            if user_id is None:
+                return None
+            
+            # Si ya es entero
+            if isinstance(user_id, int):
+                return user_id if user_id > 0 else None
+            
+            # Si es string, intentar convertir
+            if isinstance(user_id, str):
+                user_id = user_id.strip()
+                if user_id.isdigit():
+                    return int(user_id)
+                # Remover caracteres no numéricos comunes
+                user_id_clean = re.sub(r'[^\d]', '', user_id)
+                if user_id_clean.isdigit():
+                    return int(user_id_clean)
+            
+            return None
+        except (ValueError, TypeError):
+            return None
+    
+    async def retry_operation(self, operation, *args, **kwargs):
+        """Ejecutar operación con reintentos automáticos"""
+        last_exception = None
+        
+        for attempt in range(self.max_retries):
+            try:
+                return await operation(*args, **kwargs)
+            except Exception as e:
+                last_exception = e
+                
+                # No reintentar ciertos errores
+                if "authentication" in str(e).lower() or "permission" in str(e).lower():
+                    break
+                
+                if attempt < self.max_retries - 1:
+                    wait_time = self.retry_delay * (2 ** attempt)  # Backoff exponencial
+                    logger.warning(f"⚠️ Intento {attempt + 1}/{self.max_retries} falló: {e}. Reintentando en {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                else:
+                    logger.error(f"❌ Operación falló después de {self.max_retries} intentos")
+        
+        raise last_exception
+    
+    async def health_check(self) -> bool:
+        """Verificar salud de las conexiones"""
+        try:
+            if not self.connected or not self.db_pool:
+                return False
+            
+            # Prueba básica de conexión
+            async with self.db_pool.acquire() as conn:
+                result = await conn.fetchval("SELECT 1")
+                return result == 1
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Health check falló: {e}")
+            return False
+    
+    async def ensure_connected(self) -> bool:
+        """Asegurar que hay conexión activa, reconectar si es necesario"""
+        if not self.connected or not await self.health_check():
+            logger.info("🔄 Reconectando a Supabase...")
+            return await self.initialize()
+        return True
+    
+    async def _execute_robust(self, operation_name: str, operation, *args, **kwargs):
+        """Helper unificado para operaciones robustas con reconexión y reintentos"""
+        # Asegurar conexión activa
+        if not await self.ensure_connected():
+            raise Exception(f"No se puede establecer conexión para {operation_name}")
+        
+        # Ejecutar operación con reintentos
+        try:
+            return await self.retry_operation(operation, *args, **kwargs)
+        except Exception as e:
+            logger.error(f"❌ Error en {operation_name}: {e}")
+            raise
+        
     async def initialize(self):
-        """Inicializar conexiones a Supabase"""
+        """Inicializar conexiones a Supabase con configuración robusta"""
         try:
             if not self.url or not self.key:
                 logger.error("❌ Variables SUPABASE_URL o SUPABASE_API_KEY no encontradas")
@@ -41,18 +191,49 @@ class SupabaseManager:
             # Cliente de Supabase para API REST
             self.client = create_client(self.url, self.key)
             
-            # Pool de conexiones para PostgreSQL directo
-            self.db_pool = await asyncpg.create_pool(
-                self.database_url,
-                min_size=2,
-                max_size=10,
-                command_timeout=30
+            # Configuración SSL robusta
+            ssl_context = self._create_ssl_context()
+            
+            # Pool de conexiones para PostgreSQL directo con configuración robusta
+            pool_kwargs = {
+                'min_size': 2,
+                'max_size': 10,
+                'command_timeout': self.command_timeout,
+                'server_settings': {
+                    'application_name': 'RbxServers_Discord_Bot',
+                    'timezone': 'UTC'
+                },
+                'max_inactive_connection_lifetime': self.pool_max_inactive_connection_lifetime,
+            }
+            
+            # Configurar SSL seguro - usar URL con sslmode si no hay contexto
+            if ssl_context:
+                pool_kwargs['ssl'] = ssl_context
+            elif 'sslmode' not in self.database_url:
+                # Forzar SSL si no está explícitamente configurado
+                if '?' in self.database_url:
+                    self.database_url += '&sslmode=require'
+                else:
+                    self.database_url += '?sslmode=require'
+            
+            # Crear pool con timeout
+            self.db_pool = await asyncio.wait_for(
+                asyncpg.create_pool(self.database_url, **pool_kwargs),
+                timeout=self.connection_timeout
             )
+            
+            # Verificar que la conexión funciona
+            if not await self.health_check():
+                logger.error("❌ Health check inicial falló")
+                return False
                 
             self.connected = True
-            logger.info("✅ Conexión a Supabase establecida exitosamente")
+            logger.info("✅ Conexión a Supabase establecida exitosamente con configuración robusta")
             return True
             
+        except asyncio.TimeoutError:
+            logger.error("❌ Timeout conectando a Supabase")
+            return False
         except Exception as e:
             logger.error(f"❌ Error conectando a Supabase: {e}")
             return False
@@ -69,37 +250,50 @@ class SupabaseManager:
     # ====================================
     
     async def upsert_user(self, user_data: Dict) -> bool:
-        """Insertar o actualizar usuario"""
+        """Insertar o actualizar usuario con validación robusta"""
         try:
-            if not self.connected:
-                await self.initialize()
-                
-            if not self.db_pool:
-                logger.error("❌ Pool de conexiones no disponible")
+            # Asegurar conexión activa con reconexión automática
+            if not await self.ensure_connected():
                 return False
-                
-            async with self.db_pool.acquire() as conn:
-                await conn.execute("""
-                    INSERT INTO users (id, username, discriminator, avatar_url, created_at, joined_at, last_activity)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7)
-                    ON CONFLICT (id) DO UPDATE SET
-                        username = EXCLUDED.username,
-                        discriminator = EXCLUDED.discriminator,
-                        avatar_url = EXCLUDED.avatar_url,
-                        last_activity = EXCLUDED.last_activity,
-                        updated_at = NOW()
-                """, 
-                user_data['user_id'], 
-                user_data.get('username', 'Usuario Desconocido'),
-                user_data.get('discriminator', '0000'),
-                user_data.get('avatar_url'),
-                user_data.get('created_at'),
-                user_data.get('joined_at'),
-                datetime.now(timezone.utc)
-                )
+            
+            # Validar datos de entrada
+            user_id = self.validate_user_id(user_data.get('user_id'))
+            if not user_id:
+                logger.error("❌ user_id inválido")
+                return False
+            
+            # Parsear fechas de forma robusta
+            created_at = self.parse_datetime_robust(user_data.get('created_at'))
+            joined_at = self.parse_datetime_robust(user_data.get('joined_at'))
+            now = datetime.now(timezone.utc)
+            
+            # Ejecutar con reintentos automáticos
+            async def _upsert_operation():
+                async with self.db_pool.acquire() as conn:
+                    await conn.execute("""
+                        INSERT INTO users (id, username, discriminator, avatar_url, created_at, joined_at, last_activity)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7)
+                        ON CONFLICT (id) DO UPDATE SET
+                            username = EXCLUDED.username,
+                            discriminator = EXCLUDED.discriminator,
+                            avatar_url = EXCLUDED.avatar_url,
+                            last_activity = EXCLUDED.last_activity,
+                            updated_at = NOW()
+                    """, 
+                    user_id,
+                    user_data.get('username', 'Usuario Desconocido'),
+                    user_data.get('discriminator', '0000'),
+                    user_data.get('avatar_url'),
+                    created_at,
+                    joined_at,
+                    now
+                    )
+            
+            await self.retry_operation(_upsert_operation)
             return True
+            
         except Exception as e:
-            logger.error(f"❌ Error guardando usuario: {e}")
+            logger.error(f"❌ Error guardando usuario {user_data.get('user_id')}: {e}")
             return False
     
     async def get_user(self, user_id: int) -> Optional[Dict]:
