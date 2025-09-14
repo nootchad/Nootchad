@@ -1,6 +1,7 @@
 """
 Sistema Anti-Scam para RbxServers
 Permite reportar usuarios, verificar historial y moderar reportes de scammers
+Ahora usa Blob Storage para persistencia de datos
 """
 import discord
 from discord.ext import commands
@@ -18,40 +19,71 @@ logger = logging.getLogger(__name__)
 class AntiScamSystem:
     def __init__(self):
         self.reports_file = "scam_reports.json"
+        self.blob_filename = "scam_reports_blob.json"
         self.reports = {}
-        self.load_data()
+        # Inicializar de forma async-safe
+        asyncio.create_task(self.load_data())
 
-    def load_data(self):
-        """Cargar datos de reportes de scam"""
+    async def load_data(self):
+        """Cargar datos de reportes de scam desde Blob Storage"""
         try:
+            from blob_storage_manager import blob_manager
+            
+            # Intentar cargar desde Blob Storage primero
+            blob_data = await blob_manager.download_json(self.blob_filename)
+            
+            if blob_data:
+                self.reports = blob_data.get('reports', {})
+                logger.info(f"✅ Cargados {len(self.reports)} reportes de scam desde Blob Storage")
+                return
+            
+            # Si no hay datos en Blob, intentar migrar desde archivo local
             if Path(self.reports_file).exists():
                 with open(self.reports_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.reports = data.get('reports', {})
-                    logger.info(f"✅ Cargados {len(self.reports)} reportes de scam")
+                    logger.info(f"⚠️ Migrando {len(self.reports)} reportes desde archivo local")
+                    # Migrar a Blob Storage
+                    await self.save_data()
             else:
-                logger.info("⚠️ Archivo de reportes de scam no encontrado, inicializando vacío")
+                logger.info("⚠️ No se encontraron reportes, inicializando vacío")
                 self.reports = {}
+                
         except Exception as e:
             logger.error(f"❌ Error cargando reportes de scam: {e}")
             self.reports = {}
 
-    def save_data(self):
-        """Guardar datos de reportes de scam"""
+    async def save_data(self):
+        """Guardar datos de reportes de scam en Blob Storage"""
         try:
+            from blob_storage_manager import blob_manager
+            
             data = {
                 'reports': self.reports,
                 'last_updated': datetime.now().isoformat(),
                 'total_reports': len(self.reports),
                 'stats': self.get_stats()
             }
-            with open(self.reports_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            logger.info(f"💾 Guardados {len(self.reports)} reportes de scam")
+            
+            # Guardar en Blob Storage
+            url = await blob_manager.upload_json(self.blob_filename, data)
+            
+            if url:
+                logger.info(f"💾 Guardados {len(self.reports)} reportes de scam en Blob Storage")
+                
+                # También mantener backup local
+                with open(self.reports_file, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+            else:
+                logger.error("❌ Error guardando en Blob Storage, usando archivo local como fallback")
+                # Fallback a archivo local
+                with open(self.reports_file, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                    
         except Exception as e:
             logger.error(f"❌ Error guardando reportes de scam: {e}")
 
-    def create_report(self, reporter_id: str, reported_user_id: str, server_id: str, reason: str, evidence_text: str = "") -> Dict:
+    async def create_report(self, reporter_id: str, reported_user_id: str, server_id: str, reason: str, evidence_text: str = "") -> Dict:
         """Crear un nuevo reporte de scam"""
         try:
             # Generar ID único
@@ -82,7 +114,7 @@ class AntiScamSystem:
             }
 
             self.reports[report_id] = report
-            self.save_data()
+            await self.save_data()
 
             logger.info(f"📋 Reporte de scam creado: {report_id} - {reported_user_id}")
 
@@ -128,7 +160,7 @@ class AntiScamSystem:
 
         return server_reports[:limit]
 
-    def confirm_report(self, report_id: str, confirmer_id: str) -> Dict:
+    async def confirm_report(self, report_id: str, confirmer_id: str) -> Dict:
         """Confirmar un reporte (solo owner/delegados)"""
         if report_id not in self.reports:
             return {
@@ -149,7 +181,7 @@ class AntiScamSystem:
         report['confirmed_by'].append(confirmer_id)
         report['confirmed_at'] = datetime.now().isoformat()
 
-        self.save_data()
+        await self.save_data()
 
         logger.info(f"✅ Reporte {report_id} confirmado por {confirmer_id}")
 
@@ -158,7 +190,7 @@ class AntiScamSystem:
             'report': report
         }
 
-    def dismiss_report(self, report_id: str, dismisser_id: str) -> Dict:
+    async def dismiss_report(self, report_id: str, dismisser_id: str) -> Dict:
         """Descartar un reporte (solo owner/delegados)"""
         if report_id not in self.reports:
             return {
@@ -179,7 +211,7 @@ class AntiScamSystem:
         report['dismissed_by'] = dismisser_id
         report['dismissed_at'] = datetime.now().isoformat()
 
-        self.save_data()
+        await self.save_data()
 
         logger.info(f"❌ Reporte {report_id} descartado por {dismisser_id}")
 
@@ -215,8 +247,17 @@ class AntiScamSystem:
             'dismissed': dismissed
         }
 
-# Instancia global
-anti_scam_system = AntiScamSystem()
+# Instancia global (se inicializa async)
+anti_scam_system = None
+
+async def initialize_anti_scam_system():
+    """Inicializar el sistema anti-scam de forma asíncrona"""
+    global anti_scam_system
+    if anti_scam_system is None:
+        anti_scam_system = AntiScamSystem()
+        await anti_scam_system.load_data()
+        logger.info("✅ Sistema Anti-Scam inicializado con Blob Storage")
+    return anti_scam_system
 
 def setup_commands(bot):
     """Función requerida para configurar comandos del sistema anti-scam"""
@@ -246,6 +287,8 @@ def setup_commands(bot):
             return
 
         try:
+            # Asegurar que el sistema esté inicializado
+            await initialize_anti_scam_system()
             reporter_id = str(interaction.user.id)
             reporter_username = f"{interaction.user.name}#{interaction.user.discriminator}"
 
@@ -298,7 +341,7 @@ def setup_commands(bot):
                 return
 
             # Crear el reporte
-            result = anti_scam_system.create_report(
+            result = await anti_scam_system.create_report(
                 reporter_id=reporter_id,
                 reported_user_id=reported_user_id,
                 server_id=server_id,
@@ -468,7 +511,7 @@ def setup_commands(bot):
             return
 
         try:
-            result = anti_scam_system.confirm_report(report_id, user_id)
+            result = await anti_scam_system.confirm_report(report_id, user_id)
 
             if not result['success']:
                 embed = discord.Embed(
@@ -548,7 +591,7 @@ def setup_commands(bot):
             return
 
         try:
-            result = anti_scam_system.dismiss_report(report_id, user_id)
+            result = await anti_scam_system.dismiss_report(report_id, user_id)
 
             if not result['success']:
                 embed = discord.Embed(
@@ -565,6 +608,59 @@ def setup_commands(bot):
                 title="🚫 Reporte Descartado",
                 description=f"El reporte `{report_id}` ha sido descartado.",
                 color=0xff9900
+
+
+    async def migrate_reports_to_blob(self) -> Dict[str, int]:
+        """Migrar reportes existentes desde archivo local a Blob Storage"""
+        try:
+            from blob_storage_manager import blob_manager
+            
+            results = {
+                'reports_migrated': 0,
+                'errors': 0,
+                'already_in_blob': False
+            }
+            
+            # Verificar si ya hay datos en Blob
+            blob_data = await blob_manager.download_json(self.blob_filename)
+            if blob_data and blob_data.get('reports'):
+                results['already_in_blob'] = True
+                logger.info("ℹ️ Los reportes ya están en Blob Storage")
+                return results
+            
+            # Cargar datos locales si existen
+            if Path(self.reports_file).exists():
+                with open(self.reports_file, 'r', encoding='utf-8') as f:
+                    local_data = json.load(f)
+                
+                reports = local_data.get('reports', {})
+                
+                if reports:
+                    # Migrar a Blob Storage
+                    self.reports = reports
+                    await self.save_data()
+                    
+                    results['reports_migrated'] = len(reports)
+                    logger.info(f"✅ Migrados {len(reports)} reportes a Blob Storage")
+                else:
+                    logger.info("⚠️ No hay reportes para migrar")
+            else:
+                logger.info("⚠️ No se encontró archivo local de reportes")
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"❌ Error en migración de reportes: {e}")
+            return {'reports_migrated': 0, 'errors': 1}
+
+    async def sync_with_blob(self):
+        """Sincronizar datos locales con Blob Storage"""
+        try:
+            await self.load_data()
+            logger.info("🔄 Sincronización con Blob Storage completada")
+        except Exception as e:
+            logger.error(f"❌ Error en sincronización: {e}")
+
             )
 
             embed.add_field(
@@ -681,3 +777,66 @@ def setup_commands(bot):
 def cleanup_commands(bot):
     """Función opcional para limpiar comandos al recargar"""
     pass
+
+
+    @bot.tree.command(name="migratescamreports", description="[OWNER ONLY] Migrar reportes de scam a Blob Storage")
+    async def migratescamreports_command(interaction: discord.Interaction):
+        """Comando para migrar reportes a Blob Storage (solo owner y delegados)"""
+        user_id = str(interaction.user.id)
+
+        # Verificar que sea owner o delegado
+        from main import DISCORD_OWNER_ID, delegated_owners, is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            # Realizar migración
+            results = await anti_scam_system.migrate_reports_to_blob()
+
+            embed = discord.Embed(
+                title="📦 Migración de Reportes de Scam",
+                description="Migración a Blob Storage completada",
+                color=0x00ff88
+            )
+
+            if results['already_in_blob']:
+                embed.add_field(
+                    name="ℹ️ Estado:",
+                    value="Los reportes ya están en Blob Storage",
+                    inline=False
+                )
+            else:
+                embed.add_field(
+                    name="📊 Resultados:",
+                    value=f"**Reportes migrados:** {results['reports_migrated']}\n**Errores:** {results['errors']}",
+                    inline=True
+                )
+
+            embed.add_field(
+                name="📅 Fecha:",
+                value=f"<t:{int(datetime.now().timestamp())}:F>",
+                inline=True
+            )
+
+            embed.set_footer(text="Sistema Anti-Scam • Migración a Blob Storage")
+
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+            logger.info(f"📦 Migración de reportes ejecutada por {interaction.user.name}")
+
+        except Exception as e:
+            logger.error(f"❌ Error en comando migratescamreports: {e}")
+            embed = discord.Embed(
+                title="❌ Error en Migración",
+                description="Ocurrió un error durante la migración a Blob Storage.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
