@@ -764,11 +764,21 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
     
-    @bot.tree.command(name="confirmreport", description="[MODERADORES] Confirmar un reporte de scam")
+    @bot.tree.command(name="confirmreport", description="[OWNER ONLY] Confirmar un reporte de scam")
     async def confirmreport_command(interaction: discord.Interaction, report_id: str):
-        """Comando para confirmar reportes (solo moderadores)"""
-        # TODO: Implementar verificación de roles de moderador
+        """Comando para confirmar reportes (solo owner y delegados)"""
         user_id = str(interaction.user.id)
+        
+        # Verificar que sea owner o delegado
+        from main import DISCORD_OWNER_ID, delegated_owners, is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
         
         # Verificar autenticación básica
         from main import check_verification
@@ -840,11 +850,21 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
     
-    @bot.tree.command(name="dismissreport", description="[MODERADORES] Descartar un reporte de scam")
+    @bot.tree.command(name="dismissreport", description="[OWNER ONLY] Descartar un reporte de scam")
     async def dismissreport_command(interaction: discord.Interaction, report_id: str):
-        """Comando para descartar reportes (solo moderadores)"""
-        # TODO: Implementar verificación de roles de moderador
+        """Comando para descartar reportes (solo owner y delegados)"""
         user_id = str(interaction.user.id)
+        
+        # Verificar que sea owner o delegado
+        from main import DISCORD_OWNER_ID, delegated_owners, is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
         
         # Verificar autenticación básica
         from main import check_verification
@@ -916,9 +936,22 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
     
-    @bot.tree.command(name="reviewreports", description="[MODERADORES] Revisar reportes pendientes")
+    @bot.tree.command(name="reviewreports", description="[OWNER ONLY] Revisar reportes pendientes")
     async def reviewreports_command(interaction: discord.Interaction):
-        """Comando para revisar reportes pendientes (solo moderadores)"""
+        """Comando para revisar reportes pendientes (solo owner y delegados)"""
+        user_id = str(interaction.user.id)
+        
+        # Verificar que sea owner o delegado
+        from main import DISCORD_OWNER_ID, delegated_owners, is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        
         # Verificar autenticación básica
         from main import check_verification
         if not await check_verification(interaction, defer_response=True):
@@ -966,7 +999,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="🛠️ Acciones Disponibles:",
+                name="🛠️ Acciones Disponibles (Owner Only):",
                 value="• `/confirmreport <report_id>` - Confirmar reporte\n• `/dismissreport <report_id>` - Descartar reporte\n• `/checkscammers <user_id>` - Ver historial completo",
                 inline=False
             )
@@ -978,7 +1011,7 @@ def setup_commands(bot):
                     inline=False
                 )
             
-            embed.set_footer(text="Sistema Anti-Scam RbxServers • Moderación")
+            embed.set_footer(text="Sistema Anti-Scam RbxServers • Owner Only")
             
             await interaction.followup.send(embed=embed, ephemeral=True)
             
