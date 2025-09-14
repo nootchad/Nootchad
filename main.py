@@ -46,7 +46,6 @@ except Exception as env_error:
     # Continuar de todas formas, Railway proporciona las variables directamente
 
 # Import new systems
-from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
 from report_system import ServerReportSystem
 from rbxserversbot import setup_roblox_control_commands
@@ -3955,26 +3954,6 @@ async def on_ready():
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de alertas de inicio: {e}")
 
-    # Setup coins system
-    global coins_system
-    try:
-        from coins_system import setup_coins_commands, CoinsSystem
-        
-        coins_system = setup_coins_commands(bot)
-        logger.info("💰 Sistema de monedas configurado")
-    except Exception as e:
-        logger.error(f"❌ Error configurando sistema de monedas: {e}")
-
-    # Setup codes system
-    global codes_system_setup
-    try:
-        from codes_system import setup_codes_commands
-        
-        codes_system_setup = setup_codes_commands(bot)
-        logger.info("🎟️ Sistema de códigos configurado")
-    except Exception as e:
-        logger.error(f"❌ Error configurando sistema de códigos: {e}")
-
     # Setup images system
     global images_system
     try:
@@ -3983,16 +3962,7 @@ async def on_ready():
         images_system = setup_images_commands(bot)
         logger.info("🎨 Sistema de generación de imágenes configurado")
     except Exception as e:
-        logger.error(f"❌ Error configurando sistema de imágenes: {e}")
-
-    # Setup anti-alt system commands
-    global anti_alt_commands
-    try:
-        from anti_alt_commands import setup_anti_alt_commands
-        
-        anti_alt_commands = setup_anti_alt_commands(bot)
-        logger.info("🛡️ Sistema anti-alt configurado")
-    except Exception as e:
+        logger.error(f"❌ Error configurando sistema de imágenes: {e}")ception as e:
         logger.error(f"❌ Error configurando sistema anti-alt: {e}")
 
     # Setup leaderboard system
