@@ -198,6 +198,17 @@ class AntiScamSystem:
 
             self.save_data()
 
+            # Guardar automáticamente en Blob Storage
+            try:
+                from blob_storage_manager import blob_manager
+                blob_success = await blob_manager.save_scam_report(report_id, report)
+                if blob_success:
+                    logger.info(f"☁️ Reporte {report_id} guardado en Blob Storage")
+                else:
+                    logger.warning(f"⚠️ No se pudo guardar reporte {report_id} en Blob Storage")
+            except Exception as blob_error:
+                logger.error(f"❌ Error guardando en Blob Storage: {blob_error}")
+
             logger.info(f"📋 Nuevo reporte creado: {report_id} - Reporter: {reporter_id}, Reported: {reported_id}")
 
             return {
@@ -313,6 +324,15 @@ class AntiScamSystem:
 
         self.save_data()
 
+        # Actualizar en Blob Storage
+        try:
+            from blob_storage_manager import blob_manager
+            blob_success = await blob_manager.save_scam_report(report_id, report)
+            if blob_success:
+                logger.info(f"☁️ Reporte confirmado {report_id} actualizado en Blob Storage")
+        except Exception as blob_error:
+            logger.error(f"❌ Error actualizando reporte confirmado en Blob Storage: {blob_error}")
+
         logger.info(f"✅ Reporte {report_id} confirmado por moderador {moderator_id}")
 
         return {'success': True, 'report': report}
@@ -349,6 +369,15 @@ class AntiScamSystem:
                 self.flag_user_for_abuse(reporter_id)
 
         self.save_data()
+
+        # Actualizar en Blob Storage
+        try:
+            from blob_storage_manager import blob_manager
+            blob_success = await blob_manager.save_scam_report(report_id, report)
+            if blob_success:
+                logger.info(f"☁️ Reporte descartado {report_id} actualizado en Blob Storage")
+        except Exception as blob_error:
+            logger.error(f"❌ Error actualizando reporte descartado en Blob Storage: {blob_error}")
 
         logger.info(f"❌ Reporte {report_id} descartado por moderador {moderator_id}")
 
