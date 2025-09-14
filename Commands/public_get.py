@@ -133,7 +133,7 @@ def setup_commands(bot):
                             
                             # Crear embed con servidores encontrados
                             success_embed = discord.Embed(
-                                title="<:verify:1396087763388072006> Servidores Obtenidos",
+                                title="✅ Servidores Obtenidos",
                                 description=f"Se encontraron **{len(servers)}** servidores para el juego ID: `{game_id}`",
                                 color=0x495057
                             )
@@ -195,7 +195,7 @@ def setup_commands(bot):
                             
                             await message.edit(embed=success_embed)
                             
-                            logger.info(f"<:verify:1396087763388072006> Usuario público {username} obtuvo {len(servers)} servidores para juego {game_id} (mostrados: {len(servers_to_show)})")
+                            logger.info(f"✅ Usuario público {username} obtuvo {len(servers)} servidores para juego {game_id} (mostrados: {len(servers_to_show)})")
                         
                         else:
                             # No se encontraron servidores
@@ -390,7 +390,7 @@ def setup_commands(bot):
             
             await message.edit(embed=error_embed)
 
-    logger.info("<:verify:1396087763388072006> Comando /publicget registrado correctamente")
+    logger.info("✅ Comando /publicget registrado correctamente")
     return True
 
 

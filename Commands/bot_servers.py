@@ -250,25 +250,25 @@ def setup_commands(bot):
             
             embed.add_field(
                 name="🤖 Bot en el Servidor",
-                value=f"• **Se unió:** <t:{int(joined_at.timestamp())}:F>\n• **Admin:** {'<:verify:1396087763388072006>' if permissions.administrator else '❌'}\n• **Nickname:** {bot_member.display_name}",
+                value=f"• **Se unió:** <t:{int(joined_at.timestamp())}:F>\n• **Admin:** {'✅' if permissions.administrator else '❌'}\n• **Nickname:** {bot_member.display_name}",
                 inline=False
             )
             
             # Permisos importantes
             important_perms = []
             if permissions.administrator:
-                important_perms.append("<:verify:1396087763388072006> Administrador")
+                important_perms.append("✅ Administrador")
             else:
                 if permissions.manage_guild:
-                    important_perms.append("<:verify:1396087763388072006> Gestionar Servidor")
+                    important_perms.append("✅ Gestionar Servidor")
                 if permissions.manage_channels:
-                    important_perms.append("<:verify:1396087763388072006> Gestionar Canales")
+                    important_perms.append("✅ Gestionar Canales")
                 if permissions.manage_roles:
-                    important_perms.append("<:verify:1396087763388072006> Gestionar Roles")
+                    important_perms.append("✅ Gestionar Roles")
                 if permissions.send_messages:
-                    important_perms.append("<:verify:1396087763388072006> Enviar Mensajes")
+                    important_perms.append("✅ Enviar Mensajes")
                 if permissions.embed_links:
-                    important_perms.append("<:verify:1396087763388072006> Insertar Enlaces")
+                    important_perms.append("✅ Insertar Enlaces")
                 if not permissions.send_messages:
                     important_perms.append("❌ Enviar Mensajes")
                 if not permissions.embed_links:
@@ -317,7 +317,7 @@ def setup_commands(bot):
             error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:200]}```", inline=False)
             await interaction.followup.send(embed=error_embed, ephemeral=True)
     
-    logger.info("<:verify:1396087763388072006> Comandos de información de servidores configurados")
+    logger.info("✅ Comandos de información de servidores configurados")
     return True
 
 def cleanup_commands(bot):

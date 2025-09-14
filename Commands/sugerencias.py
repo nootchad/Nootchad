@@ -28,7 +28,7 @@ class SugerenciasSystem:
             if Path(self.sugerencias_file).exists():
                 with open(self.sugerencias_file, 'r', encoding='utf-8') as f:
                     self.sugerencias_data = json.load(f)
-                    logger.info(f"<:verify:1396087763388072006> Datos de sugerencias cargados: {len(self.sugerencias_data.get('sugerencias', []))} sugerencias")
+                    logger.info(f"✅ Datos de sugerencias cargados: {len(self.sugerencias_data.get('sugerencias', []))} sugerencias")
             else:
                 self.sugerencias_data = {
                     'sugerencias': [],
@@ -237,7 +237,7 @@ def setup_commands(bot):
             
             # Confirmación al usuario
             confirmacion_embed = discord.Embed(
-                title="<:verify:1396087763388072006> Sugerencia Enviada",
+                title="✅ Sugerencia Enviada",
                 description=f"Tu sugerencia **#{sugerencia_id}** ha sido enviada al owner para revisión.",
                 color=0x00ff88
             )
@@ -398,7 +398,7 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=error_embed, ephemeral=True)
     
-    logger.info("<:verify:1396087763388072006> Sistema de sugerencias configurado exitosamente")
+    logger.info("✅ Sistema de sugerencias configurado exitosamente")
     return True
 
 def cleanup_commands(bot):
