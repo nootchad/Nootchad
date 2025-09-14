@@ -595,16 +595,13 @@ def setup_commands(bot):
 
     @bot.tree.command(name="checkscammers", description="Verificar reportes de scam en el servidor")
     async def checkscammers_command(interaction: discord.Interaction, user_id: str = None):
-        """Comando para verificar reportes de scammers con integración a Supabase"""
+        """Comando para verificar reportes de scammers con integración a Blob Storage"""
         # Verificar autenticación
         from main import check_verification
         if not await check_verification(interaction, defer_response=True):
             return
 
         try:
-            # Importar cliente de Supabase
-            from supabase_client import supabase_manager
-            
             if user_id:
                 # Verificar usuario específico
                 try:
@@ -613,8 +610,34 @@ def setup_commands(bot):
                     await interaction.followup.send("❌ ID de usuario inválido. Debe ser numérico.", ephemeral=True)
                     return
 
-                # Buscar reportes en Supabase
+                # Buscar reportes en Blob Storage primero
                 try:
+                    from blob_storage_manager import blob_manager
+                    reports = await blob_manager.get_scam_reports_by_user(str(user_id_int))
+                    
+                    if reports:
+                        # Usuario tiene reportes - HACER PING DIRECTO SIN EMBED
+                        confirmed_reports = [r for r in reports if r.get('report_data', {}).get('status') == 'confirmed']
+                        pending_reports = [r for r in reports if r.get('report_data', {}).get('status') == 'pending']
+                        
+                        # Mensaje simple con ping
+                        ping_message = f"🚨 **SCAMMER DETECTADO** 🚨\n\n<@{user_id}>"
+                        
+                        if confirmed_reports:
+                            ping_message += f" - {len(confirmed_reports)} reportes confirmados (Blob)"
+                        elif pending_reports:
+                            ping_message += f" - {len(pending_reports)} reportes pendientes (Blob)"
+                        
+                        await interaction.followup.send(ping_message, ephemeral=False)
+                        return
+                        
+                except Exception as blob_error:
+                    logger.error(f"Error consultando Blob Storage: {blob_error}")
+                
+                # Fallback a Supabase si está disponible
+                try:
+                    from supabase_client import supabase_manager
+                    
                     if not supabase_manager.connected:
                         await supabase_manager.initialize()
                     
@@ -637,27 +660,24 @@ def setup_commands(bot):
                                 ping_message = f"🚨 **SCAMMER DETECTADO** 🚨\n\n<@{user_id}>"
                                 
                                 if confirmed_reports:
-                                    ping_message += f" - {len(confirmed_reports)} reportes confirmados"
+                                    ping_message += f" - {len(confirmed_reports)} reportes confirmados (DB)"
                                 elif pending_reports:
-                                    ping_message += f" - {len(pending_reports)} reportes pendientes"
+                                    ping_message += f" - {len(pending_reports)} reportes pendientes (DB)"
                                 
                                 await interaction.followup.send(ping_message, ephemeral=False)
-                                return
-                            else:
-                                # No hay reportes para este usuario específico
-                                await interaction.followup.send(f"No hay reportes para el usuario {user_id}", ephemeral=True)
                                 return
                                 
                 except Exception as db_error:
                     logger.error(f"Error consultando Supabase: {db_error}")
-                    # Fallback al sistema JSON local
-                    result = anti_scam_system.get_user_reports(user_id)
-                    if result['found']:
-                        await interaction.followup.send(f"🚨 **SCAMMER DETECTADO** 🚨\n\n<@{user_id}>", ephemeral=False)
-                        return
-                    else:
-                        await interaction.followup.send(f"No hay reportes para el usuario {user_id}", ephemeral=True)
-                        return
+                
+                # Fallback final al sistema JSON local
+                result = anti_scam_system.get_user_reports(user_id)
+                if result['found']:
+                    await interaction.followup.send(f"🚨 **SCAMMER DETECTADO** 🚨\n\n<@{user_id}> (local)", ephemeral=False)
+                    return
+                else:
+                    await interaction.followup.send(f"No hay reportes para el usuario {user_id}", ephemeral=True)
+                    return
             else:
                 # Verificar servidor actual
                 if not interaction.guild:
