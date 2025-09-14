@@ -32,20 +32,20 @@ class AntiScamSystem:
             # Obtener mapeo una sola vez para consistencia
             file_map = await blob_manager.list_files_with_urls()
             scam_files = [f for f in file_map.keys() if f.startswith(self.blob_folder)]
-            
+
             self.reports = {}
-            
+
             # Cargar todos los archivos de reportes (sistema permanente)
             if scam_files:
                 successful_loads = 0
-                
+
                 for filename in scam_files:
                     try:
                         blob_data = await blob_manager.download_json(filename, file_map)
                         if blob_data and isinstance(blob_data, dict):
                             # Combinar reportes de múltiples archivos
                             file_reports = blob_data.get('reports', {})
-                            
+
                             # Manejar tanto formato de lista como diccionario
                             if isinstance(file_reports, list):
                                 # Convertir lista a diccionario usando timestamp como ID
@@ -58,7 +58,7 @@ class AntiScamSystem:
                                             import time
                                             report_id = f"report_{int(time.time() * 1000000)}"
                                             report_data['report_id'] = report_id
-                                        
+
                                         if report_id not in self.reports:
                                             self.reports[report_id] = report_data
                                             new_reports += 1
@@ -76,7 +76,7 @@ class AntiScamSystem:
                     except Exception as e:
                         logger.warning(f"⚠️ Error cargando archivo {filename}: {e}")
                         continue
-                
+
                 logger.info(f"✅ Cargados {len(self.reports)} reportes únicos desde {successful_loads}/{len(scam_files)} archivos")
                 return
 
@@ -128,7 +128,7 @@ class AntiScamSystem:
                 # También mantener backup local
                 with open(self.reports_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
-                
+
                 # Verificar integridad de archivos (mantener todos los reportes)
                 await self._cleanup_old_report_files()
             else:
@@ -144,16 +144,16 @@ class AntiScamSystem:
         """Mantener todos los reportes y solo limpiar archivos duplicados o corruptos"""
         try:
             from blob_storage_manager import blob_manager
-            
+
             # Listar archivos de reportes
             all_files = await blob_manager.list_files()
             scam_files = [f for f in all_files if f.startswith(self.blob_folder)]
-            
+
             logger.info(f"📊 Manteniendo {len(scam_files)} archivos de reportes (todos permanentes)")
-            
+
             # Solo verificar y eliminar archivos corruptos o vacíos
             corrupted_files = []
-            
+
             for filename in scam_files:
                 try:
                     # Verificar si el archivo se puede leer correctamente
@@ -161,15 +161,15 @@ class AntiScamSystem:
                     if not blob_data or not isinstance(blob_data, dict):
                         corrupted_files.append(filename)
                         continue
-                    
+
                     # Verificar si tiene estructura válida
                     if 'reports' not in blob_data and 'last_updated' not in blob_data:
                         corrupted_files.append(filename)
-                        
+
                 except Exception as e:
                     logger.warning(f"⚠️ Archivo corrupto detectado: {filename} - {e}")
                     corrupted_files.append(filename)
-            
+
             # Eliminar solo archivos corruptos
             if corrupted_files:
                 for corrupted_file in corrupted_files:
@@ -178,11 +178,11 @@ class AntiScamSystem:
                         logger.info(f"🗑️ Archivo corrupto eliminado: {corrupted_file}")
                     except Exception as e:
                         logger.warning(f"⚠️ Error eliminando archivo corrupto {corrupted_file}: {e}")
-                
+
                 logger.info(f"🧹 Limpieza completada: {len(corrupted_files)} archivos corruptos eliminados")
             else:
                 logger.info("✅ Todos los archivos de reportes están en buen estado")
-                        
+
         except Exception as e:
             logger.warning(f"⚠️ Error en verificación de archivos: {e}")
 
@@ -274,7 +274,7 @@ class AntiScamSystem:
                     import time
                     return time.time()
             return timestamp if isinstance(timestamp, (int, float)) else 0
-        
+
         server_reports.sort(key=get_timestamp, reverse=True)
 
         return server_reports[:limit]
@@ -392,7 +392,7 @@ class AntiScamSystem:
             # Verificar si ya hay datos en la carpeta de reportes
             all_files = await blob_manager.list_files()
             scam_files = [f for f in all_files if f.startswith(self.blob_folder)]
-            
+
             if scam_files:
                 results['already_in_blob'] = True
                 logger.info(f"ℹ️ Ya hay {len(scam_files)} archivos de reportes en Blob Storage")
@@ -636,7 +636,7 @@ def setup_commands(bot):
             # Asegurar que el sistema esté inicializado y sincronizado
             await initialize_anti_scam_system()
             await anti_scam_system.sync_with_blob()
-            
+
             if user_id:
                 # Verificar usuario específico
                 try:
@@ -660,7 +660,7 @@ def setup_commands(bot):
                         ping_message = f"🚨 **SCAMMER CONFIRMADO** 🚨\n\n<@{user_id}> - {len(confirmed_reports)} reportes confirmados"
                         if pending_reports:
                             ping_message += f" + {len(pending_reports)} pendientes"
-                        
+
                         # Agregar detalles de los reportes confirmados más recientes
                         ping_message += "\n\n📋 **Reportes confirmados:**"
                         for i, report in enumerate(confirmed_reports[:3], 1):  # Mostrar hasta 3 reportes
@@ -668,16 +668,16 @@ def setup_commands(bot):
                                 report_date = datetime.fromisoformat(report['created_at']).strftime("%d/%m/%Y")
                             except:
                                 report_date = "Fecha desconocida"
-                            
+
                             ping_message += f"\n• **{i}.** {report['reason'][:50]}{'...' if len(report['reason']) > 50 else ''} *(Reportado: {report_date})*"
-                        
+
                         if len(confirmed_reports) > 3:
                             ping_message += f"\n• *Y {len(confirmed_reports) - 3} reportes más...*"
-                            
+
                     elif pending_reports:
                         # Solo reportes pendientes
                         ping_message = f"⚠️ **USUARIO CON REPORTES PENDIENTES** ⚠️\n\n<@{user_id}> - {len(pending_reports)} reportes pendientes de revisión"
-                        
+
                         # Agregar detalles de los reportes pendientes más recientes
                         ping_message += "\n\n📋 **Reportes pendientes:**"
                         for i, report in enumerate(pending_reports[:3], 1):  # Mostrar hasta 3 reportes
@@ -685,12 +685,12 @@ def setup_commands(bot):
                                 report_date = datetime.fromisoformat(report['created_at']).strftime("%d/%m/%Y")
                             except:
                                 report_date = "Fecha desconocida"
-                            
+
                             ping_message += f"\n• **{i}.** {report['reason'][:50]}{'...' if len(report['reason']) > 50 else ''} *(Reportado: {report_date})*"
-                        
+
                         if len(pending_reports) > 3:
                             ping_message += f"\n• *Y {len(pending_reports) - 3} reportes más...*"
-                            
+
                     else:
                         # Solo reportes descartados
                         ping_message = f"ℹ️ **REPORTES DESCARTADOS** ℹ️\n\n<@{user_id}> - {len(dismissed_reports)} reportes descartados (no es scammer)"
@@ -708,58 +708,73 @@ def setup_commands(bot):
 
                 server_id = str(interaction.guild.id)
 
-                # Buscar reportes en el servidor actual (después de sincronizar)
-                recent_reports = anti_scam_system.get_server_recent_reports(server_id, limit=10)
+                # Obtener todos los reportes de scammers (de cualquier servidor)
+                all_reports = list(anti_scam_system.reports.values())
 
-                if recent_reports:
-                    # Extraer usuarios únicos reportados (confirmados Y pendientes)
-                    confirmed_users = list(set([r['reported_user_id'] for r in recent_reports if r['status'] == 'confirmed']))
-                    pending_users = list(set([r['reported_user_id'] for r in recent_reports if r['status'] == 'pending']))
-                    
-                    if confirmed_users:
-                        # Priorizar usuarios confirmados
-                        scammer_pings = [f"<@{user}>" for user in confirmed_users]
-                        ping_message = "🚨 **SCAMMERS CONFIRMADOS EN ESTE SERVIDOR** 🚨\n\n" + " ".join(scammer_pings)
-                        
+                if all_reports:
+                    # Obtener miembros del servidor actual
+                    server_member_ids = [str(member.id) for member in interaction.guild.members]
+
+                    # Filtrar usuarios reportados que ESTÁN EN EL SERVIDOR ACTUAL
+                    confirmed_users_in_server = []
+                    pending_users_in_server = []
+
+                    for report in all_reports:
+                        reported_user_id = report['reported_user_id']
+
+                        # Solo incluir si el usuario reportado está en el servidor actual
+                        if reported_user_id in server_member_ids:
+                            if report['status'] == 'confirmed':
+                                if reported_user_id not in confirmed_users_in_server:
+                                    confirmed_users_in_server.append(reported_user_id)
+                            elif report['status'] == 'pending':
+                                if reported_user_id not in pending_users_in_server:
+                                    pending_users_in_server.append(reported_user_id)
+
+                    if confirmed_users_in_server:
+                        # Priorizar usuarios confirmados que están en el servidor
+                        scammer_pings = [f"<@{user}>" for user in confirmed_users_in_server]
+                        ping_message = "🚨 **SCAMMERS CONFIRMADOS PRESENTES EN ESTE SERVIDOR** 🚨\n\n" + " ".join(scammer_pings)
+
                         # Agregar detalles de reportes confirmados
                         ping_message += "\n\n📋 **Detalles de reportes confirmados:**"
-                        for user_id in confirmed_users[:5]:  # Mostrar hasta 5 usuarios
-                            user_reports = [r for r in recent_reports if r['reported_user_id'] == user_id and r['status'] == 'confirmed']
+                        for user_id in confirmed_users_in_server[:5]:  # Mostrar hasta 5 usuarios
+                            user_reports = [r for r in all_reports if r['reported_user_id'] == user_id and r['status'] == 'confirmed']
                             if user_reports:
                                 latest_report = max(user_reports, key=lambda x: x.get('timestamp', 0))
                                 try:
                                     report_date = datetime.fromisoformat(latest_report['created_at']).strftime("%d/%m/%Y")
                                 except:
                                     report_date = "Fecha desconocida"
-                                
+
                                 ping_message += f"\n• <@{user_id}>: {latest_report['reason'][:40]}{'...' if len(latest_report['reason']) > 40 else ''} *({report_date})*"
-                        
-                        if len(confirmed_users) > 5:
-                            ping_message += f"\n• *Y {len(confirmed_users) - 5} usuarios más...*"
-                            
+
+                        if len(confirmed_users_in_server) > 5:
+                            ping_message += f"\n• *Y {len(confirmed_users_in_server) - 5} usuarios más...*"
+
                         await interaction.followup.send(ping_message, ephemeral=False)
                         return
-                    elif pending_users:
-                        # Mostrar usuarios con reportes pendientes si no hay confirmados
-                        scammer_pings = [f"<@{user}>" for user in pending_users]
-                        ping_message = "⚠️ **USUARIOS CON REPORTES PENDIENTES EN ESTE SERVIDOR** ⚠️\n\n" + " ".join(scammer_pings)
-                        
+                    elif pending_users_in_server:
+                        # Mostrar usuarios con reportes pendientes que están en el servidor
+                        scammer_pings = [f"<@{user}>" for user in pending_users_in_server]
+                        ping_message = "⚠️ **USUARIOS CON REPORTES PENDIENTES PRESENTES EN ESTE SERVIDOR** ⚠️\n\n" + " ".join(scammer_pings)
+
                         # Agregar detalles de reportes pendientes
                         ping_message += "\n\n📋 **Detalles de reportes pendientes:**"
-                        for user_id in pending_users[:5]:  # Mostrar hasta 5 usuarios
-                            user_reports = [r for r in recent_reports if r['reported_user_id'] == user_id and r['status'] == 'pending']
+                        for user_id in pending_users_in_server[:5]:  # Mostrar hasta 5 usuarios
+                            user_reports = [r for r in all_reports if r['reported_user_id'] == user_id and r['status'] == 'pending']
                             if user_reports:
                                 latest_report = max(user_reports, key=lambda x: x.get('timestamp', 0))
                                 try:
                                     report_date = datetime.fromisoformat(latest_report['created_at']).strftime("%d/%m/%Y")
                                 except:
                                     report_date = "Fecha desconocida"
-                                
+
                                 ping_message += f"\n• <@{user_id}>: {latest_report['reason'][:40]}{'...' if len(latest_report['reason']) > 40 else ''} *({report_date})*"
-                        
-                        if len(pending_users) > 5:
-                            ping_message += f"\n• *Y {len(pending_users) - 5} usuarios más...*"
-                            
+
+                        if len(pending_users_in_server) > 5:
+                            ping_message += f"\n• *Y {len(pending_users_in_server) - 5} usuarios más...*"
+
                         await interaction.followup.send(ping_message, ephemeral=False)
                         return
 
@@ -1147,7 +1162,7 @@ def setup_commands(bot):
                     top_list = []
                     for user_id, count in top_reported:
                         top_list.append(f"<@{user_id}>: {count} reportes")
-                    
+
                     embed.add_field(
                         name="🔥 Más Reportados",
                         value="\n".join(top_list) if top_list else "Ninguno",
@@ -1238,7 +1253,7 @@ def setup_commands(bot):
             try:
                 test_report = await anti_scam_system.create_report(
                     reporter_id="test_reporter_123",
-                    reported_user_id="test_scammer_456", 
+                    reported_user_id="test_scammer_456",
                     server_id="test_server_789",
                     reason="Test de funcionalidad del sistema",
                     evidence_text="Este es un reporte de prueba para verificar el funcionamiento"
