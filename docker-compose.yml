@@ -1,4 +1,3 @@
-
 version: '3.8'
 
 services:
@@ -8,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: rbxservers-discord-bot
     restart: unless-stopped
-    
+
     # Variables de entorno necesarias
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
@@ -17,10 +16,9 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - REPL_SLUG=${REPL_SLUG:-rbxservers}
       - REPL_OWNER=${REPL_OWNER:-paysencharlee}
-      - DISPLAY=:99
       - PYTHONUNBUFFERED=1
       - TZ=UTC
-    
+
     # Archivos de configuración y datos persistentes
     volumes:
       - ./followers.json:/app/followers.json:rw
@@ -45,48 +43,42 @@ services:
       - ./RbxBotLogic:/app/RbxBotLogic:rw
       - ./attached_assets:/app/attached_assets:rw
       - ./Commands:/app/Commands:rw
-      - rbxservers-tmp:/tmp
-      - rbxservers-chrome:/home/app/.cache
-    
+      - rbxservers-data:/app/data
+
     # Puertos
     ports:
       - "8080:8080"  # Puerto para el servidor web interno
-    
+
     # Configuración de red
     networks:
       - rbxservers-network
-    
-    # Dependencias
-    depends_on:
-      xvfb:
-        condition: service_started
-    
+
     # Límites de recursos
     deploy:
       resources:
         limits:
-          memory: 2G
-          cpus: '1.0'
-        reservations:
-          memory: 512M
+          memory: 1G
           cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
       restart_policy:
         condition: on-failure
         delay: 10s
         max_attempts: 5
         window: 120s
-    
+
     # Configuración de logging
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    
+
     # Configuraciones de seguridad
     security_opt:
       - no-new-privileges:true
-    
+
     # Healthcheck
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
@@ -94,36 +86,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-
-  # Servidor X virtual para Chrome headless
-  xvfb:
-    image: jlesage/xvfb:latest
-    container_name: rbxservers-xvfb
-    restart: unless-stopped
-    environment:
-      - DISPLAY_WIDTH=1920
-      - DISPLAY_HEIGHT=1080
-      - DISPLAY=:99
-      - VNC_PASSWORD=
-    networks:
-      - rbxservers-network
-    
-    # Límites de recursos para Xvfb
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.2'
-        reservations:
-          memory: 64M
-          cpus: '0.1'
-    
-    # Configuración de logging
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
 
 networks:
   rbxservers-network:
@@ -135,8 +97,4 @@ networks:
 # Volúmenes persistentes
 volumes:
   rbxservers-data:
-    driver: local
-  rbxservers-tmp:
-    driver: local
-  rbxservers-chrome:
     driver: local

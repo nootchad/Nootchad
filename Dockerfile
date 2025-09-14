@@ -1,4 +1,3 @@
-
 # Usar Python 3.11 como base con imagen multi-arquitectura
 FROM python:3.11-slim
 
@@ -28,22 +27,6 @@ RUN apt-get update && apt-get install -y \
     libgconf-2-4 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
-
-# Instalar Google Chrome de forma más robusta
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-# Instalar ChromeDriver con detección automática de versión
-RUN CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1) \
-    && CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") \
-    && wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" \
-    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
-    && rm /tmp/chromedriver.zip \
-    && chmod +x /usr/local/bin/chromedriver
 
 # Establecer directorio de trabajo
 WORKDIR /app
