@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 class AntiScamSystem:
     def __init__(self):
         self.reports_file = "scam_reports.json"
+        self.blob_folder = "scam_reports/"
         self.blob_filename = "scam_reports_blob.json"
         self.reports = {}
         self._initialized = False
@@ -28,12 +29,34 @@ class AntiScamSystem:
         try:
             from blob_storage_manager import blob_manager
 
-            # Intentar cargar desde Blob Storage primero
-            blob_data = await blob_manager.download_json(self.blob_filename)
+            # Listar todos los archivos en la carpeta de reportes
+            all_files = await blob_manager.list_files()
+            scam_files = [f for f in all_files if f.startswith(self.blob_folder)]
+            
+            self.reports = {}
+            
+            # Cargar todos los archivos de reportes
+            if scam_files:
+                for filename in scam_files:
+                    try:
+                        blob_data = await blob_manager.download_json(filename)
+                        if blob_data and blob_data.get('reports'):
+                            # Combinar reportes de múltiples archivos
+                            file_reports = blob_data.get('reports', {})
+                            self.reports.update(file_reports)
+                            logger.info(f"📁 Cargados reportes desde: {filename}")
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error cargando archivo {filename}: {e}")
+                        continue
+                
+                logger.info(f"✅ Cargados {len(self.reports)} reportes de scam desde {len(scam_files)} archivos")
+                return
 
+            # Si no hay archivos en la carpeta, intentar cargar archivo específico
+            blob_data = await blob_manager.download_json(self.blob_filename)
             if blob_data:
                 self.reports = blob_data.get('reports', {})
-                logger.info(f"✅ Cargados {len(self.reports)} reportes de scam desde Blob Storage")
+                logger.info(f"✅ Cargados {len(self.reports)} reportes de scam desde archivo específico")
                 return
 
             # Si no hay datos en Blob, intentar migrar desde archivo local
@@ -64,15 +87,22 @@ class AntiScamSystem:
                 'stats': self.get_stats()
             }
 
-            # Guardar en Blob Storage
-            url = await blob_manager.upload_json(self.blob_filename, data)
+            # Crear nombre de archivo con timestamp para organización
+            timestamp = int(datetime.now().timestamp())
+            blob_filename = f"{self.blob_folder}scam_reports_{timestamp}.json"
+
+            # Guardar en Blob Storage con carpeta organizada
+            url = await blob_manager.upload_json(blob_filename, data)
 
             if url:
-                logger.info(f"💾 Guardados {len(self.reports)} reportes de scam en Blob Storage")
+                logger.info(f"💾 Guardados {len(self.reports)} reportes de scam en: {blob_filename}")
 
                 # También mantener backup local
                 with open(self.reports_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
+                
+                # Limpiar archivos antiguos (mantener solo los 5 más recientes)
+                await self._cleanup_old_report_files()
             else:
                 logger.error("❌ Error guardando en Blob Storage, usando archivo local como fallback")
                 # Fallback a archivo local
@@ -81,6 +111,32 @@ class AntiScamSystem:
 
         except Exception as e:
             logger.error(f"❌ Error guardando reportes de scam: {e}")
+
+    async def _cleanup_old_report_files(self):
+        """Limpiar archivos antiguos de reportes, mantener solo los 5 más recientes"""
+        try:
+            from blob_storage_manager import blob_manager
+            
+            # Listar archivos de reportes
+            all_files = await blob_manager.list_files()
+            scam_files = [f for f in all_files if f.startswith(self.blob_folder)]
+            
+            if len(scam_files) > 5:
+                # Ordenar por nombre (que contiene timestamp)
+                scam_files.sort()
+                
+                # Eliminar archivos más antiguos
+                old_files = scam_files[:-5]  # Mantener solo los 5 más recientes
+                
+                for old_file in old_files:
+                    try:
+                        await blob_manager.delete_file(old_file)
+                        logger.info(f"🗑️ Archivo antiguo eliminado: {old_file}")
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error eliminando archivo {old_file}: {e}")
+                        
+        except Exception as e:
+            logger.warning(f"⚠️ Error en limpieza de archivos antiguos: {e}")
 
     async def create_report(self, reporter_id: str, reported_user_id: str, server_id: str, reason: str, evidence_text: str = "") -> Dict:
         """Crear un nuevo reporte de scam"""
@@ -261,11 +317,13 @@ class AntiScamSystem:
                 'already_in_blob': False
             }
 
-            # Verificar si ya hay datos en Blob
-            blob_data = await blob_manager.download_json(self.blob_filename)
-            if blob_data and blob_data.get('reports'):
+            # Verificar si ya hay datos en la carpeta de reportes
+            all_files = await blob_manager.list_files()
+            scam_files = [f for f in all_files if f.startswith(self.blob_folder)]
+            
+            if scam_files:
                 results['already_in_blob'] = True
-                logger.info("ℹ️ Los reportes ya están en Blob Storage")
+                logger.info(f"ℹ️ Ya hay {len(scam_files)} archivos de reportes en Blob Storage")
                 return results
 
             # Cargar datos locales si existen
@@ -276,12 +334,12 @@ class AntiScamSystem:
                 reports = local_data.get('reports', {})
 
                 if reports:
-                    # Migrar a Blob Storage
+                    # Migrar a Blob Storage usando el sistema de carpetas
                     self.reports = reports
                     await self.save_data()
 
                     results['reports_migrated'] = len(reports)
-                    logger.info(f"✅ Migrados {len(reports)} reportes a Blob Storage")
+                    logger.info(f"✅ Migrados {len(reports)} reportes a carpeta Blob Storage")
                 else:
                     logger.info("⚠️ No hay reportes para migrar")
             else:
@@ -296,8 +354,9 @@ class AntiScamSystem:
     async def sync_with_blob(self):
         """Sincronizar datos locales con Blob Storage"""
         try:
+            # Recargar todos los datos desde la carpeta de reportes
             await self.load_data()
-            logger.info("🔄 Sincronización con Blob Storage completada")
+            logger.info(f"🔄 Sincronización completada - {len(self.reports)} reportes cargados")
         except Exception as e:
             logger.error(f"❌ Error en sincronización: {e}")
 
@@ -935,17 +994,18 @@ def setup_commands(bot):
             try:
                 from blob_storage_manager import blob_manager
                 test_data = {"test": True, "timestamp": datetime.now().isoformat()}
-                blob_url = await blob_manager.upload_json("test_scam_reports.json", test_data)
+                test_filename = f"{self.blob_folder}test_scam_reports.json"
+                blob_url = await blob_manager.upload_json(test_filename, test_data)
 
                 if blob_url:
                     # Verificar descarga
-                    downloaded = await blob_manager.download_json("test_scam_reports.json")
+                    downloaded = await blob_manager.download_json(test_filename)
                     if downloaded and downloaded.get('test'):
                         test_results['blob_test'] = True
                         logger.info("✅ Test Blob Storage: EXITOSO")
 
                         # Limpiar archivo de prueba
-                        await blob_manager.delete_file("test_scam_reports.json")
+                        await blob_manager.delete_file(test_filename)
                     else:
                         logger.error("❌ Test Blob Storage: FALLO - descarga")
                 else:
@@ -1006,7 +1066,7 @@ def setup_commands(bot):
 
             result_embed.add_field(
                 name="🔧 Información Técnica",
-                value=f"**Archivo local:** `{anti_scam_system.reports_file}`\n**Archivo Blob:** `{anti_scam_system.blob_filename}`\n**Total tests:** {total_tests}\n**Tests exitosos:** {passed_tests}",
+                value=f"**Archivo local:** `{anti_scam_system.reports_file}`\n**Carpeta Blob:** `{anti_scam_system.blob_folder}`\n**Total tests:** {total_tests}\n**Tests exitosos:** {passed_tests}",
                 inline=False
             )
 
