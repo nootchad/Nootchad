@@ -33,17 +33,21 @@ class SupabaseManager:
                 logger.error("❌ Variables SUPABASE_URL o SUPABASE_API_KEY no encontradas")
                 return False
                 
+            # Verificar DATABASE_URL para operaciones críticas
+            if not self.database_url:
+                logger.error("❌ Variable DATABASE_URL no encontrada - requerida para migración de datos")
+                return False
+                
             # Cliente de Supabase para API REST
             self.client = create_client(self.url, self.key)
             
             # Pool de conexiones para PostgreSQL directo
-            if self.database_url:
-                self.db_pool = await asyncpg.create_pool(
-                    self.database_url,
-                    min_size=2,
-                    max_size=10,
-                    command_timeout=30
-                )
+            self.db_pool = await asyncpg.create_pool(
+                self.database_url,
+                min_size=2,
+                max_size=10,
+                command_timeout=30
+            )
                 
             self.connected = True
             logger.info("✅ Conexión a Supabase establecida exitosamente")
@@ -451,6 +455,11 @@ class SupabaseManager:
             'coins_migrated': 0,
             'transactions_migrated': 0,
             'fingerprints_migrated': 0,
+            'blacklist_migrated': 0,
+            'whitelist_migrated': 0,
+            'warnings_migrated': 0,
+            'bans_migrated': 0,
+            'cooldowns_migrated': 0,
             'errors': []
         }
         
@@ -531,12 +540,156 @@ class SupabaseManager:
             except FileNotFoundError:
                 logger.warning("⚠️ Archivo anti_alt_data.json no encontrado")
                 
+            # Migrar cooldowns desde anti_alt_data.json
+            try:
+                with open('anti_alt_data.json', 'r', encoding='utf-8') as f:
+                    anti_alt_data = json.load(f)
+                    
+                for user_id, user_cooldowns in anti_alt_data.get('cooldowns', {}).items():
+                    for cooldown_type, cooldown_info in user_cooldowns.items():
+                        try:
+                            if not self.db_pool:
+                                continue
+                            async with self.db_pool.acquire() as conn:
+                                await conn.execute("""
+                                    INSERT INTO user_cooldowns (user_id, cooldown_type, expires_at, duration_minutes, set_at)
+                                    VALUES ($1, $2, $3, $4, $5)
+                                    ON CONFLICT (user_id, cooldown_type) DO UPDATE SET
+                                        expires_at = EXCLUDED.expires_at,
+                                        duration_minutes = EXCLUDED.duration_minutes,
+                                        set_at = EXCLUDED.set_at
+                                """,
+                                int(user_id),
+                                cooldown_type,
+                                datetime.fromisoformat(cooldown_info.get('expires_at', '').replace('Z', '+00:00')) if cooldown_info.get('expires_at') else None,
+                                cooldown_info.get('duration_minutes', 0),
+                                datetime.fromisoformat(cooldown_info.get('set_at', '').replace('Z', '+00:00')) if cooldown_info.get('set_at') else None
+                                )
+                                results['cooldowns_migrated'] += 1
+                        except Exception as e:
+                            logger.warning(f"⚠️ Error migrando cooldown {cooldown_type} para usuario {user_id}: {e}")
+                            
+            except FileNotFoundError:
+                logger.warning("⚠️ Archivo anti_alt_data.json no encontrado para cooldowns")
+                
+            # Migrar blacklist
+            try:
+                with open('user_blacklist.json', 'r', encoding='utf-8') as f:
+                    blacklist_data = json.load(f)
+                    
+                for user_entry in blacklist_data.get('blacklisted_users', []):
+                    try:
+                        if isinstance(user_entry, dict):
+                            user_id = user_entry.get('user_id')
+                            reason = user_entry.get('reason', 'Migrado desde JSON')
+                        else:
+                            user_id = user_entry
+                            reason = 'Migrado desde JSON'
+                            
+                        success = await self.add_to_blacklist(int(user_id), reason)
+                        if success:
+                            results['blacklist_migrated'] += 1
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error migrando usuario a blacklist: {e}")
+                        
+            except FileNotFoundError:
+                logger.warning("⚠️ Archivo user_blacklist.json no encontrado")
+                
+            # Migrar whitelist
+            try:
+                with open('user_whitelist.json', 'r', encoding='utf-8') as f:
+                    whitelist_data = json.load(f)
+                    
+                for user_entry in whitelist_data.get('whitelisted_users', []):
+                    try:
+                        if isinstance(user_entry, dict):
+                            user_id = user_entry.get('user_id')
+                            reason = user_entry.get('reason', 'Migrado desde JSON')
+                        else:
+                            user_id = user_entry
+                            reason = 'Migrado desde JSON'
+                            
+                        success = await self.add_to_whitelist(int(user_id), reason)
+                        if success:
+                            results['whitelist_migrated'] += 1
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error migrando usuario a whitelist: {e}")
+                        
+            except FileNotFoundError:
+                logger.warning("⚠️ Archivo user_whitelist.json no encontrado")
+                
+            # Migrar warnings
+            try:
+                with open('warnings.json', 'r', encoding='utf-8') as f:
+                    warnings_data = json.load(f)
+                    
+                for user_id, warning_info in warnings_data.items():
+                    if user_id.isdigit():
+                        try:
+                            if not self.db_pool:
+                                continue
+                            async with self.db_pool.acquire() as conn:
+                                await conn.execute("""
+                                    INSERT INTO user_warnings (user_id, warning_count, reason, issued_at)
+                                    VALUES ($1, $2, $3, $4)
+                                """,
+                                int(user_id),
+                                warning_info.get('count', 0) if isinstance(warning_info, dict) else 1,
+                                warning_info.get('reason', 'Migrado desde JSON') if isinstance(warning_info, dict) else 'Migrado desde JSON',
+                                datetime.now(timezone.utc)
+                                )
+                                results['warnings_migrated'] += 1
+                        except Exception as e:
+                            logger.warning(f"⚠️ Error migrando warning para usuario {user_id}: {e}")
+                            
+            except FileNotFoundError:
+                logger.warning("⚠️ Archivo warnings.json no encontrado")
+                
+            # Migrar bans
+            try:
+                with open('bans.json', 'r', encoding='utf-8') as f:
+                    bans_data = json.load(f)
+                    
+                for user_id, ban_info in bans_data.items():
+                    if user_id.isdigit():
+                        try:
+                            if not self.db_pool:
+                                continue
+                            async with self.db_pool.acquire() as conn:
+                                await conn.execute("""
+                                    INSERT INTO user_bans (user_id, is_banned, ban_reason, ban_time, ban_duration_days)
+                                    VALUES ($1, $2, $3, $4, $5)
+                                    ON CONFLICT (user_id) DO UPDATE SET
+                                        is_banned = EXCLUDED.is_banned,
+                                        ban_reason = EXCLUDED.ban_reason,
+                                        ban_time = EXCLUDED.ban_time,
+                                        ban_duration_days = EXCLUDED.ban_duration_days,
+                                        updated_at = NOW()
+                                """,
+                                int(user_id),
+                                ban_info.get('is_banned', True) if isinstance(ban_info, dict) else True,
+                                ban_info.get('reason', 'Migrado desde JSON') if isinstance(ban_info, dict) else 'Migrado desde JSON',
+                                datetime.fromisoformat(ban_info.get('ban_time', '').replace('Z', '+00:00')) if isinstance(ban_info, dict) and ban_info.get('ban_time') else datetime.now(timezone.utc),
+                                ban_info.get('duration_days', 7) if isinstance(ban_info, dict) else 7
+                                )
+                                results['bans_migrated'] += 1
+                        except Exception as e:
+                            logger.warning(f"⚠️ Error migrando ban para usuario {user_id}: {e}")
+                            
+            except FileNotFoundError:
+                logger.warning("⚠️ Archivo bans.json no encontrado")
+                
             logger.info("✅ Migración completada exitosamente:")
             logger.info(f"   👥 Usuarios: {results['users_migrated']}")
             logger.info(f"   ✅ Verificaciones: {results['verifications_migrated']}")
             logger.info(f"   💰 Monedas: {results['coins_migrated']}")
             logger.info(f"   📊 Transacciones: {results['transactions_migrated']}")
             logger.info(f"   🔒 Fingerprints: {results['fingerprints_migrated']}")
+            logger.info(f"   ⏱️ Cooldowns: {results['cooldowns_migrated']}")
+            logger.info(f"   🚫 Blacklist: {results['blacklist_migrated']}")
+            logger.info(f"   ✅ Whitelist: {results['whitelist_migrated']}")
+            logger.info(f"   ⚠️ Warnings: {results['warnings_migrated']}")
+            logger.info(f"   🔨 Bans: {results['bans_migrated']}")
             
         except Exception as e:
             error_msg = f"Error durante migración: {e}"
