@@ -2326,6 +2326,31 @@ class VIPServerScraper:
         
         # GUARDADO INSTANTÁNEO después de toggle favorito
         self.save_links()
+        
+        # GUARDADO AUTOMÁTICO EN BLOB STORAGE
+        try:
+            import asyncio
+            async def save_to_blob():
+                try:
+                    from blob_storage_manager import blob_manager
+                    user_servers = []
+                    if user_id in self.links_by_user:
+                        for game_data in self.links_by_user[user_id].values():
+                            if isinstance(game_data, dict) and 'links' in game_data:
+                                user_servers.extend(game_data['links'])
+                    
+                    if user_servers:
+                        blob_success = await blob_manager.save_user_servers(user_id, user_servers)
+                        if blob_success:
+                            logger.info(f"☁️ BLOB: Favoritos actualizados automáticamente en Blob Storage para usuario {user_id}")
+                except Exception as e:
+                    logger.error(f"❌ BLOB FAVORITOS ERROR: {e}")
+            
+            # Ejecutar de forma asíncrona sin bloquear
+            asyncio.create_task(save_to_blob())
+        except Exception as e:
+            logger.error(f"❌ Error creando tarea de guardado en blob: {e}")
+        
         return result
 
     def remove_favorite(self, user_id: str, game_id: str) -> bool:
@@ -2383,6 +2408,31 @@ class VIPServerScraper:
         
         # GUARDADO INSTANTÁNEO después de reservar servidor
         self.save_links()
+        
+        # GUARDADO AUTOMÁTICO EN BLOB STORAGE
+        try:
+            import asyncio
+            async def save_reservation_to_blob():
+                try:
+                    from blob_storage_manager import blob_manager
+                    user_servers = []
+                    if user_id in self.links_by_user:
+                        for game_data in self.links_by_user[user_id].values():
+                            if isinstance(game_data, dict) and 'links' in game_data:
+                                user_servers.extend(game_data['links'])
+                    
+                    if user_servers:
+                        blob_success = await blob_manager.save_user_servers(user_id, user_servers)
+                        if blob_success:
+                            logger.info(f"☁️ BLOB: Reserva guardada automáticamente en Blob Storage para usuario {user_id}")
+                except Exception as e:
+                    logger.error(f"❌ BLOB RESERVA ERROR: {e}")
+            
+            # Ejecutar de forma asíncrona sin bloquear
+            asyncio.create_task(save_reservation_to_blob())
+        except Exception as e:
+            logger.error(f"❌ Error creando tarea de guardado de reserva en blob: {e}")
+        
         return True
 
     def get_reserved_servers(self, user_id: str) -> List[Dict]:
@@ -2401,6 +2451,31 @@ class VIPServerScraper:
                 del self.user_reserved_servers[user_id][i]
                 # GUARDADO INSTANTÁNEO después de remover reserva
                 self.save_links()
+                
+                # GUARDADO AUTOMÁTICO EN BLOB STORAGE
+                try:
+                    import asyncio
+                    async def save_removal_to_blob():
+                        try:
+                            from blob_storage_manager import blob_manager
+                            user_servers = []
+                            if user_id in self.links_by_user:
+                                for game_data in self.links_by_user[user_id].values():
+                                    if isinstance(game_data, dict) and 'links' in game_data:
+                                        user_servers.extend(game_data['links'])
+                            
+                            if user_servers:
+                                blob_success = await blob_manager.save_user_servers(user_id, user_servers)
+                                if blob_success:
+                                    logger.info(f"☁️ BLOB: Remoción de reserva guardada automáticamente en Blob Storage para usuario {user_id}")
+                        except Exception as e:
+                            logger.error(f"❌ BLOB REMOCIÓN ERROR: {e}")
+                    
+                    # Ejecutar de forma asíncrona sin bloquear
+                    asyncio.create_task(save_removal_to_blob())
+                except Exception as e:
+                    logger.error(f"❌ Error creando tarea de guardado de remoción en blob: {e}")
+                
                 return True
         return False
 
@@ -3106,6 +3181,17 @@ class VIPServerScraper:
                         else:
                             logger.error(f"❌ FALLO: No se pudo guardar servidor #{new_links_count}")
                         
+                        # GUARDADO AUTOMÁTICO EN BLOB STORAGE
+                        try:
+                            from blob_storage_manager import blob_manager
+                            blob_success = await blob_manager.save_user_servers(self.current_user_id, current_servers)
+                            if blob_success:
+                                logger.info(f"☁️ BLOB: Servidor #{new_links_count} guardado automáticamente en Blob Storage")
+                            else:
+                                logger.warning(f"⚠️ BLOB: No se pudo guardar servidor #{new_links_count} en Blob Storage")
+                        except Exception as blob_error:
+                            logger.error(f"❌ BLOB ERROR: {blob_error}")
+                        
                     elif vip_link:
                         logger.debug(f"🔄 Duplicate link skipped: {vip_link}")
 
@@ -3157,6 +3243,17 @@ class VIPServerScraper:
                     logger.info(f"✅ GUARDADO FINAL EXITOSO: {len(user_servers)} servidores confirmados en user_game_servers.json")
                 else:
                     logger.error(f"❌ GUARDADO FINAL FALLIDO para {len(user_servers)} servidores")
+                
+                # GUARDADO AUTOMÁTICO FINAL EN BLOB STORAGE
+                try:
+                    from blob_storage_manager import blob_manager
+                    blob_final_success = await blob_manager.save_user_servers(self.current_user_id, user_servers)
+                    if blob_final_success:
+                        logger.info(f"☁️ BLOB FINAL: {len(user_servers)} servidores guardados automáticamente en Blob Storage")
+                    else:
+                        logger.warning(f"⚠️ BLOB FINAL: No se pudieron guardar {len(user_servers)} servidores en Blob Storage")
+                except Exception as blob_final_error:
+                    logger.error(f"❌ BLOB FINAL ERROR: {blob_final_error}")
             
             # Guardar solo datos generales (stats y categorías) en vip_links.json
             try:

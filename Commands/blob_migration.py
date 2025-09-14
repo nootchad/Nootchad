@@ -20,11 +20,11 @@ def setup_commands(bot):
         user_id = str(interaction.user.id)
         
         # Verificar que sea owner o delegado
-        from main import is_owner_or_delegated
-        if not is_owner_or_delegated(user_id):
+        from main import is_owner_or_delegated, DISCORD_OWNER_ID
+        if user_id != DISCORD_OWNER_ID and user_id not in (getattr(__import__('main'), 'delegated_owners', set())):
             embed = discord.Embed(
                 title="❌ Acceso Denegado",
-                description="Este comando solo puede ser usado por el owner del bot.",
+                description="Este comando es exclusivo para el owner del bot.",
                 color=0xff0000
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -95,11 +95,11 @@ def setup_commands(bot):
         user_id = str(interaction.user.id)
         
         # Verificar que sea owner o delegado
-        from main import is_owner_or_delegated
-        if not is_owner_or_delegated(user_id):
+        from main import DISCORD_OWNER_ID
+        if user_id != DISCORD_OWNER_ID:
             embed = discord.Embed(
                 title="❌ Acceso Denegado",
-                description="Este comando solo puede ser usado por el owner del bot.",
+                description="Este comando es exclusivo para el owner del bot.",
                 color=0xff0000
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -190,11 +190,11 @@ def setup_commands(bot):
         user_id = str(interaction.user.id)
         
         # Verificar que sea owner o delegado
-        from main import is_owner_or_delegated
-        if not is_owner_or_delegated(user_id):
+        from main import DISCORD_OWNER_ID
+        if user_id != DISCORD_OWNER_ID:
             embed = discord.Embed(
                 title="❌ Acceso Denegado",
-                description="Este comando solo puede ser usado por el owner del bot.",
+                description="Este comando es exclusivo para el owner del bot.",
                 color=0xff0000
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
