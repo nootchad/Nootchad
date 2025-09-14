@@ -21,6 +21,17 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import sys
 
+# Configure logging with more detailed format PRIMERO
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(name)s - %(levelname)s - [%(funcName)s:%(lineno)d] - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('bot_debug.log', encoding='utf-8')
+    ]
+)
+logger = logging.getLogger(__name__)
+
 # Cargar variables de entorno con prioridad: Railway > archivo .env > sistema
 try:
     # Intentar cargar .env si existe (para desarrollo local)
@@ -33,6 +44,7 @@ try:
 except Exception as env_error:
     logger.warning(f"⚠️ Error cargando .env (esto es normal en Railway): {env_error}")
     # Continuar de todas formas, Railway proporciona las variables directamente
+
 # Import new systems
 from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
@@ -48,17 +60,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import subprocess
-
-# Configure logging with more detailed format
-logging.basicConfig(
-    level=logging.INFO, 
-    format='%(asctime)s - %(name)s - %(levelname)s - [%(funcName)s:%(lineno)d] - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('bot_debug.log', encoding='utf-8')
-    ]
-)
-logger = logging.getLogger(__name__)
 
 # Set Discord logging to DEBUG for more details
 discord_logger = logging.getLogger('discord')
