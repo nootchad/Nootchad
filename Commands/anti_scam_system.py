@@ -28,15 +28,15 @@ class AntiScamSystem:
         """Cargar datos de reportes de scam desde Blob Storage"""
         try:
             from blob_storage_manager import blob_manager
-            
+
             # Intentar cargar desde Blob Storage primero
             blob_data = await blob_manager.download_json(self.blob_filename)
-            
+
             if blob_data:
                 self.reports = blob_data.get('reports', {})
                 logger.info(f"✅ Cargados {len(self.reports)} reportes de scam desde Blob Storage")
                 return
-            
+
             # Si no hay datos en Blob, intentar migrar desde archivo local
             if Path(self.reports_file).exists():
                 with open(self.reports_file, 'r', encoding='utf-8') as f:
@@ -48,7 +48,7 @@ class AntiScamSystem:
             else:
                 logger.info("⚠️ No se encontraron reportes, inicializando vacío")
                 self.reports = {}
-                
+
         except Exception as e:
             logger.error(f"❌ Error cargando reportes de scam: {e}")
             self.reports = {}
@@ -57,20 +57,20 @@ class AntiScamSystem:
         """Guardar datos de reportes de scam en Blob Storage"""
         try:
             from blob_storage_manager import blob_manager
-            
+
             data = {
                 'reports': self.reports,
                 'last_updated': datetime.now().isoformat(),
                 'total_reports': len(self.reports),
                 'stats': self.get_stats()
             }
-            
+
             # Guardar en Blob Storage
             url = await blob_manager.upload_json(self.blob_filename, data)
-            
+
             if url:
                 logger.info(f"💾 Guardados {len(self.reports)} reportes de scam en Blob Storage")
-                
+
                 # También mantener backup local
                 with open(self.reports_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
@@ -79,7 +79,7 @@ class AntiScamSystem:
                 # Fallback a archivo local
                 with open(self.reports_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
-                    
+
         except Exception as e:
             logger.error(f"❌ Error guardando reportes de scam: {e}")
 
@@ -91,7 +91,7 @@ class AntiScamSystem:
 
             # Verificar si ya reportó a este usuario
             for existing_report in self.reports.values():
-                if (existing_report['reporter_id'] == reporter_id and 
+                if (existing_report['reporter_id'] == reporter_id and
                     existing_report['reported_user_id'] == reported_user_id):
                     return {
                         'success': False,
@@ -608,59 +608,6 @@ def setup_commands(bot):
                 title="🚫 Reporte Descartado",
                 description=f"El reporte `{report_id}` ha sido descartado.",
                 color=0xff9900
-
-
-    async def migrate_reports_to_blob(self) -> Dict[str, int]:
-        """Migrar reportes existentes desde archivo local a Blob Storage"""
-        try:
-            from blob_storage_manager import blob_manager
-            
-            results = {
-                'reports_migrated': 0,
-                'errors': 0,
-                'already_in_blob': False
-            }
-            
-            # Verificar si ya hay datos en Blob
-            blob_data = await blob_manager.download_json(self.blob_filename)
-            if blob_data and blob_data.get('reports'):
-                results['already_in_blob'] = True
-                logger.info("ℹ️ Los reportes ya están en Blob Storage")
-                return results
-            
-            # Cargar datos locales si existen
-            if Path(self.reports_file).exists():
-                with open(self.reports_file, 'r', encoding='utf-8') as f:
-                    local_data = json.load(f)
-                
-                reports = local_data.get('reports', {})
-                
-                if reports:
-                    # Migrar a Blob Storage
-                    self.reports = reports
-                    await self.save_data()
-                    
-                    results['reports_migrated'] = len(reports)
-                    logger.info(f"✅ Migrados {len(reports)} reportes a Blob Storage")
-                else:
-                    logger.info("⚠️ No hay reportes para migrar")
-            else:
-                logger.info("⚠️ No se encontró archivo local de reportes")
-            
-            return results
-            
-        except Exception as e:
-            logger.error(f"❌ Error en migración de reportes: {e}")
-            return {'reports_migrated': 0, 'errors': 1}
-
-    async def sync_with_blob(self):
-        """Sincronizar datos locales con Blob Storage"""
-        try:
-            await self.load_data()
-            logger.info("🔄 Sincronización con Blob Storage completada")
-        except Exception as e:
-            logger.error(f"❌ Error en sincronización: {e}")
-
             )
 
             embed.add_field(
@@ -695,6 +642,7 @@ def setup_commands(bot):
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
+
 
     @bot.tree.command(name="reviewreports", description="[OWNER ONLY] Revisar reportes pendientes")
     async def reviewreports_command(interaction: discord.Interaction):
@@ -840,3 +788,54 @@ def cleanup_commands(bot):
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
+
+    async def migrate_reports_to_blob(self) -> Dict[str, int]:
+        """Migrar reportes existentes desde archivo local a Blob Storage"""
+        try:
+            from blob_storage_manager import blob_manager
+
+            results = {
+                'reports_migrated': 0,
+                'errors': 0,
+                'already_in_blob': False
+            }
+
+            # Verificar si ya hay datos en Blob
+            blob_data = await blob_manager.download_json(self.blob_filename)
+            if blob_data and blob_data.get('reports'):
+                results['already_in_blob'] = True
+                logger.info("ℹ️ Los reportes ya están en Blob Storage")
+                return results
+
+            # Cargar datos locales si existen
+            if Path(self.reports_file).exists():
+                with open(self.reports_file, 'r', encoding='utf-8') as f:
+                    local_data = json.load(f)
+
+                reports = local_data.get('reports', {})
+
+                if reports:
+                    # Migrar a Blob Storage
+                    self.reports = reports
+                    await self.save_data()
+
+                    results['reports_migrated'] = len(reports)
+                    logger.info(f"✅ Migrados {len(reports)} reportes a Blob Storage")
+                else:
+                    logger.info("⚠️ No hay reportes para migrar")
+            else:
+                logger.info("⚠️ No se encontró archivo local de reportes")
+
+            return results
+
+        except Exception as e:
+            logger.error(f"❌ Error en migración de reportes: {e}")
+            return {'reports_migrated': 0, 'errors': 1}
+
+    async def sync_with_blob(self):
+        """Sincronizar datos locales con Blob Storage"""
+        try:
+            await self.load_data()
+            logger.info("🔄 Sincronización con Blob Storage completada")
+        except Exception as e:
+            logger.error(f"❌ Error en sincronización: {e}")
