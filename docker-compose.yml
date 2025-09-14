@@ -3,7 +3,9 @@ version: '3.8'
 
 services:
   rbxservers-bot:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: rbxservers-discord-bot
     restart: unless-stopped
     
@@ -16,30 +18,35 @@ services:
       - REPL_SLUG=${REPL_SLUG:-rbxservers}
       - REPL_OWNER=${REPL_OWNER:-paysencharlee}
       - DISPLAY=:99
+      - PYTHONUNBUFFERED=1
+      - TZ=UTC
     
     # Archivos de configuración y datos persistentes
     volumes:
-      - ./followers.json:/app/followers.json
-      - ./bans.json:/app/bans.json
-      - ./warnings.json:/app/warnings.json
-      - ./user_game_servers.json:/app/user_game_servers.json
-      - ./users_servers.json:/app/users_servers.json
-      - ./vip_links.json:/app/vip_links.json
-      - ./delegated_owners.json:/app/delegated_owners.json
-      - ./roblox_cookies.json:/app/roblox_cookies.json
-      - ./marketplace.json:/app/marketplace.json
-      - ./user_coins.json:/app/user_coins.json
-      - ./codes_usage.json:/app/codes_usage.json
-      - ./promotional_codes.json:/app/promotional_codes.json
-      - ./user_profiles.json:/app/user_profiles.json
-      - ./leaderboard_data.json:/app/leaderboard_data.json
-      - ./startup_alerts.json:/app/startup_alerts.json
-      - ./maintenance_data.json:/app/maintenance_data.json
-      - ./music_callbacks.json:/app/music_callbacks.json
-      - ./user_alerts.json:/app/user_alerts.json
-      - ./Serversdb:/app/Serversdb
-      - ./RbxBotLogic:/app/RbxBotLogic
-      - ./attached_assets:/app/attached_assets
+      - ./followers.json:/app/followers.json:rw
+      - ./bans.json:/app/bans.json:rw
+      - ./warnings.json:/app/warnings.json:rw
+      - ./user_game_servers.json:/app/user_game_servers.json:rw
+      - ./users_servers.json:/app/users_servers.json:rw
+      - ./vip_links.json:/app/vip_links.json:rw
+      - ./delegated_owners.json:/app/delegated_owners.json:rw
+      - ./roblox_cookies.json:/app/roblox_cookies.json:rw
+      - ./marketplace.json:/app/marketplace.json:rw
+      - ./user_coins.json:/app/user_coins.json:rw
+      - ./codes_usage.json:/app/codes_usage.json:rw
+      - ./promotional_codes.json:/app/promotional_codes.json:rw
+      - ./user_profiles.json:/app/user_profiles.json:rw
+      - ./leaderboard_data.json:/app/leaderboard_data.json:rw
+      - ./startup_alerts.json:/app/startup_alerts.json:rw
+      - ./maintenance_data.json:/app/maintenance_data.json:rw
+      - ./music_callbacks.json:/app/music_callbacks.json:rw
+      - ./user_alerts.json:/app/user_alerts.json:rw
+      - ./Serversdb:/app/Serversdb:rw
+      - ./RbxBotLogic:/app/RbxBotLogic:rw
+      - ./attached_assets:/app/attached_assets:rw
+      - ./Commands:/app/Commands:rw
+      - rbxservers-tmp:/tmp
+      - rbxservers-chrome:/home/app/.cache
     
     # Puertos
     ports:
@@ -51,32 +58,85 @@ services:
     
     # Dependencias
     depends_on:
-      - xvfb
+      xvfb:
+        condition: service_started
     
-    # Política de reinicio
+    # Límites de recursos
     deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
-        delay: 5s
-        max_attempts: 3
+        delay: 10s
+        max_attempts: 5
         window: 120s
+    
+    # Configuración de logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Configuraciones de seguridad
+    security_opt:
+      - no-new-privileges:true
+    
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Servidor X virtual para Chrome headless
   xvfb:
-    image: jlesage/xvfb
+    image: jlesage/xvfb:latest
     container_name: rbxservers-xvfb
     restart: unless-stopped
     environment:
       - DISPLAY_WIDTH=1920
       - DISPLAY_HEIGHT=1080
+      - DISPLAY=:99
+      - VNC_PASSWORD=
     networks:
       - rbxservers-network
+    
+    # Límites de recursos para Xvfb
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.2'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    
+    # Configuración de logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
 networks:
   rbxservers-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
-# Volúmenes persistentes opcionales
+# Volúmenes persistentes
 volumes:
   rbxservers-data:
+    driver: local
+  rbxservers-tmp:
+    driver: local
+  rbxservers-chrome:
     driver: local

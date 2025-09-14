@@ -1,0 +1,31 @@
+
+version: '3.8'
+
+# Archivo de override para desarrollo local
+# Usar: docker-compose -f docker-compose.yml -f docker-compose.override.yml up
+
+services:
+  rbxservers-bot:
+    # Montar código fuente para desarrollo en vivo
+    volumes:
+      - .:/app:rw
+    
+    # Variables de entorno para desarrollo
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    
+    # Exponer puerto adicional para debugging
+    ports:
+      - "8080:8080"
+      - "9222:9222"  # Chrome debugging port
+    
+    # Comando de desarrollo con auto-reload
+    command: python main.py
+
+  xvfb:
+    # Habilitar VNC para debugging visual
+    ports:
+      - "5900:5900"  # VNC port
+    environment:
+      - VNC_PASSWORD=vnc123
