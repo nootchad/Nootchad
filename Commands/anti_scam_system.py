@@ -643,7 +643,7 @@ def setup_commands(bot):
                     user_id_int = int(user_id)
                     user_id = str(user_id_int)
                 except ValueError:
-                    await interaction.followup.send("❌ ID de usuario inválido. Debe ser numérico.", ephemeral=True)
+                    await interaction.followup.send("❌ ID de usuario inválido. Debe ser numérico.", ephemeral=False)
                     return
 
                 # Buscar reportes del usuario
@@ -670,12 +670,12 @@ def setup_commands(bot):
                     await interaction.followup.send(ping_message, ephemeral=False)
                     return
                 else:
-                    await interaction.followup.send(f"No hay reportes para el usuario {user_id}", ephemeral=True)
+                    await interaction.followup.send(f"No hay reportes para el usuario {user_id}", ephemeral=False)
                     return
             else:
                 # Verificar servidor actual
                 if not interaction.guild:
-                    await interaction.followup.send("❌ Debes ejecutar este comando en un servidor.", ephemeral=True)
+                    await interaction.followup.send("❌ Debes ejecutar este comando en un servidor.", ephemeral=False)
                     return
 
                 server_id = str(interaction.guild.id)
@@ -706,7 +706,7 @@ def setup_commands(bot):
 
         except Exception as e:
             logger.error(f"❌ Error en comando checkscammers: {e}")
-            await interaction.followup.send("❌ Error interno al verificar reportes.", ephemeral=True)
+            await interaction.followup.send("❌ Error interno al verificar reportes.", ephemeral=False)
 
     @bot.tree.command(name="confirmreport", description="[OWNER ONLY] Confirmar un reporte de scam")
     async def confirmreport_command(interaction: discord.Interaction, report_id: str):
