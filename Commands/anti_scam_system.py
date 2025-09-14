@@ -247,6 +247,57 @@ class AntiScamSystem:
             'dismissed': dismissed
         }
 
+    async def migrate_reports_to_blob(self) -> Dict[str, int]:
+        """Migrar reportes existentes desde archivo local a Blob Storage"""
+        try:
+            from blob_storage_manager import blob_manager
+
+            results = {
+                'reports_migrated': 0,
+                'errors': 0,
+                'already_in_blob': False
+            }
+
+            # Verificar si ya hay datos en Blob
+            blob_data = await blob_manager.download_json(self.blob_filename)
+            if blob_data and blob_data.get('reports'):
+                results['already_in_blob'] = True
+                logger.info("ℹ️ Los reportes ya están en Blob Storage")
+                return results
+
+            # Cargar datos locales si existen
+            if Path(self.reports_file).exists():
+                with open(self.reports_file, 'r', encoding='utf-8') as f:
+                    local_data = json.load(f)
+
+                reports = local_data.get('reports', {})
+
+                if reports:
+                    # Migrar a Blob Storage
+                    self.reports = reports
+                    await self.save_data()
+
+                    results['reports_migrated'] = len(reports)
+                    logger.info(f"✅ Migrados {len(reports)} reportes a Blob Storage")
+                else:
+                    logger.info("⚠️ No hay reportes para migrar")
+            else:
+                logger.info("⚠️ No se encontró archivo local de reportes")
+
+            return results
+
+        except Exception as e:
+            logger.error(f"❌ Error en migración de reportes: {e}")
+            return {'reports_migrated': 0, 'errors': 1}
+
+    async def sync_with_blob(self):
+        """Sincronizar datos locales con Blob Storage"""
+        try:
+            await self.load_data()
+            logger.info("🔄 Sincronización con Blob Storage completada")
+        except Exception as e:
+            logger.error(f"❌ Error en sincronización: {e}")
+
 # Instancia global (se inicializa async)
 anti_scam_system = None
 
@@ -718,15 +769,6 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    logger.info("✅ Sistema anti-scam configurado exitosamente")
-    return True
-
-# Función opcional de limpieza cuando se recarga el módulo
-def cleanup_commands(bot):
-    """Función opcional para limpiar comandos al recargar"""
-    pass
-
-
     @bot.tree.command(name="migratescamreports", description="[OWNER ONLY] Migrar reportes de scam a Blob Storage")
     async def migratescamreports_command(interaction: discord.Interaction):
         """Comando para migrar reportes a Blob Storage (solo owner y delegados)"""
@@ -789,53 +831,184 @@ def cleanup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    async def migrate_reports_to_blob(self) -> Dict[str, int]:
-        """Migrar reportes existentes desde archivo local a Blob Storage"""
-        try:
-            from blob_storage_manager import blob_manager
+    @bot.tree.command(name="testscamreports", description="[OWNER ONLY] Probar sistema de reportes de scam")
+    async def testscamreports_command(interaction: discord.Interaction):
+        """Comando de prueba para el sistema de reportes de scam"""
+        user_id = str(interaction.user.id)
 
-            results = {
-                'reports_migrated': 0,
-                'errors': 0,
-                'already_in_blob': False
+        # Verificar que sea owner o delegado
+        from main import DISCORD_OWNER_ID, delegated_owners, is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            # Asegurar que el sistema esté inicializado
+            await initialize_anti_scam_system()
+
+            test_results = {
+                'load_test': False,
+                'save_test': False,
+                'create_test': False,
+                'blob_test': False,
+                'migration_test': False
             }
 
-            # Verificar si ya hay datos en Blob
-            blob_data = await blob_manager.download_json(self.blob_filename)
-            if blob_data and blob_data.get('reports'):
-                results['already_in_blob'] = True
-                logger.info("ℹ️ Los reportes ya están en Blob Storage")
-                return results
+            embed = discord.Embed(
+                title="🧪 Test del Sistema Anti-Scam",
+                description="Ejecutando pruebas del sistema...",
+                color=0xffaa00
+            )
 
-            # Cargar datos locales si existen
-            if Path(self.reports_file).exists():
-                with open(self.reports_file, 'r', encoding='utf-8') as f:
-                    local_data = json.load(f)
+            message = await interaction.followup.send(embed=embed, ephemeral=True)
 
-                reports = local_data.get('reports', {})
+            # Test 1: Cargar datos
+            try:
+                await anti_scam_system.load_data()
+                test_results['load_test'] = True
+                logger.info("✅ Test carga de datos: EXITOSO")
+            except Exception as e:
+                logger.error(f"❌ Test carga de datos: FALLO - {e}")
 
-                if reports:
-                    # Migrar a Blob Storage
-                    self.reports = reports
-                    await self.save_data()
+            # Test 2: Crear reporte de prueba
+            try:
+                test_report = await anti_scam_system.create_report(
+                    reporter_id="test_reporter_123",
+                    reported_user_id="test_scammer_456", 
+                    server_id="test_server_789",
+                    reason="Test de funcionalidad del sistema",
+                    evidence_text="Este es un reporte de prueba para verificar el funcionamiento"
+                )
 
-                    results['reports_migrated'] = len(reports)
-                    logger.info(f"✅ Migrados {len(reports)} reportes a Blob Storage")
+                if test_report['success']:
+                    test_results['create_test'] = True
+                    test_report_id = test_report['report_id']
+                    logger.info(f"✅ Test crear reporte: EXITOSO - ID: {test_report_id}")
+
+                    # Limpiar reporte de prueba
+                    if test_report_id in anti_scam_system.reports:
+                        del anti_scam_system.reports[test_report_id]
                 else:
-                    logger.info("⚠️ No hay reportes para migrar")
+                    logger.error(f"❌ Test crear reporte: FALLO - {test_report.get('error')}")
+            except Exception as e:
+                logger.error(f"❌ Test crear reporte: FALLO - {e}")
+
+            # Test 3: Guardar datos
+            try:
+                await anti_scam_system.save_data()
+                test_results['save_test'] = True
+                logger.info("✅ Test guardar datos: EXITOSO")
+            except Exception as e:
+                logger.error(f"❌ Test guardar datos: FALLO - {e}")
+
+            # Test 4: Verificar Blob Storage
+            try:
+                from blob_storage_manager import blob_manager
+                test_data = {"test": True, "timestamp": datetime.now().isoformat()}
+                blob_url = await blob_manager.upload_json("test_scam_reports.json", test_data)
+
+                if blob_url:
+                    # Verificar descarga
+                    downloaded = await blob_manager.download_json("test_scam_reports.json")
+                    if downloaded and downloaded.get('test'):
+                        test_results['blob_test'] = True
+                        logger.info("✅ Test Blob Storage: EXITOSO")
+
+                        # Limpiar archivo de prueba
+                        await blob_manager.delete_file("test_scam_reports.json")
+                    else:
+                        logger.error("❌ Test Blob Storage: FALLO - descarga")
+                else:
+                    logger.error("❌ Test Blob Storage: FALLO - subida")
+            except Exception as e:
+                logger.error(f"❌ Test Blob Storage: FALLO - {e}")
+
+            # Test 5: Migración a Blob
+            try:
+                migration_results = await anti_scam_system.migrate_reports_to_blob()
+                if 'reports_migrated' in migration_results:
+                    test_results['migration_test'] = True
+                    logger.info(f"✅ Test migración: EXITOSO - {migration_results}")
+                else:
+                    logger.error(f"❌ Test migración: FALLO - {migration_results}")
+            except Exception as e:
+                logger.error(f"❌ Test migración: FALLO - {e}")
+
+            # Crear embed de resultados
+            total_tests = len(test_results)
+            passed_tests = sum(test_results.values())
+
+            if passed_tests == total_tests:
+                color = 0x00ff88  # Verde
+                status = "✅ TODOS LOS TESTS PASARON"
+            elif passed_tests > 0:
+                color = 0xffaa00  # Amarillo
+                status = f"⚠️ {passed_tests}/{total_tests} TESTS PASARON"
             else:
-                logger.info("⚠️ No se encontró archivo local de reportes")
+                color = 0xff0000  # Rojo
+                status = "❌ TODOS LOS TESTS FALLARON"
 
-            return results
+            result_embed = discord.Embed(
+                title="🧪 Resultados del Test Anti-Scam",
+                description=status,
+                color=color
+            )
+
+            # Detalles de cada test
+            test_details = [
+                ("📥 Carga de Datos", "✅ Exitoso" if test_results['load_test'] else "❌ Fallo"),
+                ("💾 Guardar Datos", "✅ Exitoso" if test_results['save_test'] else "❌ Fallo"),
+                ("📝 Crear Reporte", "✅ Exitoso" if test_results['create_test'] else "❌ Fallo"),
+                ("☁️ Blob Storage", "✅ Exitoso" if test_results['blob_test'] else "❌ Fallo"),
+                ("🔄 Migración", "✅ Exitoso" if test_results['migration_test'] else "❌ Fallo")
+            ]
+
+            for test_name, result in test_details:
+                result_embed.add_field(name=test_name, value=result, inline=True)
+
+            # Estadísticas del sistema
+            stats = anti_scam_system.get_stats()
+            result_embed.add_field(
+                name="📊 Estadísticas del Sistema",
+                value=f"**Total de reportes:** {stats['total_reports']}\n**Pendientes:** {stats['pending']}\n**Confirmados:** {stats['confirmed']}\n**Descartados:** {stats['dismissed']}",
+                inline=False
+            )
+
+            result_embed.add_field(
+                name="🔧 Información Técnica",
+                value=f"**Archivo local:** `{anti_scam_system.reports_file}`\n**Archivo Blob:** `{anti_scam_system.blob_filename}`\n**Total tests:** {total_tests}\n**Tests exitosos:** {passed_tests}",
+                inline=False
+            )
+
+            result_embed.set_footer(text=f"Test ejecutado por {interaction.user.name}")
+            result_embed.timestamp = datetime.now()
+
+            await message.edit(embed=result_embed)
+
+            logger.info(f"🧪 Test del sistema anti-scam completado: {passed_tests}/{total_tests} tests exitosos")
 
         except Exception as e:
-            logger.error(f"❌ Error en migración de reportes: {e}")
-            return {'reports_migrated': 0, 'errors': 1}
+            logger.error(f"❌ Error ejecutando test de sistema anti-scam: {e}")
+            error_embed = discord.Embed(
+                title="❌ Error en Test",
+                description="Ocurrió un error durante la ejecución del test.",
+                color=0xff0000
+            )
+            error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:500]}```", inline=False)
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-    async def sync_with_blob(self):
-        """Sincronizar datos locales con Blob Storage"""
-        try:
-            await self.load_data()
-            logger.info("🔄 Sincronización con Blob Storage completada")
-        except Exception as e:
-            logger.error(f"❌ Error en sincronización: {e}")
+
+    logger.info("✅ Sistema anti-scam configurado exitosamente")
+    return True
+
+# Función opcional de limpieza cuando se recarga el módulo
+def cleanup_commands(bot):
+    """Función opcional para limpiar comandos al recargar"""
+    pass
