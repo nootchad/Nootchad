@@ -262,8 +262,20 @@ class AntiScamSystem:
             if report.get('server_id') == server_id:
                 server_reports.append(report)
 
-        # Ordenar por fecha más reciente
-        server_reports.sort(key=lambda x: x['timestamp'], reverse=True)
+        # Ordenar por fecha más reciente - asegurar que timestamp sea numérico
+        def get_timestamp(report):
+            timestamp = report.get('timestamp', 0)
+            if isinstance(timestamp, str):
+                try:
+                    # Intentar convertir string a float
+                    return float(timestamp)
+                except (ValueError, TypeError):
+                    # Si no se puede convertir, usar tiempo actual como fallback
+                    import time
+                    return time.time()
+            return timestamp if isinstance(timestamp, (int, float)) else 0
+        
+        server_reports.sort(key=get_timestamp, reverse=True)
 
         return server_reports[:limit]
 
@@ -335,8 +347,20 @@ class AntiScamSystem:
             if report['status'] == 'pending':
                 pending.append(report)
 
-        # Ordenar por fecha más antigua primero
-        pending.sort(key=lambda x: x['timestamp'])
+        # Ordenar por fecha más antigua primero - asegurar que timestamp sea numérico
+        def get_timestamp(report):
+            timestamp = report.get('timestamp', 0)
+            if isinstance(timestamp, str):
+                try:
+                    # Intentar convertir string a float
+                    return float(timestamp)
+                except (ValueError, TypeError):
+                    # Si no se puede convertir, usar tiempo actual como fallback
+                    import time
+                    return time.time()
+            return timestamp if isinstance(timestamp, (int, float)) else 0
+
+        pending.sort(key=get_timestamp)
 
         return pending[:limit]
 
