@@ -310,6 +310,22 @@ async def initialize_anti_scam_system():
         logger.info("✅ Sistema Anti-Scam inicializado con Blob Storage")
     return anti_scam_system
 
+# Inicializar automáticamente al importar el módulo
+def _init_system():
+    """Inicializar sistema en background"""
+    try:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.create_task(initialize_anti_scam_system())
+        else:
+            asyncio.run(initialize_anti_scam_system())
+    except Exception as e:
+        logger.warning(f"⚠️ No se pudo inicializar automáticamente: {e}")
+
+# Llamar inicialización
+_init_system()
+
 def setup_commands(bot):
     """Función requerida para configurar comandos del sistema anti-scam"""
 
@@ -1003,6 +1019,15 @@ def setup_commands(bot):
             )
             error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:500]}```", inline=False)
             await interaction.followup.send(embed=error_embed, ephemeral=True)
+
+
+    logger.info("✅ Sistema anti-scam configurado exitosamente")
+    return True
+
+# Función opcional de limpieza cuando se recarga el módulo
+def cleanup_commands(bot):
+    """Función opcional para limpiar comandos al recargar"""
+    pass
 
 
     logger.info("✅ Sistema anti-scam configurado exitosamente")
