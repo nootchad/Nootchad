@@ -1,0 +1,88 @@
+2025-09-14T01:56:11.144659425Z [inf]  
+2025-09-14T01:56:12.268426011Z [inf]  [35m[Region: us-east4][0m
+2025-09-14T01:56:12.273384720Z [inf]  [35m=========================
+2025-09-14T01:56:12.273423070Z [inf]  Using Detected Dockerfile
+2025-09-14T01:56:12.273426864Z [inf]  =========================
+2025-09-14T01:56:12.273430090Z [inf]  [0m
+2025-09-14T01:56:12.273443310Z [inf]  context: vq48-HPvk
+2025-09-14T01:56:12.440725389Z [inf]  [internal] load build definition from Dockerfile
+2025-09-14T01:56:12.440779760Z [inf]  [internal] load build definition from Dockerfile
+2025-09-14T01:56:12.440795609Z [inf]  [internal] load build definition from Dockerfile
+2025-09-14T01:56:12.440807962Z [inf]  [internal] load build definition from Dockerfile
+2025-09-14T01:56:12.449722434Z [inf]  [internal] load build definition from Dockerfile
+2025-09-14T01:56:12.452033288Z [inf]  [internal] load metadata for docker.io/library/python:3.11-slim
+2025-09-14T01:56:12.513297280Z [inf]  [internal] load metadata for docker.io/library/python:3.11-slim
+2025-09-14T01:56:12.513555291Z [inf]  [internal] load .dockerignore
+2025-09-14T01:56:12.513579070Z [inf]  [internal] load .dockerignore
+2025-09-14T01:56:12.513833824Z [inf]  [internal] load .dockerignore
+2025-09-14T01:56:12.522894085Z [inf]  [internal] load .dockerignore
+2025-09-14T01:56:12.527655883Z [inf]  [10/10] RUN chmod +x /app/docker-entrypoint.sh
+2025-09-14T01:56:12.527698964Z [inf]  [ 9/10] COPY --chown=app:app docker-entrypoint.sh /app/
+2025-09-14T01:56:12.527707539Z [inf]  [ 8/10] RUN mkdir -p Commands RbxBotLogic Serversdb attached_assets     && chown -R app:app /app     && chmod -R 755 /app
+2025-09-14T01:56:12.527717164Z [inf]  [ 7/10] COPY --chown=app:app . .
+2025-09-14T01:56:12.527729308Z [inf]  [ 6/10] RUN pip install --no-cache-dir --upgrade pip setuptools wheel     && pip install --no-cache-dir -r requirements.txt
+2025-09-14T01:56:12.527735963Z [inf]  [ 5/10] COPY --chown=app:app requirements.txt .
+2025-09-14T01:56:12.527742719Z [inf]  [internal] load build context
+2025-09-14T01:56:12.527749367Z [inf]  [ 4/10] RUN useradd --create-home --shell /bin/bash app     && chown -R app:app /app
+2025-09-14T01:56:12.527755827Z [inf]  [ 3/10] WORKDIR /app
+2025-09-14T01:56:12.527768930Z [inf]  [ 2/10] RUN apt-get update && apt-get install -y     wget     gnupg2     unzip     curl     xvfb     fonts-liberation     libasound2     libatk-bridge2.0-0     libdrm2     libxcomposite1     libxdamage1     libxrandr2     libgbm1     libxss1     libnss3     libgtk-3-0     libgconf-2-4     && rm -rf /var/lib/apt/lists/*     && apt-get clean
+2025-09-14T01:56:12.527776210Z [inf]  [ 1/10] FROM docker.io/library/python:3.11-slim@sha256:a0939570b38cddeb861b8e75d20b1c8218b21562b18f301171904b544e8cf228
+2025-09-14T01:56:12.527787789Z [inf]  [ 1/10] FROM docker.io/library/python:3.11-slim@sha256:a0939570b38cddeb861b8e75d20b1c8218b21562b18f301171904b544e8cf228
+2025-09-14T01:56:12.527803631Z [inf]  [internal] load build context
+2025-09-14T01:56:12.534926052Z [inf]  [ 1/10] FROM docker.io/library/python:3.11-slim@sha256:a0939570b38cddeb861b8e75d20b1c8218b21562b18f301171904b544e8cf228
+2025-09-14T01:56:12.535122213Z [inf]  [ 1/10] FROM docker.io/library/python:3.11-slim@sha256:a0939570b38cddeb861b8e75d20b1c8218b21562b18f301171904b544e8cf228
+2025-09-14T01:56:12.535419724Z [inf]  [ 2/10] RUN apt-get update && apt-get install -y     wget     gnupg2     unzip     curl     xvfb     fonts-liberation     libasound2     libatk-bridge2.0-0     libdrm2     libxcomposite1     libxdamage1     libxrandr2     libgbm1     libxss1     libnss3     libgtk-3-0     libgconf-2-4     && rm -rf /var/lib/apt/lists/*     && apt-get clean
+2025-09-14T01:56:12.535457881Z [inf]  [internal] load build context
+2025-09-14T01:56:12.607554430Z [inf]  [internal] load build context
+2025-09-14T01:56:12.684969327Z [inf]  Hit:1 http://deb.debian.org/debian trixie InRelease
+Get:2 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+
+2025-09-14T01:56:12.686106738Z [inf]  Get:3 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
+
+2025-09-14T01:56:12.70458222Z [inf]  Get:4 http://deb.debian.org/debian trixie/main amd64 Packages [9669 kB]
+
+2025-09-14T01:56:12.771322258Z [inf]  Get:5 http://deb.debian.org/debian trixie-updates/main amd64 Packages [5412 B]
+
+2025-09-14T01:56:12.772244593Z [inf]  Get:6 http://deb.debian.org/debian-security trixie-security/main amd64 Packages [40.0 kB]
+
+2025-09-14T01:56:13.58998215Z [inf]  Fetched 9805 kB in 1s (10.5 MB/s)
+Reading package lists...
+2025-09-14T01:56:14.123464802Z [inf]  
+
+2025-09-14T01:56:14.142190936Z [inf]  Reading package lists...
+2025-09-14T01:56:14.66958835Z [inf]  
+
+2025-09-14T01:56:14.68194856Z [inf]  Building dependency tree...
+2025-09-14T01:56:14.818055799Z [inf]  
+Reading state information...
+2025-09-14T01:56:14.818073871Z [inf]  
+
+2025-09-14T01:56:14.834916187Z [inf]  E: Unable to locate package libgconf-2-4
+
+2025-09-14T01:56:14.859814198Z [err]  [ 2/10] RUN apt-get update && apt-get install -y     wget     gnupg2     unzip     curl     xvfb     fonts-liberation     libasound2     libatk-bridge2.0-0     libdrm2     libxcomposite1     libxdamage1     libxrandr2     libgbm1     libxss1     libnss3     libgtk-3-0     libgconf-2-4     && rm -rf /var/lib/apt/lists/*     && apt-get clean
+2025-09-14T01:56:14.876464448Z [err]  Dockerfile:10
+2025-09-14T01:56:14.876491165Z [err]  -------------------
+2025-09-14T01:56:14.876495784Z [err]  9 |     # Instalar dependencias del sistema con manejo robusto de errores
+2025-09-14T01:56:14.876500373Z [err]  10 | >>> RUN apt-get update && apt-get install -y \
+2025-09-14T01:56:14.876505655Z [err]  11 | >>>     wget \
+2025-09-14T01:56:14.876509071Z [err]  12 | >>>     gnupg2 \
+2025-09-14T01:56:14.876512329Z [err]  13 | >>>     unzip \
+2025-09-14T01:56:14.876515904Z [err]  14 | >>>     curl \
+2025-09-14T01:56:14.876519185Z [err]  15 | >>>     xvfb \
+2025-09-14T01:56:14.876522900Z [err]  16 | >>>     fonts-liberation \
+2025-09-14T01:56:14.876526378Z [err]  17 | >>>     libasound2 \
+2025-09-14T01:56:14.876529658Z [err]  18 | >>>     libatk-bridge2.0-0 \
+2025-09-14T01:56:14.876533279Z [err]  19 | >>>     libdrm2 \
+2025-09-14T01:56:14.876536343Z [err]  20 | >>>     libxcomposite1 \
+2025-09-14T01:56:14.876539446Z [err]  21 | >>>     libxdamage1 \
+2025-09-14T01:56:14.876543017Z [err]  22 | >>>     libxrandr2 \
+2025-09-14T01:56:14.876546364Z [err]  23 | >>>     libgbm1 \
+2025-09-14T01:56:14.876549549Z [err]  24 | >>>     libxss1 \
+2025-09-14T01:56:14.876552626Z [err]  25 | >>>     libnss3 \
+2025-09-14T01:56:14.876556114Z [err]  26 | >>>     libgtk-3-0 \
+2025-09-14T01:56:14.876559688Z [err]  27 | >>>     libgconf-2-4 \
+2025-09-14T01:56:14.876562865Z [err]  28 | >>>     && rm -rf /var/lib/apt/lists/* \
+2025-09-14T01:56:14.876566431Z [err]  29 | >>>     && apt-get clean
+2025-09-14T01:56:14.876569459Z [err]  30 |
+2025-09-14T01:56:14.876572729Z [err]  -------------------
+2025-09-14T01:56:14.876576387Z [err]  ERROR: failed to build: failed to solve: process "/bin/sh -c apt-get update && apt-get install -y     wget     gnupg2     unzip     curl     xvfb     fonts-liberation     libasound2     libatk-bridge2.0-0     libdrm2     libxcomposite1     libxdamage1     libxrandr2     libgbm1     libxss1     libnss3     libgtk-3-0     libgconf-2-4     && rm -rf /var/lib/apt/lists/*     && apt-get clean" did not complete successfully: exit code: 100
