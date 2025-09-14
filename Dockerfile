@@ -1,30 +1,17 @@
+
 # Usar Python 3.11 como base con imagen multi-arquitectura
 FROM python:3.11-slim
 
 # Establecer variables de entorno para evitar prompts interactivos
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
-ENV DISPLAY=:99
 
-# Instalar dependencias del sistema con manejo robusto de errores
+# Instalar dependencias básicas del sistema
 RUN apt-get update && apt-get install -y \
     wget \
-    gnupg2 \
-    unzip \
     curl \
-    xvfb \
-    fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libdrm2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
-    libxss1 \
-    libnss3 \
-    libgtk-3-0 \
-    libgconf-2-4 \
+    git \
+    build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

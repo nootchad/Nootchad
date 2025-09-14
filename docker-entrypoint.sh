@@ -1,3 +1,4 @@
+
 #!/bin/bash
 set -e
 
@@ -24,10 +25,15 @@ mkdir -p /app/Commands
 
 log "Directorios verificados"
 
-# Verificar conectividad con Discord
+# Verificar conectividad (sin salir si falla)
 log "Verificando conectividad..."
 if ! curl -s --connect-timeout 10 https://discord.com > /dev/null; then
     log "WARNING: No se puede conectar a Discord, pero continuando..."
+fi
+
+# Configurar Railway específico
+if [ ! -z "$RAILWAY_ENVIRONMENT" ]; then
+    log "Detectado entorno Railway: $RAILWAY_ENVIRONMENT"
 fi
 
 log "Iniciando aplicación Python..."
