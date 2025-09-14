@@ -1,5 +1,5 @@
 
-"""
+<old_str>"""
 Comando para probar y mostrar información del sistema OAuth2 de Discord
 """
 import discord
@@ -214,4 +214,5 @@ def setup_commands(bot):
 # Función opcional de limpieza
 def cleanup_commands(bot):
     """Función opcional para limpiar comandos al recargar"""
-    pass
+    pass</old_str>
+<new_str># ARCHIVO ELIMINADO - Comandos de prueba OAuth2 ya no necesarios</new_str>
