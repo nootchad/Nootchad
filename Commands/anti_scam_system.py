@@ -21,8 +21,7 @@ class AntiScamSystem:
         self.reports_file = "scam_reports.json"
         self.blob_filename = "scam_reports_blob.json"
         self.reports = {}
-        # Inicializar de forma async-safe
-        asyncio.create_task(self.load_data())
+        self._initialized = False
 
     async def load_data(self):
         """Cargar datos de reportes de scam desde Blob Storage"""
@@ -134,6 +133,10 @@ class AntiScamSystem:
     def get_user_reports(self, user_id: str) -> Dict:
         """Obtener reportes de un usuario específico"""
         user_reports = []
+
+        # Asegurar que haya datos cargados
+        if not self.reports:
+            logger.warning("⚠️ No hay reportes cargados en memoria")
 
         for report in self.reports.values():
             if report['reported_user_id'] == user_id:
@@ -499,6 +502,10 @@ def setup_commands(bot):
             return
 
         try:
+            # Asegurar que el sistema esté inicializado y sincronizado
+            await initialize_anti_scam_system()
+            await anti_scam_system.sync_with_blob()
+            
             if user_id:
                 # Verificar usuario específico
                 try:
@@ -537,7 +544,7 @@ def setup_commands(bot):
 
                 server_id = str(interaction.guild.id)
 
-                # Buscar reportes en el servidor actual
+                # Buscar reportes en el servidor actual (después de sincronizar)
                 recent_reports = anti_scam_system.get_server_recent_reports(server_id, limit=10)
 
                 if recent_reports:

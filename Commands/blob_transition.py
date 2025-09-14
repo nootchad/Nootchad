@@ -1,1 +1,2 @@
+
 # ARCHIVO ELIMINADO - Transición a Blob Storage ya completada
