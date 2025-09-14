@@ -19,7 +19,7 @@ import discord
 from discord.ext import commands
 # env
 from dotenv import load_dotenv
-load_dotenv()  # Esto carga el archivo .env
+load_dotenv()  # Esto carga el archivo .env si existe
 # Import new systems
 from marketplace import CommunityMarketplace
 from recommendations import RecommendationEngine
@@ -55,12 +55,16 @@ discord_logger.setLevel(logging.INFO)
 user_logger = logging.getLogger('user_interactions')
 user_logger.setLevel(logging.INFO)
 
-# Verificar token - solo cargar desde .env
+# Verificar token - cargar desde variables de entorno del sistema o archivo .env
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
-    logger.error("❌ BOT_TOKEN no encontrado en archivo .env")
-    logger.error("💡 Asegúrate de tener un archivo .env con BOT_TOKEN=tu_token_aqui")
-    logger.error("🔧 El archivo .env debe estar en la raíz del proyecto")
+    logger.error("❌ BOT_TOKEN no encontrado en variables de entorno")
+    logger.error("💡 En Railway, configura BOT_TOKEN en las variables de entorno del deployment")
+    logger.error("🔧 En desarrollo local, asegúrate de tener un archivo .env con BOT_TOKEN=tu_token_aqui")
+    logger.error("🌐 Variables de entorno disponibles:")
+    for key in os.environ.keys():
+        if 'TOKEN' in key or 'BOT' in key:
+            logger.error(f"  - {key}: {'***' if key == 'BOT_TOKEN' else 'disponible'}")
     exit(1)
 
 # Validar que el token tenga el formato correcto
