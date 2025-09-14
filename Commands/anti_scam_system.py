@@ -35,21 +35,31 @@ class AntiScamSystem:
             
             self.reports = {}
             
-            # Cargar todos los archivos de reportes
+            # Cargar todos los archivos de reportes (sistema permanente)
             if scam_files:
+                successful_loads = 0
+                
                 for filename in scam_files:
                     try:
                         blob_data = await blob_manager.download_json(filename)
-                        if blob_data and blob_data.get('reports'):
+                        if blob_data and isinstance(blob_data, dict):
                             # Combinar reportes de múltiples archivos
                             file_reports = blob_data.get('reports', {})
-                            self.reports.update(file_reports)
-                            logger.info(f"📁 Cargados reportes desde: {filename}")
+                            if file_reports:
+                                # Evitar duplicados basados en report_id
+                                new_reports = 0
+                                for report_id, report_data in file_reports.items():
+                                    if report_id not in self.reports:
+                                        self.reports[report_id] = report_data
+                                        new_reports += 1
+                                
+                                logger.info(f"📁 Cargados {new_reports} reportes nuevos desde: {filename}")
+                                successful_loads += 1
                     except Exception as e:
                         logger.warning(f"⚠️ Error cargando archivo {filename}: {e}")
                         continue
                 
-                logger.info(f"✅ Cargados {len(self.reports)} reportes de scam desde {len(scam_files)} archivos")
+                logger.info(f"✅ Cargados {len(self.reports)} reportes únicos desde {successful_loads}/{len(scam_files)} archivos")
                 return
 
             # Si no hay archivos en la carpeta, intentar cargar archivo específico
@@ -101,7 +111,7 @@ class AntiScamSystem:
                 with open(self.reports_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
                 
-                # Limpiar archivos antiguos (mantener solo los 5 más recientes)
+                # Verificar integridad de archivos (mantener todos los reportes)
                 await self._cleanup_old_report_files()
             else:
                 logger.error("❌ Error guardando en Blob Storage, usando archivo local como fallback")
@@ -113,7 +123,7 @@ class AntiScamSystem:
             logger.error(f"❌ Error guardando reportes de scam: {e}")
 
     async def _cleanup_old_report_files(self):
-        """Limpiar archivos antiguos de reportes, mantener solo los 5 más recientes"""
+        """Mantener todos los reportes y solo limpiar archivos duplicados o corruptos"""
         try:
             from blob_storage_manager import blob_manager
             
@@ -121,22 +131,42 @@ class AntiScamSystem:
             all_files = await blob_manager.list_files()
             scam_files = [f for f in all_files if f.startswith(self.blob_folder)]
             
-            if len(scam_files) > 5:
-                # Ordenar por nombre (que contiene timestamp)
-                scam_files.sort()
-                
-                # Eliminar archivos más antiguos
-                old_files = scam_files[:-5]  # Mantener solo los 5 más recientes
-                
-                for old_file in old_files:
+            logger.info(f"📊 Manteniendo {len(scam_files)} archivos de reportes (todos permanentes)")
+            
+            # Solo verificar y eliminar archivos corruptos o vacíos
+            corrupted_files = []
+            
+            for filename in scam_files:
+                try:
+                    # Verificar si el archivo se puede leer correctamente
+                    blob_data = await blob_manager.download_json(filename)
+                    if not blob_data or not isinstance(blob_data, dict):
+                        corrupted_files.append(filename)
+                        continue
+                    
+                    # Verificar si tiene estructura válida
+                    if 'reports' not in blob_data and 'last_updated' not in blob_data:
+                        corrupted_files.append(filename)
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ Archivo corrupto detectado: {filename} - {e}")
+                    corrupted_files.append(filename)
+            
+            # Eliminar solo archivos corruptos
+            if corrupted_files:
+                for corrupted_file in corrupted_files:
                     try:
-                        await blob_manager.delete_file(old_file)
-                        logger.info(f"🗑️ Archivo antiguo eliminado: {old_file}")
+                        await blob_manager.delete_file(corrupted_file)
+                        logger.info(f"🗑️ Archivo corrupto eliminado: {corrupted_file}")
                     except Exception as e:
-                        logger.warning(f"⚠️ Error eliminando archivo {old_file}: {e}")
+                        logger.warning(f"⚠️ Error eliminando archivo corrupto {corrupted_file}: {e}")
+                
+                logger.info(f"🧹 Limpieza completada: {len(corrupted_files)} archivos corruptos eliminados")
+            else:
+                logger.info("✅ Todos los archivos de reportes están en buen estado")
                         
         except Exception as e:
-            logger.warning(f"⚠️ Error en limpieza de archivos antiguos: {e}")
+            logger.warning(f"⚠️ Error en verificación de archivos: {e}")
 
     async def create_report(self, reporter_id: str, reported_user_id: str, server_id: str, reason: str, evidence_text: str = "") -> Dict:
         """Crear un nuevo reporte de scam"""
@@ -909,6 +939,133 @@ def setup_commands(bot):
             embed = discord.Embed(
                 title="❌ Error en Migración",
                 description="Ocurrió un error durante la migración a Blob Storage.",
+                color=0xff0000
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @bot.tree.command(name="scamstats", description="[OWNER ONLY] Ver estadísticas completas del sistema anti-scam")
+    async def scamstats_command(interaction: discord.Interaction):
+        """Comando para ver estadísticas completas del sistema anti-scam"""
+        user_id = str(interaction.user.id)
+
+        # Verificar que sea owner o delegado
+        from main import DISCORD_OWNER_ID, delegated_owners, is_owner_or_delegated
+        if not is_owner_or_delegated(user_id):
+            embed = discord.Embed(
+                title="❌ Acceso Denegado",
+                description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
+                color=0xff0000
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            # Asegurar sincronización completa
+            await initialize_anti_scam_system()
+            await anti_scam_system.sync_with_blob()
+
+            # Obtener estadísticas desde Blob Storage
+            from blob_storage_manager import blob_manager
+            all_files = await blob_manager.list_files()
+            scam_files = [f for f in all_files if f.startswith(anti_scam_system.blob_folder)]
+
+            stats = anti_scam_system.get_stats()
+
+            embed = discord.Embed(
+                title="📊 Estadísticas Completas del Sistema Anti-Scam",
+                description="Información detallada del sistema de reportes",
+                color=0x00aaff
+            )
+
+            # Estadísticas principales
+            embed.add_field(
+                name="📋 Reportes Totales",
+                value=f"**{stats['total_reports']}** reportes únicos",
+                inline=True
+            )
+
+            embed.add_field(
+                name="⏳ Pendientes",
+                value=f"**{stats['pending']}** reportes",
+                inline=True
+            )
+
+            embed.add_field(
+                name="✅ Confirmados",
+                value=f"**{stats['confirmed']}** reportes",
+                inline=True
+            )
+
+            embed.add_field(
+                name="🚫 Descartados",
+                value=f"**{stats['dismissed']}** reportes",
+                inline=True
+            )
+
+            embed.add_field(
+                name="📁 Archivos en Blob",
+                value=f"**{len(scam_files)}** archivos",
+                inline=True
+            )
+
+            embed.add_field(
+                name="💾 Almacenamiento",
+                value="**Permanente** (sin límites)",
+                inline=True
+            )
+
+            # Estadísticas adicionales
+            if anti_scam_system.reports:
+                # Usuarios más reportados
+                user_counts = {}
+                for report in anti_scam_system.reports.values():
+                    user_id = report['reported_user_id']
+                    user_counts[user_id] = user_counts.get(user_id, 0) + 1
+
+                if user_counts:
+                    top_reported = sorted(user_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+                    top_list = []
+                    for user_id, count in top_reported:
+                        top_list.append(f"<@{user_id}>: {count} reportes")
+                    
+                    embed.add_field(
+                        name="🔥 Más Reportados",
+                        value="\n".join(top_list) if top_list else "Ninguno",
+                        inline=False
+                    )
+
+                # Reportes por estado confirmado
+                confirmed_users = set()
+                for report in anti_scam_system.reports.values():
+                    if report['status'] == 'confirmed':
+                        confirmed_users.add(report['reported_user_id'])
+
+                embed.add_field(
+                    name="🚨 Scammers Confirmados",
+                    value=f"**{len(confirmed_users)}** usuarios únicos",
+                    inline=True
+                )
+
+            embed.add_field(
+                name="🔧 Sistema",
+                value=f"Carpeta: `{anti_scam_system.blob_folder}`\nTodos los reportes se mantienen permanentemente",
+                inline=False
+            )
+
+            embed.set_footer(text=f"Sistema actualizado • {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            embed.timestamp = datetime.now()
+
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+            logger.info(f"📊 Estadísticas del sistema anti-scam consultadas por {interaction.user.name}")
+
+        except Exception as e:
+            logger.error(f"❌ Error obteniendo estadísticas: {e}")
+            embed = discord.Embed(
+                title="❌ Error",
+                description="No se pudieron obtener las estadísticas del sistema.",
                 color=0xff0000
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
