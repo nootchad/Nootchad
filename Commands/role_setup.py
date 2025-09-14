@@ -26,7 +26,7 @@ def setup_commands(bot):
     # Iniciar el sistema de monitoreo automático
     if verification_monitor_task is None:
         verification_monitor_task = bot.loop.create_task(monitor_verification_changes(bot))
-        logger.info("✅ Sistema de monitoreo de verificaciones iniciado")
+        logger.info("<:verify:1396087763388072006> Sistema de monitoreo de verificaciones iniciado")
         
         # Ejecutar verificación inicial de usuarios ya verificados
         bot.loop.create_task(initial_role_assignment_check(bot))
@@ -575,7 +575,7 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    logger.info("✅ Comandos de configuración de roles cargados exitosamente")
+    logger.info("<:verify:1396087763388072006> Comandos de configuración de roles cargados exitosamente")
     return True
 
 async def get_verified_users_in_guild(guild: discord.Guild) -> List[Dict]:
@@ -637,7 +637,7 @@ async def assign_roles_to_verified_users(guild: discord.Guild, role: discord.Rol
             })
             success_count += 1
 
-            logger.info(f"✅ Rol {role.name} asignado a {username} en {guild.name}")
+            logger.info(f"<:verify:1396087763388072006> Rol {role.name} asignado a {username} en {guild.name}")
 
             # Pequeña pausa para evitar rate limits
             await asyncio.sleep(0.5)
@@ -706,7 +706,7 @@ def save_role_config(guild_id: str, guild_name: str, role_id: int, role_name: st
         with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
-        logger.info(f"✅ Configuración de rol guardada para servidor {guild_id}")
+        logger.info(f"<:verify:1396087763388072006> Configuración de rol guardada para servidor {guild_id}")
         return True
 
     except Exception as e:
@@ -904,7 +904,7 @@ async def process_user_verification_in_all_guilds(bot: commands.Bot, discord_id:
                 
                 if success:
                     successful_assignments += 1
-                    logger.info(f"✅ Rol asignado automáticamente a {roblox_username} en {guild.name}")
+                    logger.info(f"<:verify:1396087763388072006> Rol asignado automáticamente a {roblox_username} en {guild.name}")
                 else:
                     logger.warning(f"❌ No se pudo asignar rol a {roblox_username} en {guild.name}")
                 
@@ -976,7 +976,7 @@ async def initial_role_assignment_check(bot: commands.Bot):
                         
                         # Verificar si ya tiene el rol
                         if role in member.roles:
-                            logger.debug(f"✅ Usuario {member.name} ya tiene el rol en {guild.name}")
+                            logger.debug(f"<:verify:1396087763388072006> Usuario {member.name} ya tiene el rol en {guild.name}")
                             continue
                         
                         # Asignar el rol
@@ -986,7 +986,7 @@ async def initial_role_assignment_check(bot: commands.Bot):
                             total_roles_assigned += 1
                             
                             roblox_username = user_data.get('roblox_username', 'Unknown')
-                            logger.info(f"✅ Rol asignado automáticamente a {member.name} ({roblox_username}) en {guild.name}")
+                            logger.info(f"<:verify:1396087763388072006> Rol asignado automáticamente a {member.name} ({roblox_username}) en {guild.name}")
                             
                             # Pequeña pausa para evitar rate limits
                             await asyncio.sleep(0.5)
@@ -1012,7 +1012,7 @@ async def initial_role_assignment_check(bot: commands.Bot):
                 continue
         
         if total_users_checked > 0:
-            logger.info(f"✅ Verificación inicial completada: {total_roles_assigned}/{total_users_checked} roles asignados")
+            logger.info(f"<:verify:1396087763388072006> Verificación inicial completada: {total_roles_assigned}/{total_users_checked} roles asignados")
         else:
             logger.info("📊 Verificación inicial completada: No hay usuarios verificados en servidores configurados")
             
