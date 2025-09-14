@@ -562,7 +562,7 @@ def setup_commands(bot):
             # Crear embed de confirmación
             report = result['report']
             embed = discord.Embed(
-                title="✅ Reporte de Scammer Enviado",
+                title="<:verify:1396087763388072006> Reporte de Scammer Enviado",
                 description="Tu reporte ha sido registrado exitosamente y será revisado por los moderadores.",
                 color=0x00ff88
             )
@@ -821,7 +821,7 @@ def setup_commands(bot):
             # Crear embed de confirmación
             report = result['report']
             embed = discord.Embed(
-                title="✅ Reporte Confirmado",
+                title="<:verify:1396087763388072006> Reporte Confirmado",
                 description=f"El reporte `{report_id}` ha sido confirmado exitosamente.",
                 color=0x00ff88
             )
@@ -839,7 +839,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="✅ Confirmado por:",
+                name="<:verify:1396087763388072006> Confirmado por:",
                 value=f"<@{user_id}>",
                 inline=True
             )
@@ -977,7 +977,7 @@ def setup_commands(bot):
 
             if not pending_reports:
                 embed.add_field(
-                    name="✅ Sin Reportes Pendientes",
+                    name="<:verify:1396087763388072006> Sin Reportes Pendientes",
                     value="No hay reportes pendientes de revisión.",
                     inline=False
                 )
@@ -1126,7 +1126,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="✅ Confirmados",
+                name="<:verify:1396087763388072006> Confirmados",
                 value=f"**{stats['confirmed']}** reportes",
                 inline=True
             )

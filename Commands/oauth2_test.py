@@ -87,7 +87,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="✅ Estado",
+                name="<:verify:1396087763388072006> Estado",
                 value="Sistema OAuth2 configurado correctamente",
                 inline=True
             )
