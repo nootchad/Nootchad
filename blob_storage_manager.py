@@ -61,11 +61,13 @@ class BlobStorageManager:
             logger.error(f"❌ Error en upload_json para {filename}: {e}")
             return None
     
-    async def download_json(self, filename: str) -> Optional[dict]:
+    async def download_json(self, filename: str, file_map: Optional[Dict[str, str]] = None) -> Optional[dict]:
         """Descargar datos JSON desde Blob Storage usando URL real"""
         try:
-            # Primero obtener la URL real del archivo
-            file_map = await self.list_files_with_urls()
+            # Usar mapeo proporcionado o obtener uno nuevo
+            if file_map is None:
+                file_map = await self.list_files_with_urls()
+            
             real_url = file_map.get(filename)
             
             if not real_url:
@@ -95,8 +97,14 @@ class BlobStorageManager:
         return list(file_map.keys())
     
     async def list_files_with_urls(self) -> Dict[str, str]:
-        """Listar archivos con sus URLs reales"""
+        """Listar archivos con sus URLs reales con cache para consistencia"""
         try:
+            # Cache simple para evitar inconsistencias entre llamadas
+            if hasattr(self, '_file_cache') and hasattr(self, '_cache_time'):
+                import time
+                if time.time() - self._cache_time < 30:  # Cache por 30 segundos
+                    return self._file_cache
+            
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                     f"{self.base_url}",
@@ -112,6 +120,12 @@ class BlobStorageManager:
                             url = blob.get('url', '')
                             if pathname and url:
                                 file_map[pathname] = url
+                        
+                        # Guardar en cache
+                        import time
+                        self._file_cache = file_map
+                        self._cache_time = time.time()
+                        
                         logger.info(f"📋 {len(file_map)} archivos encontrados en Blob Storage")
                         return file_map
                     else:

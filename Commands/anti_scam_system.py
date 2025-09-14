@@ -29,9 +29,9 @@ class AntiScamSystem:
         try:
             from blob_storage_manager import blob_manager
 
-            # Listar todos los archivos en la carpeta de reportes
-            all_files = await blob_manager.list_files()
-            scam_files = [f for f in all_files if f.startswith(self.blob_folder)]
+            # Obtener mapeo una sola vez para consistencia
+            file_map = await blob_manager.list_files_with_urls()
+            scam_files = [f for f in file_map.keys() if f.startswith(self.blob_folder)]
             
             self.reports = {}
             
@@ -41,18 +41,36 @@ class AntiScamSystem:
                 
                 for filename in scam_files:
                     try:
-                        blob_data = await blob_manager.download_json(filename)
+                        blob_data = await blob_manager.download_json(filename, file_map)
                         if blob_data and isinstance(blob_data, dict):
                             # Combinar reportes de múltiples archivos
                             file_reports = blob_data.get('reports', {})
-                            if file_reports:
-                                # Evitar duplicados basados en report_id
+                            
+                            # Manejar tanto formato de lista como diccionario
+                            if isinstance(file_reports, list):
+                                # Convertir lista a diccionario usando timestamp como ID
+                                new_reports = 0
+                                for report_data in file_reports:
+                                    if isinstance(report_data, dict):
+                                        # Generar ID único si no existe
+                                        report_id = report_data.get('report_id')
+                                        if not report_id:
+                                            import time
+                                            report_id = f"report_{int(time.time() * 1000000)}"
+                                            report_data['report_id'] = report_id
+                                        
+                                        if report_id not in self.reports:
+                                            self.reports[report_id] = report_data
+                                            new_reports += 1
+                                logger.info(f"📁 Cargados {new_reports} reportes nuevos desde: {filename}")
+                                successful_loads += 1
+                            elif isinstance(file_reports, dict):
+                                # Formato diccionario (esperado)
                                 new_reports = 0
                                 for report_id, report_data in file_reports.items():
                                     if report_id not in self.reports:
                                         self.reports[report_id] = report_data
                                         new_reports += 1
-                                
                                 logger.info(f"📁 Cargados {new_reports} reportes nuevos desde: {filename}")
                                 successful_loads += 1
                     except Exception as e:
