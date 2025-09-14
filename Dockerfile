@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     build-essential \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -53,7 +54,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 
 # Copiar y configurar script de entrada
 COPY --chown=app:app docker-entrypoint.sh /app/
-RUN chmod +x /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh \
+    && dos2unix /app/docker-entrypoint.sh || true
 
 # Comando para ejecutar la aplicación
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
