@@ -1,6 +1,9 @@
 # Overview
 
-VIP Server Scraper Discord Bot is a comprehensive Discord bot that scrapes VIP server links from rbxservers.xyz and provides them through Discord commands. The bot features advanced user management systems including anti-alt detection, promotional codes, user verification, and a marketplace for server exchanges. It uses a hybrid architecture with both JSON file storage and Supabase integration for scalability.
+VIP Server Scraper Discord Bot is a comprehensive Discord bot that scrapes VIP server links from rbxservers.xyz and provides them through Discord commands. The bot features advanced user management systems including promotional codes, user verification, and security features. It uses a hybrid architecture with both JSON file storage and Supabase integration for scalability.
+
+## Recent Changes (September 15, 2025)
+- **System Cleanup**: Removed antialt detection, coins system, kxis3rr system, leaderboard, marketplace, and music generation systems to simplify codebase and improve bot startup reliability
 
 # User Preferences
 
@@ -27,10 +30,8 @@ Preferred communication style: Simple, everyday language.
 - **Blob Storage**: Vercel Blob Storage for large file management and backups
 
 ## User Management Systems
-- **Anti-Alt Detection**: Sophisticated fingerprinting system to prevent alt account abuse
-- **User Verification**: Roblox account linking with verification codes
+- **User Verification**: Roblox account linking with verification codes  
 - **Role Management**: Automatic Discord role assignment upon verification
-- **Profile System**: Comprehensive user profiles with activity tracking
 
 ## Security & Moderation
 - **Blacklist/Whitelist**: User access control with permanent and temporary restrictions
@@ -39,20 +40,16 @@ Preferred communication style: Simple, everyday language.
 - **Access Control**: Owner/delegated owner permission system
 
 ## Economic Systems
-- **Coin System**: Internal currency with earning and spending mechanics
 - **Promotional Codes**: Redeemable codes with usage tracking and limits
-- **Marketplace**: Community-driven server exchange system
-- **Shop System**: Item purchasing with different categories (games, accounts, robux, premium)
 
 ## API Integration
 - **Web API**: RESTful endpoints for external integrations
 - **OAuth2 System**: Discord OAuth for web authentication
-- **Music Generation**: AI music creation through external APIs
 - **Image Generation**: AI image generation using Pollinations API
 
 ## Monitoring & Analytics
 - **Command Logging**: Comprehensive logging of all bot interactions
-- **Usage Statistics**: User activity tracking and leaderboards
+- **Usage Statistics**: User activity tracking
 - **Web Analytics**: Website visit tracking and user behavior analysis
 - **Alert System**: Bot startup notifications and user alerts
 
@@ -73,7 +70,6 @@ Preferred communication style: Simple, everyday language.
 ## Third-party APIs
 - **Roblox API**: User verification and game data retrieval
 - **Pollinations AI**: Image generation services
-- **External Music API**: AI music generation and processing
 
 ## Python Libraries
 - **discord.py**: Discord bot framework
