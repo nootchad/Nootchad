@@ -59,8 +59,18 @@ def setup_commands(bot):
             logger.info(f"Usuarios verificados totales: {len(roblox_verification.verified_users)}")
             logger.info(f"Usuario {user_id} en verified_users: {user_id in roblox_verification.verified_users}")
             
+            # Usar el mismo método que funciona en publicget
             user_verified = roblox_verification.is_user_verified(user_id)
             logger.info(f"Resultado de verificación para {user_id}: {user_verified}")
+            
+            # Verificación adicional directa si el método falla
+            if not user_verified:
+                # Verificación directa como backup
+                direct_check = user_id in roblox_verification.verified_users
+                logger.info(f"Verificación directa para {user_id}: {direct_check}")
+                if direct_check:
+                    user_verified = True
+                    logger.info(f"✅ Usuario {user_id} verificado mediante verificación directa")
             
             if not user_verified:
                 embed = discord.Embed(
@@ -79,14 +89,25 @@ def setup_commands(bot):
             # Obtener información del usuario verificado
             user_data = roblox_verification.verified_users.get(user_id)
             if not user_data:
-                logger.error(f"Usuario {user_id} no encontrado en verified_users a pesar de pasar is_user_verified")
-                embed = discord.Embed(
-                    title="❌ Error de Verificación",
-                    description="Error interno: datos de verificación no encontrados. Intenta verificarte nuevamente con `/verify`.",
-                    color=0x5c5c5c
-                )
-                await interaction.followup.send(embed=embed, ephemeral=True)
-                return
+                logger.error(f"Usuario {user_id} no encontrado en verified_users a pesar de pasar verificación")
+                logger.error(f"Debug - Contenido de verified_users: {list(roblox_verification.verified_users.keys())}")
+                logger.error(f"Debug - Tipo de user_id: {type(user_id)}, valor: '{user_id}'")
+                
+                # Intentar con diferentes tipos de datos
+                for key in roblox_verification.verified_users.keys():
+                    if str(key) == str(user_id):
+                        user_data = roblox_verification.verified_users[key]
+                        logger.info(f"✅ Datos encontrados con key alternativa: {key} (tipo: {type(key)})")
+                        break
+                
+                if not user_data:
+                    embed = discord.Embed(
+                        title="❌ Error de Verificación",
+                        description="Error interno: datos de verificación no encontrados. Intenta verificarte nuevamente con `/verify`.",
+                        color=0x5c5c5c
+                    )
+                    await interaction.followup.send(embed=embed, ephemeral=True)
+                    return
                 
             roblox_username = user_data['roblox_username']
             
