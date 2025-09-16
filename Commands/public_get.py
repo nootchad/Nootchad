@@ -49,58 +49,21 @@ DAILY_LIMIT_DONATOR = 50
 limiter = RateLimiter(DAILY_LIMIT_REGULAR, DAILY_LIMIT_DONATOR)
 
 async def check_user_donation_status(user_id: str) -> bool:
-    """Verifica si un usuario es donador usando el mismo sistema que /donacion."""
+    """Verifica si un usuario es donador usando el nuevo sistema simplificado."""
     try:
         logger.info(f"Verificando estado de donador para el usuario ID: {user_id}")
         
-        # Importar el sistema de verificación de main
-        import sys
-        main_module = sys.modules.get('main')
-        if not main_module:
-            logger.error("Sistema de verificación no disponible")
-            return False
+        # Importar función del comando donacion
+        from Commands.donacion import is_user_donator
         
-        roblox_verification = main_module.roblox_verification
+        # Verificar si es donador usando el nuevo sistema
+        is_donator = is_user_donator(user_id)
         
-        # Verificar si el usuario está verificado en Roblox
-        if not hasattr(roblox_verification, 'verified_users'):
-            logger.error("Sistema de verificación no inicializado")
-            return False
-        
-        if not roblox_verification.is_user_verified(user_id):
-            logger.info(f"Usuario {user_id} no está verificado en Roblox")
-            return False
-        
-        # Obtener datos del usuario verificado
-        user_data = roblox_verification.verified_users.get(user_id)
-        if not user_data:
-            logger.error(f"Datos de usuario {user_id} no encontrados")
-            return False
-        
-        roblox_username = user_data['roblox_username']
-        logger.info(f"Verificando donación para usuario Roblox: {roblox_username}")
-        
-        # Importar funciones del comando donacion para verificar gamepass
-        from Commands.donacion import get_roblox_user_id, check_user_has_gamepass, DONATION_GAMEPASS_ID
-        
-        # Obtener ID de usuario de Roblox
-        roblox_user_id = await get_roblox_user_id(roblox_username)
-        if not roblox_user_id:
-            logger.error(f"No se pudo obtener ID de Roblox para {roblox_username}")
-            return False
-        
-        # Verificar si tiene el gamepass de donación
-        has_gamepass = await check_user_has_gamepass(roblox_user_id, DONATION_GAMEPASS_ID)
-        
-        if has_gamepass is True:
-            logger.info(f"Usuario {user_id} ({roblox_username}) CONFIRMADO como donador")
+        if is_donator:
+            logger.info(f"Usuario {user_id} CONFIRMADO como donador (sistema nuevo)")
             return True
-        elif has_gamepass is False:
-            logger.info(f"Usuario {user_id} ({roblox_username}) NO es donador")
-            return False
         else:
-            # Error verificando gamepass, asumir no donador por seguridad
-            logger.warning(f"Error verificando gamepass para {user_id} ({roblox_username})")
+            logger.info(f"Usuario {user_id} NO es donador (sistema nuevo)")
             return False
             
     except Exception as e:

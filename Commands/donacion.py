@@ -8,108 +8,81 @@ from discord.ext import commands
 import logging
 import aiohttp
 import asyncio
+import json
+import os
 
 logger = logging.getLogger(__name__)
 
 # ID del gamepass de donación
 DONATION_GAMEPASS_ID = "1328319614"
 
+# Archivo para almacenar donadores verificados
+DONATORS_FILE = "verified_donators.json"
+
+def load_donators():
+    """Cargar lista de donadores verificados"""
+    if os.path.exists(DONATORS_FILE):
+        try:
+            with open(DONATORS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error cargando donadores: {e}")
+    return {}
+
+def save_donators(donators):
+    """Guardar lista de donadores verificados"""
+    try:
+        with open(DONATORS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(donators, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        logger.error(f"Error guardando donadores: {e}")
+
+def is_user_donator(user_id: str) -> bool:
+    """Verificar si un usuario es donador verificado"""
+    donators = load_donators()
+    return user_id in donators
+
+def add_donator(user_id: str, roblox_username: str, roblox_id: str):
+    """Agregar un donador verificado"""
+    donators = load_donators()
+    donators[user_id] = {
+        'roblox_username': roblox_username,
+        'roblox_id': roblox_id,
+        'verified_at': asyncio.get_event_loop().time()
+    }
+    save_donators(donators)
+
 def setup_commands(bot):
     """Función requerida para configurar comandos"""
     
-    @bot.tree.command(name="donacion", description="Verificar si has donado mediante gamepass y recibir agradecimiento")
-    async def donacion_command(interaction: discord.Interaction):
+    @bot.tree.command(name="donacion", description="Verificar si has donado mediante gamepass (sin necesidad de verificación previa)")
+    async def donacion_command(interaction: discord.Interaction, roblox_username: str):
         """Verificar gamepass de donación del usuario"""
         try:
             user_id = str(interaction.user.id)
             username = f"{interaction.user.name}#{interaction.user.discriminator}"
             
-            logger.info(f"Usuario {username} (ID: {user_id}) usó comando /donacion")
+            logger.info(f"Usuario {username} (ID: {user_id}) usó comando /donacion con username: {roblox_username}")
             
             # Defer la respuesta porque puede tomar tiempo verificar la API
             await interaction.response.defer()
             
-            # Importar después de defer para evitar problemas de importación
-            import sys
-            main_module = sys.modules.get('main')
-            if not main_module:
+            # Verificar si ya es donador conocido
+            if is_user_donator(user_id):
+                donators = load_donators()
+                donator_data = donators[user_id]
                 embed = discord.Embed(
-                    title="❌ Error del Sistema",
-                    description="Sistema de verificación no disponible temporalmente.",
-                    color=0x5c5c5c
-                )
-                await interaction.followup.send(embed=embed, ephemeral=True)
-                return
-            
-            roblox_verification = main_module.roblox_verification
-            
-            # Verificar estado del sistema de verificación
-            if not hasattr(roblox_verification, 'verified_users'):
-                logger.error("Sistema de verificación no inicializado correctamente")
-                embed = discord.Embed(
-                    title="❌ Error del Sistema",
-                    description="Sistema de verificación no disponible. Contacta al administrador.",
-                    color=0x5c5c5c
-                )
-                await interaction.followup.send(embed=embed, ephemeral=True)
-                return
-            
-            # Verificar si el usuario está verificado
-            logger.info(f"Verificando estado del usuario {user_id}...")
-            logger.info(f"Usuarios verificados totales: {len(roblox_verification.verified_users)}")
-            logger.info(f"Usuario {user_id} en verified_users: {user_id in roblox_verification.verified_users}")
-            
-            # Usar el mismo método que funciona en publicget
-            user_verified = roblox_verification.is_user_verified(user_id)
-            logger.info(f"Resultado de verificación para {user_id}: {user_verified}")
-            
-            # Verificación adicional directa si el método falla
-            if not user_verified:
-                # Verificación directa como backup
-                direct_check = user_id in roblox_verification.verified_users
-                logger.info(f"Verificación directa para {user_id}: {direct_check}")
-                if direct_check:
-                    user_verified = True
-                    logger.info(f"✅ Usuario {user_id} verificado mediante verificación directa")
-            
-            if not user_verified:
-                embed = discord.Embed(
-                    title="Verificación Requerida",
-                    description="Necesitas estar verificado con tu cuenta de Roblox para usar este comando.",
-                    color=0x5c5c5c
+                    title="✅ Donador Verificado",
+                    description=f"Ya tienes el estado de donador verificado con la cuenta **{donator_data['roblox_username']}**.",
+                    color=0x00ff00
                 )
                 embed.add_field(
-                    name="Como verificarte",
-                    value="Usa el comando `/verify nombre_roblox` para verificar tu cuenta",
+                    name="🎁 Beneficios Activos",
+                    value="• 50 usos diarios en `/publicget`\n• Reconocimiento como donador\n• Apoyas el desarrollo del bot",
                     inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
-            # Obtener información del usuario verificado
-            user_data = roblox_verification.verified_users.get(user_id)
-            if not user_data:
-                logger.error(f"Usuario {user_id} no encontrado en verified_users a pesar de pasar verificación")
-                logger.error(f"Debug - Contenido de verified_users: {list(roblox_verification.verified_users.keys())}")
-                logger.error(f"Debug - Tipo de user_id: {type(user_id)}, valor: '{user_id}'")
-                
-                # Intentar con diferentes tipos de datos
-                for key in roblox_verification.verified_users.keys():
-                    if str(key) == str(user_id):
-                        user_data = roblox_verification.verified_users[key]
-                        logger.info(f"✅ Datos encontrados con key alternativa: {key} (tipo: {type(key)})")
-                        break
-                
-                if not user_data:
-                    embed = discord.Embed(
-                        title="❌ Error de Verificación",
-                        description="Error interno: datos de verificación no encontrados. Intenta verificarte nuevamente con `/verify`.",
-                        color=0x5c5c5c
-                    )
-                    await interaction.followup.send(embed=embed, ephemeral=True)
-                    return
-                
-            roblox_username = user_data['roblox_username']
             
             logger.info(f"Verificando donación para usuario Roblox: {roblox_username} (Discord ID: {user_id})")
             
@@ -118,9 +91,14 @@ def setup_commands(bot):
             
             if not roblox_user_id:
                 embed = discord.Embed(
-                    title="Error de Verificación",
-                    description="No se pudo obtener la información de tu cuenta de Roblox. Intenta verificarte nuevamente.",
-                    color=0x5c5c5c
+                    title="❌ Usuario No Encontrado",
+                    description=f"No se pudo encontrar el usuario **{roblox_username}** en Roblox.",
+                    color=0xff0000
+                )
+                embed.add_field(
+                    name="💡 Verificaciones",
+                    value="• Asegúrate de escribir el username correctamente\n• Verifica que la cuenta no esté baneada\n• Intenta nuevamente en unos momentos",
+                    inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
@@ -156,30 +134,42 @@ def setup_commands(bot):
                 return
             
             if has_gamepass:
-                # Usuario tiene el gamepass - enviar mensaje de agradecimiento
+                # Usuario tiene el gamepass - agregarlo a la lista de donadores y enviar mensaje de agradecimiento
+                add_donator(user_id, roblox_username, roblox_user_id)
+                
                 embed = discord.Embed(
-                    title="Gracias por tu Donación",
-                    description=f"Hemos verificado que {roblox_username} ha donado al proyecto mediante gamepass.",
-                    color=0x5c5c5c
+                    title="🎉 ¡Gracias por tu Donación!",
+                    description=f"¡Hemos verificado que **{roblox_username}** ha donado al proyecto mediante gamepass!",
+                    color=0x00ff00
                 )
                 embed.add_field(
-                    name="Usuario Roblox",
-                    value=roblox_username,
+                    name="👤 Usuario Roblox",
+                    value=f"[{roblox_username}](https://www.roblox.com/users/{roblox_user_id}/profile)",
                     inline=True
                 )
                 embed.add_field(
-                    name="Estado de Donación",
-                    value="Confirmado",
+                    name="✅ Estado de Donación",
+                    value="**CONFIRMADO**",
                     inline=True
                 )
                 embed.add_field(
-                    name="Agradecimiento",
-                    value="Tu apoyo es fundamental para mantener y mejorar RbxServers. Gracias por contribuir al desarrollo del bot.",
+                    name="🆔 ID de Roblox",
+                    value=f"`{roblox_user_id}`",
+                    inline=True
+                )
+                embed.add_field(
+                    name="🙏 Agradecimiento",
+                    value="Tu apoyo es fundamental para mantener y mejorar RbxServers. ¡Gracias por contribuir al desarrollo del bot!",
                     inline=False
                 )
                 embed.add_field(
-                    name="Beneficios",
-                    value="Como donador, tu apoyo nos permite seguir proporcionando servidores VIP gratuitos para toda la comunidad.",
+                    name="🎁 Beneficios Obtenidos",
+                    value="• **50 usos diarios** en `/publicget` (en lugar de 10)\n• Reconocimiento público como donador\n• Apoyas el desarrollo continuo del bot",
+                    inline=False
+                )
+                embed.add_field(
+                    name="💰 Bonus de Monedas",
+                    value="¡Has recibido **500 monedas** bonus por tu donación!",
                     inline=False
                 )
                 
@@ -187,7 +177,7 @@ def setup_commands(bot):
                 await interaction.followup.send(embed=embed, ephemeral=False)
                 
                 # Log del donador
-                logger.info(f"DONACIÓN CONFIRMADA: Usuario {username} (Roblox: {roblox_username}) tiene gamepass {DONATION_GAMEPASS_ID}")
+                logger.info(f"DONACIÓN CONFIRMADA: Usuario {username} (Roblox: {roblox_username}, ID: {roblox_user_id}) tiene gamepass {DONATION_GAMEPASS_ID}")
                 
                 # Dar monedas bonus por donación (si el sistema está disponible)
                 try:
@@ -205,7 +195,7 @@ def setup_commands(bot):
                 embed = discord.Embed(
                     title="💝 Donación No Detectada",
                     description=f"No se detectó el gamepass de donación en la cuenta **{roblox_username}**.",
-                    color=0x5c5c5c
+                    color=0xffa500
                 )
                 embed.add_field(
                     name="🎁 Como Donar",
@@ -213,13 +203,13 @@ def setup_commands(bot):
                     inline=False
                 )
                 embed.add_field(
-                    name="🎯 Beneficios",
-                    value="• Reconocimiento público como donador\n• Bonus de 500 monedas\n• Apoyas el desarrollo continuo del bot",
+                    name="🎯 Beneficios de Donar",
+                    value="• **50 usos diarios** en `/publicget` (en lugar de 10)\n• Reconocimiento público como donador\n• Bonus de 500 monedas\n• Apoyas el desarrollo continuo del bot",
                     inline=False
                 )
                 embed.add_field(
                     name="🔄 Después de Donar",
-                    value="Una vez que adquieras el gamepass, usa este comando nuevamente para recibir el reconocimiento y bonus.",
+                    value="Una vez que adquieras el gamepass, usa este comando nuevamente para recibir el reconocimiento y beneficios.",
                     inline=False
                 )
                 embed.add_field(
@@ -228,7 +218,7 @@ def setup_commands(bot):
                     inline=True
                 )
                 embed.add_field(
-                    name="🆔 Tu ID de Roblox",
+                    name="🆔 ID de Roblox",
                     value=f"`{roblox_user_id}`",
                     inline=True
                 )
@@ -240,9 +230,9 @@ def setup_commands(bot):
             logger.error(f"Error en comando /donacion: {e}")
             
             error_embed = discord.Embed(
-                title="Error",
+                title="❌ Error",
                 description="Ocurrió un error al verificar tu donación. Intenta nuevamente en unos momentos.",
-                color=0x5c5c5c
+                color=0xff0000
             )
             
             if not interaction.response.is_done():
