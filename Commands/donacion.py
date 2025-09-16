@@ -21,9 +21,6 @@ def setup_commands(bot):
     async def donacion_command(interaction: discord.Interaction):
         """Verificar gamepass de donación del usuario"""
         try:
-            # Verificar que el usuario esté verificado en Roblox
-            from main import roblox_verification
-            
             user_id = str(interaction.user.id)
             username = f"{interaction.user.name}#{interaction.user.discriminator}"
             
@@ -32,8 +29,40 @@ def setup_commands(bot):
             # Defer la respuesta porque puede tomar tiempo verificar la API
             await interaction.response.defer()
             
+            # Importar después de defer para evitar problemas de importación
+            import sys
+            main_module = sys.modules.get('main')
+            if not main_module:
+                embed = discord.Embed(
+                    title="❌ Error del Sistema",
+                    description="Sistema de verificación no disponible temporalmente.",
+                    color=0x5c5c5c
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
+            roblox_verification = main_module.roblox_verification
+            
+            # Verificar estado del sistema de verificación
+            if not hasattr(roblox_verification, 'verified_users'):
+                logger.error("Sistema de verificación no inicializado correctamente")
+                embed = discord.Embed(
+                    title="❌ Error del Sistema",
+                    description="Sistema de verificación no disponible. Contacta al administrador.",
+                    color=0x5c5c5c
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
             # Verificar si el usuario está verificado
-            if not roblox_verification.is_user_verified(user_id):
+            logger.info(f"Verificando estado del usuario {user_id}...")
+            logger.info(f"Usuarios verificados totales: {len(roblox_verification.verified_users)}")
+            logger.info(f"Usuario {user_id} en verified_users: {user_id in roblox_verification.verified_users}")
+            
+            user_verified = roblox_verification.is_user_verified(user_id)
+            logger.info(f"Resultado de verificación para {user_id}: {user_verified}")
+            
+            if not user_verified:
                 embed = discord.Embed(
                     title="Verificación Requerida",
                     description="Necesitas estar verificado con tu cuenta de Roblox para usar este comando.",
@@ -49,9 +78,19 @@ def setup_commands(bot):
             
             # Obtener información del usuario verificado
             user_data = roblox_verification.verified_users.get(user_id)
+            if not user_data:
+                logger.error(f"Usuario {user_id} no encontrado en verified_users a pesar de pasar is_user_verified")
+                embed = discord.Embed(
+                    title="❌ Error de Verificación",
+                    description="Error interno: datos de verificación no encontrados. Intenta verificarte nuevamente con `/verify`.",
+                    color=0x5c5c5c
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+                
             roblox_username = user_data['roblox_username']
             
-            logger.info(f"Verificando donación para usuario Roblox: {roblox_username}")
+            logger.info(f"Verificando donación para usuario Roblox: {roblox_username} (Discord ID: {user_id})")
             
             # Obtener el ID de usuario de Roblox
             roblox_user_id = await get_roblox_user_id(roblox_username)
