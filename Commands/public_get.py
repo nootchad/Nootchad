@@ -1,4 +1,3 @@
-
 """
 Comando /publicget - Público
 Comando para obtener servidores de una API externa por ID de juego (versión pública)
@@ -8,9 +7,61 @@ from discord.ext import commands
 import logging
 import requests
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
+
+# --- Limitador de Tasa ---
+class RateLimiter:
+    def __init__(self, default_limit, donator_limit):
+        self.default_limit = default_limit
+        self.donator_limit = donator_limit
+        self.user_requests = {} # {user_id: {'count': count, 'reset_time': datetime}}
+
+    def get_user_usage(self, user_id: str) -> int:
+        now = datetime.now()
+        if user_id not in self.user_requests:
+            return 0
+
+        request_data = self.user_requests[user_id]
+        if now < request_data['reset_time']:
+            return request_data['count']
+        else:
+            # Reset count if it's a new day
+            self.user_requests[user_id] = {'count': 0, 'reset_time': now + timedelta(days=1)}
+            return 0
+
+    def increment_user_usage(self, user_id: str) -> bool:
+        now = datetime.now()
+        limit = self.get_user_usage(user_id) # This will get the current count for today
+
+        # Prepare to increment
+        new_count = limit + 1
+
+        # Update the user's request data for the current day
+        self.user_requests[user_id] = {'count': new_count, 'reset_time': now + timedelta(days=1)}
+        return True # Indicate that the usage was incremented
+
+    async def check_user_donation_status(self, user_id: str) -> bool:
+        # This is a placeholder. You would typically check a database or an external service here.
+        # For demonstration, we'll assume a user with ID '1234567890' is a donator.
+        # Replace this with your actual donation status check logic.
+        logger.info(f"Verificando estado de donador para el usuario ID: {user_id}")
+        # Example: return await is_user_a_donator(user_id)
+        return user_id == '1234567890' # Dummy check for testing
+
+# Definir límites
+DAILY_LIMIT_REGULAR = 10
+DAILY_LIMIT_DONATOR = 50
+
+limiter = RateLimiter(DAILY_LIMIT_REGULAR, DAILY_LIMIT_DONATOR)
+
+async def check_user_donation_status(user_id: str) -> bool:
+    """Verifica si un usuario es donador (placeholder)."""
+    logger.info(f"Verificando estado de donador para el usuario ID: {user_id}")
+    # Reemplaza esto con tu lógica real para verificar el estado de donador.
+    # Por ahora, asumimos que el usuario con ID '1234567890' es un donador.
+    return user_id == '1234567890'
 
 def setup_commands(bot):
     """Configurar comando public get"""
@@ -28,6 +79,37 @@ def setup_commands(bot):
 
         # Defer response
         await interaction.response.defer(ephemeral=False)
+
+        # Verificar límite de uso diario
+        is_donator = await check_user_donation_status(user_id)
+        current_limit = DAILY_LIMIT_DONATOR if is_donator else DAILY_LIMIT_REGULAR
+        current_usage = limiter.get_user_usage(user_id)
+
+        if current_usage >= current_limit:
+            remaining_uses = current_limit - current_usage
+            status_text = "🎁 Donador" if is_donator else "👤 Regular"
+            limit_embed = discord.Embed(
+                title="⏳ Límite de Uso Diario Alcanzado",
+                description=f"Has alcanzado tu límite diario de usos para este comando.",
+                color=0xffc107 # Amarillo
+            )
+            limit_embed.add_field(
+                name="📊 Tu Estado de Uso",
+                value=f"{status_text} | **{current_usage}/{current_limit}** usos hoy | **{remaining_uses}** restantes",
+                inline=False
+            )
+            limit_embed.add_field(
+                name="💡 Sugerencia",
+                value="Intenta de nuevo mañana o considera donar para obtener un límite mayor.",
+                inline=False
+            )
+            await interaction.followup.send(embed=limit_embed, ephemeral=True)
+            logger.warning(f"Usuario {username} ({user_id}) excedió el límite diario de /publicget.")
+            return
+
+        # Incrementar uso si no se ha alcanzado el límite
+        limiter.increment_user_usage(user_id)
+
 
         try:
             # Validar formato de game_id
@@ -55,7 +137,7 @@ def setup_commands(bot):
 
             # Hacer petición a la API
             api_url = f"https://v0-discord-bot-api-snowy.vercel.app/api/data?game_id={game_id}"
-            
+
             logger.info(f"🌐 Usuario público {username} haciendo petición a API: {api_url}")
 
             # Ejecutar la petición en un hilo separado para evitar bloquear asyncio
@@ -75,7 +157,7 @@ def setup_commands(bot):
             if response.status_code == 200:
                 try:
                     data = response.json()
-                    
+
                     # Verificar estructura de respuesta - manejar nueva respuesta de API
                     if data.get("success") == False:
                         # API responde con éxito = False cuando no hay datos
@@ -85,118 +167,152 @@ def setup_commands(bot):
                             description=data.get("message", "No se encontraron servidores en nuestra base de datos para este juego."),
                             color=0x6c757d
                         )
-                        
+
                         no_servers_embed.add_field(
                             name="🎮 ID del Juego",
                             value=f"`{game_id}`",
                             inline=True
                         )
-                        
+
                         no_servers_embed.add_field(
                             name="📊 Servidores Encontrados",
                             value="`0`",
                             inline=True
                         )
-                        
+
                         no_servers_embed.add_field(
                             name="👤 Solicitado por",
                             value=f"{username}",
                             inline=True
                         )
-                        
+
                         no_servers_embed.add_field(
                             name="💡 Sugerencia",
                             value="• Verifica que el ID del juego sea correcto\n• El juego podría no tener servidores VIP\n• Intenta con otro ID de juego",
                             inline=False
                         )
-                        
+
                         no_servers_embed.add_field(
                             name="⏰ Consultado",
                             value=f"<t:{int(datetime.now().timestamp())}:R>",
                             inline=True
                         )
-                        
-                        no_servers_embed.set_footer(text="RbxServers • API Externa v0-discord-bot-api • Comando Público")
-                        
+
+                        # Agregar información de límites para respuestas sin servidores
+                        try:
+                            is_donator_info = await check_user_donation_status(user_id)
+                            current_usage_info = limiter.get_user_usage(user_id)
+                            daily_limit_info = DAILY_LIMIT_DONATOR if is_donator_info else DAILY_LIMIT_REGULAR
+                            remaining_uses = daily_limit_info - current_usage_info
+
+                            status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
+
+                            no_servers_embed.add_field(
+                                name="📊 Tu Estado de Uso",
+                                value=f"{status_text} | **{current_usage_info}/{daily_limit_info}** usos hoy | **{remaining_uses}** restantes",
+                                inline=False
+                            )
+                        except Exception as e:
+                            logger.error(f"Error agregando info de límites: {e}")
+
+                        no_servers_embed.set_footer(text="RbxServers • API Externa • Límites diarios aplicados")
+
                         await message.edit(embed=no_servers_embed)
-                        
+
                         logger.info(f"⚠️ Usuario público {username} no encontró servidores para juego {game_id} - API respondió: {data.get('message', 'Sin mensaje')}")
                         return
-                    
+
                     elif "servers" in data and isinstance(data["servers"], list):
                         servers = data["servers"]
-                        
+
                         if servers:
                             # Limitar servidores mostrados para usuarios públicos (máximo 5)
                             max_servers_display = 5
                             servers_to_show = servers[:max_servers_display]
-                            
+
                             # Crear embed con servidores encontrados
                             success_embed = discord.Embed(
                                 title="✅ Servidores Obtenidos",
                                 description=f"Se encontraron **{len(servers)}** servidores para el juego ID: `{game_id}`",
                                 color=0x495057
                             )
-                            
+
                             # Agregar información del juego
                             success_embed.add_field(
                                 name="🎮 ID del Juego",
                                 value=f"`{data.get('game_id', game_id)}`",
                                 inline=True
                             )
-                            
+
                             success_embed.add_field(
                                 name="📊 Total de Servidores",
                                 value=f"`{len(servers)}`",
                                 inline=True
                             )
-                            
+
                             success_embed.add_field(
                                 name="🌐 Fuente",
                                 value="API Externa",
                                 inline=True
                             )
-                            
+
                             # Mostrar los primeros servidores
                             servers_text = ""
                             for i, server in enumerate(servers_to_show, 1):
                                 servers_text += f"`{i}.` {server}\n"
-                            
+
                             if len(servers) > max_servers_display:
                                 servers_text += f"\n... y {len(servers) - max_servers_display} servidores más"
                                 servers_text += f"\n\n💡 *Para ver todos los servidores, contacta a un administrador*"
-                            
+
                             success_embed.add_field(
                                 name="🔗 Servidores VIP:",
                                 value=servers_text,
                                 inline=False
                             )
-                            
+
                             # Información adicional
                             success_embed.add_field(
                                 name="⏰ Consultado",
                                 value=f"<t:{int(datetime.now().timestamp())}:R>",
                                 inline=True
                             )
-                            
+
                             success_embed.add_field(
                                 name="👤 Solicitado por",
                                 value=f"{username}",
                                 inline=True
                             )
-                            
+
                             success_embed.add_field(
                                 name="📋 Limitación",
                                 value=f"Mostrando {min(len(servers), max_servers_display)} de {len(servers)}",
                                 inline=True
                             )
-                            
-                            success_embed.set_footer(text="RbxServers • API Externa v0-discord-bot-api • Comando Público")
-                            
+
+                            # Agregar información de límites para respuestas con servidores
+                            try:
+                                is_donator_info = await check_user_donation_status(user_id)
+                                current_usage_info = limiter.get_user_usage(user_id)
+                                daily_limit_info = DAILY_LIMIT_DONATOR if is_donator_info else DAILY_LIMIT_REGULAR
+                                remaining_uses = daily_limit_info - current_usage_info
+
+                                status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
+
+                                success_embed.add_field(
+                                    name="📊 Tu Estado de Uso",
+                                    value=f"{status_text} | **{current_usage_info}/{daily_limit_info}** usos hoy | **{remaining_uses}** restantes",
+                                    inline=False
+                                )
+                            except Exception as e:
+                                logger.error(f"Error agregando info de límites: {e}")
+
+                            success_embed.set_footer(text="RbxServers • API Externa • Límites diarios aplicados")
+
                             await message.edit(embed=success_embed)
-                            
+
                             logger.info(f"✅ Usuario público {username} obtuvo {len(servers)} servidores para juego {game_id} (mostrados: {len(servers_to_show)})")
-                        
+
                         else:
                             # No se encontraron servidores
                             no_servers_embed = discord.Embed(
@@ -204,43 +320,61 @@ def setup_commands(bot):
                                 description="No se encontraron servidores en nuestra base de datos para este juego.",
                                 color=0x6c757d
                             )
-                            
+
                             no_servers_embed.add_field(
                                 name="🎮 ID del Juego",
                                 value=f"`{game_id}`",
                                 inline=True
                             )
-                            
+
                             no_servers_embed.add_field(
                                 name="📊 Servidores Encontrados",
                                 value="`0`",
                                 inline=True
                             )
-                            
+
                             no_servers_embed.add_field(
                                 name="👤 Solicitado por",
                                 value=f"{username}",
                                 inline=True
                             )
-                            
+
                             no_servers_embed.add_field(
                                 name="💡 Sugerencia",
                                 value="• Verifica que el ID del juego sea correcto\n• El juego podría no tener servidores VIP\n• Intenta con otro ID de juego",
                                 inline=False
                             )
-                            
+
                             no_servers_embed.add_field(
                                 name="⏰ Consultado",
                                 value=f"<t:{int(datetime.now().timestamp())}:R>",
                                 inline=True
                             )
-                            
-                            no_servers_embed.set_footer(text="RbxServers • API Externa v0-discord-bot-api • Comando Público")
-                            
+
+                            # Agregar información de límites para respuestas sin servidores
+                            try:
+                                is_donator_info = await check_user_donation_status(user_id)
+                                current_usage_info = limiter.get_user_usage(user_id)
+                                daily_limit_info = DAILY_LIMIT_DONATOR if is_donator_info else DAILY_LIMIT_REGULAR
+                                remaining_uses = daily_limit_info - current_usage_info
+
+                                status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
+
+                                no_servers_embed.add_field(
+                                    name="📊 Tu Estado de Uso",
+                                    value=f"{status_text} | **{current_usage_info}/{daily_limit_info}** usos hoy | **{remaining_uses}** restantes",
+                                    inline=False
+                                )
+                            except Exception as e:
+                                logger.error(f"Error agregando info de límites: {e}")
+
+                            no_servers_embed.set_footer(text="RbxServers • API Externa • Límites diarios aplicados")
+
+
                             await message.edit(embed=no_servers_embed)
-                            
+
                             logger.info(f"⚠️ Usuario público {username} no encontró servidores para juego {game_id}")
-                    
+
                     else:
                         # Respuesta de API con formato incorrecto
                         error_embed = discord.Embed(
@@ -258,9 +392,9 @@ def setup_commands(bot):
                             value=f"```json\n{str(data)[:300]}{'...' if len(str(data)) > 300 else ''}```",
                             inline=False
                         )
-                        
+
                         await message.edit(embed=error_embed)
-                        
+
                 except ValueError as e:
                     # Error parseando JSON
                     error_embed = discord.Embed(
@@ -278,10 +412,10 @@ def setup_commands(bot):
                         value=f"```{response.text[:300]}{'...' if len(response.text) > 300 else ''}```",
                         inline=False
                     )
-                    
+
                     await message.edit(embed=error_embed)
                     logger.error(f"❌ Error parseando JSON de API: {e}")
-            
+
             else:
                 # Error HTTP de la API
                 error_embed = discord.Embed(
@@ -289,37 +423,37 @@ def setup_commands(bot):
                     description=f"La API respondió con código de error: `{response.status_code}`",
                     color=0x6c757d
                 )
-                
+
                 error_embed.add_field(
                     name="🎮 ID del Juego",
                     value=f"`{game_id}`",
                     inline=True
                 )
-                
+
                 error_embed.add_field(
                     name="🔴 Código de Error",
                     value=f"`{response.status_code}`",
                     inline=True
                 )
-                
+
                 error_embed.add_field(
                     name="👤 Solicitado por",
                     value=f"{username}",
                     inline=True
                 )
-                
+
                 error_embed.add_field(
                     name="📝 Respuesta del Servidor",
                     value=f"```{response.text[:150]}{'...' if len(response.text) > 150 else ''}```",
                     inline=False
                 )
-                
+
                 error_embed.add_field(
                     name="💡 Posibles Causas",
                     value="• ID de juego no existe en la API\n• Problemas temporales del servidor\n• API sobrecargada",
                     inline=False
                 )
-                
+
                 await message.edit(embed=error_embed)
                 logger.error(f"❌ API respondió con error {response.status_code} para juego {game_id} (usuario público: {username})")
 
@@ -339,10 +473,10 @@ def setup_commands(bot):
                 value="Intenta nuevamente en unos momentos",
                 inline=False
             )
-            
+
             await message.edit(embed=timeout_embed)
             logger.error(f"❌ Timeout consultando API para juego {game_id} (usuario público: {username})")
-        
+
         except requests.ConnectionError:
             connection_embed = discord.Embed(
                 title="🌐 Error de Conexión",
@@ -359,14 +493,14 @@ def setup_commands(bot):
                 value="• Problemas de conectividad\n• API temporalmente no disponible\n• DNS no resuelve correctamente",
                 inline=False
             )
-            
+
             await message.edit(embed=connection_embed)
             logger.error(f"❌ Error de conexión consultando API para juego {game_id} (usuario público: {username})")
-        
+
         except Exception as e:
             # Error general
             logger.error(f"❌ Error en comando publicget: {e}")
-            
+
             error_embed = discord.Embed(
                 title="❌ Error Interno",
                 description="Ocurrió un error inesperado al consultar la API.",
@@ -387,7 +521,7 @@ def setup_commands(bot):
                 value="Contacta al desarrollador si el problema persiste",
                 inline=False
             )
-            
+
             await message.edit(embed=error_embed)
 
     logger.info("✅ Comando /publicget registrado correctamente")
