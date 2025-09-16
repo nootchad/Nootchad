@@ -42,14 +42,6 @@ class RateLimiter:
         self.user_requests[user_id] = {'count': new_count, 'reset_time': now + timedelta(days=1)}
         return True # Indicate that the usage was incremented
 
-    async def check_user_donation_status(self, user_id: str) -> bool:
-        # This is a placeholder. You would typically check a database or an external service here.
-        # For demonstration, we'll assume a user with ID '1234567890' is a donator.
-        # Replace this with your actual donation status check logic.
-        logger.info(f"Verificando estado de donador para el usuario ID: {user_id}")
-        # Example: return await is_user_a_donator(user_id)
-        return user_id == '1234567890' # Dummy check for testing
-
 # Definir límites
 DAILY_LIMIT_REGULAR = 10
 DAILY_LIMIT_DONATOR = 50
@@ -57,11 +49,63 @@ DAILY_LIMIT_DONATOR = 50
 limiter = RateLimiter(DAILY_LIMIT_REGULAR, DAILY_LIMIT_DONATOR)
 
 async def check_user_donation_status(user_id: str) -> bool:
-    """Verifica si un usuario es donador (placeholder)."""
-    logger.info(f"Verificando estado de donador para el usuario ID: {user_id}")
-    # Reemplaza esto con tu lógica real para verificar el estado de donador.
-    # Por ahora, asumimos que el usuario con ID '1234567890' es un donador.
-    return user_id == '1234567890'
+    """Verifica si un usuario es donador usando el mismo sistema que /donacion."""
+    try:
+        logger.info(f"Verificando estado de donador para el usuario ID: {user_id}")
+        
+        # Importar el sistema de verificación de main
+        import sys
+        main_module = sys.modules.get('main')
+        if not main_module:
+            logger.error("Sistema de verificación no disponible")
+            return False
+        
+        roblox_verification = main_module.roblox_verification
+        
+        # Verificar si el usuario está verificado en Roblox
+        if not hasattr(roblox_verification, 'verified_users'):
+            logger.error("Sistema de verificación no inicializado")
+            return False
+        
+        if not roblox_verification.is_user_verified(user_id):
+            logger.info(f"Usuario {user_id} no está verificado en Roblox")
+            return False
+        
+        # Obtener datos del usuario verificado
+        user_data = roblox_verification.verified_users.get(user_id)
+        if not user_data:
+            logger.error(f"Datos de usuario {user_id} no encontrados")
+            return False
+        
+        roblox_username = user_data['roblox_username']
+        logger.info(f"Verificando donación para usuario Roblox: {roblox_username}")
+        
+        # Importar funciones del comando donacion para verificar gamepass
+        from Commands.donacion import get_roblox_user_id, check_user_has_gamepass, DONATION_GAMEPASS_ID
+        
+        # Obtener ID de usuario de Roblox
+        roblox_user_id = await get_roblox_user_id(roblox_username)
+        if not roblox_user_id:
+            logger.error(f"No se pudo obtener ID de Roblox para {roblox_username}")
+            return False
+        
+        # Verificar si tiene el gamepass de donación
+        has_gamepass = await check_user_has_gamepass(roblox_user_id, DONATION_GAMEPASS_ID)
+        
+        if has_gamepass is True:
+            logger.info(f"Usuario {user_id} ({roblox_username}) CONFIRMADO como donador")
+            return True
+        elif has_gamepass is False:
+            logger.info(f"Usuario {user_id} ({roblox_username}) NO es donador")
+            return False
+        else:
+            # Error verificando gamepass, asumir no donador por seguridad
+            logger.warning(f"Error verificando gamepass para {user_id} ({roblox_username})")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error verificando estado de donador para {user_id}: {e}")
+        return False
 
 def setup_commands(bot):
     """Configurar comando public get"""
