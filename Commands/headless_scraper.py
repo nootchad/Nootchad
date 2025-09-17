@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 def setup_commands(bot):
     """Configurar comando de scraping headless"""
 
-    @bot.tree.command(name="headscrape", description="Obtener servidores VIP usando scraping headless (sin VNC)")
+    # TEMPORALMENTE DESACTIVADO - /headscrape
+    # @bot.tree.command(name="headscrape", description="Obtener servidores VIP usando scraping headless (sin VNC)")
     async def headscrape_command(
         interaction: discord.Interaction,
         juego: str,

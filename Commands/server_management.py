@@ -194,7 +194,8 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @bot.tree.command(name="scheduler", description="Programar scraping automático a horas específicas")
+    # TEMPORALMENTE DESACTIVADO - /scheduler
+    # @bot.tree.command(name="scheduler", description="Programar scraping automático a horas específicas")
     async def scheduler_command(
         interaction: discord.Interaction, 
         game_id: str,

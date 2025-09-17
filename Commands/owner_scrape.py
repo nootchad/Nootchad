@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 def setup_commands(bot):
     """Configurar comando owner scrape"""
 
-    @bot.tree.command(name="ownerscrape", description="[OWNER ONLY] Hacer scraping y enviar datos a API externa")
+    # TEMPORALMENTE DESACTIVADO - /ownerscrape
+    # @bot.tree.command(name="ownerscrape", description="[OWNER ONLY] Hacer scraping y enviar datos a API externa")
     async def ownerscrape_command(
         interaction: discord.Interaction,
         cantidad: int,

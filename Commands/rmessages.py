@@ -359,7 +359,8 @@ def setup_commands(bot):
     Función requerida para configurar comandos
     """
 
-    @bot.tree.command(name="rmessages", description="[OWNER ONLY] Hacer scrape de mensajes en Roblox con VNC visible")
+    # TEMPORALMENTE DESACTIVADO - /rmessages
+    # @bot.tree.command(name="rmessages", description="[OWNER ONLY] Hacer scrape de mensajes en Roblox con VNC visible")
     async def rmessages_command(interaction: discord.Interaction, friend_name: str = None, text_message: str = None, message_count: int = 1):
         """Comando para hacer scrape de mensajes en Roblox"""
         user_id = str(interaction.user.id)

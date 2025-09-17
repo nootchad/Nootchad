@@ -9627,7 +9627,8 @@ class CategoryFilterView(discord.ui.View):
         super().__init__(timeout=300)
         self.add_item(CategoryFilterSelect(user_id))
 
-@bot.tree.command(name="searchgame", description="Buscar un juego por nombre para hacer scraping")
+# TEMPORALMENTE DESACTIVADO - /searchgame
+# @bot.tree.command(name="searchgame", description="Buscar un juego por nombre para hacer scraping")
 async def search_game_command(interaction: discord.Interaction, nombre: str):
     """Search for games by name"""
     # Verificar autenticación
@@ -9704,7 +9705,8 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
         )
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-@bot.tree.command(name="game", description="Buscar y hacer scraping automáticamente por nombre de juego")
+# TEMPORALMENTE DESACTIVADO - /game
+# @bot.tree.command(name="game", description="Buscar y hacer scraping automáticamente por nombre de juego")
 async def game_command(interaction: discord.Interaction, nombre: str):
     """Search for a game by name and automatically start scraping the best match"""
     # Verificar autenticación
@@ -10282,7 +10284,8 @@ async def servertest(interaction: discord.Interaction):
         except Exception:
             pass
 
-@bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP (acepta ID o nombre)")
+# TEMPORALMENTE DESACTIVADO - /scrape
+# @bot.tree.command(name="scrape", description="Iniciar scraping para nuevos enlaces de servidores VIP (acepta ID o nombre)")
 async def scrape_command(interaction: discord.Interaction, juego: str):
     """Manually trigger scraping with real-time progress updates - supports both game ID and name"""
     user_id = str(interaction.user.id)

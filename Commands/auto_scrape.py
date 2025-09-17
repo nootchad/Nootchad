@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 def setup_commands(bot):
     """Configurar comando de auto scrape"""
 
-    @bot.tree.command(name="autoscrape", description="Auto obtener servidores VIP de juegos específicos")
+    # TEMPORALMENTE DESACTIVADO - /autoscrape
+    # @bot.tree.command(name="autoscrape", description="Auto obtener servidores VIP de juegos específicos")
     async def autoscrape_command(
         interaction: discord.Interaction,
         game_id: str,
