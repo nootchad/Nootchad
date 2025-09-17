@@ -407,12 +407,12 @@ def get_server_links_headless(driver, game_id, max_retries=2):
             if attempt == max_retries - 1:
                 logger.error("❌ Todos los intentos headless fallaron")
                 return []
-            await asyncio.sleep(2)
+            time.sleep(2)
         except WebDriverException as e:
             logger.error(f"🚫 Error WebDriver headless en intento {attempt + 1}: {e}")
             if attempt == max_retries - 1:
                 return []
-            await asyncio.sleep(2)
+            time.sleep(2)
     
     return []
 
