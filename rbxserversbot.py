@@ -23,7 +23,8 @@ class RobloxControlCommands:
     def setup_commands(self):
         """Configurar los comandos de control remoto"""
 
-        @self.bot.tree.command(name="control", description="[OWNER ONLY] Controlar bot de Roblox remotamente")
+        # TEMPORALMENTE DESACTIVADO - /control
+        # @self.bot.tree.command(name="control", description="[OWNER ONLY] Controlar bot de Roblox remotamente")
         async def control_command(interaction: discord.Interaction, 
                                 action: str, 
                                 target_user: str = None, 
@@ -181,7 +182,8 @@ class RobloxControlCommands:
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
         # Comando para ejecutar setup completo automáticamente
-        @self.bot.tree.command(name="setup_roblox", description="[OWNER ONLY] Setup completo: enviar script de conexión + script principal")
+        # TEMPORALMENTE DESACTIVADO - /setup_roblox
+        # @self.bot.tree.command(name="setup_roblox", description="[OWNER ONLY] Setup completo: enviar script de conexión + script principal")
         async def setup_roblox_command(interaction: discord.Interaction):
             """Enviar script de conexión automática y luego el script principal"""
             user_id = str(interaction.user.id)
@@ -246,7 +248,8 @@ class RobloxControlCommands:
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
         # Comando para ejecutar script principal automáticamente
-        @self.bot.tree.command(name="auto_script", description="[OWNER ONLY] Ejecutar script principal de Roblox automáticamente")
+        # TEMPORALMENTE DESACTIVADO - /auto_script
+        # @self.bot.tree.command(name="auto_script", description="[OWNER ONLY] Ejecutar script principal de Roblox automáticamente")
         async def auto_script_command(interaction: discord.Interaction):
             """Ejecutar el script principal automáticamente"""
             user_id = str(interaction.user.id)
@@ -308,7 +311,8 @@ class RobloxControlCommands:
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
         # Comando adicional para ver estado de scripts
-        @self.bot.tree.command(name="roblox_status", description="[OWNER ONLY] Ver estado de scripts de Roblox conectados")
+        # TEMPORALMENTE DESACTIVADO - /roblox_status
+        # @self.bot.tree.command(name="roblox_status", description="[OWNER ONLY] Ver estado de scripts de Roblox conectados")
         async def roblox_status_command(interaction: discord.Interaction):
             """Ver estado de scripts conectados"""
             user_id = str(interaction.user.id)

@@ -199,7 +199,8 @@ def setup_commands(bot):
     Configurar el comando /md
     """
 
-    @bot.tree.command(name="md", description="[OWNER ONLY] Enviar contenido de archivos markdown del bot")
+    # TEMPORALMENTE DESACTIVADO - /md
+    # @bot.tree.command(name="md", description="[OWNER ONLY] Enviar contenido de archivos markdown del bot")
     async def md_command(interaction: discord.Interaction):
         """Comando para seleccionar y enviar archivos markdown"""
         user_id = str(interaction.user.id)

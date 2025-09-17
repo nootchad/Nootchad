@@ -4764,7 +4764,8 @@ def aplicar_token_captcha(driver, token):
         logger.error(f"❌ Traceback: {traceback.format_exc()}")
         return False
 
-@bot.tree.command(name="friend", description="[OWNER ONLY] Enviar solicitudes de amistad usando múltiples cookies")
+# TEMPORALMENTE DESACTIVADO - /friend
+# @bot.tree.command(name="friend", description="[OWNER ONLY] Enviar solicitudes de amistad usando múltiples cookies")
 async def friend_command(interaction: discord.Interaction, user_id: int, cantidad: int = 1):
     """Comando para enviar múltiples solicitudes de amistad usando rotación de cookies"""
     user_discord_id = str(interaction.user.id)
@@ -6433,7 +6434,8 @@ def extract_cookies_from_cookiesnew():
         logger.error(f"❌ Error extrayendo cookies de Cookiesnew.md: {e}")
         return []
 
-@bot.tree.command(name="friendbrowser", description="[OWNER ONLY] Enviar solicitudes de amistad usando navegador con rotación de cookies")
+# TEMPORALMENTE DESACTIVADO - /friendbrowser
+# @bot.tree.command(name="friendbrowser", description="[OWNER ONLY] Enviar solicitudes de amistad usando navegador con rotación de cookies")
 async def friendbrowser_command(interaction: discord.Interaction, user_id: int, cantidad: int = 1):
     """Comando para enviar múltiples solicitudes de amistad usando navegador con logout automático"""
     user_discord_id = str(interaction.user.id)
@@ -7504,7 +7506,8 @@ async def handle_friend_response(response, message, user_id, user_name):
         error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:100]}```", inline=False)
         await message.edit(embed=error_embed)
 
-@bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies y obtener información de cuenta")
+# TEMPORALMENTE DESACTIVADO - /cookielog
+# @bot.tree.command(name="cookielog", description="[OWNER ONLY] Probar cookies y obtener información de cuenta")
 async def cookielog_command(interaction: discord.Interaction, vnc_mode: bool = False):
     """Comando solo para el owner que prueba cookies empezando por el secreto COOKIE y luego alt.txt"""
     user_id = str(interaction.user.id)
@@ -8374,7 +8377,8 @@ async def alerts_command(interaction: discord.Interaction,
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="follow", description="[OWNER ONLY] Enviar 1 seguidor bot a un perfil de Roblox usando navegador")
+# TEMPORALMENTE DESACTIVADO - /follow
+# @bot.tree.command(name="follow", description="[OWNER ONLY] Enviar 1 seguidor bot a un perfil de Roblox usando navegador")
 async def follow_command(interaction: discord.Interaction, roblox_username: str, vnc_mode: bool = False):
     """Comando solo para el owner que envía 1 seguidor bot a un perfil de Roblox usando Selenium"""
     user_id = str(interaction.user.id)
@@ -11596,7 +11600,8 @@ class DebugMenuView(discord.ui.View):
         super().__init__(timeout=300)
         self.add_item(DebugMenuSelect())
 
-@bot.tree.command(name="debug", description="[OWNER ONLY] Menú de debug y administración avanzada")
+# TEMPORALMENTE DESACTIVADO - /debug
+# @bot.tree.command(name="debug", description="[OWNER ONLY] Menú de debug y administración avanzada")
 async def debug_menu_command(interaction: discord.Interaction):
     """Debug menu with dropdown for advanced admin functions"""
     await interaction.response.defer(ephemeral=True)
@@ -11643,7 +11648,8 @@ async def debug_menu_command(interaction: discord.Interaction):
     view = DebugMenuView()
     await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
-@bot.tree.command(name="admin", description="[OWNER ONLY] Comandos de administración del bot")
+# TEMPORALMENTE DESACTIVADO - /admin
+# @bot.tree.command(name="admin", description="[OWNER ONLY] Comandos de administración del bot")
 async def admin_command(interaction: discord.Interaction, 
                        accion: str, 
                        usuario_id: str = None, 
@@ -12235,7 +12241,8 @@ async def admin_command(interaction: discord.Interaction,
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="roblox_control", description="[OWNER ONLY] Enviar comandos al bot de Roblox")
+# TEMPORALMENTE DESACTIVADO - /roblox_control
+# @bot.tree.command(name="roblox_control", description="[OWNER ONLY] Enviar comandos al bot de Roblox")
 async def roblox_control_command(interaction: discord.Interaction, 
                                 accion: str, 
                                 place_id: str = None, 

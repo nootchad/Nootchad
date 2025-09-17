@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 def setup_commands(bot):
     """Función requerida para configurar comandos"""
     
-    @bot.tree.command(name="update", description="Ver las últimas actualizaciones del bot RbxServers")
+    # TEMPORALMENTE DESACTIVADO - /update
+    # @bot.tree.command(name="update", description="Ver las últimas actualizaciones del bot RbxServers")
     async def update_command(interaction: discord.Interaction):
         """Mostrar las últimas actualizaciones del bot"""
         try:
