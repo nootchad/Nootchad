@@ -267,15 +267,48 @@ def setup_commands(bot):
                 )
             
             # Configurar la imagen del badge
-            if badge_info.get('iconImageId'):
-                # URL de la imagen del badge en alta resolución
-                image_url = f"https://thumbnails.roblox.com/v1/badges/icons?badgeIds={badge_id}&size=150x150&format=Png&isCircular=false"
-                result_embed.set_image(url=image_url)
+            image_configured = False
             
-            # Thumbnail más pequeño
-            if badge_info.get('iconImageId'):
+            # Método 1: Usar la URL directa de la API de thumbnails
+            try:
+                async with aiohttp.ClientSession() as session:
+                    thumbnail_url = f"https://thumbnails.roblox.com/v1/badges/icons?badgeIds={badge_id}&size=150x150&format=Png&isCircular=false"
+                    async with session.get(thumbnail_url) as thumb_response:
+                        if thumb_response.status == 200:
+                            thumb_data = await thumb_response.json()
+                            if thumb_data.get('data') and len(thumb_data['data']) > 0:
+                                image_url = thumb_data['data'][0].get('imageUrl')
+                                if image_url and image_url != 'https://tr.rbxcdn.com/':
+                                    result_embed.set_image(url=image_url)
+                                    image_configured = True
+                                    logger.info(f"✅ Imagen configurada desde API de thumbnails: {image_url}")
+            except Exception as thumb_error:
+                logger.warning(f"⚠️ Error obteniendo thumbnail desde API: {thumb_error}")
+            
+            # Método 2: Usar iconImageId si existe y el método anterior falló
+            if not image_configured and badge_info.get('iconImageId'):
+                try:
+                    icon_image_id = badge_info['iconImageId']
+                    # URL directa del asset de Roblox
+                    direct_image_url = f"https://assetdelivery.roblox.com/v1/asset?id={icon_image_id}"
+                    result_embed.set_image(url=direct_image_url)
+                    image_configured = True
+                    logger.info(f"✅ Imagen configurada desde iconImageId: {direct_image_url}")
+                except Exception as icon_error:
+                    logger.warning(f"⚠️ Error usando iconImageId: {icon_error}")
+            
+            # Método 3: URL de respaldo si los métodos anteriores fallan
+            if not image_configured:
+                fallback_url = f"https://thumbnails.roblox.com/v1/badges/icons?badgeIds={badge_id}&size=420x420&format=Png&isCircular=false"
+                result_embed.set_image(url=fallback_url)
+                logger.info(f"🔄 Usando URL de respaldo para badge {badge_id}")
+            
+            # Configurar thumbnail pequeño
+            try:
                 thumbnail_url = f"https://thumbnails.roblox.com/v1/badges/icons?badgeIds={badge_id}&size=50x50&format=Png&isCircular=false"
                 result_embed.set_thumbnail(url=thumbnail_url)
+            except Exception as thumbnail_error:
+                logger.warning(f"⚠️ Error configurando thumbnail: {thumbnail_error}")
             
             result_embed.set_footer(text=f"Badge ID: {badge_id} • Consultado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
