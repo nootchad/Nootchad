@@ -99,9 +99,19 @@ def setup_commands(bot):
             cheapest_item = await get_cheapest_limited()
             if not cheapest_item:
                 error_embed = discord.Embed(
-                    title="❌ No se encontraron ítems",
-                    description="No se pudieron obtener ítems limitados del catálogo en este momento.",
+                    title="❌ No se encontraron ítems limitados",
+                    description="No se pudieron encontrar ítems limitados disponibles en el catálogo de Roblox en este momento.",
                     color=0xff0000
+                )
+                error_embed.add_field(
+                    name="🔍 Posibles causas:",
+                    value="• La API de Roblox está experimentando problemas\n• No hay ítems limitados con precios públicos\n• Los filtros de búsqueda son muy restrictivos",
+                    inline=False
+                )
+                error_embed.add_field(
+                    name="💡 Sugerencia:",
+                    value="Intenta usar `/limited search [nombre_del_item]` para buscar un ítem específico.",
+                    inline=False
                 )
                 await message.edit(embed=error_embed)
                 return
