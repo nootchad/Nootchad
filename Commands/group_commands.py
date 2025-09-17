@@ -53,12 +53,31 @@ def setup_commands(bot):
             embed.add_field(name="🔓 Público", value="Sí" if group_info.get('publicEntryAllowed', False) else "No", inline=True)
             embed.add_field(name="🔗 Enlace", value=f"[Ver en Roblox](https://www.roblox.com/groups/{group_id})", inline=True)
             
-            # Configurar thumbnail del grupo
+            # Configurar imagen del grupo
             try:
-                thumbnail_url = f"https://thumbnails.roblox.com/v1/groups/icons?groupIds={group_id}&size=150x150&format=Png"
-                embed.set_thumbnail(url=thumbnail_url)
-            except:
-                pass
+                # Imagen principal del grupo
+                async with aiohttp.ClientSession() as session:
+                    group_image_url = f"https://thumbnails.roblox.com/v1/groups/icons?groupIds={group_id}&size=420x420&format=Png&isCircular=false"
+                    async with session.get(group_image_url) as response:
+                        if response.status == 200:
+                            group_data = await response.json()
+                            if group_data.get('data') and len(group_data['data']) > 0:
+                                image_url = group_data['data'][0].get('imageUrl')
+                                if image_url and image_url != 'https://tr.rbxcdn.com/':
+                                    embed.set_image(url=image_url)
+                                    logger.info(f"✅ Imagen del grupo configurada: {image_url}")
+                    
+                    # Thumbnail más pequeño
+                    thumbnail_url = f"https://thumbnails.roblox.com/v1/groups/icons?groupIds={group_id}&size=150x150&format=Png&isCircular=false"
+                    async with session.get(thumbnail_url) as response:
+                        if response.status == 200:
+                            thumb_data = await response.json()
+                            if thumb_data.get('data') and len(thumb_data['data']) > 0:
+                                thumb_url = thumb_data['data'][0].get('imageUrl')
+                                if thumb_url and thumb_url != 'https://tr.rbxcdn.com/':
+                                    embed.set_thumbnail(url=thumb_url)
+            except Exception as e:
+                logger.warning(f"⚠️ Error configurando imagen del grupo: {e}")
             
             embed.set_footer(text=f"Grupo ID: {group_id} • RbxServers")
             
