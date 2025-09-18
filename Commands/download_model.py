@@ -67,8 +67,18 @@ def setup_commands(bot):
             if not asset_info:
                 error_embed = discord.Embed(
                     title="❌ Asset No Encontrado",
-                    description=f"No se pudo encontrar información para el asset ID: `{asset_id}`",
+                    description=f"No se pudo encontrar el asset con ID: `{asset_id}`",
                     color=0xff0000
+                )
+                error_embed.add_field(
+                    name="🔍 Posibles causas:",
+                    value="• El ID del asset no existe\n• El asset está privado o eliminado\n• El asset requiere permisos especiales\n• Error temporal de la API de Roblox",
+                    inline=False
+                )
+                error_embed.add_field(
+                    name="💡 Sugerencias:",
+                    value=f"• Verifica que el ID `{asset_id}` sea correcto\n• Prueba con otro asset público\n• Asegúrate de que el asset exista en [roblox.com/catalog/{asset_id}](https://www.roblox.com/catalog/{asset_id})",
+                    inline=False
                 )
                 await message.edit(embed=error_embed)
                 return
@@ -215,40 +225,94 @@ async def get_asset_info(asset_id):
     """Obtener información del asset desde la API de Roblox"""
     try:
         async with aiohttp.ClientSession() as session:
-            # API de información del asset
-            info_url = f"https://assetdelivery.roblox.com/v1/asset/?id={asset_id}"
-            async with session.get(info_url) as response:
-                if response.status != 200:
-                    return None
-                
-                # Obtener información adicional
-                details_url = f"https://economy.roblox.com/v2/assets/{asset_id}/details"
-                async with session.get(details_url) as details_response:
-                    details_data = {}
-                    if details_response.status == 200:
-                        details_data = await details_response.json()
-                
-                # Obtener thumbnail
-                thumb_url = f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false"
-                thumbnail_url = None
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+            
+            # Primero verificar que el asset existe
+            asset_exists = False
+            asset_data = {}
+            
+            # Intentar obtener información del asset desde la API de economía
+            economy_url = f"https://economy.roblox.com/v2/assets/{asset_id}/details"
+            try:
+                async with session.get(economy_url, headers=headers) as response:
+                    if response.status == 200:
+                        asset_data = await response.json()
+                        asset_exists = True
+                        logger.info(f"✅ Asset {asset_id} encontrado en API de economía")
+            except Exception as e:
+                logger.debug(f"Error en API de economía: {e}")
+            
+            # Si no se encuentra en economía, intentar con la API de catálogo
+            if not asset_exists:
+                catalog_url = f"https://catalog.roblox.com/v1/catalog/items/details"
+                payload = {"items": [{"itemType": "Asset", "id": int(asset_id)}]}
                 try:
-                    async with session.get(thumb_url) as thumb_response:
-                        if thumb_response.status == 200:
-                            thumb_data = await thumb_response.json()
-                            if thumb_data.get('data') and len(thumb_data['data']) > 0:
-                                thumbnail_url = thumb_data['data'][0].get('imageUrl')
-                except:
-                    pass
-                
-                return {
-                    'id': asset_id,
-                    'name': details_data.get('Name', f'Asset {asset_id}'),
-                    'description': details_data.get('Description', ''),
-                    'assetType': details_data.get('AssetType', {}),
-                    'creator': details_data.get('Creator', {}).get('Name', 'Unknown'),
-                    'created': details_data.get('Created', ''),
-                    'thumbnail_url': thumbnail_url
-                }
+                    async with session.post(catalog_url, json=payload, headers=headers) as response:
+                        if response.status == 200:
+                            catalog_data = await response.json()
+                            if catalog_data.get('data') and len(catalog_data['data']) > 0:
+                                item_data = catalog_data['data'][0]
+                                asset_data = {
+                                    'Name': item_data.get('name', f'Asset {asset_id}'),
+                                    'Description': item_data.get('description', ''),
+                                    'AssetType': {'name': item_data.get('itemType', 'Unknown')},
+                                    'Creator': {'Name': item_data.get('creatorName', 'Unknown')},
+                                    'Created': item_data.get('created', ''),
+                                    'Id': asset_id
+                                }
+                                asset_exists = True
+                                logger.info(f"✅ Asset {asset_id} encontrado en API de catálogo")
+                except Exception as e:
+                    logger.debug(f"Error en API de catálogo: {e}")
+            
+            # Si aún no se encuentra, intentar verificar si existe con una llamada simple
+            if not asset_exists:
+                asset_delivery_url = f"https://assetdelivery.roblox.com/v1/asset/?id={asset_id}"
+                try:
+                    async with session.head(asset_delivery_url, headers=headers) as response:
+                        if response.status == 200:
+                            # El asset existe pero no tiene información pública detallada
+                            asset_data = {
+                                'Name': f'Asset {asset_id}',
+                                'Description': 'Asset sin información pública detallada',
+                                'AssetType': {'name': 'Unknown'},
+                                'Creator': {'Name': 'Unknown'},
+                                'Created': '',
+                                'Id': asset_id
+                            }
+                            asset_exists = True
+                            logger.info(f"✅ Asset {asset_id} existe (verificado por asset delivery)")
+                except Exception as e:
+                    logger.debug(f"Error verificando asset delivery: {e}")
+            
+            if not asset_exists:
+                logger.error(f"❌ Asset {asset_id} no encontrado en ninguna API")
+                return None
+            
+            # Obtener thumbnail
+            thumbnail_url = None
+            thumb_url = f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false"
+            try:
+                async with session.get(thumb_url, headers=headers) as thumb_response:
+                    if thumb_response.status == 200:
+                        thumb_data = await thumb_response.json()
+                        if thumb_data.get('data') and len(thumb_data['data']) > 0:
+                            thumbnail_url = thumb_data['data'][0].get('imageUrl')
+                            logger.info(f"✅ Thumbnail obtenido para asset {asset_id}")
+            except Exception as e:
+                logger.debug(f"Error obteniendo thumbnail: {e}")
+            
+            return {
+                'id': asset_id,
+                'name': asset_data.get('Name', f'Asset {asset_id}'),
+                'description': asset_data.get('Description', ''),
+                'assetType': asset_data.get('AssetType', {'name': 'Unknown'}),
+                'creator': asset_data.get('Creator', {}).get('Name', 'Unknown'),
+                'created': asset_data.get('Created', ''),
+                'thumbnail_url': thumbnail_url
+            }
     
     except Exception as e:
         logger.error(f"Error obteniendo info del asset {asset_id}: {e}")
@@ -258,34 +322,112 @@ async def download_roblox_model(asset_id, asset_info):
     """Descargar el modelo 3D del asset"""
     try:
         async with aiohttp.ClientSession() as session:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept": "*/*"
+            }
+            
             # URL de descarga del asset
             download_url = f"https://assetdelivery.roblox.com/v1/asset/?id={asset_id}"
             
-            async with session.get(download_url) as response:
-                if response.status != 200:
+            logger.info(f"🔄 Descargando asset {asset_id} desde {download_url}")
+            
+            async with session.get(download_url, headers=headers) as response:
+                logger.info(f"📡 Respuesta del servidor: {response.status}")
+                
+                if response.status == 400:
+                    logger.error(f"❌ Asset {asset_id}: Bad Request - Asset puede no existir o estar restringido")
+                    return None
+                elif response.status == 403:
+                    logger.error(f"❌ Asset {asset_id}: Forbidden - Sin permisos para descargar")
+                    return None
+                elif response.status == 404:
+                    logger.error(f"❌ Asset {asset_id}: Not Found - Asset no encontrado")
+                    return None
+                elif response.status != 200:
+                    logger.error(f"❌ Asset {asset_id}: Error {response.status}")
                     return None
                 
                 content_type = response.headers.get('content-type', '').lower()
+                content_length = response.headers.get('content-length', 'unknown')
+                
+                logger.info(f"📦 Content-Type: {content_type}, Content-Length: {content_length}")
+                
                 data = await response.read()
+                
+                if len(data) == 0:
+                    logger.error(f"❌ Asset {asset_id}: Archivo vacío")
+                    return None
+                
+                logger.info(f"✅ Descargado {len(data)} bytes para asset {asset_id}")
                 
                 # Crear ZIP con los archivos del modelo
                 zip_buffer = io.BytesIO()
                 file_count = 0
                 
                 with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                    # Agregar el archivo principal
-                    if 'xml' in content_type or data.startswith(b'<roblox'):
-                        # Es un archivo RBXM/RBXL
-                        zip_file.writestr(f"model_{asset_id}.rbxm", data)
+                    # Determinar el tipo de archivo y extensión apropiada
+                    if 'xml' in content_type or data.startswith(b'<roblox') or data.startswith(b'<?xml'):
+                        # Es un archivo RBXM/RBXL (XML de Roblox)
+                        if b'<roblox' in data[:100]:
+                            extension = 'rbxm'
+                        else:
+                            extension = 'xml'
+                        zip_file.writestr(f"model_{asset_id}.{extension}", data)
                         file_count += 1
-                    elif 'application/octet-stream' in content_type:
-                        # Archivo binario (posiblemente mesh)
+                        logger.info(f"📁 Archivo guardado como model_{asset_id}.{extension}")
+                    
+                    elif 'application/octet-stream' in content_type or data.startswith(b'version '):
+                        # Archivo mesh o binario de Roblox
                         zip_file.writestr(f"model_{asset_id}.mesh", data)
                         file_count += 1
-                    else:
-                        # Archivo desconocido
-                        zip_file.writestr(f"model_{asset_id}.dat", data)
+                        logger.info(f"📁 Archivo guardado como model_{asset_id}.mesh")
+                    
+                    elif 'text/plain' in content_type or data.startswith(b'local ') or data.startswith(b'--'):
+                        # Script de Lua
+                        zip_file.writestr(f"script_{asset_id}.lua", data)
                         file_count += 1
+                        logger.info(f"📁 Archivo guardado como script_{asset_id}.lua")
+                    
+                    elif data.startswith(b'\x89PNG') or 'image/png' in content_type:
+                        # Imagen PNG
+                        zip_file.writestr(f"image_{asset_id}.png", data)
+                        file_count += 1
+                        logger.info(f"📁 Archivo guardado como image_{asset_id}.png")
+                    
+                    elif data.startswith(b'\xFF\xD8\xFF') or 'image/jpeg' in content_type:
+                        # Imagen JPEG
+                        zip_file.writestr(f"image_{asset_id}.jpg", data)
+                        file_count += 1
+                        logger.info(f"📁 Archivo guardado como image_{asset_id}.jpg")
+                    
+                    else:
+                        # Archivo desconocido - intentar detectar por contenido
+                        if b'mesh' in data[:100].lower():
+                            extension = 'mesh'
+                        elif b'roblox' in data[:100].lower():
+                            extension = 'rbxm'
+                        elif data.startswith(b'return') or data.startswith(b'local'):
+                            extension = 'lua'
+                        else:
+                            extension = 'dat'
+                        
+                        zip_file.writestr(f"asset_{asset_id}.{extension}", data)
+                        file_count += 1
+                        logger.info(f"📁 Archivo guardado como asset_{asset_id}.{extension}")
+                    
+                    # Agregar información detallada del contenido
+                    content_info = f"""Información del contenido descargado:
+
+Content-Type: {content_type}
+Content-Length: {content_length}
+Tamaño real: {len(data)} bytes
+Primeros 100 caracteres: {str(data[:100])}
+
+Tipo detectado: {extension if 'extension' in locals() else 'auto-detectado'}
+"""
+                    zip_file.writestr('content_info.txt', content_info)
+                    file_count += 1
                     
                     # Agregar metadatos
                     metadata = {
