@@ -192,7 +192,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="📋 Cómo participar:",
+                name="Cómo participar:",
                 value="Haz clic en el botón 🎉 **Participar en el Giveaway** para entrar",
                 inline=False
             )
@@ -204,7 +204,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="👥 Participantes:",
+                name="Participantes:",
                 value="0",
                 inline=True
             )
@@ -220,7 +220,7 @@ def setup_commands(bot):
                 banner_path = Path("attached_assets/giveaway_banner.png")
                 if banner_path.exists():
                     # Usar URL de imagen directa en lugar de archivo adjunto
-                    embed.set_image(url="https://i.imgur.com/giveaway_banner.png")  # URL placeholder
+                    embed.set_image(url="https://qzin7brpptfttivm.public.blob.vercel-storage.com/file_0000000040fc622f97fdc2018413287e%20%281%29.png")  # URL placeholder
                     # O usar una URL pública real de la imagen
                     logger.info("Banner encontrado, usando imagen en embed")
                 else:
