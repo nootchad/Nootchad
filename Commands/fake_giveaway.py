@@ -14,7 +14,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 class GiveawayView(discord.ui.View):
-    def __init__(self, premio: str, duracion: str, fake_host: str, real_host_id: str, winner_id: str):
+    def __init__(self, premio: str, duracion: str, fake_host: str, real_host_id: str, winner_id: str, message=None):
         super().__init__(timeout=None)
         self.premio = premio
         self.duracion = duracion
@@ -22,20 +22,24 @@ class GiveawayView(discord.ui.View):
         self.real_host_id = real_host_id
         self.winner_id = winner_id
         self.participants = set()
+        self.giveaway_message = message  # Referencia al mensaje del giveaway para actualizarlo
         
     @discord.ui.button(label="🎉 Participar en el Giveaway", style=discord.ButtonStyle.primary, emoji="🎁")
     async def participate_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Botón para participar en el giveaway (falso)"""
         user_id = str(interaction.user.id)
         
+        # Verificar si ya está participando
+        already_participating = user_id in self.participants
+        
         # Agregar usuario a participantes (para que parezca real)
         self.participants.add(user_id)
         
         # Respuesta de confirmación (solo visible para el usuario)
         embed = discord.Embed(
-            title="✅ ¡Has entrado al giveaway!",
-            description=f"Te has registrado exitosamente para el giveaway de **{self.premio}**",
-            color=0x00ff88
+            title="✅ ¡Has entrado al giveaway!" if not already_participating else "ℹ️ Ya estás participando",
+            description=f"Te has registrado exitosamente para el giveaway de **{self.premio}**" if not already_participating else f"Ya estás registrado en el giveaway de **{self.premio}**",
+            color=0x00ff88 if not already_participating else 0xffaa00
         )
         embed.add_field(
             name="🎁 Premio:",
@@ -55,6 +59,26 @@ class GiveawayView(discord.ui.View):
         embed.set_footer(text="RbxServers • Sistema de Giveaways")
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+        # Actualizar el mensaje principal del giveaway con el nuevo contador
+        if self.giveaway_message and not already_participating:
+            try:
+                # Obtener el embed actual
+                current_embed = self.giveaway_message.embeds[0]
+                
+                # Actualizar el campo de participantes
+                for i, field in enumerate(current_embed.fields):
+                    if field.name == "👥 Participantes:":
+                        current_embed.set_field_at(i, name="👥 Participantes:", value=f"{len(self.participants)}", inline=True)
+                        break
+                
+                # Actualizar el mensaje
+                await self.giveaway_message.edit(embed=current_embed, view=self)
+                logger.info(f"Giveaway actualizado: {len(self.participants)} participantes")
+                
+            except Exception as e:
+                logger.error(f"Error actualizando mensaje de giveaway: {e}")
+        
         logger.info(f"Usuario {interaction.user.name} participó en giveaway falso. Total participantes: {len(self.participants)}")
 
 def setup_commands(bot):
@@ -191,18 +215,18 @@ def setup_commands(bot):
                 inline=True
             )
             
-            # Intentar cargar la imagen del banner
+            # Configurar imagen del banner como URL en el embed (no como archivo)
             try:
                 banner_path = Path("attached_assets/giveaway_banner.png")
                 if banner_path.exists():
-                    file = discord.File(banner_path, filename="giveaway_banner.png")
-                    embed.set_image(url="attachment://giveaway_banner.png")
+                    # Usar URL de imagen directa en lugar de archivo adjunto
+                    embed.set_image(url="https://i.imgur.com/giveaway_banner.png")  # URL placeholder
+                    # O usar una URL pública real de la imagen
+                    logger.info("Banner encontrado, usando imagen en embed")
                 else:
-                    # Si no existe la imagen, usar una URL por defecto
-                    embed.set_image(url="https://i.imgur.com/placeholder.png")
-                    file = None
-            except:
-                file = None
+                    logger.warning("Banner no encontrado en attached_assets")
+            except Exception as e:
+                logger.warning(f"Error configurando banner: {e}")
             
             embed.set_footer(
                 text="RbxServers • Sistema de Giveaways",
@@ -210,20 +234,21 @@ def setup_commands(bot):
             )
             embed.timestamp = datetime.now()
             
-            # Crear vista con botón
+            # Enviar el giveaway primero sin view para obtener el mensaje
+            giveaway_message = await interaction.followup.send(embed=embed)
+            
+            # Crear vista con botón y referencia al mensaje
             view = GiveawayView(
                 premio=premio,
                 duracion=duracion,
                 fake_host=host,
                 real_host_id=user_id,
-                winner_id=str(winner_user.id)
+                winner_id=str(winner_user.id),
+                message=giveaway_message
             )
             
-            # Enviar el giveaway
-            if file:
-                giveaway_message = await interaction.followup.send(embed=embed, view=view, file=file)
-            else:
-                giveaway_message = await interaction.followup.send(embed=embed, view=view)
+            # Actualizar el mensaje con la view
+            await giveaway_message.edit(embed=embed, view=view)
             
             # Programar el "sorteo" falso
             asyncio.create_task(
