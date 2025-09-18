@@ -56,7 +56,7 @@ def setup_commands(bot):
             )
             initial_embed.add_field(
                 name="📊 Estado:",
-                value="• 🔍 Verificando asset...\n• ⏳ Descargando modelo...\n• ☁️ Subiendo a Blob Storage...",
+                value="• 🔍 Verificando asset...\n• ⏳ Descargando modelo...\n• ☁️ Creando archivo",
                 inline=False
             )
             
