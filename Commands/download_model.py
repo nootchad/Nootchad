@@ -1,6 +1,5 @@
-
 """
-Comando /download_model - Descargar modelos 3D de assets de Roblox
+Comando /download_model - Descargar modelos 3D del Creator Hub de Roblox
 """
 import discord
 from discord.ext import commands
@@ -23,132 +22,129 @@ BLOB_BASE_URL = "https://blob.vercel-storage.com"
 
 def setup_commands(bot):
     """Función requerida para configurar comandos"""
-    
-    @bot.tree.command(name="download_model", description="Descargar modelo 3D de un asset de Roblox")
-    async def download_model_command(interaction: discord.Interaction, asset_id: str):
+
+    @bot.tree.command(name="download_model", description="Descargar modelo 3D del Creator Hub de Roblox")
+    async def download_model_command(interaction: discord.Interaction, model_id: str):
         """
-        Descargar modelo 3D de un asset de Roblox
-        
+        Descargar modelo 3D del Creator Hub de Roblox
+
         Args:
-            asset_id: ID del asset de Roblox
+            model_id: ID del modelo del Creator Hub (https://create.roblox.com/store/models/[ID])
         """
         from main import check_verification
-        
+
         if not await check_verification(interaction, defer_response=True):
             return
-        
+
         try:
-            # Validar asset_id
-            if not asset_id.isdigit():
+            # Validar model_id
+            if not model_id.isdigit():
                 embed = discord.Embed(
                     title="❌ ID Inválido",
-                    description="El ID del asset debe ser un número válido.",
+                    description="El ID del modelo debe ser un número válido.",
                     color=0xff0000
+                )
+                embed.add_field(
+                    name="💡 Ejemplo:",
+                    value="Para el modelo: `https://create.roblox.com/store/models/123456`\nUsa: `/download_model 123456`",
+                    inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Embed inicial
             initial_embed = discord.Embed(
-                title="🔄 Descargando Modelo 3D",
-                description=f"Procesando asset ID: `{asset_id}`",
+                title="🔄 Descargando Modelo del Creator Hub",
+                description=f"Procesando modelo ID: `{model_id}`",
                 color=0xffaa00
             )
             initial_embed.add_field(
                 name="📊 Estado:",
-                value="• 🔍 Verificando asset...\n• ⏳ Descargando modelo...\n• ☁️ Creando archivo",
+                value="• 🔍 Verificando modelo...\n• ⏳ Descargando archivos...\n• ☁️ Preparando descarga",
                 inline=False
             )
-            
+            initial_embed.add_field(
+                name="🌐 Fuente:",
+                value=f"[Creator Hub - Modelo {model_id}](https://create.roblox.com/store/models/{model_id})",
+                inline=False
+            )
+
             message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
-            
-            # Obtener información del asset
-            asset_info = await get_asset_info(asset_id)
-            if not asset_info:
+
+            # Obtener información del modelo
+            model_info = await get_creator_hub_model_info(model_id)
+            if not model_info:
                 error_embed = discord.Embed(
-                    title="❌ Asset No Encontrado",
-                    description=f"No se pudo encontrar el asset con ID: `{asset_id}`",
+                    title="❌ Modelo No Encontrado",
+                    description=f"No se pudo encontrar el modelo con ID: `{model_id}`",
                     color=0xff0000
                 )
                 error_embed.add_field(
                     name="🔍 Posibles causas:",
-                    value="• El ID del asset no existe\n• El asset está privado o eliminado\n• El asset requiere permisos especiales\n• Error temporal de la API de Roblox",
+                    value="• El ID del modelo no existe en el Creator Hub\n• El modelo está privado o eliminado\n• El modelo requiere permisos especiales\n• Error temporal de la API de Roblox",
                     inline=False
                 )
                 error_embed.add_field(
                     name="💡 Sugerencias:",
-                    value=f"• Verifica que el ID `{asset_id}` sea correcto\n• Prueba con otro asset público\n• Asegúrate de que el asset exista en [roblox.com/catalog/{asset_id}](https://www.roblox.com/catalog/{asset_id})",
+                    value=f"• Verifica que el ID `{model_id}` sea correcto\n• Visita: [create.roblox.com/store/models/{model_id}](https://create.roblox.com/store/models/{model_id})\n• Asegúrate de que el modelo sea público",
                     inline=False
                 )
                 await message.edit(embed=error_embed)
                 return
-            
-            # Verificar si es un asset que puede tener modelo 3D
-            asset_type = asset_info.get('assetType', {}).get('name', 'Unknown')
-            valid_types = ['Model', 'Hat', 'Gear', 'Package', 'MeshPart', 'Accessory']
-            
-            if asset_type not in valid_types:
-                warning_embed = discord.Embed(
-                    title="⚠️ Tipo de Asset No Soportado",
-                    description=f"El asset `{asset_info.get('name', 'Unknown')}` es de tipo `{asset_type}` y puede no tener un modelo 3D descargable.",
-                    color=0xffaa00
-                )
-                warning_embed.add_field(
-                    name="🎯 Tipos Soportados:",
-                    value="• Model\n• Hat/Accessory\n• Gear\n• Package\n• MeshPart",
-                    inline=False
-                )
-                await message.edit(embed=warning_embed)
-                await asyncio.sleep(3)
-            
-            # Actualizar progreso
+
+            # Actualizar progreso con información del modelo
             progress_embed = discord.Embed(
-                title="🔄 Descargando Modelo 3D",
-                description=f"**{asset_info.get('name', 'Unknown Asset')}** (ID: `{asset_id}`)",
+                title="🔄 Descargando Modelo del Creator Hub",
+                description=f"**{model_info.get('name', 'Modelo Sin Nombre')}**",
                 color=0x3366ff
             )
             progress_embed.add_field(
                 name="📊 Progreso:",
-                value="• ✅ Asset verificado\n• 🔄 Descargando archivos...\n• ⏳ Procesando modelo...",
+                value="• ✅ Modelo verificado\n• 🔄 Descargando archivos...\n• ⏳ Procesando contenido...",
                 inline=False
             )
             progress_embed.add_field(
                 name="ℹ️ Información:",
-                value=f"**Tipo:** {asset_type}\n**Creado:** {asset_info.get('created', 'Unknown')[:10]}",
+                value=f"**Creador:** {model_info.get('creator', 'Desconocido')}\n**Creado:** {model_info.get('created', 'Desconocido')[:10] if model_info.get('created') else 'Desconocido'}\n**Favoritos:** {model_info.get('favoriteCount', 0):,}",
                 inline=True
             )
-            
+            progress_embed.add_field(
+                name="🌐 Enlaces:",
+                value=f"[Ver en Creator Hub](https://create.roblox.com/store/models/{model_id})",
+                inline=True
+            )
+
             # Agregar thumbnail si está disponible
-            if asset_info.get('thumbnail_url'):
-                progress_embed.set_thumbnail(url=asset_info['thumbnail_url'])
-            
+            if model_info.get('thumbnail_url'):
+                progress_embed.set_thumbnail(url=model_info['thumbnail_url'])
+
             await message.edit(embed=progress_embed)
-            
+
             # Descargar el modelo
-            model_data = await download_roblox_model(asset_id, asset_info)
+            model_data = await download_creator_hub_model(model_id, model_info)
             if not model_data:
                 error_embed = discord.Embed(
                     title="❌ Error de Descarga",
-                    description="No se pudo descargar el modelo 3D. El asset puede no tener archivos 3D disponibles.",
+                    description="No se pudo descargar el modelo. El modelo puede no estar disponible para descarga.",
                     color=0xff0000
                 )
                 error_embed.add_field(
                     name="💡 Posibles causas:",
-                    value="• Asset sin modelo 3D\n• Asset privado o eliminado\n• Restricciones de descarga",
+                    value="• Modelo sin archivos descargables\n• Modelo privado o eliminado\n• Restricciones de descarga del Creator Hub",
                     inline=False
                 )
                 await message.edit(embed=error_embed)
                 return
-            
+
             # Actualizar progreso - subiendo
             upload_embed = discord.Embed(
                 title="☁️ Subiendo a Blob Storage",
-                description=f"**{asset_info.get('name', 'Unknown Asset')}** (ID: `{asset_id}`)",
+                description=f"**{model_info.get('name', 'Modelo Sin Nombre')}**",
                 color=0x00aaff
             )
             upload_embed.add_field(
                 name="📊 Progreso:",
-                value="• ✅ Asset verificado\n• ✅ Modelo descargado\n• 🔄 Subiendo a la nube...",
+                value="• ✅ Modelo verificado\n• ✅ Archivos descargados\n• 🔄 Subiendo a la nube...",
                 inline=False
             )
             upload_embed.add_field(
@@ -156,12 +152,12 @@ def setup_commands(bot):
                 value=f"**Tamaño:** {len(model_data['zip_data']) / 1024:.1f} KB\n**Archivos:** {model_data['file_count']}",
                 inline=True
             )
-            
+
             await message.edit(embed=upload_embed)
-            
+
             # Subir a Blob Storage
-            blob_url = await upload_to_blob_storage(model_data['zip_data'], f"roblox_model_{asset_id}.zip")
-            
+            blob_url = await upload_to_blob_storage(model_data['zip_data'], f"creator_hub_model_{model_id}.zip")
+
             if not blob_url:
                 error_embed = discord.Embed(
                     title="❌ Error de Subida",
@@ -170,48 +166,54 @@ def setup_commands(bot):
                 )
                 await message.edit(embed=error_embed)
                 return
-            
+
             # Embed de éxito
             success_embed = discord.Embed(
                 title="✅ Modelo Descargado Exitosamente",
-                description=f"**{asset_info.get('name', 'Unknown Asset')}** está listo para descargar",
+                description=f"**{model_info.get('name', 'Modelo Sin Nombre')}** está listo para descargar",
                 color=0x00ff88
             )
-            
+
             success_embed.add_field(
                 name="📁 Información del Archivo:",
-                value=f"**Nombre:** `roblox_model_{asset_id}.zip`\n**Tamaño:** {len(model_data['zip_data']) / 1024:.1f} KB\n**Archivos incluidos:** {model_data['file_count']}",
+                value=f"**Nombre:** `creator_hub_model_{model_id}.zip`\n**Tamaño:** {len(model_data['zip_data']) / 1024:.1f} KB\n**Archivos incluidos:** {model_data['file_count']}",
                 inline=False
             )
-            
+
             success_embed.add_field(
                 name="🔗 Descargar Modelo:",
                 value=f"[**📥 Descargar ZIP**]({blob_url})",
                 inline=False
             )
-            
+
             success_embed.add_field(
-                name="ℹ️ Detalles del Asset:",
-                value=f"**ID:** `{asset_id}`\n**Tipo:** {asset_type}\n**Creador:** {asset_info.get('creator', 'Unknown')}",
+                name="ℹ️ Detalles del Modelo:",
+                value=f"**ID:** `{model_id}`\n**Creador:** {model_info.get('creator', 'Desconocido')}\n**Favoritos:** {model_info.get('favoriteCount', 0):,}",
                 inline=True
             )
-            
+
             success_embed.add_field(
                 name="🎯 Contenido del ZIP:",
-                value="• Archivos .obj (geometría)\n• Archivos .mtl (materiales)\n• Texturas (si disponibles)\n• Metadatos del asset",
+                value="• Archivo .rbxm (modelo de Roblox)\n• Metadatos del modelo\n• Información del creador\n• Instrucciones de uso",
                 inline=True
             )
-            
+
+            success_embed.add_field(
+                name="🛠️ Uso en Roblox Studio:",
+                value="1. Descarga el archivo ZIP\n2. Extrae el archivo .rbxm\n3. Abre Roblox Studio\n4. Usa File > Import o arrastra a Workspace",
+                inline=False
+            )
+
             # Agregar thumbnail
-            if asset_info.get('thumbnail_url'):
-                success_embed.set_thumbnail(url=asset_info['thumbnail_url'])
-            
-            success_embed.set_footer(text=f"Asset ID: {asset_id} • RbxServers Model Downloader")
-            
+            if model_info.get('thumbnail_url'):
+                success_embed.set_thumbnail(url=model_info['thumbnail_url'])
+
+            success_embed.set_footer(text=f"Creator Hub Model ID: {model_id} • RbxServers Model Downloader")
+
             await message.edit(embed=success_embed)
-            
-            logger.info(f"✅ Modelo descargado exitosamente: Asset {asset_id} -> {blob_url}")
-            
+
+            logger.info(f"✅ Modelo del Creator Hub descargado exitosamente: {model_id} -> {blob_url}")
+
         except Exception as e:
             logger.error(f"Error en comando download_model: {e}")
             error_embed = discord.Embed(
@@ -221,271 +223,215 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-async def get_asset_info(asset_id):
-    """Obtener información del asset desde la API de Roblox"""
+async def get_creator_hub_model_info(model_id):
+    """Obtener información del modelo desde el Creator Hub de Roblox"""
     try:
         async with aiohttp.ClientSession() as session:
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Connection": "keep-alive",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin"
             }
-            
-            # Primero verificar que el asset existe
-            asset_exists = False
-            asset_data = {}
-            
-            # Intentar obtener información del asset desde la API de economía
-            economy_url = f"https://economy.roblox.com/v2/assets/{asset_id}/details"
-            try:
-                async with session.get(economy_url, headers=headers) as response:
-                    if response.status == 200:
-                        asset_data = await response.json()
-                        asset_exists = True
-                        logger.info(f"✅ Asset {asset_id} encontrado en API de economía")
-            except Exception as e:
-                logger.debug(f"Error en API de economía: {e}")
-            
-            # Si no se encuentra en economía, intentar con la API de catálogo
-            if not asset_exists:
-                catalog_url = f"https://catalog.roblox.com/v1/catalog/items/details"
-                payload = {"items": [{"itemType": "Asset", "id": int(asset_id)}]}
-                try:
-                    async with session.post(catalog_url, json=payload, headers=headers) as response:
-                        if response.status == 200:
-                            catalog_data = await response.json()
-                            if catalog_data.get('data') and len(catalog_data['data']) > 0:
-                                item_data = catalog_data['data'][0]
-                                asset_data = {
-                                    'Name': item_data.get('name', f'Asset {asset_id}'),
-                                    'Description': item_data.get('description', ''),
-                                    'AssetType': {'name': item_data.get('itemType', 'Unknown')},
-                                    'Creator': {'Name': item_data.get('creatorName', 'Unknown')},
-                                    'Created': item_data.get('created', ''),
-                                    'Id': asset_id
-                                }
-                                asset_exists = True
-                                logger.info(f"✅ Asset {asset_id} encontrado en API de catálogo")
-                except Exception as e:
-                    logger.debug(f"Error en API de catálogo: {e}")
-            
-            # Si aún no se encuentra, intentar verificar si existe con una llamada simple
-            if not asset_exists:
-                asset_delivery_url = f"https://assetdelivery.roblox.com/v1/asset/?id={asset_id}"
-                try:
-                    async with session.head(asset_delivery_url, headers=headers) as response:
-                        if response.status == 200:
-                            # El asset existe pero no tiene información pública detallada
-                            asset_data = {
-                                'Name': f'Asset {asset_id}',
-                                'Description': 'Asset sin información pública detallada',
-                                'AssetType': {'name': 'Unknown'},
-                                'Creator': {'Name': 'Unknown'},
-                                'Created': '',
-                                'Id': asset_id
-                            }
-                            asset_exists = True
-                            logger.info(f"✅ Asset {asset_id} existe (verificado por asset delivery)")
-                except Exception as e:
-                    logger.debug(f"Error verificando asset delivery: {e}")
-            
-            if not asset_exists:
-                logger.error(f"❌ Asset {asset_id} no encontrado en ninguna API")
-                return None
-            
-            # Obtener thumbnail
-            thumbnail_url = None
-            thumb_url = f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false"
-            try:
-                async with session.get(thumb_url, headers=headers) as thumb_response:
-                    if thumb_response.status == 200:
-                        thumb_data = await thumb_response.json()
-                        if thumb_data.get('data') and len(thumb_data['data']) > 0:
-                            thumbnail_url = thumb_data['data'][0].get('imageUrl')
-                            logger.info(f"✅ Thumbnail obtenido para asset {asset_id}")
-            except Exception as e:
-                logger.debug(f"Error obteniendo thumbnail: {e}")
-            
-            return {
-                'id': asset_id,
-                'name': asset_data.get('Name', f'Asset {asset_id}'),
-                'description': asset_data.get('Description', ''),
-                'assetType': asset_data.get('AssetType', {'name': 'Unknown'}),
-                'creator': asset_data.get('Creator', {}).get('Name', 'Unknown'),
-                'created': asset_data.get('Created', ''),
-                'thumbnail_url': thumbnail_url
-            }
-    
-    except Exception as e:
-        logger.error(f"Error obteniendo info del asset {asset_id}: {e}")
-        return None
 
-async def download_roblox_model(asset_id, asset_info):
-    """Descargar el modelo 3D del asset"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Accept": "*/*"
-            }
-            
-            # URL de descarga del asset
-            download_url = f"https://assetdelivery.roblox.com/v1/asset/?id={asset_id}"
-            
-            logger.info(f"🔄 Descargando asset {asset_id} desde {download_url}")
-            
-            async with session.get(download_url, headers=headers) as response:
+            # URL de la API del Creator Hub para modelos
+            api_url = f"https://develop.roblox.com/v1/assets/{model_id}"
+
+            logger.info(f"🔍 Obteniendo información del modelo {model_id} desde {api_url}")
+
+            async with session.get(api_url, headers=headers) as response:
                 logger.info(f"📡 Respuesta del servidor: {response.status}")
-                
-                if response.status == 400:
-                    logger.error(f"❌ Asset {asset_id}: Bad Request - Asset puede no existir o estar restringido")
+
+                if response.status == 404:
+                    logger.error(f"❌ Modelo {model_id}: Not Found")
                     return None
                 elif response.status == 403:
-                    logger.error(f"❌ Asset {asset_id}: Forbidden - Sin permisos para descargar")
-                    return None
-                elif response.status == 404:
-                    logger.error(f"❌ Asset {asset_id}: Not Found - Asset no encontrado")
+                    logger.error(f"❌ Modelo {model_id}: Forbidden - Sin permisos")
                     return None
                 elif response.status != 200:
-                    logger.error(f"❌ Asset {asset_id}: Error {response.status}")
+                    logger.error(f"❌ Modelo {model_id}: Error {response.status}")
                     return None
-                
+
+                model_data = await response.json()
+                logger.info(f"✅ Información del modelo {model_id} obtenida exitosamente")
+
+                # Obtener thumbnail
+                thumbnail_url = None
+                thumb_url = f"https://thumbnails.roblox.com/v1/assets?assetIds={model_id}&size=420x420&format=Png&isCircular=false"
+                try:
+                    async with session.get(thumb_url, headers=headers) as thumb_response:
+                        if thumb_response.status == 200:
+                            thumb_data = await thumb_response.json()
+                            if thumb_data.get('data') and len(thumb_data['data']) > 0:
+                                thumbnail_url = thumb_data['data'][0].get('imageUrl')
+                                logger.info(f"✅ Thumbnail obtenido para modelo {model_id}")
+                except Exception as e:
+                    logger.debug(f"Error obteniendo thumbnail: {e}")
+
+                return {
+                    'id': model_id,
+                    'name': model_data.get('name', f'Modelo {model_id}'),
+                    'description': model_data.get('description', ''),
+                    'creator': model_data.get('creator', {}).get('name', 'Desconocido'),
+                    'created': model_data.get('created', ''),
+                    'updated': model_data.get('updated', ''),
+                    'favoriteCount': model_data.get('favoriteCount', 0),
+                    'thumbnail_url': thumbnail_url,
+                    'assetType': model_data.get('assetType', 'Model')
+                }
+
+    except Exception as e:
+        logger.error(f"Error obteniendo info del modelo {model_id}: {e}")
+        return None
+
+async def download_creator_hub_model(model_id, model_info):
+    """Descargar el modelo 3D del Creator Hub"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Accept": "*/*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Connection": "keep-alive",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "cross-site"
+            }
+
+            # URL de descarga del modelo del Creator Hub
+            download_url = f"https://assetdelivery.roblox.com/v1/asset/?id={model_id}"
+
+            logger.info(f"🔄 Descargando modelo {model_id} desde {download_url}")
+
+            async with session.get(download_url, headers=headers) as response:
+                logger.info(f"📡 Respuesta del servidor: {response.status}")
+
+                if response.status == 400:
+                    logger.error(f"❌ Modelo {model_id}: Bad Request - Modelo puede no existir o estar restringido")
+                    return None
+                elif response.status == 403:
+                    logger.error(f"❌ Modelo {model_id}: Forbidden - Sin permisos para descargar")
+                    return None
+                elif response.status == 404:
+                    logger.error(f"❌ Modelo {model_id}: Not Found - Modelo no encontrado")
+                    return None
+                elif response.status != 200:
+                    logger.error(f"❌ Modelo {model_id}: Error {response.status}")
+                    return None
+
                 content_type = response.headers.get('content-type', '').lower()
                 content_length = response.headers.get('content-length', 'unknown')
-                
+
                 logger.info(f"📦 Content-Type: {content_type}, Content-Length: {content_length}")
-                
+
                 data = await response.read()
-                
+
                 if len(data) == 0:
-                    logger.error(f"❌ Asset {asset_id}: Archivo vacío")
+                    logger.error(f"❌ Modelo {model_id}: Archivo vacío")
                     return None
-                
-                logger.info(f"✅ Descargado {len(data)} bytes para asset {asset_id}")
-                
+
+                logger.info(f"✅ Descargado {len(data)} bytes para modelo {model_id}")
+
                 # Crear ZIP con los archivos del modelo
                 zip_buffer = io.BytesIO()
                 file_count = 0
-                
+
                 with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                    # Determinar el tipo de archivo y extensión apropiada
-                    if 'xml' in content_type or data.startswith(b'<roblox') or data.startswith(b'<?xml'):
-                        # Es un archivo RBXM/RBXL (XML de Roblox)
-                        if b'<roblox' in data[:100]:
-                            extension = 'rbxm'
-                        else:
-                            extension = 'xml'
-                        zip_file.writestr(f"model_{asset_id}.{extension}", data)
+                    # El archivo descargado del Creator Hub suele ser un .rbxm
+                    model_filename = f"model_{model_id}.rbxm"
+
+                    # Verificar si es un archivo XML de Roblox válido
+                    if b'<roblox' in data[:100] or b'<?xml' in data[:100]:
+                        zip_file.writestr(model_filename, data)
                         file_count += 1
-                        logger.info(f"📁 Archivo guardado como model_{asset_id}.{extension}")
-                    
-                    elif 'application/octet-stream' in content_type or data.startswith(b'version '):
-                        # Archivo mesh o binario de Roblox
-                        zip_file.writestr(f"model_{asset_id}.mesh", data)
-                        file_count += 1
-                        logger.info(f"📁 Archivo guardado como model_{asset_id}.mesh")
-                    
-                    elif 'text/plain' in content_type or data.startswith(b'local ') or data.startswith(b'--'):
-                        # Script de Lua
-                        zip_file.writestr(f"script_{asset_id}.lua", data)
-                        file_count += 1
-                        logger.info(f"📁 Archivo guardado como script_{asset_id}.lua")
-                    
-                    elif data.startswith(b'\x89PNG') or 'image/png' in content_type:
-                        # Imagen PNG
-                        zip_file.writestr(f"image_{asset_id}.png", data)
-                        file_count += 1
-                        logger.info(f"📁 Archivo guardado como image_{asset_id}.png")
-                    
-                    elif data.startswith(b'\xFF\xD8\xFF') or 'image/jpeg' in content_type:
-                        # Imagen JPEG
-                        zip_file.writestr(f"image_{asset_id}.jpg", data)
-                        file_count += 1
-                        logger.info(f"📁 Archivo guardado como image_{asset_id}.jpg")
-                    
+                        logger.info(f"📁 Modelo guardado como {model_filename}")
                     else:
-                        # Archivo desconocido - intentar detectar por contenido
-                        if b'mesh' in data[:100].lower():
-                            extension = 'mesh'
-                        elif b'roblox' in data[:100].lower():
-                            extension = 'rbxm'
-                        elif data.startswith(b'return') or data.startswith(b'local'):
-                            extension = 'lua'
+                        # Si no es XML, guardarlo como está con una extensión apropiada
+                        if 'application/octet-stream' in content_type:
+                            model_filename = f"model_{model_id}.rbxm"
                         else:
-                            extension = 'dat'
-                        
-                        zip_file.writestr(f"asset_{asset_id}.{extension}", data)
+                            model_filename = f"model_{model_id}.dat"
+
+                        zip_file.writestr(model_filename, data)
                         file_count += 1
-                        logger.info(f"📁 Archivo guardado como asset_{asset_id}.{extension}")
-                    
-                    # Agregar información detallada del contenido
-                    content_info = f"""Información del contenido descargado:
+                        logger.info(f"📁 Archivo guardado como {model_filename}")
 
-Content-Type: {content_type}
-Content-Length: {content_length}
-Tamaño real: {len(data)} bytes
-Primeros 100 caracteres: {str(data[:100])}
-
-Tipo detectado: {extension if 'extension' in locals() else 'auto-detectado'}
-"""
-                    zip_file.writestr('content_info.txt', content_info)
-                    file_count += 1
-                    
-                    # Agregar metadatos
+                    # Agregar metadatos del modelo
                     metadata = {
-                        'asset_id': asset_id,
-                        'name': asset_info.get('name', 'Unknown'),
-                        'type': asset_info.get('assetType', {}).get('name', 'Unknown'),
-                        'creator': asset_info.get('creator', 'Unknown'),
+                        'model_id': model_id,
+                        'name': model_info.get('name', 'Modelo Sin Nombre'),
+                        'creator': model_info.get('creator', 'Desconocido'),
+                        'description': model_info.get('description', ''),
+                        'created': model_info.get('created', ''),
+                        'favorite_count': model_info.get('favoriteCount', 0),
                         'downloaded_at': datetime.now().isoformat(),
                         'download_url': download_url,
+                        'creator_hub_url': f'https://create.roblox.com/store/models/{model_id}',
                         'content_type': content_type,
                         'file_size': len(data)
                     }
-                    
+
                     zip_file.writestr('metadata.json', json.dumps(metadata, indent=2))
                     file_count += 1
-                    
+
                     # Agregar README con instrucciones
-                    readme_content = f"""# Roblox Model Download - Asset {asset_id}
+                    readme_content = f"""# Roblox Creator Hub Model - {model_info.get('name', 'Modelo Sin Nombre')}
 
-## Asset Information
-- **Name:** {asset_info.get('name', 'Unknown')}
-- **Type:** {asset_info.get('assetType', {}).get('name', 'Unknown')}
-- **Creator:** {asset_info.get('creator', 'Unknown')}
-- **Asset ID:** {asset_id}
-- **Downloaded:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+## Información del Modelo
+- **Nombre:** {model_info.get('name', 'Modelo Sin Nombre')}
+- **Creador:** {model_info.get('creator', 'Desconocido')}
+- **ID del Modelo:** {model_id}
+- **Favoritos:** {model_info.get('favoriteCount', 0):,}
+- **Creado:** {model_info.get('created', 'Desconocido')[:10] if model_info.get('created') else 'Desconocido'}
+- **Descargado:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-## Files Included
-- Model file (.rbxm/.mesh/.dat)
-- metadata.json - Asset information
-- README.md - This file
+## Descripción
+{model_info.get('description', 'Sin descripción disponible')}
 
-## Usage
-1. Import the model file into Roblox Studio
-2. Use File > Import or drag and drop into workspace
-3. Check metadata.json for additional information
+## Cómo Usar en Roblox Studio
+1. Extrae el archivo .rbxm de este ZIP
+2. Abre Roblox Studio
+3. Ve a File > Import (o usa Ctrl+Shift+I)
+4. Selecciona el archivo .rbxm
+5. El modelo se importará a tu workspace
 
-## Notes
-- This model was downloaded from Roblox using RbxServers Bot
-- Some textures may need to be re-applied manually
-- Ensure you have permission to use this asset
+## Archivos Incluidos
+- `{model_filename}` - El modelo principal de Roblox
+- `metadata.json` - Información detallada del modelo
+- `README.md` - Este archivo
+
+## Enlaces
+- **Creator Hub:** https://create.roblox.com/store/models/{model_id}
+- **Creador:** {model_info.get('creator', 'Desconocido')}
+
+## Notas Importantes
+- Este modelo fue descargado del Creator Hub de Roblox
+- Respeta los términos de uso del creador original
+- Algunos modelos pueden requerir plugins adicionales para funcionar correctamente
 
 ---
-Downloaded via RbxServers Bot - discord.gg/rbxservers
+Descargado via RbxServers Bot - discord.gg/rbxservers
+Modelo original: https://create.roblox.com/store/models/{model_id}
 """
                     zip_file.writestr('README.md', readme_content)
                     file_count += 1
-                
+
                 zip_data = zip_buffer.getvalue()
-                
+
                 return {
                     'zip_data': zip_data,
                     'file_count': file_count,
                     'original_size': len(data),
                     'compressed_size': len(zip_data)
                 }
-    
+
     except Exception as e:
-        logger.error(f"Error descargando modelo {asset_id}: {e}")
+        logger.error(f"Error descargando modelo {model_id}: {e}")
         return None
 
 async def upload_to_blob_storage(data, filename):
@@ -494,15 +440,15 @@ async def upload_to_blob_storage(data, filename):
         if not BLOB_READ_WRITE_TOKEN:
             logger.error("BLOB_READ_WRITE_TOKEN no configurado")
             return None
-        
+
         headers = {
             'Authorization': f'Bearer {BLOB_READ_WRITE_TOKEN}',
             'Content-Type': 'application/zip'
         }
-        
+
         async with aiohttp.ClientSession() as session:
             upload_url = f"{BLOB_BASE_URL}/{filename}"
-            
+
             async with session.put(upload_url, data=data, headers=headers) as response:
                 if response.status in [200, 201]:
                     response_data = await response.json()
@@ -513,7 +459,7 @@ async def upload_to_blob_storage(data, filename):
                     error_text = await response.text()
                     logger.error(f"Error subiendo a Blob Storage: {response.status} - {error_text}")
                     return None
-    
+
     except Exception as e:
         logger.error(f"Error en upload_to_blob_storage: {e}")
         return None
