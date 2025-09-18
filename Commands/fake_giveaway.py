@@ -23,7 +23,7 @@ class GiveawayView(discord.ui.View):
         self.participants = set()
         self.giveaway_message = message  # Referencia al mensaje del giveaway para actualizarlo
 
-    @discord.ui.button(label="🎉 Participar en el Giveaway", style=discord.ButtonStyle.primary, emoji="🎁")
+    @discord.ui.button(label="Participar en el Giveaway", style=discord.ButtonStyle.primary, emoji="<:gift:1418093880720621648>")
     async def participate_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Botón para participar en el giveaway (falso)"""
         user_id = str(interaction.user.id)
@@ -36,26 +36,26 @@ class GiveawayView(discord.ui.View):
 
         # Respuesta de confirmación (solo visible para el usuario)
         embed = discord.Embed(
-            title="✅ ¡Has entrado al giveaway!" if not already_participating else "ℹ️ Ya estás participando",
+            title="¡Has entrado al giveaway!" if not already_participating else "Ya estás participando",
             description=f"Te has registrado exitosamente para el giveaway de **{self.premio}**" if not already_participating else f"Ya estás registrado en el giveaway de **{self.premio}**",
             color=0x00ff88 if not already_participating else 0xffaa00
         )
         embed.add_field(
-            name="🎁 Premio:",
+            name="<:gift:1418093880720621648> Premio:",
             value=f"{self.premio}",
             inline=True
         )
         embed.add_field(
-            name="👥 Participantes:",
+            name="Participantes:",
             value=f"{len(self.participants)} personas",
             inline=True
         )
         embed.add_field(
-            name="🍀 Buena suerte:",
+            name="<:lucky:1418094027525328957> Buena suerte:",
             value="El ganador será anunciado cuando termine el giveaway",
             inline=False
         )
-        embed.set_footer(text="RbxServers • Sistema de Giveaways")
+        embed.set_footer(text="RbxServers • Giveaways")
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -67,8 +67,8 @@ class GiveawayView(discord.ui.View):
 
                 # Actualizar el campo de participantes
                 for i, field in enumerate(current_embed.fields):
-                    if field.name == "👥 Participantes:":
-                        current_embed.set_field_at(i, name="👥 Participantes:", value=f"{len(self.participants)}", inline=True)
+                    if field.name == "Participantes:":
+                        current_embed.set_field_at(i, name="Participantes:", value=f"{len(self.participants)}", inline=True)
                         break
 
                 # Actualizar el mensaje
@@ -93,7 +93,7 @@ def setup_commands(bot):
         from main import is_owner_or_delegated
         if not is_owner_or_delegated(user_id):
             embed = discord.Embed(
-                title="❌ Acceso Denegado",
+                title="Acceso Denegado",
                 description="Este comando solo puede ser usado por el owner del bot o usuarios con acceso delegado.",
                 color=0xff0000
             )
@@ -197,13 +197,13 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="🏆 Ganadores:",
+                name="<:crown:1418093936932687964> Ganadores:",
                 value="1 ganador",
                 inline=True
             )
 
             embed.add_field(
-                name="👥 Participantes:",
+                name="Participantes:",
                 value="0",
                 inline=True
             )
@@ -325,31 +325,31 @@ async def fake_giveaway_end(bot, channel, message_id, premio, winner_user, host_
 
         # Crear embed de ganador
         winner_embed = discord.Embed(
-            title="🎉 ¡GIVEAWAY TERMINADO!",
+            title="<:giveaway:1418093796280897567> ¡GIVEAWAY TERMINADO!",
             description=f"**¡Felicidades al ganador del giveaway!**",
             color=0x00ff88
         )
 
         winner_embed.add_field(
-            name="🎁 Premio:",
+            name="<:gift:1418093880720621648> Premio:",
             value=f"**{premio}**",
             inline=True
         )
 
         winner_embed.add_field(
-            name="🏆 Ganador:",
+            name="<:crown:1418093936932687964> Ganador:",
             value=f"{winner_user.mention}",
             inline=True
         )
 
         winner_embed.add_field(
-            name="👑 Host:",
+            name="<:crown:1418093936932687964> Host:",
             value=f"{host_user.mention}",
             inline=True
         )
 
         winner_embed.add_field(
-            name="🎊 ¡Enhorabuena!",
+            name="¡Enhorabuena!",
             value=f"¡{winner_user.mention} ha ganado **{premio}**!\nEl host se pondrá en contacto contigo pronto.",
             inline=False
         )
@@ -367,7 +367,7 @@ async def fake_giveaway_end(bot, channel, message_id, premio, winner_user, host_
             pass
 
         # Enviar mensaje de anuncio
-        await channel.send(f"🎉 **¡GIVEAWAY TERMINADO!** 🎉\n\n{winner_user.mention} ¡has ganado **{premio}**! 🏆\n\nContacta con {host_user.mention} para reclamar tu premio.")
+        await channel.send(f"<:giveaway:1418093796280897567> **¡GIVEAWAY TERMINADO!** <:giveaway:1418093796280897567>\n\n{winner_user.mention} ¡has ganado **{premio}**! <:crown:1418093936932687964>\n\nContacta con {host_user.mention} para reclamar tu premio.")
 
         logger.info(f"Giveaway falso terminado: {premio} | Ganador: {winner_user.name}")
 
