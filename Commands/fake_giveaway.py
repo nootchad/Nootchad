@@ -1,4 +1,3 @@
-
 """
 Comando /giveaway - Owner only
 Giveaway falso con ganador predeterminado
@@ -23,18 +22,18 @@ class GiveawayView(discord.ui.View):
         self.winner_id = winner_id
         self.participants = set()
         self.giveaway_message = message  # Referencia al mensaje del giveaway para actualizarlo
-        
+
     @discord.ui.button(label="🎉 Participar en el Giveaway", style=discord.ButtonStyle.primary, emoji="🎁")
     async def participate_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Botón para participar en el giveaway (falso)"""
         user_id = str(interaction.user.id)
-        
+
         # Verificar si ya está participando
         already_participating = user_id in self.participants
-        
+
         # Agregar usuario a participantes (para que parezca real)
         self.participants.add(user_id)
-        
+
         # Respuesta de confirmación (solo visible para el usuario)
         embed = discord.Embed(
             title="✅ ¡Has entrado al giveaway!" if not already_participating else "ℹ️ Ya estás participando",
@@ -57,39 +56,39 @@ class GiveawayView(discord.ui.View):
             inline=False
         )
         embed.set_footer(text="RbxServers • Sistema de Giveaways")
-        
+
         await interaction.response.send_message(embed=embed, ephemeral=True)
-        
+
         # Actualizar el mensaje principal del giveaway con el nuevo contador
         if self.giveaway_message and not already_participating:
             try:
                 # Obtener el embed actual
                 current_embed = self.giveaway_message.embeds[0]
-                
+
                 # Actualizar el campo de participantes
                 for i, field in enumerate(current_embed.fields):
                     if field.name == "👥 Participantes:":
                         current_embed.set_field_at(i, name="👥 Participantes:", value=f"{len(self.participants)}", inline=True)
                         break
-                
+
                 # Actualizar el mensaje
                 await self.giveaway_message.edit(embed=current_embed, view=self)
                 logger.info(f"Giveaway actualizado: {len(self.participants)} participantes")
-                
+
             except Exception as e:
                 logger.error(f"Error actualizando mensaje de giveaway: {e}")
-        
+
         logger.info(f"Usuario {interaction.user.name} participó en giveaway falso. Total participantes: {len(self.participants)}")
 
 def setup_commands(bot):
     """Función requerida para configurar comandos"""
-    
+
     @bot.tree.command(name="giveaway", description="[OWNER ONLY] Crear un giveaway")
     async def giveaway_command(interaction: discord.Interaction, premio: str, duracion: str, host: str):
         """Comando para crear un giveaway falso"""
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
-        
+
         # Verificar que solo el owner pueda usar este comando
         from main import is_owner_or_delegated
         if not is_owner_or_delegated(user_id):
@@ -100,13 +99,13 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        
+
         await interaction.response.defer()
-        
+
         try:
             # Buscar al usuario host mencionado (que será el ganador predeterminado)
             winner_user = None
-            
+
             # Intentar buscar por mención
             if host.startswith('<@') and host.endswith('>'):
                 user_id_str = host[2:-1]
@@ -118,7 +117,7 @@ def setup_commands(bot):
                         winner_user = await bot.fetch_user(int(user_id_str))
                 except:
                     pass
-            
+
             # Intentar buscar por ID numérico
             elif host.isdigit():
                 try:
@@ -127,14 +126,14 @@ def setup_commands(bot):
                         winner_user = await bot.fetch_user(int(host))
                 except:
                     pass
-            
+
             # Intentar buscar por nombre en el servidor
             elif interaction.guild:
                 for member in interaction.guild.members:
                     if member.name.lower() == host.lower() or member.display_name.lower() == host.lower():
                         winner_user = member
                         break
-            
+
             if not winner_user:
                 embed = discord.Embed(
                     title="❌ Usuario No Encontrado",
@@ -143,7 +142,7 @@ def setup_commands(bot):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
-            
+
             # Parsear duración para mostrar cuándo termina
             try:
                 # Asumir que la duración está en formato "1h", "30m", "2d", etc.
@@ -164,57 +163,57 @@ def setup_commands(bot):
             except:
                 # Si falla el parsing, usar 1 hora por defecto
                 end_time = datetime.now() + timedelta(hours=1)
-            
+
             # Crear embed principal del giveaway
             embed = discord.Embed(
-                title="🎉 GIVEAWAY ACTIVO",
+                title="<:giveaway:1418093796280897567> GIVEAWAY ACTIVO",
                 description=f"**¡Participa para ganar {premio}!**",
                 color=0x7289da
             )
-            
+
             # Campos del giveaway
             embed.add_field(
-                name="🎁 Premio:",
+                name="<:gift:1418093880720621648> Premio:",
                 value=f"**{premio}**",
                 inline=True
             )
-            
+
             embed.add_field(
-                name="👑 Host:",
+                name="<:crown:1418093936932687964> Host:",
                 value=f"{interaction.user.mention}",
                 inline=True
             )
-            
+
             embed.add_field(
-                name="⏰ Termina:",
+                name="<:timer:1418093989185458257> Termina:",
                 value=f"<t:{int(end_time.timestamp())}:R>",
                 inline=True
             )
-            
+
             embed.add_field(
                 name="Cómo participar:",
-                value="Haz clic en el botón 🎉 **Participar en el Giveaway** para entrar",
+                value="Haz clic en el botón <:giveaway:1418093796280897567> **Participar en el Giveaway** para entrar",
                 inline=False
             )
-            
+
             embed.add_field(
                 name="🏆 Ganadores:",
                 value="1 ganador",
                 inline=True
             )
-            
+
             embed.add_field(
-                name="Participantes:",
+                name="👥 Participantes:",
                 value="0",
                 inline=True
             )
-            
+
             embed.add_field(
-                name="🍀 Buena suerte:",
+                name="<:lucky:1418094027525328957> Buena suerte:",
                 value="¡El ganador será seleccionado aleatoriamente!",
                 inline=True
             )
-            
+
             # Configurar imagen del banner como URL en el embed (no como archivo)
             try:
                 banner_path = Path("attached_assets/giveaway_banner.png")
@@ -227,16 +226,16 @@ def setup_commands(bot):
                     logger.warning("Banner no encontrado en attached_assets")
             except Exception as e:
                 logger.warning(f"Error configurando banner: {e}")
-            
+
             embed.set_footer(
                 text="RbxServers • Sistema de Giveaways",
                 icon_url=interaction.user.display_avatar.url
             )
             embed.timestamp = datetime.now()
-            
+
             # Enviar el giveaway primero sin view para obtener el mensaje
             giveaway_message = await interaction.followup.send(embed=embed)
-            
+
             # Crear vista con botón y referencia al mensaje
             view = GiveawayView(
                 premio=premio,
@@ -246,10 +245,10 @@ def setup_commands(bot):
                 winner_id=str(winner_user.id),
                 message=giveaway_message
             )
-            
+
             # Actualizar el mensaje con la view
             await giveaway_message.edit(embed=embed, view=view)
-            
+
             # Programar el "sorteo" falso
             asyncio.create_task(
                 fake_giveaway_end(
@@ -262,10 +261,10 @@ def setup_commands(bot):
                     duration_seconds=int((end_time - datetime.now()).total_seconds())
                 )
             )
-            
+
             # Log del giveaway creado
             logger.info(f"Owner {username} creó giveaway falso: {premio} | Ganador predeterminado: {winner_user.name} ({winner_user.id})")
-            
+
             # Mensaje de confirmación privado para el owner
             confirm_embed = discord.Embed(
                 title="✅ Giveaway Falso Creado",
@@ -292,13 +291,13 @@ def setup_commands(bot):
                 value="Solo tú puedes ver este mensaje. El giveaway aparentará ser legítimo para todos los demás.",
                 inline=False
             )
-            
+
             try:
                 await interaction.user.send(embed=confirm_embed)
             except:
                 # Si no se puede enviar DM, ignorar
                 pass
-                
+
         except Exception as e:
             logger.error(f"Error en comando giveaway: {e}")
             error_embed = discord.Embed(
@@ -308,7 +307,7 @@ def setup_commands(bot):
             )
             error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:200]}```", inline=False)
             await interaction.followup.send(embed=error_embed, ephemeral=True)
-    
+
     logger.info("✅ Comando /giveaway (falso) configurado")
     return True
 
@@ -317,61 +316,61 @@ async def fake_giveaway_end(bot, channel, message_id, premio, winner_user, host_
     try:
         # Esperar la duración especificada
         await asyncio.sleep(duration_seconds)
-        
+
         # Obtener el mensaje original
         try:
             message = await channel.fetch_message(message_id)
         except:
             return
-        
+
         # Crear embed de ganador
         winner_embed = discord.Embed(
             title="🎉 ¡GIVEAWAY TERMINADO!",
             description=f"**¡Felicidades al ganador del giveaway!**",
             color=0x00ff88
         )
-        
+
         winner_embed.add_field(
             name="🎁 Premio:",
             value=f"**{premio}**",
             inline=True
         )
-        
+
         winner_embed.add_field(
             name="🏆 Ganador:",
             value=f"{winner_user.mention}",
             inline=True
         )
-        
+
         winner_embed.add_field(
             name="👑 Host:",
             value=f"{host_user.mention}",
             inline=True
         )
-        
+
         winner_embed.add_field(
             name="🎊 ¡Enhorabuena!",
             value=f"¡{winner_user.mention} ha ganado **{premio}**!\nEl host se pondrá en contacto contigo pronto.",
             inline=False
         )
-        
+
         winner_embed.set_footer(
             text="RbxServers • Giveaway Completado",
             icon_url=winner_user.display_avatar.url
         )
         winner_embed.timestamp = datetime.now()
-        
+
         # Actualizar el mensaje original
         try:
             await message.edit(embed=winner_embed, view=None)
         except:
             pass
-        
+
         # Enviar mensaje de anuncio
         await channel.send(f"🎉 **¡GIVEAWAY TERMINADO!** 🎉\n\n{winner_user.mention} ¡has ganado **{premio}**! 🏆\n\nContacta con {host_user.mention} para reclamar tu premio.")
-        
+
         logger.info(f"Giveaway falso terminado: {premio} | Ganador: {winner_user.name}")
-        
+
     except Exception as e:
         logger.error(f"Error terminando giveaway falso: {e}")
 
