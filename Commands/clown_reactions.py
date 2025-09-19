@@ -241,14 +241,15 @@ def setup_commands(bot):
                     inline=True
                 )
 
-                # Verificar disponibilidad del emoji
+                # Verificar disponibilidad del emoji del bot
                 emoji_available = False
-                for emoji in interaction.guild.emojis:
-                    if emoji.id == 1418508263984463932:
-                        emoji_available = True
-                        break
+                try:
+                    clown_emoji_check = bot.get_emoji(1418508263984463932)
+                    emoji_available = clown_emoji_check is not None
+                except:
+                    emoji_available = False
 
-                emoji_status = "✅ Disponible" if emoji_available else "❌ No disponible (usando 🤡)"
+                emoji_status = "✅ Disponible en el bot" if emoji_available else "✅ Usando formato directo"
 
                 embed.add_field(
                     name="<a:clown:1418508263984463932> Emoji Clown:",
@@ -295,17 +296,20 @@ def setup_commands(bot):
                 else:
                     # Test de reacción inmediata
                     try:
-                        # Verificar emoji
+                        # Verificar emoji del bot
                         clown_emoji = None
-                        for emoji in interaction.guild.emojis:
-                            if emoji.id == 1418508263984463932:
-                                clown_emoji = emoji
-                                break
+                        try:
+                            clown_emoji = bot.get_emoji(1418508263984463932)
+                            if not clown_emoji:
+                                # Fallback: usar formato directo
+                                clown_emoji = f"<a:clown:1418508263984463932>"
+                        except:
+                            clown_emoji = f"<a:clown:1418508263984463932>"
 
                         if not clown_emoji:
                             embed = discord.Embed(
                                 title="❌ Emoji No Encontrado",
-                                description="El emoji clown personalizado no se encontró en este servidor. No se puede realizar la prueba.",
+                                description="El emoji clown personalizado no se pudo obtener del bot. No se puede realizar la prueba.",
                                 color=0xff0000
                             )
                         else:
@@ -444,21 +448,28 @@ def setup_commands(bot):
 
             # Intentar reaccionar con el emoji clown
             try:
-                # Emoji personalizado animado clown
+                # Emoji personalizado animado clown - usar directamente por ID
                 clown_emoji = None
-
-                # Verificar si el emoji existe en el servidor primero
-                for emoji in message.guild.emojis:
-                    if emoji.id == 1418508263984463932:  # ID del emoji clown
-                        clown_emoji = emoji
-                        break
+                
+                # Obtener el emoji del bot directamente por ID (emojis internos del bot)
+                try:
+                    clown_emoji = bot.get_emoji(1418508263984463932)
+                    if clown_emoji:
+                        logger.debug(f"✅ Emoji clown obtenido del bot: {clown_emoji}")
+                    else:
+                        logger.debug(f"⚠️ Emoji clown no encontrado en emojis del bot, intentando crear manualmente")
+                        # Crear emoji manualmente usando el ID
+                        clown_emoji = f"<a:clown:1418508263984463932>"
+                except Exception as e:
+                    logger.debug(f"Error obteniendo emoji del bot: {e}")
+                    # Fallback: usar formato de emoji directo
+                    clown_emoji = f"<a:clown:1418508263984463932>"
 
                 if not clown_emoji:
-                    # Si no se encuentra el emoji personalizado, no reaccionar
-                    logger.warning(f"⚠️ Emoji clown personalizado no encontrado en servidor {message.guild.name}, saltando reacción")
+                    logger.warning(f"⚠️ No se pudo obtener emoji clown, saltando reacción")
                     return
 
-                # Añadir reacción solo con emoji personalizado
+                # Añadir reacción con emoji del bot
                 reaction = await message.add_reaction(clown_emoji)
 
                 # Verificar que la reacción se mantuvo después de un pequeño delay
