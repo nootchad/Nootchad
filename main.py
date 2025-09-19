@@ -1299,33 +1299,7 @@ def remove_delegated_owner(user_id: str) -> bool:
         return True
     return False
 
-    async def send_expiration_alert(self, discord_id: str, roblox_username: str):
-        """Enviar alerta por DM cuando expire la verificación"""
-        try:
-            user = bot.get_user(int(discord_id))
-            if user:
-                embed = discord.Embed(
-                    title="⏰ Verificación Expirada",
-                    description=f"Tu verificación como **{roblox_username}** ha expirado después de 24 horas.",
-                    color=0xff9900
-                )
-                embed.add_field(
-                    name="🔄 Para volver a usar el bot:",
-                    value="Usa `/verify [tu_nombre_roblox]` nuevamente",
-                    inline=False
-                )
-                embed.add_field(
-                    name="⚡ Verificación rápida:",
-                    value="Ya no necesitas cambiar tu descripción si usas el mismo nombre de usuario",
-                    inline=False
-                )
-                
-                await user.send(embed=embed)
-                logger.info(f"Expiration alert sent to user {discord_id}")
-        except Exception as e:
-            logger.error(f"Failed to send expiration alert to user {discord_id}: {e}")
-
-    def cleanup_expired_data(self):
+class VIPServerScraper:
         """Limpiar datos expirados"""
         current_time = time.time()
         
