@@ -40,7 +40,7 @@ class ImagesSystem:
                     color=0xffaa00
                 )
                 loading_embed.add_field(name="⏳ Estado", value="Conectando con Pollinations AI...", inline=True)
-                loading_embed.add_field(name="<a:pepebot:1418489370129993728> Modelo", value="RbxServers-v1 x Pollinations", inline=True)
+                loading_embed.add_field(name="🤖 Modelo", value="RbxServers-v1 x Pollinations", inline=True)
                 loading_embed.add_field(name="🎨 Tipo", value="Generación de Imagen", inline=True)
                 loading_embed.set_footer(text=f"Solicitado por {username}")
                 
@@ -72,7 +72,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                     )
                     
                     result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
-                    result_embed.add_field(name="<a:pepebot:1418489370129993728> Generado por", value="RbxServers-v1 x Pollinations", inline=True)
+                    result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1 x Pollinations", inline=True)
                     result_embed.add_field(name="⏰ Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
                     
                     result_embed.set_footer(text="🎨 RbxServers-v1 x Pollinations • Generador de Imágenes IA")
@@ -168,8 +168,8 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                         with open(temp_path, 'wb') as f:
                             f.write(image_data)
                         
-                        logger.info(f"<a:verify2:1418486831993061497> Imagen generada y guardada en: {temp_path}")
-                        logger.info(f"<:stats:1418490788437823599> Tamaño de imagen: {len(image_data)} bytes")
+                        logger.info(f"✅ Imagen generada y guardada en: {temp_path}")
+                        logger.info(f"📊 Tamaño de imagen: {len(image_data)} bytes")
                         
                         return temp_path
                     else:
@@ -222,7 +222,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                                     with open(temp_path, 'wb') as f:
                                         f.write(image_data)
                                     
-                                    logger.info(f"<a:verify2:1418486831993061497> Imagen DeepAI generada: {temp_path}")
+                                    logger.info(f"✅ Imagen DeepAI generada: {temp_path}")
                                     return temp_path
                     
                     logger.error(f"❌ Error en DeepAI API: {response.status}")
@@ -241,7 +241,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
             image_file = await self.generate_image_with_deepai(descripcion)
             
             if image_file:
-                logger.info("<a:verify2:1418486831993061497> Imagen generada con DeepAI como respaldo")
+                logger.info("✅ Imagen generada con DeepAI como respaldo")
                 
                 result_embed = discord.Embed(
                     title="🎨 Imagen Generada por RbxServers-v1 x DeepAI",
@@ -250,7 +250,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                 )
                 
                 result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
-                result_embed.add_field(name="<a:pepebot:1418489370129993728> Generado por", value="RbxServers-v1 x DeepAI", inline=True)
+                result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1 x DeepAI", inline=True)
                 result_embed.add_field(name="🎯 Método", value="Respaldo AI", inline=True)
                 
                 result_embed.set_footer(text="🎨 RbxServers-v1 x DeepAI • Generador de Imágenes IA")
@@ -304,11 +304,11 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
             fallback_embed.set_image(url=image_url)
             
             fallback_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
-            fallback_embed.add_field(name="<a:pepebot:1418489370129993728> Generado por", value="RbxServers-v1", inline=True)
+            fallback_embed.add_field(name="🤖 Generado por", value="RbxServers-v1", inline=True)
             fallback_embed.add_field(name="🎯 Estilo", value=style_desc, inline=True)
             
             fallback_embed.add_field(
-                name="<a:foco:1418492184373755966> Nota:",
+                name="💡 Nota:",
                 value="RbxServers-v1 interpretó tu descripción y generó una representación visual conceptual. La imagen se adapta al tema de tu solicitud.",
                 inline=False
             )
@@ -329,7 +329,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                 color=0xff0000
             )
             error_embed.add_field(
-                name="<a:foco:1418492184373755966> Sugerencia:",
+                name="💡 Sugerencia:",
                 value="• Intenta con una descripción más simple\n• Verifica la conexión a internet\n• Intenta nuevamente en unos momentos",
                 inline=False
             )

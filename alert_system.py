@@ -21,7 +21,7 @@ class BotStartupAlertSystem:
                 with open(self.alerts_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.subscribed_users = set(data.get('subscribed_users', []))
-                    logger.info(f"<a:verify2:1418486831993061497> Alertas de inicio cargadas: {len(self.subscribed_users)} usuarios suscritos")
+                    logger.info(f"✅ Alertas de inicio cargadas: {len(self.subscribed_users)} usuarios suscritos")
             else:
                 logger.info("⚠️ Archivo de alertas de inicio no encontrado, inicializando vacío")
         except Exception as e:
@@ -47,7 +47,7 @@ class BotStartupAlertSystem:
         if user_id not in self.subscribed_users:
             self.subscribed_users.add(user_id)
             self.save_alerts_data()
-            logger.info(f"<a:verify2:1418486831993061497> Usuario {user_id} suscrito a alertas de inicio")
+            logger.info(f"✅ Usuario {user_id} suscrito a alertas de inicio")
             return True
         return False
     
@@ -56,7 +56,7 @@ class BotStartupAlertSystem:
         if user_id in self.subscribed_users:
             self.subscribed_users.remove(user_id)
             self.save_alerts_data()
-            logger.info(f"<a:verify2:1418486831993061497> Usuario {user_id} desuscrito de alertas de inicio")
+            logger.info(f"✅ Usuario {user_id} desuscrito de alertas de inicio")
             return True
         return False
     
@@ -76,32 +76,32 @@ class BotStartupAlertSystem:
         failed_notifications = 0
         
         startup_embed = discord.Embed(
-            title="<a:pepebot:1418489370129993728> RbxServers Bot Iniciado",
+            title="🤖 RbxServers Bot Iniciado",
             description="¡El bot de RbxServers está ahora **en línea** y listo para usar!",
             color=0x00ff88,
             timestamp=datetime.now()
         )
         
         startup_embed.add_field(
-            name="<a:verify2:1418486831993061497> Estado",
+            name="✅ Estado",
             value="**Conectado y funcionando**",
             inline=True
         )
         
         startup_embed.add_field(
-            name="<a:control:1418490793223651409> Servicios Disponibles",
+            name="🎮 Servicios Disponibles",
             value="• Scraping de servidores VIP\n• Búsqueda de juegos\n• Sistema de favoritos\n• Y mucho más...",
             inline=False
         )
         
         startup_embed.add_field(
-            name="<a:foco:1418492184373755966> Comandos Principales",
+            name="💡 Comandos Principales",
             value="`/scrape` • `/game` • `/servertest` • `/favorites`",
             inline=False
         )
         
         startup_embed.add_field(
-            name="<a:notification:1418491712317292646> Alerta Automática",
+            name="🔔 Alerta Automática",
             value="Puedes desactivar estas notificaciones usando `/alerta` nuevamente",
             inline=False
         )
@@ -134,7 +134,7 @@ class BotStartupAlertSystem:
                 logger.error(f"❌ Error enviando notificación a usuario {user_id}: {e}")
                 failed_notifications += 1
         
-        logger.info(f"<:stats:1418490788437823599> Notificaciones de inicio completadas: {successful_notifications} exitosas, {failed_notifications} fallidas")
+        logger.info(f"📊 Notificaciones de inicio completadas: {successful_notifications} exitosas, {failed_notifications} fallidas")
 
 def setup_alert_commands(bot):
     """Configurar comandos de alertas de inicio"""
@@ -163,7 +163,7 @@ def setup_alert_commands(bot):
                     inline=True
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Para reactivar",
+                    name="💡 Para reactivar",
                     value="Usa `/alerta` nuevamente",
                     inline=True
                 )
@@ -182,12 +182,12 @@ def setup_alert_commands(bot):
                 startup_alert_system.subscribe_user(user_id)
                 
                 embed = discord.Embed(
-                    title="<a:notification:1418491712317292646> Alertas Activadas",
+                    title="🔔 Alertas Activadas",
                     description="¡Te has **suscrito** exitosamente a las notificaciones de inicio del bot!",
                     color=0x00ff88
                 )
                 embed.add_field(
-                    name="<a:verify2:1418486831993061497> Estado Actual",
+                    name="✅ Estado Actual",
                     value="**Alertas activadas**",
                     inline=True
                 )
@@ -197,7 +197,7 @@ def setup_alert_commands(bot):
                     inline=False
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Para desactivar",
+                    name="💡 Para desactivar",
                     value="Usa `/alerta` nuevamente",
                     inline=True
                 )
@@ -211,18 +211,18 @@ def setup_alert_commands(bot):
                 # Enviar confirmación por DM
                 try:
                     dm_embed = discord.Embed(
-                        title="<a:notification:1418491712317292646> Confirmación de Suscripción",
+                        title="🔔 Confirmación de Suscripción",
                         description="Has activado las **alertas de inicio** del bot RbxServers.",
                         color=0x00ff88,
                         timestamp=datetime.now()
                     )
                     dm_embed.add_field(
-                        name="<a:verify2:1418486831993061497> Activado Exitosamente",
+                        name="✅ Activado Exitosamente",
                         value="Ahora recibirás un mensaje cada vez que el bot se inicie o reconecte",
                         inline=False
                     )
                     dm_embed.add_field(
-                        name="<a:control:1418490793223651409> Bot Status",
+                        name="🎮 Bot Status",
                         value="El bot está **actualmente en línea** y funcionando correctamente",
                         inline=False
                     )
@@ -262,7 +262,7 @@ def setup_alert_commands(bot):
                 color=0xff0000
             )
             error_embed.add_field(
-                name="<a:foco:1418492184373755966> Sugerencia",
+                name="💡 Sugerencia",
                 value="Intenta nuevamente en unos momentos",
                 inline=False
             )

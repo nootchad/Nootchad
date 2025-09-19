@@ -101,12 +101,12 @@ def setup_commands(bot):
                 color=0xffc107 # Amarillo
             )
             limit_embed.add_field(
-                name="<:stats:1418490788437823599> Tu Estado de Uso",
+                name="📊 Tu Estado de Uso",
                 value=f"{status_text} | **{current_usage}/{current_limit}** usos hoy | **{remaining_uses}** restantes",
                 inline=False
             )
             limit_embed.add_field(
-                name="<a:foco:1418492184373755966> Sugerencia",
+                name="💡 Sugerencia",
                 value="Intenta de nuevo mañana o considera donar para obtener un límite mayor.",
                 inline=False
             )
@@ -136,7 +136,7 @@ def setup_commands(bot):
                 color=0x6c757d
             )
             loading_embed.add_field(name="⏳ Estado", value="Conectando con la API...", inline=False)
-            loading_embed.add_field(name="<a:control:1418490793223651409> ID del Juego", value=f"`{game_id}`", inline=True)
+            loading_embed.add_field(name="🎮 ID del Juego", value=f"`{game_id}`", inline=True)
             loading_embed.add_field(name="🌐 API", value="v0-discord-bot-api-snowy.vercel.app", inline=True)
             loading_embed.add_field(name="👤 Solicitado por", value=f"{username}", inline=True)
 
@@ -176,13 +176,13 @@ def setup_commands(bot):
                         )
 
                         no_servers_embed.add_field(
-                            name="<a:control:1418490793223651409> ID del Juego",
+                            name="🎮 ID del Juego",
                             value=f"`{game_id}`",
                             inline=True
                         )
 
                         no_servers_embed.add_field(
-                            name="<:stats:1418490788437823599> Servidores Encontrados",
+                            name="📊 Servidores Encontrados",
                             value="`0`",
                             inline=True
                         )
@@ -194,7 +194,7 @@ def setup_commands(bot):
                         )
 
                         no_servers_embed.add_field(
-                            name="<a:foco:1418492184373755966> Sugerencia",
+                            name="💡 Sugerencia",
                             value="• Verifica que el ID del juego sea correcto\n• El juego podría no tener servidores VIP\n• Intenta con otro ID de juego",
                             inline=False
                         )
@@ -215,7 +215,7 @@ def setup_commands(bot):
                             status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
 
                             no_servers_embed.add_field(
-                                name="<:stats:1418490788437823599> Tu Estado de Uso",
+                                name="📊 Tu Estado de Uso",
                                 value=f"{status_text} | **{current_usage_info}/{daily_limit_info}** usos hoy | **{remaining_uses}** restantes",
                                 inline=False
                             )
@@ -239,20 +239,20 @@ def setup_commands(bot):
 
                             # Crear embed con servidores encontrados
                             success_embed = discord.Embed(
-                                title="<a:verify2:1418486831993061497> Servidores Obtenidos",
+                                title="✅ Servidores Obtenidos",
                                 description=f"Se encontraron **{len(servers)}** servidores para el juego ID: `{game_id}`",
                                 color=0x495057
                             )
 
                             # Agregar información del juego
                             success_embed.add_field(
-                                name="<a:control:1418490793223651409> ID del Juego",
+                                name="🎮 ID del Juego",
                                 value=f"`{data.get('game_id', game_id)}`",
                                 inline=True
                             )
 
                             success_embed.add_field(
-                                name="<:stats:1418490788437823599> Total de Servidores",
+                                name="📊 Total de Servidores",
                                 value=f"`{len(servers)}`",
                                 inline=True
                             )
@@ -270,7 +270,7 @@ def setup_commands(bot):
 
                             if len(servers) > max_servers_display:
                                 servers_text += f"\n... y {len(servers) - max_servers_display} servidores más"
-                                servers_text += f"\n\n<a:foco:1418492184373755966> *Para ver todos los servidores, contacta a un administrador*"
+                                servers_text += f"\n\n💡 *Para ver todos los servidores, contacta a un administrador*"
 
                             success_embed.add_field(
                                 name="🔗 Servidores VIP:",
@@ -307,7 +307,7 @@ def setup_commands(bot):
                                 status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
 
                                 success_embed.add_field(
-                                    name="<:stats:1418490788437823599> Tu Estado de Uso",
+                                    name="📊 Tu Estado de Uso",
                                     value=f"{status_text} | **{current_usage_info}/{daily_limit_info}** usos hoy | **{remaining_uses}** restantes",
                                     inline=False
                                 )
@@ -318,7 +318,7 @@ def setup_commands(bot):
 
                             await message.edit(embed=success_embed)
 
-                            logger.info(f"<a:verify2:1418486831993061497> Usuario público {username} obtuvo {len(servers)} servidores para juego {game_id} (mostrados: {len(servers_to_show)})")
+                            logger.info(f"✅ Usuario público {username} obtuvo {len(servers)} servidores para juego {game_id} (mostrados: {len(servers_to_show)})")
 
                         else:
                             # No se encontraron servidores
@@ -329,13 +329,13 @@ def setup_commands(bot):
                             )
 
                             no_servers_embed.add_field(
-                                name="<a:control:1418490793223651409> ID del Juego",
+                                name="🎮 ID del Juego",
                                 value=f"`{game_id}`",
                                 inline=True
                             )
 
                             no_servers_embed.add_field(
-                                name="<:stats:1418490788437823599> Servidores Encontrados",
+                                name="📊 Servidores Encontrados",
                                 value="`0`",
                                 inline=True
                             )
@@ -347,7 +347,7 @@ def setup_commands(bot):
                             )
 
                             no_servers_embed.add_field(
-                                name="<a:foco:1418492184373755966> Sugerencia",
+                                name="💡 Sugerencia",
                                 value="• Verifica que el ID del juego sea correcto\n• El juego podría no tener servidores VIP\n• Intenta con otro ID de juego",
                                 inline=False
                             )
@@ -368,7 +368,7 @@ def setup_commands(bot):
                                 status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
 
                                 no_servers_embed.add_field(
-                                    name="<:stats:1418490788437823599> Tu Estado de Uso",
+                                    name="📊 Tu Estado de Uso",
                                     value=f"{status_text} | **{current_usage_info}/{daily_limit_info}** usos hoy | **{remaining_uses}** restantes",
                                     inline=False
                                 )
@@ -432,7 +432,7 @@ def setup_commands(bot):
                 )
 
                 error_embed.add_field(
-                    name="<a:control:1418490793223651409> ID del Juego",
+                    name="🎮 ID del Juego",
                     value=f"`{game_id}`",
                     inline=True
                 )
@@ -456,7 +456,7 @@ def setup_commands(bot):
                 )
 
                 error_embed.add_field(
-                    name="<a:foco:1418492184373755966> Posibles Causas",
+                    name="💡 Posibles Causas",
                     value="• ID de juego no existe en la API\n• Problemas temporales del servidor\n• API sobrecargada",
                     inline=False
                 )
@@ -476,7 +476,7 @@ def setup_commands(bot):
                 inline=True
             )
             timeout_embed.add_field(
-                name="<a:foco:1418492184373755966> Sugerencia",
+                name="💡 Sugerencia",
                 value="Intenta nuevamente en unos momentos",
                 inline=False
             )
@@ -496,7 +496,7 @@ def setup_commands(bot):
                 inline=True
             )
             connection_embed.add_field(
-                name="<a:foco:1418492184373755966> Posibles Causas",
+                name="💡 Posibles Causas",
                 value="• Problemas de conectividad\n• API temporalmente no disponible\n• DNS no resuelve correctamente",
                 inline=False
             )
@@ -524,14 +524,14 @@ def setup_commands(bot):
                 inline=False
             )
             error_embed.add_field(
-                name="<a:foco:1418492184373755966> Sugerencia",
+                name="💡 Sugerencia",
                 value="Contacta al desarrollador si el problema persiste",
                 inline=False
             )
 
             await message.edit(embed=error_embed)
 
-    logger.info("<a:verify2:1418486831993061497> Comando /publicget registrado correctamente")
+    logger.info("✅ Comando /publicget registrado correctamente")
     return True
 
 

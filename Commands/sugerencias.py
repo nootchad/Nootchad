@@ -28,7 +28,7 @@ class SugerenciasSystem:
             if Path(self.sugerencias_file).exists():
                 with open(self.sugerencias_file, 'r', encoding='utf-8') as f:
                     self.sugerencias_data = json.load(f)
-                    logger.info(f"<a:verify2:1418486831993061497> Datos de sugerencias cargados: {len(self.sugerencias_data.get('sugerencias', []))} sugerencias")
+                    logger.info(f"✅ Datos de sugerencias cargados: {len(self.sugerencias_data.get('sugerencias', []))} sugerencias")
             else:
                 self.sugerencias_data = {
                     'sugerencias': [],
@@ -160,7 +160,7 @@ def setup_commands(bot):
                     # Mapeo de categorías a emojis
                     categoria_emojis = {
                         "general": "<:1000182584:1396049547838492672>",
-                        "bot": "<a:pepebot:1418489370129993728>",
+                        "bot": "🤖",
                         "comandos": "⚡",
                         "scraping": "🔍",
                         "vip": "⭐",
@@ -237,7 +237,7 @@ def setup_commands(bot):
             
             # Confirmación al usuario
             confirmacion_embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Sugerencia Enviada",
+                title="✅ Sugerencia Enviada",
                 description=f"Tu sugerencia **#{sugerencia_id}** ha sido enviada al owner para revisión.",
                 color=0x00ff88
             )
@@ -291,7 +291,7 @@ def setup_commands(bot):
                 color=0xff0000
             )
             error_embed.add_field(
-                name="<a:foco:1418492184373755966> Sugerencia",
+                name="💡 Sugerencia",
                 value="Si el problema persiste, contacta al owner usando `/reportes`",
                 inline=False
             )
@@ -321,7 +321,7 @@ def setup_commands(bot):
             sugerencias = sugerencias_system.sugerencias_data.get('sugerencias', [])
             
             stats_embed = discord.Embed(
-                title="<:stats:1418490788437823599> Estadísticas del Sistema de Sugerencias",
+                title="📊 Estadísticas del Sistema de Sugerencias",
                 description="Panel de control para el owner",
                 color=0x7289da
             )
@@ -398,7 +398,7 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=error_embed, ephemeral=True)
     
-    logger.info("<a:verify2:1418486831993061497> Sistema de sugerencias configurado exitosamente")
+    logger.info("✅ Sistema de sugerencias configurado exitosamente")
     return True
 
 def cleanup_commands(bot):

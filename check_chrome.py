@@ -24,13 +24,13 @@ def quick_chrome_check():
         driver.get("about:blank")
         driver.quit()
         
-        print("<a:verify2:1418486831993061497> Chrome driver is working properly")
+        print("✅ Chrome driver is working properly")
         return True
         
     except WebDriverException as e:
         print(f"❌ Chrome driver error: {e}")
-        print("<a:foco:1418492184373755966> This is normal - try running the scraper anyway")
-        print("<a:foco:1418492184373755966> Selenium errors often resolve on retry")
+        print("💡 This is normal - try running the scraper anyway")
+        print("💡 Selenium errors often resolve on retry")
         return False
     except Exception as e:
         print(f"❌ Unexpected error: {e}")

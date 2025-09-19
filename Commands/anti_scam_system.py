@@ -77,14 +77,14 @@ class AntiScamSystem:
                         logger.warning(f"⚠️ Error cargando archivo {filename}: {e}")
                         continue
 
-                logger.info(f"<a:verify2:1418486831993061497> Cargados {len(self.reports)} reportes únicos desde {successful_loads}/{len(scam_files)} archivos")
+                logger.info(f"✅ Cargados {len(self.reports)} reportes únicos desde {successful_loads}/{len(scam_files)} archivos")
                 return
 
             # Si no hay archivos en la carpeta, intentar cargar archivo específico
             blob_data = await blob_manager.download_json(self.blob_filename)
             if blob_data:
                 self.reports = blob_data.get('reports', {})
-                logger.info(f"<a:verify2:1418486831993061497> Cargados {len(self.reports)} reportes de scam desde archivo específico")
+                logger.info(f"✅ Cargados {len(self.reports)} reportes de scam desde archivo específico")
                 return
 
             # Si no hay datos en Blob, intentar migrar desde archivo local
@@ -149,7 +149,7 @@ class AntiScamSystem:
             all_files = await blob_manager.list_files()
             scam_files = [f for f in all_files if f.startswith(self.blob_folder)]
 
-            logger.info(f"<:stats:1418490788437823599> Manteniendo {len(scam_files)} archivos de reportes (todos permanentes)")
+            logger.info(f"📊 Manteniendo {len(scam_files)} archivos de reportes (todos permanentes)")
 
             # Solo verificar y eliminar archivos corruptos o vacíos
             corrupted_files = []
@@ -181,7 +181,7 @@ class AntiScamSystem:
 
                 logger.info(f"🧹 Limpieza completada: {len(corrupted_files)} archivos corruptos eliminados")
             else:
-                logger.info("<a:verify2:1418486831993061497> Todos los archivos de reportes están en buen estado")
+                logger.info("✅ Todos los archivos de reportes están en buen estado")
 
         except Exception as e:
             logger.warning(f"⚠️ Error en verificación de archivos: {e}")
@@ -302,7 +302,7 @@ class AntiScamSystem:
 
         await self.save_data()
 
-        logger.info(f"<a:verify2:1418486831993061497> Reporte {report_id} confirmado por {confirmer_id}")
+        logger.info(f"✅ Reporte {report_id} confirmado por {confirmer_id}")
 
         return {
             'success': True,
@@ -411,7 +411,7 @@ class AntiScamSystem:
                     await self.save_data()
 
                     results['reports_migrated'] = len(reports)
-                    logger.info(f"<a:verify2:1418486831993061497> Migrados {len(reports)} reportes a carpeta Blob Storage")
+                    logger.info(f"✅ Migrados {len(reports)} reportes a carpeta Blob Storage")
                 else:
                     logger.info("⚠️ No hay reportes para migrar")
             else:
@@ -441,7 +441,7 @@ async def initialize_anti_scam_system():
     if anti_scam_system is None:
         anti_scam_system = AntiScamSystem()
         await anti_scam_system.load_data()
-        logger.info("<a:verify2:1418486831993061497> Sistema Anti-Scam inicializado con Blob Storage")
+        logger.info("✅ Sistema Anti-Scam inicializado con Blob Storage")
     return anti_scam_system
 
 # Inicializar automáticamente al importar el módulo
@@ -562,7 +562,7 @@ def setup_commands(bot):
             # Crear embed de confirmación
             report = result['report']
             embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Reporte de Scammer Enviado",
+                title="✅ Reporte de Scammer Enviado",
                 description="Tu reporte ha sido registrado exitosamente y será revisado por los moderadores.",
                 color=0x00ff88
             )
@@ -821,7 +821,7 @@ def setup_commands(bot):
             # Crear embed de confirmación
             report = result['report']
             embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Reporte Confirmado",
+                title="✅ Reporte Confirmado",
                 description=f"El reporte `{report_id}` ha sido confirmado exitosamente.",
                 color=0x00ff88
             )
@@ -839,7 +839,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="<a:verify2:1418486831993061497> Confirmado por:",
+                name="✅ Confirmado por:",
                 value=f"<@{user_id}>",
                 inline=True
             )
@@ -854,7 +854,7 @@ def setup_commands(bot):
 
             await interaction.followup.send(embed=embed)
 
-            logger.info(f"<a:verify2:1418486831993061497> Reporte {report_id} confirmado por {interaction.user.name}")
+            logger.info(f"✅ Reporte {report_id} confirmado por {interaction.user.name}")
 
         except Exception as e:
             logger.error(f"❌ Error en comando confirmreport: {e}")
@@ -970,14 +970,14 @@ def setup_commands(bot):
 
             # Estadísticas generales
             embed.add_field(
-                name="<:stats:1418490788437823599> Estadísticas:",
+                name="📊 Estadísticas:",
                 value=f"**Total:** {stats['total_reports']}\n**Pendientes:** {stats['pending']}\n**Confirmados:** {stats['confirmed']}\n**Descartados:** {stats['dismissed']}",
                 inline=True
             )
 
             if not pending_reports:
                 embed.add_field(
-                    name="<a:verify2:1418486831993061497> Sin Reportes Pendientes",
+                    name="✅ Sin Reportes Pendientes",
                     value="No hay reportes pendientes de revisión.",
                     inline=False
                 )
@@ -1050,7 +1050,7 @@ def setup_commands(bot):
                 )
             else:
                 embed.add_field(
-                    name="<:stats:1418490788437823599> Resultados:",
+                    name="📊 Resultados:",
                     value=f"**Reportes migrados:** {results['reports_migrated']}\n**Errores:** {results['errors']}",
                     inline=True
                 )
@@ -1107,7 +1107,7 @@ def setup_commands(bot):
             stats = anti_scam_system.get_stats()
 
             embed = discord.Embed(
-                title="<:stats:1418490788437823599> Estadísticas Completas del Sistema Anti-Scam",
+                title="📊 Estadísticas Completas del Sistema Anti-Scam",
                 description="Información detallada del sistema de reportes",
                 color=0x00aaff
             )
@@ -1126,7 +1126,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="<a:verify2:1418486831993061497> Confirmados",
+                name="✅ Confirmados",
                 value=f"**{stats['confirmed']}** reportes",
                 inline=True
             )
@@ -1192,7 +1192,7 @@ def setup_commands(bot):
 
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-            logger.info(f"<:stats:1418490788437823599> Estadísticas del sistema anti-scam consultadas por {interaction.user.name}")
+            logger.info(f"📊 Estadísticas del sistema anti-scam consultadas por {interaction.user.name}")
 
         except Exception as e:
             logger.error(f"❌ Error obteniendo estadísticas: {e}")
@@ -1245,7 +1245,7 @@ def setup_commands(bot):
             try:
                 await anti_scam_system.load_data()
                 test_results['load_test'] = True
-                logger.info("<a:verify2:1418486831993061497> Test carga de datos: EXITOSO")
+                logger.info("✅ Test carga de datos: EXITOSO")
             except Exception as e:
                 logger.error(f"❌ Test carga de datos: FALLO - {e}")
 
@@ -1262,7 +1262,7 @@ def setup_commands(bot):
                 if test_report['success']:
                     test_results['create_test'] = True
                     test_report_id = test_report['report_id']
-                    logger.info(f"<a:verify2:1418486831993061497> Test crear reporte: EXITOSO - ID: {test_report_id}")
+                    logger.info(f"✅ Test crear reporte: EXITOSO - ID: {test_report_id}")
 
                     # Limpiar reporte de prueba
                     if test_report_id in anti_scam_system.reports:
@@ -1276,7 +1276,7 @@ def setup_commands(bot):
             try:
                 await anti_scam_system.save_data()
                 test_results['save_test'] = True
-                logger.info("<a:verify2:1418486831993061497> Test guardar datos: EXITOSO")
+                logger.info("✅ Test guardar datos: EXITOSO")
             except Exception as e:
                 logger.error(f"❌ Test guardar datos: FALLO - {e}")
 
@@ -1292,7 +1292,7 @@ def setup_commands(bot):
                     downloaded = await blob_manager.download_json(test_filename)
                     if downloaded and downloaded.get('test'):
                         test_results['blob_test'] = True
-                        logger.info("<a:verify2:1418486831993061497> Test Blob Storage: EXITOSO")
+                        logger.info("✅ Test Blob Storage: EXITOSO")
 
                         # Limpiar archivo de prueba
                         await blob_manager.delete_file(test_filename)
@@ -1308,7 +1308,7 @@ def setup_commands(bot):
                 migration_results = await anti_scam_system.migrate_reports_to_blob()
                 if 'reports_migrated' in migration_results:
                     test_results['migration_test'] = True
-                    logger.info(f"<a:verify2:1418486831993061497> Test migración: EXITOSO - {migration_results}")
+                    logger.info(f"✅ Test migración: EXITOSO - {migration_results}")
                 else:
                     logger.error(f"❌ Test migración: FALLO - {migration_results}")
             except Exception as e:
@@ -1320,7 +1320,7 @@ def setup_commands(bot):
 
             if passed_tests == total_tests:
                 color = 0x00ff88  # Verde
-                status = "<a:verify2:1418486831993061497> TODOS LOS TESTS PASARON"
+                status = "✅ TODOS LOS TESTS PASARON"
             elif passed_tests > 0:
                 color = 0xffaa00  # Amarillo
                 status = f"⚠️ {passed_tests}/{total_tests} TESTS PASARON"
@@ -1336,11 +1336,11 @@ def setup_commands(bot):
 
             # Detalles de cada test
             test_details = [
-                ("📥 Carga de Datos", "<a:verify2:1418486831993061497> Exitoso" if test_results['load_test'] else "❌ Fallo"),
-                ("💾 Guardar Datos", "<a:verify2:1418486831993061497> Exitoso" if test_results['save_test'] else "❌ Fallo"),
-                ("📝 Crear Reporte", "<a:verify2:1418486831993061497> Exitoso" if test_results['create_test'] else "❌ Fallo"),
-                ("☁️ Blob Storage", "<a:verify2:1418486831993061497> Exitoso" if test_results['blob_test'] else "❌ Fallo"),
-                ("🔄 Migración", "<a:verify2:1418486831993061497> Exitoso" if test_results['migration_test'] else "❌ Fallo")
+                ("📥 Carga de Datos", "✅ Exitoso" if test_results['load_test'] else "❌ Fallo"),
+                ("💾 Guardar Datos", "✅ Exitoso" if test_results['save_test'] else "❌ Fallo"),
+                ("📝 Crear Reporte", "✅ Exitoso" if test_results['create_test'] else "❌ Fallo"),
+                ("☁️ Blob Storage", "✅ Exitoso" if test_results['blob_test'] else "❌ Fallo"),
+                ("🔄 Migración", "✅ Exitoso" if test_results['migration_test'] else "❌ Fallo")
             ]
 
             for test_name, result in test_details:
@@ -1349,7 +1349,7 @@ def setup_commands(bot):
             # Estadísticas del sistema
             stats = anti_scam_system.get_stats()
             result_embed.add_field(
-                name="<:stats:1418490788437823599> Estadísticas del Sistema",
+                name="📊 Estadísticas del Sistema",
                 value=f"**Total de reportes:** {stats['total_reports']}\n**Pendientes:** {stats['pending']}\n**Confirmados:** {stats['confirmed']}\n**Descartados:** {stats['dismissed']}",
                 inline=False
             )
@@ -1378,7 +1378,7 @@ def setup_commands(bot):
             await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 
-    logger.info("<a:verify2:1418486831993061497> Sistema anti-scam configurado exitosamente")
+    logger.info("✅ Sistema anti-scam configurado exitosamente")
     return True
 
 # Función opcional de limpieza cuando se recarga el módulo
@@ -1387,7 +1387,7 @@ def cleanup_commands(bot):
     pass
 
 
-    logger.info("<a:verify2:1418486831993061497> Sistema anti-scam configurado exitosamente")
+    logger.info("✅ Sistema anti-scam configurado exitosamente")
     return True
 
 # Función opcional de limpieza cuando se recarga el módulo

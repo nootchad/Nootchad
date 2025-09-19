@@ -40,7 +40,7 @@ try:
     # Railway y otros proveedores de hosting automáticamente cargan variables
     # Las variables del sistema tienen prioridad sobre las del archivo .env
     
-    logger.info("<a:verify2:1418486831993061497> Variables de entorno cargadas correctamente")
+    logger.info("✅ Variables de entorno cargadas correctamente")
 except Exception as env_error:
     logger.warning(f"⚠️ Error cargando .env (esto es normal en Railway): {env_error}")
     # Continuar de todas formas, Railway proporciona las variables directamente
@@ -72,7 +72,7 @@ user_logger.setLevel(logging.INFO)
 BOT_TOKEN = os.getenv('BOT_TOKEN') or os.getenv('DISCORD_TOKEN')  # Railway puede usar ambos nombres
 if not BOT_TOKEN:
     logger.error("❌ BOT_TOKEN no encontrado en variables de entorno")
-    logger.error("<a:foco:1418492184373755966> En Railway:")
+    logger.error("💡 En Railway:")
     logger.error("   1. Ve a tu proyecto en Railway")
     logger.error("   2. Ve a la pestaña 'Variables'")
     logger.error("   3. Agrega BOT_TOKEN con tu token de Discord")
@@ -95,7 +95,7 @@ if not BOT_TOKEN:
 if not BOT_TOKEN.startswith(('MTM4', 'MTE', 'MTI', 'MTQ', 'MTO', 'MTA')):
     logger.error("❌ El token no parece válido (no tiene el formato correcto de Discord)")
     logger.error(f"🔍 Token encontrado: {BOT_TOKEN[:20]}...")
-    logger.error("<a:foco:1418492184373755966> Verifica que copiaste el token completo desde Discord Developer Portal")
+    logger.error("💡 Verifica que copiaste el token completo desde Discord Developer Portal")
     exit(1)
 
 # Detectar entorno de ejecución
@@ -110,7 +110,7 @@ elif 'HEROKU_APP_NAME' in os.environ:
 else:
     logger.info("💻 Ejecutándose en entorno local/desconocido")
 
-logger.info(f"<a:verify2:1418486831993061497> Token cargado correctamente: {BOT_TOKEN[:10]}...")
+logger.info(f"✅ Token cargado correctamente: {BOT_TOKEN[:10]}...")
 
 # Roblox verification settings
 ROBLOX_OWNER_ID = "11834624"  # Tu ID de Roblox (hesiz)
@@ -223,7 +223,7 @@ class RobloxRemoteControl:
                 'status': 'connected'
             }
             
-            logger.info(f"<a:pepebot:1418489370129993728> Roblox script connected: {script_id} ({roblox_username})")
+            logger.info(f"🤖 Roblox script connected: {script_id} ({roblox_username})")
             
             return web.json_response({
                 'status': 'success',
@@ -285,7 +285,7 @@ class RobloxRemoteControl:
                         'action': cmd_data['action'],
                         'server_link': cmd_data.get('server_link'),
                         'target_user': cmd_data.get('target_user'),
-                        'message': cmd_data.get('message', 'bot by RbxServers **Testing** <a:pepebot:1418489370129993728>'),
+                        'message': cmd_data.get('message', 'bot by RbxServers **Testing** 🤖'),
                         'timestamp': cmd_data['timestamp']
                     }
                     
@@ -305,7 +305,7 @@ class RobloxRemoteControl:
             for cmd_id in commands_to_mark_sent:
                 if cmd_id in self.active_commands:
                     self.active_commands[cmd_id]['status'] = 'sent'
-                    logger.info(f"<a:verify2:1418486831993061497> Comando {cmd_id} marcado como enviado")
+                    logger.info(f"✅ Comando {cmd_id} marcado como enviado")
             
             if pending_commands:
                 logger.info(f"📡 Enviando {len(pending_commands)} comandos nuevos a script {script_id}")
@@ -368,7 +368,7 @@ class RobloxRemoteControl:
                 self.active_commands[command_id]['completed_at'] = asyncio.get_event_loop().time()
                 
                 action = self.active_commands[command_id].get('action', 'unknown')
-                logger.info(f"📝 Command {command_id} ({action}) result from {script_id}: {'<a:verify2:1418486831993061497>' if success else '❌'} - {message}")
+                logger.info(f"📝 Command {command_id} ({action}) result from {script_id}: {'✅' if success else '❌'} - {message}")
                 
                 return web.json_response({'status': 'success', 'message': 'Result recorded'})
             else:
@@ -472,11 +472,11 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
                 </head>
                 <body>
                     <div class="container">
-                        <h1><a:pepebot:1418489370129993728> RbxServers Bot API</h1>
+                        <h1>🤖 RbxServers Bot API</h1>
                         <div class="status">
-                            <h2><:stats:1418490788437823599> Estado del Sistema</h2>
-                            <p><strong>Bot de Discord:</strong> <span class="green"><a:verify2:1418486831993061497> Conectado</span></p>
-                            <p><strong>API Web:</strong> <span class="green"><a:verify2:1418486831993061497> Activa</span></p>
+                            <h2>📊 Estado del Sistema</h2>
+                            <p><strong>Bot de Discord:</strong> <span class="green">✅ Conectado</span></p>
+                            <p><strong>API Web:</strong> <span class="green">✅ Activa</span></p>
                             <p><strong>Scripts de Roblox:</strong> <span class="orange">{connected_scripts}</span></p>
                             <p><strong>Comandos Pendientes:</strong> <span class="orange">{active_commands}</span></p>
                         </div>
@@ -530,7 +530,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
             'server_link': server_link,
             'target_user': target_user,
             'target_script': target_script,
-            'message': message or 'bot by RbxServers **Testing** <a:pepebot:1418489370129993728>',
+            'message': message or 'bot by RbxServers **Testing** 🤖',
             'lua_script': lua_script,
             'timestamp': asyncio.get_event_loop().time(),
             'status': 'pending'
@@ -629,7 +629,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
                 processed_info['audio_url'] = data['audio_url']
                 processed_info['status'] = data.get('status', 'completed')
                 processed_info['task_id'] = data.get('task_id', data.get('id'))
-                logger.info(f"<a:verify2:1418486831993061497> Kie.ai callback processed on port 8080: {data['audio_url']}")
+                logger.info(f"✅ Kie.ai callback processed on port 8080: {data['audio_url']}")
             
             # Procesar callback de Suno AI
             elif 'url' in data and 'id' in data:
@@ -637,7 +637,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
                 processed_info['audio_url'] = data['url']
                 processed_info['status'] = data.get('status', 'completed')
                 processed_info['task_id'] = data['id']
-                logger.info(f"<a:verify2:1418486831993061497> Suno AI callback processed on port 8080: {data['url']}")
+                logger.info(f"✅ Suno AI callback processed on port 8080: {data['url']}")
             
             # Procesar callback de ElevenLabs
             elif 'audio' in data:
@@ -645,7 +645,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
                 processed_info['audio_url'] = data['audio']
                 processed_info['status'] = 'completed'
                 processed_info['task_id'] = data.get('request_id')
-                logger.info(f"<a:verify2:1418486831993061497> ElevenLabs callback processed on port 8080")
+                logger.info(f"✅ ElevenLabs callback processed on port 8080")
             
             # Procesar otros formatos
             elif 'download_url' in data:
@@ -1188,7 +1188,7 @@ def setup_commands(bot):
     @bot.tree.command(name="ejemplo", description="Comando de ejemplo cargado dinámicamente")
     async def ejemplo_command(interaction: discord.Interaction):
         embed = discord.Embed(
-            title="<a:verify2:1418486831993061497> Comando de Ejemplo",
+            title="✅ Comando de Ejemplo",
             description="Este comando fue cargado dinámicamente desde la carpeta Commands",
             color=0x00ff88
         )
@@ -1204,7 +1204,7 @@ def setup_commands(bot):
         )
         await interaction.response.send_message(embed=embed, ephemeral=False)
     
-    logger.info("<a:verify2:1418486831993061497> Comando de ejemplo configurado")
+    logger.info("✅ Comando de ejemplo configurado")
     return True
 
 # Opcional: función de limpieza cuando se recarga el módulo
@@ -1256,7 +1256,7 @@ def cleanup_commands(bot):
                     
                     if result is not False:  # Considerar exitoso si no retorna False explícitamente
                         loaded_commands += 1
-                        logger.info(f"<a:verify2:1418486831993061497> Comandos cargados exitosamente desde: {module_name}")
+                        logger.info(f"✅ Comandos cargados exitosamente desde: {module_name}")
                     else:
                         failed_commands += 1
                         logger.warning(f"⚠️ La función setup_commands de {module_name} retornó False")
@@ -1299,28 +1299,73 @@ def remove_delegated_owner(user_id: str) -> bool:
         return True
     return False
 
-class VIPServerScraper:
-    def __init__(self):
-        self.vip_links_file = "vip_links.json"
-        self.users_servers_file = "users_servers.json"
-        self.cookies_file = "roblox_cookies.json"
-        self.unique_vip_links: Set[str] = set()
-        self.server_details: Dict[str, Dict] = {}
-        self.scraping_stats = {
-            'total_scraped': 0,
-            'successful_extractions': 0,
-            'failed_extractions': 0,
-            'last_scrape_time': None,
-            'scrape_duration': 0,
-            'servers_per_minute': 0
-        }
-        self.user_game_servers: Dict[str, Dict] = {}
-        self.user_favorites: Dict[str, Set[str]] = {}
-        self.usage_history: Dict[str, List[Dict]] = {}
-        self.user_cooldowns: Dict[str, float] = {}
-        self.server_reservations: Dict[str, List[Dict]] = {}
-        self.load_existing_links()
-        self.load_roblox_cookies()
+    async def send_expiration_alert(self, discord_id: str, roblox_username: str):
+        """Enviar alerta por DM cuando expire la verificación"""
+        try:
+            user = bot.get_user(int(discord_id))
+            if user:
+                embed = discord.Embed(
+                    title="⏰ Verificación Expirada",
+                    description=f"Tu verificación como **{roblox_username}** ha expirado después de 24 horas.",
+                    color=0xff9900
+                )
+                embed.add_field(
+                    name="🔄 Para volver a usar el bot:",
+                    value="Usa `/verify [tu_nombre_roblox]` nuevamente",
+                    inline=False
+                )
+                embed.add_field(
+                    name="⚡ Verificación rápida:",
+                    value="Ya no necesitas cambiar tu descripción si usas el mismo nombre de usuario",
+                    inline=False
+                )
+                
+                await user.send(embed=embed)
+                logger.info(f"Expiration alert sent to user {discord_id}")
+        except Exception as e:
+            logger.error(f"Failed to send expiration alert to user {discord_id}: {e}")
+
+    def cleanup_expired_data(self):
+        """Limpiar datos expirados"""
+        current_time = time.time()
+        
+        # Limpiar usuarios verificados expirados
+        expired_verified = []
+        for discord_id, data in self.verified_users.items():
+            if current_time - data['verified_at'] > VERIFICATION_DURATION:
+                expired_verified.append((discord_id, data['roblox_username']))
+        
+        for discord_id, roblox_username in expired_verified:
+            del self.verified_users[discord_id]
+            logger.info(f"Verification expired for user {discord_id}")
+            # Enviar alerta por DM de forma asíncrona
+            asyncio.create_task(self.send_expiration_alert(discord_id, roblox_username))
+        
+        # Limpiar verificaciones pendientes expiradas (10 minutos)
+        expired_pending = []
+        for discord_id, data in self.pending_verifications.items():
+            if current_time - data['created_at'] > 600:  # 10 minutos
+                expired_pending.append(discord_id)
+        
+        for discord_id in expired_pending:
+            del self.pending_verifications[discord_id]
+            logger.info(f"Pending verification expired for user {discord_id}")
+        
+        # Limpiar usuarios baneados expirados
+        expired_banned = []
+        for discord_id, ban_time in self.banned_users.items():
+            if current_time - ban_time > BAN_DURATION:
+                expired_banned.append(discord_id)
+        
+        for discord_id in expired_banned:
+            del self.banned_users[discord_id]
+            logger.info(f"Ban expired for user {discord_id}")
+        
+        # Guardar archivos por separado solo si hay cambios
+        if expired_verified or expired_pending:
+            self.save_data()
+        if expired_banned:
+            self.save_bans()
 
     def is_user_banned(self, discord_id: str) -> bool:
         """Verificar si el usuario está baneado"""
@@ -1640,9 +1685,9 @@ class VIPServerScraper:
                         total_links_loaded += len(servers_list)
                         total_users_loaded += 1
                         
-                        logger.info(f"<a:verify2:1418486831993061497> Usuario {user_id_str} cargado: {len(servers_list)} servidores")
+                        logger.info(f"✅ Usuario {user_id_str} cargado: {len(servers_list)} servidores")
                 
-                logger.info(f"<a:verify2:1418486831993061497> Datos cargados desde user_game_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
+                logger.info(f"✅ Datos cargados desde user_game_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
                 
             except Exception as e:
                 logger.error(f"❌ Error cargando user_game_servers.json: {e}")
@@ -1685,7 +1730,7 @@ class VIPServerScraper:
                     if self.links_by_user[user_id_str]:  # Solo contar si tiene datos
                         total_users_loaded += 1
                 
-                logger.info(f"<a:verify2:1418486831993061497> Datos de respaldo cargados desde users_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
+                logger.info(f"✅ Datos de respaldo cargados desde users_servers.json: {total_users_loaded} usuarios, {total_links_loaded} enlaces")
                 
             except Exception as e:
                 logger.error(f"❌ Error cargando users_servers.json: {e}")
@@ -1701,13 +1746,13 @@ class VIPServerScraper:
             self.user_reserved_servers = {}
         
         # Log final de resumen
-        logger.info(f"<:stats:1418490788437823599> RESUMEN FINAL: {total_users_loaded} usuarios cargados con {total_links_loaded} enlaces totales")
+        logger.info(f"📊 RESUMEN FINAL: {total_users_loaded} usuarios cargados con {total_links_loaded} enlaces totales")
         
         # Debug detallado de usuarios cargados
         for user_id, user_games in self.links_by_user.items():
             if isinstance(user_games, dict):
                 user_total_links = sum(len(game_data.get('links', [])) for game_data in user_games.values() if isinstance(game_data, dict))
-                logger.debug(f"<:stats:1418490788437823599> Usuario {user_id}: {len(user_games)} juegos, {user_total_links} enlaces")
+                logger.debug(f"📊 Usuario {user_id}: {len(user_games)} juegos, {user_total_links} enlaces")
             else:
                 logger.warning(f"⚠️ Usuario {user_id} tiene estructura de datos inválida: {type(user_games)}")
         
@@ -1758,7 +1803,7 @@ class VIPServerScraper:
                 with open(self.cookies_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.roblox_cookies = data.get('cookies', {})
-                    logger.info(f"<a:verify2:1418486831993061497> Cargadas cookies de Roblox para {len(self.roblox_cookies)} dominios")
+                    logger.info(f"✅ Cargadas cookies de Roblox para {len(self.roblox_cookies)} dominios")
             else:
                 logger.info(f"⚠️ Archivo de cookies {self.cookies_file} no encontrado, inicializando vacío")
                 self.roblox_cookies = {}
@@ -1777,7 +1822,7 @@ class VIPServerScraper:
             
             with open(self.cookies_file, 'w', encoding='utf-8') as f:
                 json.dump(cookies_data, f, indent=2)
-            logger.info(f"<a:verify2:1418486831993061497> Cookies de Roblox guardadas exitosamente en {self.cookies_file}")
+            logger.info(f"✅ Cookies de Roblox guardadas exitosamente en {self.cookies_file}")
             
         except Exception as e:
             logger.error(f"❌ Error guardando cookies de Roblox: {e}")
@@ -1842,7 +1887,7 @@ class VIPServerScraper:
                     }
                 
                 self.save_roblox_cookies()
-                logger.info(f"<a:verify2:1418486831993061497> {len(roblox_cookies_extracted)} cookies de Roblox extraídas y guardadas desde alt.txt")
+                logger.info(f"✅ {len(roblox_cookies_extracted)} cookies de Roblox extraídas y guardadas desde alt.txt")
                 return len(roblox_cookies_extracted)
             else:
                 logger.warning("⚠️ No se encontraron cookies válidas en alt.txt")
@@ -1941,7 +1986,7 @@ class VIPServerScraper:
             driver.get("https://www.roblox.com")
             time.sleep(2)
             
-            logger.info("<a:verify2:1418486831993061497> Logout completado - sesión cerrada")
+            logger.info("✅ Logout completado - sesión cerrada")
             return True
             
         except Exception as e:
@@ -2002,7 +2047,7 @@ class VIPServerScraper:
                         driver.add_cookie(cookie_dict)
                         cookies_loaded += 1
                         
-                        logger.info(f"<a:verify2:1418486831993061497> Cookie aplicada: {cookie_name} (usuario: {cookie_data.get('username', 'unknown')})")
+                        logger.info(f"✅ Cookie aplicada: {cookie_name} (usuario: {cookie_data.get('username', 'unknown')})")
                         
                     except Exception as cookie_error:
                         cookies_failed += 1
@@ -2051,7 +2096,7 @@ class VIPServerScraper:
     def configure_nopecha_extension(self, driver):
         """Configurar la extensión NopeCHA para resolver CAPTCHAs automáticamente"""
         try:
-            logger.info("<a:pepebot:1418489370129993728> Configurando extensión NopeCHA...")
+            logger.info("🤖 Configurando extensión NopeCHA...")
             
             # Esperar más tiempo a que la extensión se cargue completamente
             time.sleep(10)  # Aumentado de 5 a 10 segundos
@@ -2070,7 +2115,7 @@ class VIPServerScraper:
                     driver.switch_to.window(window)
                     if "chrome-extension://" in driver.current_url and "nopecha" in driver.current_url.lower():
                         nopecha_found = True
-                        logger.info("<a:verify2:1418486831993061497> NopeCHA extension detected and active")
+                        logger.info("✅ NopeCHA extension detected and active")
                         break
                 
                 # Volver a la ventana original
@@ -2087,7 +2132,7 @@ class VIPServerScraper:
                         }
                         return false;
                     """)
-                    logger.info("<a:pepebot:1418489370129993728> NopeCHA verificado mediante script injection")
+                    logger.info("🤖 NopeCHA verificado mediante script injection")
                 except Exception as script_error:
                     logger.debug(f"Script verification failed: {script_error}")
                 
@@ -2198,7 +2243,7 @@ class VIPServerScraper:
             with open(servers_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             
-            logger.info(f"<a:verify2:1418486831993061497> GUARDADO EXITOSO en user_game_servers.json: {users_processed} usuarios, {total_servers_saved} servidores")
+            logger.info(f"✅ GUARDADO EXITOSO en user_game_servers.json: {users_processed} usuarios, {total_servers_saved} servidores")
             
         except Exception as e:
             logger.error(f"❌ ERROR CRÍTICO guardando en user_game_servers.json: {e}")
@@ -2216,7 +2261,7 @@ class VIPServerScraper:
             
             with open(self.vip_links_file, 'w') as f:
                 json.dump(general_data, f, indent=2)
-            logger.info(f"<a:verify2:1418486831993061497> Datos generales guardados exitosamente en {self.vip_links_file}")
+            logger.info(f"✅ Datos generales guardados exitosamente en {self.vip_links_file}")
             
         except Exception as e:
             logger.error(f"❌ Error guardando datos generales: {e}")
@@ -2237,11 +2282,11 @@ class VIPServerScraper:
                 logger.info(f"⏰ Usuario {user_id} en cooldown - {int(remaining)}s restantes")
                 return int(remaining)
             else:
-                logger.debug(f"<a:verify2:1418486831993061497> Cooldown expirado para usuario {user_id}")
+                logger.debug(f"✅ Cooldown expirado para usuario {user_id}")
                 # Remover cooldown expirado
                 del self.user_cooldowns[user_id]
         else:
-            logger.debug(f"<a:verify2:1418486831993061497> No hay cooldown previo para usuario {user_id}")
+            logger.debug(f"✅ No hay cooldown previo para usuario {user_id}")
         return None
 
     def set_cooldown(self, user_id: str):
@@ -2669,7 +2714,7 @@ class VIPServerScraper:
 
             # Limitar a máximo 5 servidores
             servers = servers[:5] if servers else []
-            logger.info(f"<:stats:1418490788437823599> Limitando a {len(servers)} servidores (máximo 5)")
+            logger.info(f"📊 Limitando a {len(servers)} servidores (máximo 5)")
             
             # Actualizar datos del usuario
             data['user_servers'][user_id] = servers
@@ -2696,7 +2741,7 @@ class VIPServerScraper:
                         saved_servers = verify_data.get('user_servers', {}).get(user_id, [])
                         
                     if len(saved_servers) == len(servers):
-                        logger.info(f"<a:verify2:1418486831993061497> GUARDADO EXITOSO en intento {attempt + 1}: {len(saved_servers)} servidores verificados")
+                        logger.info(f"✅ GUARDADO EXITOSO en intento {attempt + 1}: {len(saved_servers)} servidores verificados")
                         return True
                     else:
                         logger.warning(f"⚠️ Intento {attempt + 1}: Guardado incompleto ({len(saved_servers)}/{len(servers)})")
@@ -2795,7 +2840,7 @@ class VIPServerScraper:
                     logger.info(f"Trying approach {i}...")
                     driver = approach()
                     if driver:
-                        logger.info(f"<a:verify2:1418486831993061497> Driver created successfully with approach {i}")
+                        logger.info(f"✅ Driver created successfully with approach {i}")
                         break
                 except Exception as e:
                     logger.warning(f"Approach {i} failed: {e}")
@@ -2817,11 +2862,11 @@ class VIPServerScraper:
             logger.info("🍪 Aplicando cookies de Roblox desde alt.txt...")
             cookies_loaded = self.load_roblox_cookies_to_driver(driver, force_refresh=True)
             if cookies_loaded > 0:
-                logger.info(f"<a:verify2:1418486831993061497> {cookies_loaded} cookies de Roblox aplicadas exitosamente al navegador")
+                logger.info(f"✅ {cookies_loaded} cookies de Roblox aplicadas exitosamente al navegador")
             else:
                 logger.warning("⚠️ No se pudieron aplicar cookies de Roblox - verificar alt.txt")
 
-            logger.info("<a:verify2:1418486831993061497> Chrome driver created successfully (headless mode)")
+            logger.info("✅ Chrome driver created successfully (headless mode)")
             return driver
 
         except Exception as e:
@@ -2892,7 +2937,7 @@ class VIPServerScraper:
                     break
 
             driver = webdriver.Chrome(options=chrome_options)
-            logger.info("<a:verify2:1418486831993061497> Chrome driver created with minimal configuration")
+            logger.info("✅ Chrome driver created with minimal configuration")
             return driver
         except Exception as e:
             logger.error(f"Minimal fallback also failed: {e}")
@@ -2926,7 +2971,7 @@ class VIPServerScraper:
                     if link and link not in server_links:
                         server_links.append(link)
 
-                logger.info(f"<a:verify2:1418486831993061497> Found {len(server_links)} server links")
+                logger.info(f"✅ Found {len(server_links)} server links")
                 return server_links
 
             except TimeoutException:
@@ -2990,7 +3035,7 @@ class VIPServerScraper:
                         'cookies_used': True
                     }
 
-                    logger.debug(f"<a:verify2:1418486831993061497> VIP link extraído con cookies: {vip_link[:50]}...")
+                    logger.debug(f"✅ VIP link extraído con cookies: {vip_link[:50]}...")
                     return vip_link
 
             except TimeoutException:
@@ -3115,7 +3160,7 @@ class VIPServerScraper:
             logger.info("🍪 Aplicando cookies de alt.txt al driver...")
             cookies_applied = self.extract_cookies_from_alt_file()
             if cookies_applied > 0:
-                logger.info(f"<a:verify2:1418486831993061497> {cookies_applied} cookies extraídas y listas para usar")
+                logger.info(f"✅ {cookies_applied} cookies extraídas y listas para usar")
             else:
                 logger.warning("⚠️ No se encontraron cookies en alt.txt")
             
@@ -3168,7 +3213,7 @@ class VIPServerScraper:
                         # Usar el método especializado para guardado directo
                         save_success = self.save_servers_directly_to_new_format(self.current_user_id, current_servers)
                         if save_success:
-                            logger.info(f"<a:verify2:1418486831993061497> CONFIRMADO: Servidor #{new_links_count} guardado exitosamente")
+                            logger.info(f"✅ CONFIRMADO: Servidor #{new_links_count} guardado exitosamente")
                         else:
                             logger.error(f"❌ FALLO: No se pudo guardar servidor #{new_links_count}")
                         
@@ -3197,7 +3242,7 @@ class VIPServerScraper:
                     if (i + 1) % 3 == 0:
                         elapsed = time.time() - start_time
                         eta = (elapsed / (i + 1)) * (len(server_links) - i - 1)
-                        logger.info(f"<:stats:1418490788437823599> Progress: {i + 1}/{len(server_links)} | New: {new_links_count} | ETA: {eta:.1f}s")
+                        logger.info(f"📊 Progress: {i + 1}/{len(server_links)} | New: {new_links_count} | ETA: {eta:.1f}s")
 
                 except Exception as e:
                     logger.error(f"❌ Error processing {server_url}: {e}")
@@ -3224,7 +3269,7 @@ class VIPServerScraper:
             except Exception as e:
                 logger.debug(f"No se pudieron extraer cookies: {e}")
 
-            logger.info(f"<a:verify2:1418486831993061497> Scraping completed in {total_time:.1f}s")
+            logger.info(f"✅ Scraping completed in {total_time:.1f}s")
             user_game_total = len(self.links_by_user[self.current_user_id][game_id]['links']) if self.current_user_id in self.links_by_user and game_id in self.links_by_user[self.current_user_id] else 0
             logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {user_game_total})")
             logger.info(f"⚡ Processing speed: {self.scraping_stats['servers_per_minute']} servers/minute")
@@ -3238,7 +3283,7 @@ class VIPServerScraper:
                 # Usar método especializado para guardado final
                 save_success = self.save_servers_directly_to_new_format(self.current_user_id, user_servers)
                 if save_success:
-                    logger.info(f"<a:verify2:1418486831993061497> GUARDADO FINAL EXITOSO: {len(user_servers)} servidores confirmados en user_game_servers.json")
+                    logger.info(f"✅ GUARDADO FINAL EXITOSO: {len(user_servers)} servidores confirmados en user_game_servers.json")
                 else:
                     logger.error(f"❌ GUARDADO FINAL FALLIDO para {len(user_servers)} servidores")
                 
@@ -3271,7 +3316,7 @@ class VIPServerScraper:
                 
                 with open(self.vip_links_file, 'w') as f:
                     json.dump(general_data, f, indent=2)
-                logger.info(f"<a:verify2:1418486831993061497> Datos generales guardados en {self.vip_links_file}")
+                logger.info(f"✅ Datos generales guardados en {self.vip_links_file}")
                 
             except Exception as e:
                 logger.error(f"❌ Error guardando datos generales: {e}")
@@ -3361,7 +3406,7 @@ class RobloxUserMonitoring:
                     data = json.load(f)
                     self.monitored_users = data.get('monitored_users', {})
                     self.user_states = data.get('user_states', {})
-                    logger.info(f"<a:verify2:1418486831993061497> Alertas cargadas: {len(self.monitored_users)} usuarios monitoreados")
+                    logger.info(f"✅ Alertas cargadas: {len(self.monitored_users)} usuarios monitoreados")
             else:
                 logger.info("⚠️ Archivo de alertas no encontrado, inicializando vacío")
         except Exception as e:
@@ -3460,7 +3505,7 @@ class RobloxUserMonitoring:
                 self.user_states[roblox_user_id].update(current_status)
                 self.user_states[roblox_user_id]['last_check'] = datetime.now().isoformat()
                 
-                logger.info(f"<a:verify2:1418486831993061497> Estado inicial verificado para usuario {roblox_user_id}: {'online' if current_status['online'] else 'offline'}")
+                logger.info(f"✅ Estado inicial verificado para usuario {roblox_user_id}: {'online' if current_status['online'] else 'offline'}")
             
         except Exception as e:
             logger.error(f"Error verificando estado inmediato: {e}")
@@ -3581,7 +3626,7 @@ class RobloxUserMonitoring:
                             # Empezó a jugar
                             notifications.append({
                                 'type': 'started_playing',
-                                'message': f'<a:control:1418490793223651409> **Empezó a jugar:** {current_status.get("game_name", "Unknown Game")}',
+                                'message': f'🎮 **Empezó a jugar:** {current_status.get("game_name", "Unknown Game")}',
                                 'color': 0x00aaff,
                                 'game_name': current_status.get('game_name'),
                                 'game_id': new_game
@@ -3625,7 +3670,7 @@ class RobloxUserMonitoring:
             
             # Guardar datos actualizados
             self.save_alerts_data()
-            logger.info(f"<a:verify2:1418486831993061497> Verificación de usuarios completada")
+            logger.info(f"✅ Verificación de usuarios completada")
             
         except Exception as e:
             logger.error(f"Error en verificación masiva: {e}")
@@ -3662,7 +3707,7 @@ class RobloxUserMonitoring:
                     if user:
                         for notification in notifications:
                             embed = discord.Embed(
-                                title=f"<a:notification:1418491712317292646> Alerta de Usuario",
+                                title=f"🔔 Alerta de Usuario",
                                 description=f"**{roblox_username}** {notification['message']}",
                                 color=notification['color'],
                                 timestamp=datetime.now()
@@ -3682,7 +3727,7 @@ class RobloxUserMonitoring:
                             
                             if notification.get('game_name') and notification.get('game_id'):
                                 embed.add_field(
-                                    name="<a:control:1418490793223651409> Juego",
+                                    name="🎮 Juego",
                                     value=f"[{notification['game_name']}](https://www.roblox.com/games/{notification['game_id']})",
                                     inline=False
                                 )
@@ -3788,13 +3833,13 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
 
 @bot.event
 async def on_ready():
-    logger.info(f'<a:pepebot:1418489370129993728> {bot.user} ha conectado exitosamente a Discord!')
+    logger.info(f'🤖 {bot.user} ha conectado exitosamente a Discord!')
     
     # Verificar API key de CAPTCHA
     import os
     captcha_api_key = os.getenv("CAPTCHA2")
     if captcha_api_key:
-        logger.info(f"<a:verify2:1418486831993061497> API key de CAPTCHA configurada: {captcha_api_key[:10]}...")
+        logger.info(f"✅ API key de CAPTCHA configurada: {captcha_api_key[:10]}...")
     else:
         logger.warning("⚠️ API key de CAPTCHA (CAPTCHA2) no encontrada en variables de entorno")
         logger.warning("⚠️ Los CAPTCHAs no podrán resolverse automáticamente")
@@ -3839,22 +3884,22 @@ async def on_ready():
                     user_links += game_links
                     total_links += game_links
             total_games += len(user_games)
-            logger.debug(f"<:stats:1418490788437823599> Usuario {user_id}: {user_links} enlaces en {len(user_games)} juegos")
+            logger.debug(f"📊 Usuario {user_id}: {user_links} enlaces en {len(user_games)} juegos")
         else:
             logger.warning(f"⚠️ Usuario {user_id} tiene estructura de datos inválida: {type(user_games)}")
     
-    logger.info(f'<a:control:1418490793223651409> Bot listo con {total_links} enlaces VIP cargados para {total_users} usuarios en {total_games} juegos')
+    logger.info(f'🎮 Bot listo con {total_links} enlaces VIP cargados para {total_users} usuarios en {total_games} juegos')
     
     # Log adicional para debug si no se cargan datos
     if total_links == 0 and total_users == 0:
         logger.warning("⚠️ No se cargaron datos de servidores. Verificando archivo users_servers.json...")
         if Path(scraper.users_servers_file).exists():
-            logger.info(f"<a:verify2:1418486831993061497> Archivo {scraper.users_servers_file} existe")
+            logger.info(f"✅ Archivo {scraper.users_servers_file} existe")
             try:
                 with open(scraper.users_servers_file, 'r', encoding='utf-8') as f:
                     check_data = json.load(f)
                     check_users = check_data.get('users', {})
-                    logger.info(f"<:stats:1418490788437823599> Archivo contiene {len(check_users)} usuarios")
+                    logger.info(f"📊 Archivo contiene {len(check_users)} usuarios")
                     for uid, udata in list(check_users.items())[:3]:  # Mostrar primeros 3
                         games_count = len(udata.get('games', {}))
                         logger.info(f"  Usuario {uid}: {games_count} juegos")
@@ -3872,13 +3917,13 @@ async def on_ready():
     logger.info(f"👑 Owners delegados: {len(delegated_owners)}")
 
     # Verification system is now manual-based, no API needed
-    logger.info("<a:verify2:1418486831993061497> Sistema de verificación manual inicializado exitosamente")
+    logger.info("✅ Sistema de verificación manual inicializado exitosamente")
 
     # Setup Roblox control commands
     global roblox_control_commands
     try:
         roblox_control_commands = setup_roblox_control_commands(bot, remote_control)
-        logger.info("<a:pepebot:1418489370129993728> Comandos de control remoto de Roblox configurados")
+        logger.info("🤖 Comandos de control remoto de Roblox configurados")
     except Exception as e:
         logger.error(f"❌ Error configurando comandos de control remoto: {e}")
 
@@ -3898,7 +3943,7 @@ async def on_ready():
         from alert_system import setup_alert_commands
         
         startup_alert_system = setup_alert_commands(bot)
-        logger.info("<a:notification:1418491712317292646> Sistema de alertas de inicio configurado")
+        logger.info("🔔 Sistema de alertas de inicio configurado")
     except Exception as e:
         logger.error(f"❌ Error configurando sistema de alertas de inicio: {e}")
 
@@ -3958,11 +4003,11 @@ async def on_ready():
     try:
         logger.info("🔄 Sincronizando comandos slash después de carga dinámica...")
         synced = await bot.tree.sync()
-        logger.info(f"<a:verify2:1418486831993061497> {len(synced)} comandos sincronizados después de carga dinámica")
+        logger.info(f"✅ {len(synced)} comandos sincronizados después de carga dinámica")
         
         # Mostrar comandos sincronizados
         for cmd in synced:
-            logger.info(f"  <a:verify2:1418486831993061497> /{cmd.name} - {cmd.description[:60]}...")
+            logger.info(f"  ✅ /{cmd.name} - {cmd.description[:60]}...")
             
     except Exception as e:
         logger.error(f"❌ Error sincronizando comandos después de carga dinámica: {e}")
@@ -3971,7 +4016,7 @@ async def on_ready():
     # Inicializar sistema de monitoreo de usuarios
     try:
         user_monitoring.start_monitoring()
-        logger.info("<a:notification:1418491712317292646> Sistema de alertas de usuarios iniciado")
+        logger.info("🔔 Sistema de alertas de usuarios iniciado")
     except Exception as e:
         logger.error(f"❌ Error iniciando sistema de alertas: {e}")
 
@@ -4001,7 +4046,7 @@ async def on_ready():
 class VerificationConfirmButton(discord.ui.Button):
     def __init__(self, user_id: str):
         super().__init__(
-            label="Confirmar Verificación",
+            label="✅ Confirmar Verificación",
             style=discord.ButtonStyle.success,
             custom_id=f"verify_confirm_{user_id}"
         )
@@ -4022,7 +4067,7 @@ class VerificationConfirmButton(discord.ui.Button):
             )
             return
         
-        user_logger.info(f"<a:verify2:1418486831993061497> Usuario autorizado {username} confirmando verificación")
+        user_logger.info(f"✅ Usuario autorizado {username} confirmando verificación")
         await interaction.response.defer()
         
         try:
@@ -4046,7 +4091,7 @@ class VerificationConfirmButton(discord.ui.Button):
             # Verificar si ya está verificado
             if roblox_verification.is_user_verified(user_id):
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Ya Verificado",
+                    title="✅ Ya Verificado",
                     description="Ya estás verificado y puedes usar todos los comandos del bot.",
                     color=0x00ff88
                 )
@@ -4129,7 +4174,7 @@ class VerificationConfirmButton(discord.ui.Button):
                         color=0xff9900
                     )
                     embed.add_field(
-                        name="<a:foco:1418492184373755966> ¿Qué hacer ahora?",
+                        name="💡 ¿Qué hacer ahora?",
                         value="• Usa tu propio nombre de usuario de Roblox\n• Ejecuta `/verify` nuevamente con tu nombre real\n• **Una segunda advertencia resultará en ban de 7 días**",
                         inline=False
                     )
@@ -4139,12 +4184,12 @@ class VerificationConfirmButton(discord.ui.Button):
             
             # Verificación completada exitosamente
             success_embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Verificación Completada Automáticamente",
+                title="✅ Verificación Completada Automáticamente",
                 description=f"¡Excelente **{roblox_username}**! El código fue encontrado en tu descripción y la verificación se completó exitosamente.",
                 color=0x00ff88
             )
             success_embed.add_field(
-                name="<a:control:1418490793223651409> Ahora puedes usar:",
+                name="🎮 Ahora puedes usar:",
                 value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
                 inline=False
             )
@@ -4164,7 +4209,7 @@ class VerificationConfirmButton(discord.ui.Button):
                 inline=True
             )
             success_embed.add_field(
-                name="<a:foco:1418492184373755966> Consejo:",
+                name="💡 Consejo:",
                 value="Ya puedes **remover el código** de tu descripción de Roblox si quieres.",
                 inline=False
             )
@@ -4272,7 +4317,7 @@ async def check_verification(interaction: discord.Interaction, defer_response: b
             
             return False
         
-        user_logger.info(f"<a:verify2:1418486831993061497> Usuario verificado exitosamente: {username} (ID: {user_id})")
+        user_logger.info(f"✅ Usuario verificado exitosamente: {username} (ID: {user_id})")
         return True
         
     except discord.errors.NotFound as e:
@@ -4365,7 +4410,7 @@ def detect_captcha(driver):
                                         sitekey = element.get_attribute(attr)
                                         if sitekey:
                                             driver.switch_to.default_content()
-                                            logger.info(f"<a:verify2:1418486831993061497> Sitekey encontrado en iframe: {sitekey}")
+                                            logger.info(f"✅ Sitekey encontrado en iframe: {sitekey}")
                                             return sitekey
                             except Exception as e:
                                 logger.debug(f"Error en iframe con selector {selector}: {e}")
@@ -4379,7 +4424,7 @@ def detect_captcha(driver):
                             sitekey = params.get('sitekey', [None])[0]
                             if sitekey:
                                 driver.switch_to.default_content()
-                                logger.info(f"<a:verify2:1418486831993061497> Sitekey extraído de URL del iframe: {sitekey}")
+                                logger.info(f"✅ Sitekey extraído de URL del iframe: {sitekey}")
                                 return sitekey
                                 
                     finally:
@@ -4414,7 +4459,7 @@ def detect_captcha(driver):
                 matches = re.findall(pattern, page_source, re.IGNORECASE)
                 if matches:
                     sitekey = matches[0]
-                    logger.info(f"<a:verify2:1418486831993061497> Sitekey encontrado en código fuente: {sitekey}")
+                    logger.info(f"✅ Sitekey encontrado en código fuente: {sitekey}")
                     return sitekey
                     
         except Exception as e:
@@ -4450,7 +4495,7 @@ def resolver_captcha(sitekey, url):
             logger.error("❌ API key CAPTCHA2 no encontrada en variables de entorno")
             return None
             
-        logger.info(f"<a:pepebot:1418489370129993728> Resolviendo CAPTCHA con sitekey: {sitekey[:20]}...")
+        logger.info(f"🤖 Resolviendo CAPTCHA con sitekey: {sitekey[:20]}...")
         logger.info(f"🌐 URL: {url}")
         logger.info(f"🔑 API Key configurada: {api_key[:10]}... (longitud: {len(api_key)})")
         
@@ -4494,13 +4539,13 @@ def resolver_captcha(sitekey, url):
         )
         
         logger.info(f"📥 RESPUESTA RECIBIDA DE API NOPECHA:")
-        logger.info(f"<:stats:1418490788437823599> Status Code: {response.status_code}")
+        logger.info(f"📊 Status Code: {response.status_code}")
         logger.info(f"📋 Headers de respuesta: {dict(response.headers)}")
         logger.info(f"📝 Contenido de respuesta: {response.text}")
         
         if response.status_code == 200:
             result = response.json()
-            logger.info(f"<a:verify2:1418486831993061497> Respuesta JSON exitosa: {result}")
+            logger.info(f"✅ Respuesta JSON exitosa: {result}")
             
             token = result.get("data")
             if token:
@@ -4538,7 +4583,7 @@ def resolver_captcha(sitekey, url):
                     result2 = response2.json()
                     token = result2.get("data")
                     if token:
-                        logger.info(f"<a:verify2:1418486831993061497> CAPTCHA resuelto en segundo intento!")
+                        logger.info(f"✅ CAPTCHA resuelto en segundo intento!")
                         logger.info(f"🎫 Token del segundo intento: {token[:20]}...")
                         return token
                         
@@ -4602,7 +4647,7 @@ def aplicar_token_captcha(driver, token):
                         # También intentar con setAttribute
                         driver.execute_script("arguments[0].setAttribute('value', arguments[1]);", field, token)
                         
-                        logger.info(f"<a:verify2:1418486831993061497> Token aplicado en campo: {selector}")
+                        logger.info(f"✅ Token aplicado en campo: {selector}")
                         token_aplicado = True
                         break
                         
@@ -4628,7 +4673,7 @@ def aplicar_token_captcha(driver, token):
                             for field in response_fields:
                                 if field.is_enabled():
                                     driver.execute_script("arguments[0].value = arguments[1];", field, token)
-                                    logger.info(f"<a:verify2:1418486831993061497> Token aplicado en iframe {i+1}: {selector}")
+                                    logger.info(f"✅ Token aplicado en iframe {i+1}: {selector}")
                                     token_aplicado = True
                                     break
                             if token_aplicado:
@@ -4697,17 +4742,17 @@ def aplicar_token_captcha(driver, token):
                 for callback in callbacks:
                     try:
                         driver.execute_script(callback)
-                        logger.debug("<a:verify2:1418486831993061497> Callback ejecutado exitosamente")
+                        logger.debug("✅ Callback ejecutado exitosamente")
                     except Exception as e:
                         logger.debug(f"Error ejecutando callback: {e}")
                 
-                logger.info("<a:verify2:1418486831993061497> Callbacks de CAPTCHA ejecutados")
+                logger.info("✅ Callbacks de CAPTCHA ejecutados")
                 
             except Exception as e:
                 logger.warning(f"⚠️ Error ejecutando callbacks: {e}")
         
         if token_aplicado:
-            logger.info("<a:verify2:1418486831993061497> Token de CAPTCHA aplicado exitosamente")
+            logger.info("✅ Token de CAPTCHA aplicado exitosamente")
             return True
         else:
             logger.warning("⚠️ No se pudo aplicar el token - no se encontraron campos de respuesta")
@@ -4791,7 +4836,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         )
         initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
         initial_embed.add_field(name="🍪 Cookies Disponibles", value=f"{len(cookies_disponibles)} total", inline=True)
-        initial_embed.add_field(name="<:stats:1418490788437823599> Cantidad Solicitada", value=f"{cantidad_real}/{cantidad}", inline=True)
+        initial_embed.add_field(name="📊 Cantidad Solicitada", value=f"{cantidad_real}/{cantidad}", inline=True)
         initial_embed.add_field(name="⏳ Estado", value="Iniciando envío...", inline=False)
         
         message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
@@ -4818,8 +4863,8 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                 )
                 progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
                 progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
-                progress_embed.add_field(name="🚪 Logout", value="<a:verify2:1418486831993061497> Completo entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
-                progress_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
+                progress_embed.add_field(name="🚪 Logout", value="✅ Completo entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
+                progress_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
                 progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
                 
@@ -4898,7 +4943,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                 # Procesar resultado (CADA COOKIE ES INDEPENDIENTE)
                 if resultado and resultado["status"] == "success":
                     exitosas += 1
-                    logger.info(f"<a:verify2:1418486831993061497> Solicitud exitosa con cookie {cookie_data['source']} (#{i + 1})")
+                    logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']} (#{i + 1})")
                     
                 elif resultado and resultado["status"] == "already_friends":
                     ya_amigos += 1
@@ -4928,7 +4973,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         # Crear embed final con resultados
         if exitosas > 0:
             color = 0x00ff88  # Verde si hay éxitos
-            title = "<a:verify2:1418486831993061497> Solicitudes Completadas"
+            title = "✅ Solicitudes Completadas"
         elif ya_amigos > 0:
             color = 0xffaa00  # Amarillo si ya son amigos
             title = "👥 Solicitudes Procesadas"
@@ -4943,10 +4988,10 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
         )
         
         final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-        final_embed.add_field(name="<:stats:1418490788437823599> Total Procesadas", value=f"{cantidad_real}", inline=True)
+        final_embed.add_field(name="📊 Total Procesadas", value=f"{cantidad_real}", inline=True)
         final_embed.add_field(name="🍪 Cookies Usadas", value=f"{len(cookies_a_usar)}", inline=True)
         
-        final_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
+        final_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
         final_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
         final_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
         
@@ -4981,7 +5026,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
             )
         elif ya_amigos > 0:
             final_embed.add_field(
-                name="<a:foco:1418492184373755966> Información:",
+                name="💡 Información:",
                 value="Las cuentas ya son amigas del usuario objetivo o ya tienen solicitudes pendientes.",
                 inline=False
             )
@@ -5000,7 +5045,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
             color=0xff0000
         )
         error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}```", inline=False)
-        error_embed.add_field(name="<a:foco:1418492184373755966> Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
+        error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 @bot.tree.command(name="scripts", description="Generar scripts de Roblox o chatear usando la IA de RbxServers")
@@ -5042,7 +5087,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                 color=0xff0000
             )
             embed.add_field(
-                name="<a:foco:1418492184373755966> Para el administrador:",
+                name="💡 Para el administrador:",
                 value="Agrega la variable `GEMINI_API_KEY` en los secretos de Replit",
                 inline=False
             )
@@ -5051,7 +5096,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
         
         # Crear mensaje de cargando
         loading_embed = discord.Embed(
-            title="<a:pepebot:1418489370129993728> RbxServers-v1 Pensando...",
+            title="🤖 RbxServers-v1 Pensando...",
             description=f"Procesando tu petición: `{peticion[:100]}{'...' if len(peticion) > 100 else ''}`",
             color=0xffaa00
         )
@@ -5094,7 +5139,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                                 
                                 # Crear embed con la respuesta
                                 response_embed = discord.Embed(
-                                    title="<a:pepebot:1418489370129993728> Respuesta de RbxServers-v1",
+                                    title="🤖 Respuesta de RbxServers-v1",
                                     description="",
                                     color=0x00ff88
                                 )
@@ -5130,8 +5175,8 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                                 # Detectar si es un script de Roblox
                                 if any(keyword in gemini_response.lower() for keyword in ["local ", "game:", "script", "function", "end", "wait(", "print("]):
                                     response_embed.add_field(
-                                        name="<a:control:1418490793223651409> Tipo de Respuesta:",
-                                        value="<a:verify2:1418486831993061497> Script de Roblox detectado",
+                                        name="🎮 Tipo de Respuesta:",
+                                        value="✅ Script de Roblox detectado",
                                         inline=True
                                     )
                                     response_embed.add_field(
@@ -5164,7 +5209,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                             color=0xff0000
                         )
                         error_embed.add_field(
-                            name="<a:foco:1418492184373755966> Posibles causas:",
+                            name="💡 Posibles causas:",
                             value="• Petición muy larga\n• Contenido inapropiado\n• Límites de la API",
                             inline=False
                         )
@@ -5177,7 +5222,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                             color=0xff0000
                         )
                         error_embed.add_field(
-                            name="<a:foco:1418492184373755966> Para el administrador:",
+                            name="💡 Para el administrador:",
                             value="Verifica la API key en los secretos de Replit",
                             inline=False
                         )
@@ -5198,7 +5243,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                     color=0xff9900
                 )
                 timeout_embed.add_field(
-                    name="<a:foco:1418492184373755966> Sugerencia:",
+                    name="💡 Sugerencia:",
                     value="Intenta con una petición más corta o específica",
                     inline=False
                 )
@@ -5243,7 +5288,7 @@ async def sync_command(interaction: discord.Interaction):
     try:
         synced = await bot.tree.sync()
         embed = discord.Embed(
-            title="<a:verify2:1418486831993061497> Comandos Sincronizados",
+            title="✅ Comandos Sincronizados",
             description=f"Se sincronizaron {len(synced)} comandos slash exitosamente.",
             color=0x00ff88
         )
@@ -5254,7 +5299,7 @@ async def sync_command(interaction: discord.Interaction):
             inline=False
         )
         embed.add_field(
-            name="<a:foco:1418492184373755966> Nota",
+            name="💡 Nota",
             value="Los comandos pueden tardar hasta 1 hora en aparecer en Discord.",
             inline=False
         )
@@ -5313,7 +5358,7 @@ async def say_command(interaction: discord.Interaction, mensaje: str):
                 return
         
         # Responder primero con confirmación
-        await interaction.response.send_message("<a:verify2:1418486831993061497> Mensaje enviado exitosamente.", ephemeral=True)
+        await interaction.response.send_message("✅ Mensaje enviado exitosamente.", ephemeral=True)
         
         # Enviar el mensaje del usuario en el mismo canal
         await interaction.followup.send(mensaje, ephemeral=False)
@@ -5455,7 +5500,7 @@ async def on_message(message):
                 color=0xffaa00
             )
             loading_embed.add_field(name="⏳ Estado", value="Conectando con Pollinations AI...", inline=True)
-            loading_embed.add_field(name="<a:pepebot:1418489370129993728> Modelo", value="RbxServers-v1 x Pollinations", inline=True)
+            loading_embed.add_field(name="🤖 Modelo", value="RbxServers-v1 x Pollinations", inline=True)
             loading_embed.add_field(name="🎨 Tipo", value="Generación de Imagen", inline=True)
             loading_embed.set_footer(text=f"Solicitado por {username}")
             
@@ -5493,7 +5538,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                 )
                 
                 result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
-                result_embed.add_field(name="<a:pepebot:1418489370129993728> Generado por", value="RbxServers-v1 x Pollinations", inline=True)
+                result_embed.add_field(name="🤖 Generado por", value="RbxServers-v1 x Pollinations", inline=True)
                 result_embed.add_field(name="⏰ Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
                 
                 result_embed.set_footer(text="🎨 RbxServers-v1 x Pollinations • Generador de Imágenes IA")
@@ -5581,7 +5626,7 @@ async def credits_command(interaction: discord.Interaction):
         
         # Estadísticas del bot
         embed.add_field(
-            name="<:stats:1418490788437823599> Estadísticas",
+            name="📊 Estadísticas",
             value=f"• **Usuarios verificados:** {len(roblox_verification.verified_users)}\n• **Comandos disponibles:** 50+\n• **Servidores VIP:** Miles de enlaces\n• **Uptime:** 24/7",
             inline=True
         )
@@ -5640,7 +5685,7 @@ async def credits_command(interaction: discord.Interaction):
             color=0xff0000
         )
         error_embed.add_field(
-            name="<a:foco:1418492184373755966> Sugerencia",
+            name="💡 Sugerencia",
             value="Intenta nuevamente en unos momentos",
             inline=False
         )
@@ -5723,7 +5768,7 @@ async def executors_command(interaction: discord.Interaction):
             )
             
             dm_embed.add_field(
-                name="<a:foco:1418492184373755966> **Educational and Legal Alternatives**",
+                name="💡 **Educational and Legal Alternatives**",
                 value="**Learn Official Development:**\n• [Roblox Studio](https://www.roblox.com/create) - Free official tool\n• [Developer Hub](https://developer.roblox.com/) - Complete documentation\n• [Roblox Education](https://education.roblox.com/) - Official courses\n• [YouTube Creator Hub](https://www.youtube.com/robloxdev) - Official tutorials\n\n**Development Communities:**\n• Roblox Developer Forum\n• DevForum Communities\n• Official Roblox Discord Servers\n• Developer groups and communities",
                 inline=False
             )
@@ -5750,7 +5795,7 @@ async def executors_command(interaction: discord.Interaction):
             dm_embed.timestamp = datetime.now()
             
             await user.send(embed=dm_embed)
-            logger.info(f"<a:verify2:1418486831993061497> Educational DM sent successfully to {username}")
+            logger.info(f"✅ Educational DM sent successfully to {username}")
             
         except discord.Forbidden:
             # Si no se puede enviar DM, informar en la respuesta ephemeral
@@ -5760,7 +5805,7 @@ async def executors_command(interaction: discord.Interaction):
                 color=0xff9900
             )
             no_dm_embed.add_field(
-                name="<a:foco:1418492184373755966> To receive complete information:",
+                name="💡 To receive complete information:",
                 value="1. Go to **User Settings** → **Privacy & Safety**\n2. Enable **Allow direct messages from server members**\n3. Run the command again",
                 inline=False
             )
@@ -5802,7 +5847,7 @@ async def executors_command(interaction: discord.Interaction):
         # Información adicional
         embed.add_field(
             name="📱 Compatibilidad",
-            value="• **Android:** <a:verify2:1418486831993061497> Compatible\n• **iOS:** ❌ No compatible\n• **PC:** Usar otros ejecutores",
+            value="• **Android:** ✅ Compatible\n• **iOS:** ❌ No compatible\n• **PC:** Usar otros ejecutores",
             inline=True
         )
         
@@ -5814,7 +5859,7 @@ async def executors_command(interaction: discord.Interaction):
         
         embed.add_field(
             name="<:1000182637:1396049292879200256> Seguridad",
-            value="• Enlaces verificados <a:verify2:1418486831993061497>\n• Actualizados <a:verify2:1418486831993061497>\n• Sin virus <a:verify2:1418486831993061497>",
+            value="• Enlaces verificados ✅\n• Actualizados ✅\n• Sin virus ✅",
             inline=True
         )
         
@@ -5843,7 +5888,7 @@ async def executors_command(interaction: discord.Interaction):
             color=0xff0000
         )
         error_embed.add_field(
-            name="<a:foco:1418492184373755966> Sugerencia",
+            name="💡 Sugerencia",
             value="Intenta nuevamente en unos momentos",
             inline=False
         )
@@ -5895,14 +5940,14 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
         
         # Mensaje inicial
         embed = discord.Embed(
-            title="<a:control:1418490793223651409> Creando Cuenta de Roblox",
+            title="🎮 Creando Cuenta de Roblox",
             description=f"Iniciando creación automatizada de cuenta con username: **{new_username}**",
             color=0xffaa00
         )
         embed.add_field(name="👤 Username Propuesto", value=f"`{new_username}`", inline=True)
         embed.add_field(name="🖥️ Modo", value="Automatizado con NopeCHA API", inline=True)
         embed.add_field(name="🔄 Estado", value="Inicializando navegador...", inline=True)
-        embed.add_field(name="<a:pepebot:1418489370129993728> Anti-CAPTCHA", value="<a:verify2:1418486831993061497> NopeCHA API Configurada", inline=True)
+        embed.add_field(name="🤖 Anti-CAPTCHA", value="✅ NopeCHA API Configurada", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -5963,18 +6008,18 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 # Intentar con WebDriverManager primero
                 from webdriver_manager.chrome import ChromeDriverManager
                 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-                logger.info("<a:verify2:1418486831993061497> Driver creado con WebDriverManager")
+                logger.info("✅ Driver creado con WebDriverManager")
             except Exception as e:
                 logger.warning(f"WebDriverManager falló: {e}")
                 try:
                     # Intentar con driver del sistema
                     driver = webdriver.Chrome(service=Service(), options=chrome_options)
-                    logger.info("<a:verify2:1418486831993061497> Driver creado con chromedriver del sistema")
+                    logger.info("✅ Driver creado con chromedriver del sistema")
                 except Exception as e2:
                     logger.error(f"Sistema chromedriver falló: {e2}")
                     # Último intento sin service específico
                     driver = webdriver.Chrome(options=chrome_options)
-                    logger.info("<a:verify2:1418486831993061497> Driver creado sin service específico")
+                    logger.info("✅ Driver creado sin service específico")
             
             if not driver:
                 raise Exception("No se pudo crear el driver de Chrome")
@@ -5992,10 +6037,10 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             update_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
             update_embed.add_field(name="🖥️ Modo", value="Chrome + NopeCHA API", inline=True)
             update_embed.add_field(name="🔄 Estado", value="Navegando a Roblox...", inline=True)
-            update_embed.add_field(name="<a:pepebot:1418489370129993728> CAPTCHA Solver", value="<a:verify2:1418486831993061497> API Lista", inline=True)
+            update_embed.add_field(name="🤖 CAPTCHA Solver", value="✅ API Lista", inline=True)
             await message.edit(embed=update_embed)
             
-            logger.info("<a:verify2:1418486831993061497> Navegador iniciado exitosamente, navegando a Roblox...")
+            logger.info("✅ Navegador iniciado exitosamente, navegando a Roblox...")
             
             # Navegar a Roblox
             driver.get("https://www.roblox.com")
@@ -6024,7 +6069,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     signup_tab = driver.find_element(By.ID, "signup-button")
                     signup_tab.click()
                     time.sleep(3)
-                    logger.info("<a:verify2:1418486831993061497> Botón de registro clickeado")
+                    logger.info("✅ Botón de registro clickeado")
                 except Exception as e:
                     logger.info("ℹ️ Botón de registro no encontrado o ya en página de registro")
                 
@@ -6044,7 +6089,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     for month_val in month_values:
                         try:
                             Select(month_dropdown).select_by_value(month_val)
-                            logger.info(f"<a:verify2:1418486831993061497> Mes seleccionado: Marzo (valor: {month_val})")
+                            logger.info(f"✅ Mes seleccionado: Marzo (valor: {month_val})")
                             fields_completed += 1
                             month_selected = True
                             break
@@ -6054,7 +6099,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     if not month_selected:
                         try:
                             Select(month_dropdown).select_by_index(3)
-                            logger.info("<a:verify2:1418486831993061497> Mes seleccionado por índice: Marzo")
+                            logger.info("✅ Mes seleccionado por índice: Marzo")
                             fields_completed += 1
                         except Exception:
                             logger.warning("⚠️ No se pudo seleccionar mes automáticamente")
@@ -6066,7 +6111,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     # Día (15)
                     day_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "DayDropdown")))
                     Select(day_dropdown).select_by_value("15")
-                    logger.info("<a:verify2:1418486831993061497> Día seleccionado: 15")
+                    logger.info("✅ Día seleccionado: 15")
                     fields_completed += 1
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando día: {e}")
@@ -6075,7 +6120,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     # Año (2006)
                     year_dropdown = wait.until(EC.element_to_be_clickable((By.ID, "YearDropdown")))
                     Select(year_dropdown).select_by_value("2006")
-                    logger.info(f"<a:verify2:1418486831993061497> Año seleccionado: {birth_year}")
+                    logger.info(f"✅ Año seleccionado: {birth_year}")
                     fields_completed += 1
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando año: {e}")
@@ -6088,7 +6133,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     username_input = wait.until(EC.element_to_be_clickable((By.ID, "signup-username")))
                     username_input.clear()
                     username_input.send_keys(new_username)
-                    logger.info(f"<a:verify2:1418486831993061497> Username '{new_username}' ingresado exitosamente")
+                    logger.info(f"✅ Username '{new_username}' ingresado exitosamente")
                     fields_completed += 1
                     form_data['username'] = new_username
                 except Exception as e:
@@ -6101,7 +6146,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     password_input = wait.until(EC.element_to_be_clickable((By.ID, "signup-password")))
                     password_input.clear()
                     password_input.send_keys(strong_password)
-                    logger.info("<a:verify2:1418486831993061497> Password configurada exitosamente")
+                    logger.info("✅ Password configurada exitosamente")
                     fields_completed += 1
                     form_data['password'] = strong_password
                 except Exception as e:
@@ -6112,14 +6157,14 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 try:
                     male_button = wait.until(EC.element_to_be_clickable((By.ID, "MaleButton")))
                     male_button.click()
-                    logger.info("<a:verify2:1418486831993061497> Género masculino seleccionado")
+                    logger.info("✅ Género masculino seleccionado")
                     fields_completed += 1
                     form_data['gender'] = 'Male'
                 except Exception as e:
                     logger.warning(f"❌ Error seleccionando género: {e}")
                     try:
                         driver.find_element(By.ID, "FemaleButton").click()
-                        logger.info("<a:verify2:1418486831993061497> Género femenino seleccionado como respaldo")
+                        logger.info("✅ Género femenino seleccionado como respaldo")
                         fields_completed += 1
                         form_data['gender'] = 'Female'
                     except Exception as e2:
@@ -6130,21 +6175,21 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 
                 # Actualizar estado del formulario
                 form_status_embed = discord.Embed(
-                    title="<:stats:1418490788437823599> Formulario Completado",
+                    title="📊 Formulario Completado",
                     description=f"**{fields_completed}** de 5 campos completados para **{new_username}**",
                     color=0x00ff88 if fields_completed >= 4 else 0xffaa00
                 )
                 
                 completed_data = "\n".join([f"• {key.title()}: `{value}`" for key, value in form_data.items()])
                 form_status_embed.add_field(
-                    name="<a:verify2:1418486831993061497> Datos Completados",
+                    name="✅ Datos Completados",
                     value=completed_data if completed_data else "Ninguno",
                     inline=False
                 )
                 
                 progress_bar = "█" * fields_completed + "░" * (5 - fields_completed)
                 form_status_embed.add_field(
-                    name="<:stats:1418490788437823599> Progreso",
+                    name="📊 Progreso",
                     value=f"`{progress_bar}` {fields_completed}/5 campos",
                     inline=False
                 )
@@ -6158,7 +6203,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                     try:
                         signup_button = wait.until(EC.element_to_be_clickable((By.ID, "signup-button")))
                         signup_button.click()
-                        logger.info("<a:verify2:1418486831993061497> Botón de registro clickeado exitosamente")
+                        logger.info("✅ Botón de registro clickeado exitosamente")
                         
                         # Esperar un momento para que aparezca el CAPTCHA
                         time.sleep(5)
@@ -6202,13 +6247,13 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                                 
                                 # Actualizar estado de CAPTCHA detectado
                                 captcha_detect_embed = discord.Embed(
-                                    title="<a:pepebot:1418489370129993728> CAPTCHA Detectado",
+                                    title="🤖 CAPTCHA Detectado",
                                     description=f"Se detectó un CAPTCHA en el registro de **{new_username}**. Resolviendo automáticamente...",
                                     color=0xff9900
                                 )
                                 captcha_detect_embed.add_field(name="🔑 Sitekey", value=f"`{sitekey[:20]}...`", inline=True)
                                 captcha_detect_embed.add_field(name="🔄 Intento", value=f"{captcha_attempts}/{max_captcha_attempts}", inline=True)
-                                captcha_detect_embed.add_field(name="<a:pepebot:1418489370129993728> API", value="NopeCHA API", inline=True)
+                                captcha_detect_embed.add_field(name="🤖 API", value="NopeCHA API", inline=True)
                                 
                                 await message.edit(embed=captcha_detect_embed)
                                 
@@ -6223,19 +6268,19 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                                     logger.error(f"❌ No se obtuvo token de resolver_captcha()")
                                 
                                 if token:
-                                    logger.info("<a:verify2:1418486831993061497> CAPTCHA resuelto, aplicando token...")
+                                    logger.info("✅ CAPTCHA resuelto, aplicando token...")
                                     
                                     # Aplicar token
                                     if aplicar_token_captcha(driver, token):
-                                        logger.info("<a:verify2:1418486831993061497> Token de CAPTCHA aplicado exitosamente")
+                                        logger.info("✅ Token de CAPTCHA aplicado exitosamente")
                                         
                                         # Actualizar estado de resolución exitosa
                                         captcha_success_embed = discord.Embed(
-                                            title="<a:verify2:1418486831993061497> CAPTCHA Resuelto",
+                                            title="✅ CAPTCHA Resuelto",
                                             description=f"El CAPTCHA ha sido resuelto exitosamente para **{new_username}**.",
                                             color=0x00ff88
                                         )
-                                        captcha_success_embed.add_field(name="<a:pepebot:1418489370129993728> Método", value="NopeCHA API", inline=True)
+                                        captcha_success_embed.add_field(name="🤖 Método", value="NopeCHA API", inline=True)
                                         captcha_success_embed.add_field(name="⏱️ Intento", value=f"{captcha_attempts}", inline=True)
                                         captcha_success_embed.add_field(name="🔄 Estado", value="Finalizando registro...", inline=True)
                                         
@@ -6245,7 +6290,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                                         try:
                                             submit_button = driver.find_element(By.ID, "signup-button")
                                             submit_button.click()
-                                            logger.info("<a:verify2:1418486831993061497> Botón de envío clickeado después de resolver CAPTCHA")
+                                            logger.info("✅ Botón de envío clickeado después de resolver CAPTCHA")
                                         except:
                                             logger.info("ℹ️ No se encontró botón de envío adicional")
                                         
@@ -6274,8 +6319,8 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                             )
                             final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
                             final_embed.add_field(name="🔒 Password", value=f"`{strong_password}`", inline=True)
-                            final_embed.add_field(name="<a:pepebot:1418489370129993728> CAPTCHA", value="<a:verify2:1418486831993061497> Resuelto automáticamente", inline=True)
-                            final_embed.add_field(name="<:stats:1418490788437823599> Campos Completados", value=f"{fields_completed}/5", inline=True)
+                            final_embed.add_field(name="🤖 CAPTCHA", value="✅ Resuelto automáticamente", inline=True)
+                            final_embed.add_field(name="📊 Campos Completados", value=f"{fields_completed}/5", inline=True)
                             final_embed.add_field(name="🔄 Intentos CAPTCHA", value=f"{captcha_attempts}", inline=True)
                             final_embed.add_field(name="⏰ Estado", value="Proceso finalizado", inline=True)
                         else:
@@ -6285,8 +6330,8 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                                 color=0xff9900
                             )
                             final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
-                            final_embed.add_field(name="<:stats:1418490788437823599> Campos", value=f"{fields_completed}/5 completados", inline=True)
-                            final_embed.add_field(name="<a:pepebot:1418489370129993728> CAPTCHA", value="⚠️ Requiere resolución manual", inline=True)
+                            final_embed.add_field(name="📊 Campos", value=f"{fields_completed}/5 completados", inline=True)
+                            final_embed.add_field(name="🤖 CAPTCHA", value="⚠️ Requiere resolución manual", inline=True)
                         
                         await message.edit(embed=final_embed)
                         
@@ -6332,7 +6377,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 try:
                     logger.info("🔒 Cerrando navegador Chrome...")
                     driver.quit()
-                    logger.info("<a:verify2:1418486831993061497> Navegador cerrado exitosamente")
+                    logger.info("✅ Navegador cerrado exitosamente")
                 except Exception as close_error:
                     logger.warning(f"Error cerrando navegador: {close_error}")
         
@@ -6345,7 +6390,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             description=f"Ocurrió un error durante la creación de cuenta: {str(e)[:200]}",
             color=0xff0000
         )
-        error_embed.add_field(name="<a:foco:1418492184373755966> Sugerencia", value="Verifica la conexión y configuración del navegador", inline=False)
+        error_embed.add_field(name="💡 Sugerencia", value="Verifica la conexión y configuración del navegador", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 def extract_cookies_from_cookiesnew():
@@ -6382,7 +6427,7 @@ def extract_cookies_from_cookiesnew():
                     logger.debug(f"Error procesando línea {line_num}: {e}")
                     continue
         
-        logger.info(f"<a:verify2:1418486831993061497> {len(roblox_cookies)} cookies extraídas de Cookiesnew.md")
+        logger.info(f"✅ {len(roblox_cookies)} cookies extraídas de Cookiesnew.md")
         return roblox_cookies
         
     except Exception as e:
@@ -6462,7 +6507,7 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
         )
         initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
         initial_embed.add_field(name="🍪 Cookies Disponibles", value=f"{len(cookies_disponibles)} total", inline=True)
-        initial_embed.add_field(name="<a:pepebot:1418489370129993728> Método", value="Navegador + Logout automático", inline=True)
+        initial_embed.add_field(name="🤖 Método", value="Navegador + Logout automático", inline=True)
         initial_embed.add_field(name="⏳ Estado", value="Iniciando navegador...", inline=False)
         
         message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
@@ -6494,8 +6539,8 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
                 )
                 progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
                 progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
-                progress_embed.add_field(name="🚪 Logout", value="<a:verify2:1418486831993061497> Automático entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
-                progress_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
+                progress_embed.add_field(name="🚪 Logout", value="✅ Automático entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
+                progress_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
                 progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
                 
@@ -6507,7 +6552,7 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
                 # Procesar resultado
                 if resultado and resultado["status"] == "success":
                     exitosas += 1
-                    logger.info(f"<a:verify2:1418486831993061497> Solicitud exitosa con cookie {cookie_data['source']} via navegador")
+                    logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']} via navegador")
                     
                 elif resultado and resultado["status"] == "already_friends":
                     ya_amigos += 1
@@ -6533,7 +6578,7 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
         # Crear embed final con resultados
         if exitosas > 0:
             color = 0x00ff88  # Verde si hay éxitos
-            title = "<a:verify2:1418486831993061497> Friend Requests Completados via Navegador"
+            title = "✅ Friend Requests Completados via Navegador"
         elif ya_amigos > 0:
             color = 0xffaa00  # Amarillo si ya son amigos
             title = "👥 Friend Requests Procesados via Navegador"
@@ -6548,10 +6593,10 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
         )
         
         final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-        final_embed.add_field(name="<:stats:1418490788437823599> Total Procesadas", value=f"{cantidad_real}", inline=True)
-        final_embed.add_field(name="<a:pepebot:1418489370129993728> Método", value="Navegador + Logout", inline=True)
+        final_embed.add_field(name="📊 Total Procesadas", value=f"{cantidad_real}", inline=True)
+        final_embed.add_field(name="🤖 Método", value="Navegador + Logout", inline=True)
         
-        final_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
+        final_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
         final_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
         final_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
         
@@ -6569,7 +6614,7 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
         # Agregar ventajas del método navegador
         final_embed.add_field(
             name="🌐 Ventajas del Navegador:",
-            value="• <a:verify2:1418486831993061497> Logout automático entre cookies\n• <a:verify2:1418486831993061497> Sesiones completamente separadas\n• <a:verify2:1418486831993061497> Emulación real de usuario\n• <a:verify2:1418486831993061497> Mayor tasa de éxito",
+            value="• ✅ Logout automático entre cookies\n• ✅ Sesiones completamente separadas\n• ✅ Emulación real de usuario\n• ✅ Mayor tasa de éxito",
             inline=False
         )
         
@@ -6598,7 +6643,7 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
             color=0xff0000
         )
         error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}```", inline=False)
-        error_embed.add_field(name="<a:foco:1418492184373755966> Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
+        error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
     
     finally:
@@ -6607,7 +6652,7 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
             try:
                 logger.info("🔒 Cerrando navegador...")
                 driver.quit()
-                logger.info("<a:verify2:1418486831993061497> Navegador cerrado exitosamente")
+                logger.info("✅ Navegador cerrado exitosamente")
             except Exception as close_error:
                 logger.warning(f"Error cerrando navegador: {close_error}")
 
@@ -6666,7 +6711,7 @@ async def send_friend_request_with_browser(driver, user_id, cookie_data, attempt
         
         try:
             driver.add_cookie(cookie_dict)
-            logger.info("<a:verify2:1418486831993061497> Cookie aplicada exitosamente")
+            logger.info("✅ Cookie aplicada exitosamente")
         except Exception as cookie_error:
             logger.warning(f"⚠️ Error aplicando cookie: {cookie_error}")
             return {"status": "error", "message": f"Error aplicando cookie: {str(cookie_error)[:50]}"}
@@ -6708,7 +6753,7 @@ async def send_friend_request_with_browser(driver, user_id, cookie_data, attempt
                         friend_button = driver.find_element(By.CSS_SELECTOR, selector)
                     
                     if friend_button and friend_button.is_displayed():
-                        logger.info(f"<a:verify2:1418486831993061497> Botón de Add Friend encontrado con selector: {selector}")
+                        logger.info(f"✅ Botón de Add Friend encontrado con selector: {selector}")
                         break
                 except:
                     continue
@@ -6721,7 +6766,7 @@ async def send_friend_request_with_browser(driver, user_id, cookie_data, attempt
                         button_text = button.text.lower()
                         if any(phrase in button_text for phrase in ['add friend', 'agregar amigo', 'seguir']):
                             friend_button = button
-                            logger.info(f"<a:verify2:1418486831993061497> Botón encontrado por texto: {button.text}")
+                            logger.info(f"✅ Botón encontrado por texto: {button.text}")
                             break
                 except Exception as e:
                     logger.debug(f"Error buscando botones por texto: {e}")
@@ -6733,7 +6778,7 @@ async def send_friend_request_with_browser(driver, user_id, cookie_data, attempt
                 
                 # Hacer clic en el botón
                 friend_button.click()
-                logger.info("<a:verify2:1418486831993061497> Botón de Add Friend clickeado exitosamente")
+                logger.info("✅ Botón de Add Friend clickeado exitosamente")
                 
                 # Esperar un momento para que se procese la request
                 time.sleep(3)
@@ -6752,7 +6797,7 @@ async def send_friend_request_with_browser(driver, user_id, cookie_data, attempt
                     request_sent = any(indicator.lower() in page_text for indicator in success_indicators)
                     
                     if request_sent:
-                        logger.info("<a:verify2:1418486831993061497> Friend request enviado exitosamente")
+                        logger.info("✅ Friend request enviado exitosamente")
                         return {"status": "success", "message": "Friend request sent successfully"}
                     else:
                         # Verificar si ya son amigos
@@ -6799,15 +6844,15 @@ async def process_friend_response(response, user_id, cookie_source):
     """Procesar respuesta de friend request API"""
     try:
         logger.info(f"📡 Procesando respuesta de friend request para usuario {user_id} desde {cookie_source}")
-        logger.info(f"<:stats:1418490788437823599> Status Code: {response.status}")
+        logger.info(f"📊 Status Code: {response.status}")
         
         if response.status == 200:
             try:
                 response_data = await response.json()
-                logger.info(f"<a:verify2:1418486831993061497> Friend request exitoso para usuario {user_id}")
+                logger.info(f"✅ Friend request exitoso para usuario {user_id}")
                 return {"status": "success", "message": "Friend request sent successfully"}
             except:
-                logger.info(f"<a:verify2:1418486831993061497> Friend request exitoso para usuario {user_id} (sin JSON)")
+                logger.info(f"✅ Friend request exitoso para usuario {user_id} (sin JSON)")
                 return {"status": "success", "message": "Friend request sent successfully"}
                 
         elif response.status == 400:
@@ -6901,14 +6946,14 @@ async def perform_complete_logout(previous_cookie):
                             logger.info(f"🚪 Logout intento en {endpoint}: {logout_response.status}")
                             if logout_response.status in [200, 403]:  # 403 también puede indicar logout exitoso
                                 logout_success = True
-                                logger.info(f"<a:verify2:1418486831993061497> Logout exitoso en {endpoint}")
+                                logger.info(f"✅ Logout exitoso en {endpoint}")
                                 break
                     except Exception as e:
                         logger.debug(f"Error en logout endpoint {endpoint}: {e}")
                         continue
                 
                 if logout_success:
-                    logger.info("<a:verify2:1418486831993061497> Logout completo realizado exitosamente")
+                    logger.info("✅ Logout completo realizado exitosamente")
                 else:
                     logger.warning("⚠️ Logout no confirmado, pero sesión debería estar limpia")
                 
@@ -6988,7 +7033,7 @@ async def perform_complete_logout(previous_cookie):
         )
         initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
         initial_embed.add_field(name="🍪 Cookies Disponibles", value=f"{len(cookies_disponibles)} total", inline=True)
-        initial_embed.add_field(name="<:stats:1418490788437823599> Cantidad Solicitada", value=f"{cantidad_real}/{cantidad}", inline=True)
+        initial_embed.add_field(name="📊 Cantidad Solicitada", value=f"{cantidad_real}/{cantidad}", inline=True)
         initial_embed.add_field(name="⏳ Estado", value="Iniciando envío...", inline=False)
         
         message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
@@ -7015,8 +7060,8 @@ async def perform_complete_logout(previous_cookie):
                 )
                 progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
                 progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
-                progress_embed.add_field(name="🚪 Logout", value="<a:verify2:1418486831993061497> Completo entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
-                progress_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
+                progress_embed.add_field(name="🚪 Logout", value="✅ Completo entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
+                progress_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
                 progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
                 
@@ -7095,7 +7140,7 @@ async def perform_complete_logout(previous_cookie):
                 # Procesar resultado (CADA COOKIE ES INDEPENDIENTE)
                 if resultado and resultado["status"] == "success":
                     exitosas += 1
-                    logger.info(f"<a:verify2:1418486831993061497> Solicitud exitosa con cookie {cookie_data['source']} (#{i + 1})")
+                    logger.info(f"✅ Solicitud exitosa con cookie {cookie_data['source']} (#{i + 1})")
                     
                 elif resultado and resultado["status"] == "already_friends":
                     ya_amigos += 1
@@ -7125,7 +7170,7 @@ async def perform_complete_logout(previous_cookie):
         # Crear embed final con resultados
         if exitosas > 0:
             color = 0x00ff88  # Verde si hay éxitos
-            title = "<a:verify2:1418486831993061497> Solicitudes Completadas"
+            title = "✅ Solicitudes Completadas"
         elif ya_amigos > 0:
             color = 0xffaa00  # Amarillo si ya son amigos
             title = "👥 Solicitudes Procesadas"
@@ -7140,10 +7185,10 @@ async def perform_complete_logout(previous_cookie):
         )
         
         final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-        final_embed.add_field(name="<:stats:1418490788437823599> Total Procesadas", value=f"{cantidad_real}", inline=True)
+        final_embed.add_field(name="📊 Total Procesadas", value=f"{cantidad_real}", inline=True)
         final_embed.add_field(name="🍪 Cookies Usadas", value=f"{len(cookies_a_usar)}", inline=True)
         
-        final_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
+        final_embed.add_field(name="✅ Exitosas", value=f"{exitosas}", inline=True)
         final_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
         final_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
         
@@ -7178,7 +7223,7 @@ async def perform_complete_logout(previous_cookie):
             )
         elif ya_amigos > 0:
             final_embed.add_field(
-                name="<a:foco:1418492184373755966> Información:",
+                name="💡 Información:",
                 value="Las cuentas ya son amigas del usuario objetivo o ya tienen solicitudes pendientes.",
                 inline=False
             )
@@ -7197,7 +7242,7 @@ async def perform_complete_logout(previous_cookie):
             color=0xff0000
         )
         error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}```", inline=False)
-        error_embed.add_field(name="<a:foco:1418492184373755966> Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
+        error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
         await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 async def send_friend_request_with_browser(driver, user_id, cookie_data, cookie_index):
@@ -7314,13 +7359,13 @@ async def send_friend_request_with_browser(driver, user_id, cookie_data, cookie_
 async def process_friend_response(response, user_id, cookie_source):
     """Procesar respuesta de solicitud de amistad y retornar resultado"""
     try:
-        logger.info(f"<:stats:1418490788437823599> Procesando respuesta {response.status} para {cookie_source}")
+        logger.info(f"📊 Procesando respuesta {response.status} para {cookie_source}")
         
         if response.status == 200:
             # Verificar si realmente fue exitoso
             try:
                 response_data = await response.json()
-                logger.info(f"<a:verify2:1418486831993061497> Respuesta 200 exitosa: {response_data}")
+                logger.info(f"✅ Respuesta 200 exitosa: {response_data}")
                 return {"status": "success", "message": "Solicitud enviada exitosamente"}
             except:
                 # Respuesta 200 sin JSON también es éxito
@@ -7382,15 +7427,15 @@ async def handle_friend_response(response, message, user_id, user_name):
         if response.status == 200:
             # Éxito
             success_embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Solicitud de Amistad Enviada",
+                title="✅ Solicitud de Amistad Enviada",
                 description=f"La solicitud de amistad fue enviada exitosamente al usuario ID: `{user_id}`",
                 color=0x00ff88
             )
             success_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-            success_embed.add_field(name="<:stats:1418490788437823599> Estado", value="<a:verify2:1418486831993061497> Completado", inline=True)
+            success_embed.add_field(name="📊 Estado", value="✅ Completado", inline=True)
             success_embed.add_field(name="🕐 Tiempo", value=f"<t:{int(asyncio.get_event_loop().time())}:R>", inline=True)
             success_embed.add_field(
-                name="<a:foco:1418492184373755966> Información:",
+                name="💡 Información:",
                 value="La solicitud se envió correctamente. El usuario puede aceptar o rechazar la solicitud desde su perfil.",
                 inline=False
             )
@@ -7413,7 +7458,7 @@ async def handle_friend_response(response, message, user_id, user_name):
                 color=0xffaa00
             )
             warning_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-            warning_embed.add_field(name="<:stats:1418490788437823599> Código", value=f"`{response.status}`", inline=True)
+            warning_embed.add_field(name="📊 Código", value=f"`{response.status}`", inline=True)
             warning_embed.add_field(name="📝 Motivo", value=f"```{error_message[:100]}{'...' if len(error_message) > 100 else ''}```", inline=False)
             warning_embed.add_field(
                 name="🔍 Posibles Causas:",
@@ -7430,7 +7475,7 @@ async def handle_friend_response(response, message, user_id, user_name):
                 color=0xff0000
             )
             auth_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
-            auth_embed.add_field(name="<:stats:1418490788437823599> Código", value=f"`{response.status}`", inline=True)
+            auth_embed.add_field(name="📊 Código", value=f"`{response.status}`", inline=True)
             auth_embed.add_field(
                 name="🔧 Solución:",
                 value="Actualiza la cookie del secreto `COOKIE` con una cookie válida de Roblox",
@@ -7446,7 +7491,7 @@ async def handle_friend_response(response, message, user_id, user_name):
                 description=f"Error al enviar solicitud de amistad al usuario ID: `{user_id}`",
                 color=0xff0000
             )
-            error_embed.add_field(name="<:stats:1418490788437823599> Código de Estado", value=f"`{response.status}`", inline=True)
+            error_embed.add_field(name="📊 Código de Estado", value=f"`{response.status}`", inline=True)
             error_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
             error_embed.add_field(name="📝 Respuesta", value=f"```{response_text[:200]}{'...' if len(response_text) > 200 else ''}```", inline=False)
             await message.edit(embed=embed)
@@ -7652,7 +7697,7 @@ async def cookielog_command(interaction: discord.Interaction, vnc_mode: bool = F
             )
             await message.edit(embed=update_embed)
             
-            logger.info("<a:verify2:1418486831993061497> Navegador iniciado exitosamente, navegando a Roblox...")
+            logger.info("✅ Navegador iniciado exitosamente, navegando a Roblox...")
             
             # Navegar a Roblox primero
             driver.get("https://www.roblox.com")
@@ -7678,7 +7723,7 @@ async def cookielog_command(interaction: discord.Interaction, vnc_mode: bool = F
                     }
                     
                     driver.add_cookie(cookie_dict)
-                    logger.info(f"<a:verify2:1418486831993061497> Cookie aplicada al navegador para usuario: {cookie_data['username']} ({source_text})")
+                    logger.info(f"✅ Cookie aplicada al navegador para usuario: {cookie_data['username']} ({source_text})")
                     
                     # Refrescar página para aplicar la cookie
                     driver.refresh()
@@ -7812,9 +7857,9 @@ Configuración: https://www.roblox.com/my/account
 Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
 
 === INFORMACIÓN DE NAVEGADOR ===
-<a:verify2:1418486831993061497> Cookie aplicada exitosamente en navegador VNC
-<a:verify2:1418486831993061497> Login verificado en Roblox.com
-<a:verify2:1418486831993061497> Navegador cerrado automáticamente
+✅ Cookie aplicada exitosamente en navegador VNC
+✅ Login verificado en Roblox.com
+✅ Navegador cerrado automáticamente
 """
         
         # Guardar archivo
@@ -7828,7 +7873,7 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         
         # Crear embed de éxito
         embed = discord.Embed(
-            title="<a:verify2:1418486831993061497> Cookie Aplicada Exitosamente en Navegador",
+            title="✅ Cookie Aplicada Exitosamente en Navegador",
             description=f"Se encontró una cookie funcionando para **{account_info['username']}** y se aplicó correctamente en el navegador VNC.",
             color=0x00ff88
         )
@@ -7847,7 +7892,7 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         
         embed.add_field(
             name="🏷️ Estado",
-            value=f"{'🚫 Baneado' if account_info['is_banned'] else '<a:verify2:1418486831993061497> Activo'}\n{'<a:verify2:1418486831993061497> Verificado' if account_info['has_verified_badge'] else '❌ No Verificado'}",
+            value=f"{'🚫 Baneado' if account_info['is_banned'] else '✅ Activo'}\n{'✅ Verificado' if account_info['has_verified_badge'] else '❌ No Verificado'}",
             inline=True
         )
         
@@ -7859,7 +7904,7 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         
         embed.add_field(
             name="🌐 Estado del Navegador",
-            value="<a:verify2:1418486831993061497> Cookie aplicada en VNC\n<a:verify2:1418486831993061497> Login verificado\n<a:verify2:1418486831993061497> Navegador cerrado",
+            value="✅ Cookie aplicada en VNC\n✅ Login verificado\n✅ Navegador cerrado",
             inline=True
         )
         
@@ -7944,7 +7989,7 @@ async def grant_access_command(interaction: discord.Interaction, user_id: str):
         
         if was_added:
             embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Acceso Otorgado",
+                title="✅ Acceso Otorgado",
                 description=f"Se ha otorgado acceso de owner al usuario.",
                 color=0x00ff88
             )
@@ -7978,7 +8023,7 @@ async def grant_access_command(interaction: discord.Interaction, user_id: str):
                 color=0xffaa00
             )
             embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
-            embed.add_field(name="<:stats:1418490788437823599> Estado", value="Ya delegado", inline=True)
+            embed.add_field(name="📊 Estado", value="Ya delegado", inline=True)
         
         await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -8042,7 +8087,7 @@ async def revoke_access_command(interaction: discord.Interaction, user_id: str):
         
         if was_removed:
             embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Acceso Revocado",
+                title="✅ Acceso Revocado",
                 description=f"Se ha revocado el acceso de owner al usuario.",
                 color=0x00ff88
             )
@@ -8070,7 +8115,7 @@ async def revoke_access_command(interaction: discord.Interaction, user_id: str):
                 color=0xffaa00
             )
             embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
-            embed.add_field(name="<:stats:1418490788437823599> Estado", value="Sin acceso previo", inline=True)
+            embed.add_field(name="📊 Estado", value="Sin acceso previo", inline=True)
         
         await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -8096,7 +8141,7 @@ async def alerts_command(interaction: discord.Interaction,
     user_id = str(interaction.user.id)
     username = f"{interaction.user.name}#{interaction.user.discriminator}"
     
-    user_logger.info(f"<a:notification:1418491712317292646> Comando /alerts ejecutado por {username} (ID: {user_id}) - Acción: {accion}")
+    user_logger.info(f"🔔 Comando /alerts ejecutado por {username} (ID: {user_id}) - Acción: {accion}")
     
     try:
         if accion.lower() == "agregar":
@@ -8107,7 +8152,7 @@ async def alerts_command(interaction: discord.Interaction,
                     color=0xff0000
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Uso correcto:",
+                    name="💡 Uso correcto:",
                     value="`/alerts agregar [nombre_usuario_roblox]`",
                     inline=False
                 )
@@ -8130,13 +8175,13 @@ async def alerts_command(interaction: discord.Interaction,
             
             if success:
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Alertas Configuradas",
+                    title="✅ Alertas Configuradas",
                     description=f"Ahora recibirás alertas sobre el estado de **{usuario_roblox}**.",
                     color=0x00ff88
                 )
                 embed.add_field(
-                    name="<a:notification:1418491712317292646> Tipos de Alertas:",
-                    value="• 🟢 Cuando se conecte\n• 🔴 Cuando se desconecte\n• <a:control:1418490793223651409> Cuando empiece a jugar\n• ⏹️ Cuando deje de jugar\n• 🔄 Cuando cambie de juego",
+                    name="🔔 Tipos de Alertas:",
+                    value="• 🟢 Cuando se conecte\n• 🔴 Cuando se desconecte\n• 🎮 Cuando empiece a jugar\n• ⏹️ Cuando deje de jugar\n• 🔄 Cuando cambie de juego",
                     inline=False
                 )
                 embed.add_field(
@@ -8150,7 +8195,7 @@ async def alerts_command(interaction: discord.Interaction,
                     inline=True
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Gestionar Alertas:",
+                    name="💡 Gestionar Alertas:",
                     value="`/alerts estado` - Ver estado actual\n`/alerts quitar` - Desactivar alertas",
                     inline=False
                 )
@@ -8167,13 +8212,13 @@ async def alerts_command(interaction: discord.Interaction,
                     status_text = "🔴 Desconectado"
                 
                 embed.add_field(
-                    name="<:stats:1418490788437823599> Estado Actual:",
+                    name="📊 Estado Actual:",
                     value=status_text,
                     inline=False
                 )
                 
                 await interaction.followup.send(embed=embed, ephemeral=True)
-                logger.info(f"<a:verify2:1418486831993061497> Usuario {user_id} configuró alertas para {usuario_roblox}")
+                logger.info(f"✅ Usuario {user_id} configuró alertas para {usuario_roblox}")
             else:
                 embed = discord.Embed(
                     title="❌ Error",
@@ -8187,17 +8232,17 @@ async def alerts_command(interaction: discord.Interaction,
             
             if success:
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Alertas Desactivadas",
+                    title="✅ Alertas Desactivadas",
                     description="Ya no recibirás alertas de estado de usuarios.",
                     color=0x00ff88
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Para reactivar:",
+                    name="💡 Para reactivar:",
                     value="Usa `/alerts agregar [usuario_roblox]`",
                     inline=False
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
-                logger.info(f"<a:verify2:1418486831993061497> Usuario {user_id} desactivó alertas")
+                logger.info(f"✅ Usuario {user_id} desactivó alertas")
             else:
                 embed = discord.Embed(
                     title="⚠️ Sin Alertas Activas",
@@ -8214,7 +8259,7 @@ async def alerts_command(interaction: discord.Interaction,
                     color=0xffaa00
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Para configurar:",
+                    name="💡 Para configurar:",
                     value="`/alerts agregar [usuario_roblox]`",
                     inline=False
                 )
@@ -8229,7 +8274,7 @@ async def alerts_command(interaction: discord.Interaction,
             current_state = user_monitoring.user_states.get(roblox_user_id, {})
             
             embed = discord.Embed(
-                title="<:stats:1418490788437823599> Estado de Alertas",
+                title="📊 Estado de Alertas",
                 description=f"Información sobre el monitoreo de **{roblox_username}**",
                 color=0x3366ff
             )
@@ -8241,8 +8286,8 @@ async def alerts_command(interaction: discord.Interaction,
             )
             
             embed.add_field(
-                name="<a:notification:1418491712317292646> Alertas:",
-                value="<a:verify2:1418486831993061497> Activas",
+                name="🔔 Alertas:",
+                value="✅ Activas",
                 inline=True
             )
             
@@ -8251,13 +8296,13 @@ async def alerts_command(interaction: discord.Interaction,
                 status_text = "🟢 En línea"
                 status_color = "🟢"
                 if current_state.get('game_name'):
-                    status_text += f"\n<a:control:1418490793223651409> Jugando: [{current_state['game_name']}](https://www.roblox.com/games/{current_state.get('game_id', '')})"
+                    status_text += f"\n🎮 Jugando: [{current_state['game_name']}](https://www.roblox.com/games/{current_state.get('game_id', '')})"
             else:
                 status_text = "🔴 Desconectado"
                 status_color = "🔴"
             
             embed.add_field(
-                name="<:stats:1418490788437823599> Estado Actual:",
+                name="📊 Estado Actual:",
                 value=status_text,
                 inline=False
             )
@@ -8295,7 +8340,7 @@ async def alerts_command(interaction: discord.Interaction,
                     pass
             
             embed.add_field(
-                name="<a:foco:1418492184373755966> Acciones:",
+                name="💡 Acciones:",
                 value="`/alerts quitar` - Desactivar alertas\n`/alerts agregar [otro_usuario]` - Cambiar usuario",
                 inline=False
             )
@@ -8312,12 +8357,12 @@ async def alerts_command(interaction: discord.Interaction,
                 color=0xff0000
             )
             embed.add_field(
-                name="<a:verify2:1418486831993061497> Acciones Disponibles:",
+                name="✅ Acciones Disponibles:",
                 value="`agregar` - Agregar usuario al monitoreo\n`quitar` - Quitar alertas\n`estado` - Ver estado actual",
                 inline=False
             )
             embed.add_field(
-                name="<a:foco:1418492184373755966> Ejemplos:",
+                name="💡 Ejemplos:",
                 value="`/alerts agregar username123`\n`/alerts quitar`\n`/alerts estado`",
                 inline=False
             )
@@ -8371,7 +8416,7 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
             color=0xffaa00
         )
         embed.add_field(name="👤 Usuario Objetivo", value=f"`{roblox_username}`", inline=True)
-        embed.add_field(name="<a:pepebot:1418489370129993728> Método", value=f"Selenium + JavaScript ({mode_display})", inline=True)
+        embed.add_field(name="🤖 Método", value=f"Selenium + JavaScript ({mode_display})", inline=True)
         embed.add_field(name="🔄 Estado", value="Iniciando navegador...", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
@@ -8484,7 +8529,7 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
                 try:
                     logger.info(f"Trying VNC driver approach {i}...")
                     driver = approach()
-                    logger.info(f"<a:verify2:1418486831993061497> VNC driver created successfully")
+                    logger.info(f"✅ VNC driver created successfully")
                     break
                 except Exception as e:
                     logger.warning(f"VNC approach {i} failed: {e}")
@@ -8519,7 +8564,7 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
         }
         
         driver.add_cookie(cookie_dict)
-        logger.info("<a:verify2:1418486831993061497> Cookie del secreto aplicada al navegador")
+        logger.info("✅ Cookie del secreto aplicada al navegador")
         
         # Refrescar para aplicar las cookies
         driver.refresh()
@@ -8532,7 +8577,7 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
             color=0x00ff88
         )
         nav_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
-        nav_embed.add_field(name="🍪 Cookies", value="<a:verify2:1418486831993061497> Aplicadas", inline=True)
+        nav_embed.add_field(name="🍪 Cookies", value="✅ Aplicadas", inline=True)
         nav_embed.add_field(name="🔄 Estado", value="Navegando al perfil...", inline=True)
         
         await message.edit(embed=nav_embed)
@@ -8718,27 +8763,27 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
         # Resultado final
         if follow_success:
             success_embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> ¡Seguidor Enviado Exitosamente!",
+                title="✅ ¡Seguidor Enviado Exitosamente!",
                 description=f"El bot ha seguido exitosamente a **{roblox_username}** usando el navegador automatizado",
                 color=0x00ff88
             )
             success_embed.add_field(name="👤 Usuario Seguido", value=f"{roblox_username}", inline=True)
-            success_embed.add_field(name="<a:pepebot:1418489370129993728> Método", value="Navegador + JavaScript", inline=True)
-            success_embed.add_field(name="<:stats:1418490788437823599> Resultado", value=f"`{result}`", inline=True)
+            success_embed.add_field(name="🤖 Método", value="Navegador + JavaScript", inline=True)
+            success_embed.add_field(name="📊 Resultado", value=f"`{result}`", inline=True)
             success_embed.add_field(
                 name="🔗 Perfil del Usuario",
                 value=f"[Ver Perfil]({profile_url})",
                 inline=False
             )
             success_embed.add_field(
-                name="<a:verify2:1418486831993061497> Confirmación",
+                name="✅ Confirmación",
                 value=f"Script ejecutado: `{result}`\nVerificación: `{verification_result}`",
                 inline=False
             )
             success_embed.set_footer(text=f"Ejecutado por: {interaction.user.name}")
             
             await message.edit(embed=success_embed)
-            logger.info(f"<a:verify2:1418486831993061497> Owner {interaction.user.name} envió seguidor bot exitosamente a {roblox_username} via navegador")
+            logger.info(f"✅ Owner {interaction.user.name} envió seguidor bot exitosamente a {roblox_username} via navegador")
         else:
             error_embed = discord.Embed(
                 title="⚠️ Proceso Completado con Advertencias",
@@ -8746,10 +8791,10 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
                 color=0xff9900
             )
             error_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username}", inline=True)
-            error_embed.add_field(name="<a:pepebot:1418489370129993728> Script", value=f"`{result}`", inline=True)
+            error_embed.add_field(name="🤖 Script", value=f"`{result}`", inline=True)
             error_embed.add_field(name="🔍 Verificación", value=f"`{verification_result}`", inline=True)
             error_embed.add_field(
-                name="<a:foco:1418492184373755966> Posibles Causas:",
+                name="💡 Posibles Causas:",
                 value="• El usuario ya está siendo seguido\n• El botón de follow no estaba visible\n• Cambio en la interfaz de Roblox\n• Restricciones de la cuenta",
                 inline=False
             )
@@ -8776,7 +8821,7 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
             try:
                 logger.info("🔒 Cerrando navegador...")
                 driver.quit()
-                logger.info("<a:verify2:1418486831993061497> Navegador cerrado exitosamente")
+                logger.info("✅ Navegador cerrado exitosamente")
             except Exception as close_error:
                 logger.warning(f"Error cerrando navegador: {close_error}")
         
@@ -8807,7 +8852,7 @@ async def list_access_command(interaction: discord.Interaction):
                 color=0x888888
             )
             embed.add_field(
-                name="<a:foco:1418492184373755966> Para otorgar acceso:",
+                name="💡 Para otorgar acceso:",
                 value="Usa `/grantaccess [user_id]`",
                 inline=False
             )
@@ -8889,7 +8934,7 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
         # Verificar si ya está verificado
         if roblox_verification.is_user_verified(user_id):
             embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Ya Verificado",
+                title="✅ Ya Verificado",
                 description="Ya estás verificado y puedes usar todos los comandos del bot.",
                 color=0x00ff88
             )
@@ -8932,7 +8977,7 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
                     color=0xff9900
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> ¿Qué hacer ahora?",
+                    name="💡 ¿Qué hacer ahora?",
                     value="• Usa tu propio nombre de usuario de Roblox\n• No intentes usar nombres de otros usuarios\n• **Una segunda advertencia resultará en ban de 7 días**",
                     inline=False
                 )
@@ -9028,7 +9073,7 @@ class ServerBrowserView(discord.ui.View):
             )
             return False
             
-        user_logger.debug(f"<a:verify2:1418486831993061497> Usuario autorizado {username} puede usar navegación")
+        user_logger.debug(f"✅ Usuario autorizado {username} puede usar navegación")
         return True
 
     def update_buttons(self):
@@ -9059,7 +9104,7 @@ class ServerBrowserView(discord.ui.View):
         # Join server button
         current_server = self.servers_list[self.current_index]
         join_button = discord.ui.Button(
-            label="<a:control:1418490793223651409> Unirse al Servidor",
+            label="🎮 Unirse al Servidor",
             style=discord.ButtonStyle.primary,
             url=current_server
         )
@@ -9138,7 +9183,7 @@ class ServerBrowserView(discord.ui.View):
             
             await interaction.response.edit_message(embed=embed, view=self)
             await interaction.followup.send(
-                f"<a:verify2:1418486831993061497> **{game_name}** ha sido {status} tus favoritos.", 
+                f"✅ **{game_name}** ha sido {status} tus favoritos.", 
                 ephemeral=True
             )
         else:
@@ -9180,7 +9225,7 @@ class ServerBrowserView(discord.ui.View):
         category = self.game_info.get('category', 'other')
 
         embed = discord.Embed(
-            title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+            title="🎮 ROBLOX PRIVATE SERVER LINKS",
             description=f"Tu servidor para **{game_name}** ha sido generado exitosamente! Manténlo seguro y no lo compartas con nadie.",
             color=0x2F3136
         )
@@ -9195,11 +9240,11 @@ class ServerBrowserView(discord.ui.View):
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-            "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
         }
         embed.add_field(
             name="📂 Categoría", 
-            value=f"{category_emoji.get(category, '<a:control:1418490793223651409>')} {category.title()}", 
+            value=f"{category_emoji.get(category, '🎮')} {category.title()}", 
             inline=True
         )
 
@@ -9286,10 +9331,10 @@ class ServerOptionsSelect(discord.ui.Select):
                 emoji="📌"
             ),
             discord.SelectOption(
-                label="<:stats:1418490788437823599> Info del Servidor",
+                label="📊 Info del Servidor",
                 description="Ver información detallada del servidor",
                 value="server_info",
-                emoji="<:stats:1418490788437823599>"
+                emoji="📊"
             ),
             discord.SelectOption(
                 label="🔄 Actualizar Vista",
@@ -9345,12 +9390,12 @@ class ServerOptionsSelect(discord.ui.Select):
             server_details = scraper.links_by_user[user_id][game_id].get('server_details', {}).get(current_server, {})
         
         embed = discord.Embed(
-            title="<:stats:1418490788437823599> Información Detallada del Servidor",
+            title="📊 Información Detallada del Servidor",
             description=f"Servidor {self.server_browser_view.current_index + 1} de {self.server_browser_view.total_servers}",
             color=0x3366ff
         )
         
-        embed.add_field(name="<a:control:1418490793223651409> Juego", value=game_info.get('game_name', 'Desconocido'), inline=True)
+        embed.add_field(name="🎮 Juego", value=game_info.get('game_name', 'Desconocido'), inline=True)
         embed.add_field(name="🆔 Game ID", value=game_info.get('game_id', 'Desconocido'), inline=True)
         embed.add_field(name="📂 Categoría", value=game_info.get('category', 'other').title(), inline=True)
         
@@ -9440,13 +9485,13 @@ class GameSearchSelect(discord.ui.Select):
         try:
             # Initial status embed
             start_embed = discord.Embed(
-                title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+                title="🎮 ROBLOX PRIVATE SERVER LINKS",
                 description=f"Se ha iniciado la búsqueda de servidores para **{selected_game['name']}** (ID: {selected_game_id})!",
                 color=0x2F3136
             )
             start_embed.add_field(name="🎯 Juego", value=f"```{selected_game['name']}```", inline=True)
             start_embed.add_field(name="🆔 ID", value=f"```{selected_game_id}```", inline=True)
-            start_embed.add_field(name="<:stats:1418490788437823599> Estado", value="Inicializando...", inline=True)
+            start_embed.add_field(name="📊 Estado", value="Inicializando...", inline=True)
             
             start_time = time.time()
             message = await interaction.followup.send(embed=start_embed)
@@ -9474,17 +9519,17 @@ class CategoryFilterSelect(discord.ui.Select):
         self.user_id = user_id
         
         category_emoji = {
-            "all": "<a:control:1418490793223651409>", "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
+            "all": "🎮", "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "📦"
         }
         
         options = [
             discord.SelectOption(
-                label="<a:control:1418490793223651409> Todos los Juegos",
+                label="🎮 Todos los Juegos",
                 description="Ver todos tus juegos sin filtrar",
                 value="all",
-                emoji="<a:control:1418490793223651409>"
+                emoji="🎮"
             )
         ]
         
@@ -9562,7 +9607,7 @@ class CategoryFilterSelect(discord.ui.Select):
                 color=0xff3333
             )
             embed.add_field(
-                name="<a:foco:1418492184373755966> Para obtener servidores:",
+                name="💡 Para obtener servidores:",
                 value="Usa `/scrape [game_id]` para generar enlaces",
                 inline=False
             )
@@ -9618,7 +9663,7 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
                 color=0xff3333
             )
             embed.add_field(
-                name="<a:foco:1418492184373755966> Ejemplos de búsqueda:",
+                name="💡 Ejemplos de búsqueda:",
                 value="• `dress to impress` o `dti`\n• `murder mystery` o `mm2`\n• `tower of hell` o `toh`\n• `blox fruits`\n• `adopt me`",
                 inline=False
             )
@@ -9635,12 +9680,12 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-            "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
         }
         
         for i, game in enumerate(search_results, 1):
             category = game.get('category', 'other')
-            emoji = category_emoji.get(category, '<a:control:1418490793223651409>')
+            emoji = category_emoji.get(category, '🎮')
             relevance_stars = "⭐" * min(int(game.get('relevance', 0) * 3) + 1, 3)
             
             embed.add_field(
@@ -9696,7 +9741,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                 color=0xff3333
             )
             embed.add_field(
-                name="<a:foco:1418492184373755966> Sugerencias:",
+                name="💡 Sugerencias:",
                 value="• Usa `/searchgame` para ver opciones\n• Prueba con nombres más comunes\n• Usa abreviaciones (DTI, MM2, TOH)\n• Verifica la ortografía",
                 inline=False
             )
@@ -9722,12 +9767,12 @@ async def game_command(interaction: discord.Interaction, nombre: str):
             category_emoji = {
                 "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                 "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-                "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+                "building": "🏗️", "anime": "🌸", "other": "🎮"
             }
             
             for i, game in enumerate(search_results[:5], 1):
                 category = game.get('category', 'other')
-                emoji = category_emoji.get(category, '<a:control:1418490793223651409>')
+                emoji = category_emoji.get(category, '🎮')
                 relevance_stars = "⭐" * min(int(game.get('relevance', 0) * 3) + 1, 3)
                 
                 embed.add_field(
@@ -9757,21 +9802,21 @@ async def game_command(interaction: discord.Interaction, nombre: str):
         try:
             # Initial status embed
             start_embed = discord.Embed(
-                title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+                title="🎮 ROBLOX PRIVATE SERVER LINKS",
                 description=f"¡Búsqueda automática iniciada para **{game_name}** (ID: {game_id})! Se seleccionó automáticamente la mejor coincidencia.",
                 color=0x2F3136
             )
             start_embed.add_field(name="🎯 Juego Seleccionado", value=f"```{game_name}```", inline=True)
             start_embed.add_field(name="🆔 ID", value=f"```{game_id}```", inline=True)
-            start_embed.add_field(name="<:stats:1418490788437823599> Estado", value="Inicializando...", inline=True)
+            start_embed.add_field(name="📊 Estado", value="Inicializando...", inline=True)
             
             category = best_match.get('category', 'other')
             category_emoji = {
                 "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                 "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-                "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+                "building": "🏗️", "anime": "🌸", "other": "🎮"
             }
-            start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '<a:control:1418490793223651409>')} {category.title()}", inline=True)
+            start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
             
             relevance_percentage = int(best_match.get('relevance', 0) * 100)
             start_embed.add_field(name="🎯 Precisión", value=f"{relevance_percentage}%", inline=True)
@@ -9844,11 +9889,11 @@ async def favorites_command(interaction: discord.Interaction):
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-            "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
         }
         
         for category, games in categorized_favorites.items():
-            emoji = category_emoji.get(category, '<a:control:1418490793223651409>')
+            emoji = category_emoji.get(category, '🎮')
             category_text = f"{emoji} **{category.title()}** ({len(games)} juegos)\n"
             
             for game in games[:3]:  # Mostrar máximo 3 por categoría
@@ -9900,7 +9945,7 @@ async def remove_favorite_command(interaction: discord.Interaction, game_id: str
         if success:
             scraper.save_links()
             embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Favorito Removido",
+                title="✅ Favorito Removido",
                 description=f"**{game_name}** ha sido removido de tus favoritos.",
                 color=0x00ff88
             )
@@ -9916,7 +9961,7 @@ async def remove_favorite_command(interaction: discord.Interaction, game_id: str
                 color=0xff3333
             )
             embed.add_field(
-                name="<a:foco:1418492184373755966> Verifica:",
+                name="💡 Verifica:",
                 value="• Usa `/favorites` para ver tus juegos favoritos\n• Copia el ID exacto del juego",
                 inline=False
             )
@@ -9975,7 +10020,7 @@ async def history_command(interaction: discord.Interaction):
                 action_emojis = {
                     'navigate_next': '➡️',
                     'navigate_previous': '⬅️',
-                    'server_access': '<a:control:1418490793223651409>',
+                    'server_access': '🎮',
                     'scrape_complete': '🔍'
                 }
                 
@@ -10030,7 +10075,7 @@ async def reservations_command(interaction: discord.Interaction):
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-            "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
         }
         
         for i, reservation in enumerate(reserved_servers[-10:], 1):  # Mostrar últimas 10 reservas
@@ -10046,7 +10091,7 @@ async def reservations_command(interaction: discord.Interaction):
                     time_str = f"hace {time_ago.seconds//60}m"
                 
                 category = reservation.get('category', 'other')
-                emoji = category_emoji.get(category, '<a:control:1418490793223651409>')
+                emoji = category_emoji.get(category, '🎮')
                 
                 embed.add_field(
                     name=f"{emoji} {reservation['game_name'][:25]}{'...' if len(reservation['game_name']) > 25 else ''}",
@@ -10097,7 +10142,7 @@ async def clear_reservations_command(interaction: discord.Interaction):
         scraper.save_links()
         
         embed = discord.Embed(
-            title="<a:verify2:1418486831993061497> Reservas Limpiadas",
+            title="✅ Reservas Limpiadas",
             description=f"Se eliminaron **{reserved_count}** reservas de servidores exitosamente.",
             color=0x00ff88
         )
@@ -10125,26 +10170,26 @@ async def servertest(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     username = f"{interaction.user.name}#{interaction.user.discriminator}"
     
-    user_logger.info(f"<a:control:1418490793223651409> Comando /servertest ejecutado por {username} (ID: {user_id})")
+    user_logger.info(f"🎮 Comando /servertest ejecutado por {username} (ID: {user_id})")
     
     # Verificar autenticación (no defer aquí, se hará en check_verification)
     if not await check_verification(interaction, defer_response=True):
         user_logger.warning(f"❌ Verificación fallida para {username} en comando /servertest")
         return
     
-    user_logger.info(f"<a:verify2:1418486831993061497> Verificación exitosa para {username}, cargando servidores")
+    user_logger.info(f"✅ Verificación exitosa para {username}, cargando servidores")
 
     try:
         user_id = str(interaction.user.id)
         
         # Diagnostic logging
         user_logger.info(f"🔍 Diagnóstico para usuario {user_id}:")
-        user_logger.info(f"<:stats:1418490788437823599> Total usuarios en base de datos: {len(scraper.links_by_user)}")
+        user_logger.info(f"📊 Total usuarios en base de datos: {len(scraper.links_by_user)}")
         user_logger.info(f"👤 Usuario existe en DB: {user_id in scraper.links_by_user}")
         
         if user_id in scraper.links_by_user:
             user_games = scraper.links_by_user[user_id]
-            user_logger.info(f"<a:control:1418490793223651409> Juegos del usuario: {len(user_games)}")
+            user_logger.info(f"🎮 Juegos del usuario: {len(user_games)}")
             for game_id, game_data in user_games.items():
                 if isinstance(game_data, dict):
                     links_count = len(game_data.get('links', []))
@@ -10169,7 +10214,7 @@ async def servertest(interaction: discord.Interaction):
                     'category': game_data.get('category', 'other'),
                     'user_id': user_id
                 }
-                user_logger.info(f"<a:verify2:1418486831993061497> Encontrado juego con servidores: {current_game_info['game_name']} ({len(all_servers)} servidores)")
+                user_logger.info(f"✅ Encontrado juego con servidores: {current_game_info['game_name']} ({len(all_servers)} servidores)")
                 break
 
         if not all_servers:
@@ -10183,7 +10228,7 @@ async def servertest(interaction: discord.Interaction):
                 color=0xff3333
             )
             embed.add_field(
-                name="<:stats:1418490788437823599> Diagnóstico:",
+                name="📊 Diagnóstico:",
                 value=f"• Tu ID: `{user_id}`\n• Tus juegos: {user_games_count}\n• Total usuarios con datos: {total_users_with_data}",
                 inline=False
             )
@@ -10204,7 +10249,7 @@ async def servertest(interaction: discord.Interaction):
                         games_list.append(f"• {game_id}: datos corruptos")
                 
                 embed.add_field(
-                    name="<a:control:1418490793223651409> Tus juegos:",
+                    name="🎮 Tus juegos:",
                     value="\n".join(games_list),
                     inline=False
                 )
@@ -10250,14 +10295,14 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
     user_id = str(interaction.user.id)
     username = f"{interaction.user.name}#{interaction.user.discriminator}"
     
-    user_logger.info(f"<a:control:1418490793223651409> Comando /scrape ejecutado por {username} (ID: {user_id}) con parámetro: '{juego}'")
+    user_logger.info(f"🎮 Comando /scrape ejecutado por {username} (ID: {user_id}) con parámetro: '{juego}'")
     
     # Verificar autenticación (defer en check_verification)
     if not await check_verification(interaction, defer_response=True):
         user_logger.warning(f"❌ Verificación fallida para {username} en comando /scrape")
         return
     
-    user_logger.info(f"<a:verify2:1418486831993061497> Verificación exitosa para {username}, procediendo con scrape")
+    user_logger.info(f"✅ Verificación exitosa para {username}, procediendo con scrape")
 
     user_id = str(interaction.user.id)
     
@@ -10274,7 +10319,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
                 description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.\n\n**Razón:** Prevención de spam y sobrecarga del sistema.",
                 color=0xff9900
             )
-            embed.add_field(name="<a:foco:1418492184373755966> Mientras esperas:", value="• Usa `/servertest` para ver tus servidores\n• Usa `/favorites` para ver favoritos\n• Usa `/history` para ver historial", inline=False)
+            embed.add_field(name="💡 Mientras esperas:", value="• Usa `/servertest` para ver tus servidores\n• Usa `/favorites` para ver favoritos\n• Usa `/history` para ver historial", inline=False)
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
@@ -10284,14 +10329,14 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
         try:
             # Initial status embed
             start_embed = discord.Embed(
-                title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+                title="🎮 ROBLOX PRIVATE SERVER LINKS",
                 description=f"¡Se ha iniciado exitosamente la búsqueda de servidores para el juego ID: **{game_id}**! Manténlo seguro y no lo compartas con nadie.",
                 color=0x2F3136
             )
             start_embed.add_field(name="🆔 ID del Juego", value=f"```{game_id}```", inline=True)
             # Get initial count for this user and game
             initial_count = len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', []))
-            start_embed.add_field(name="<:stats:1418490788437823599> Base de Datos Actual", value=f"{initial_count} servidores", inline=True)
+            start_embed.add_field(name="📊 Base de Datos Actual", value=f"{initial_count} servidores", inline=True)
             start_embed.add_field(name="🔄 Estado", value="Inicializando...", inline=True)
             start_time = time.time()
 
@@ -10313,7 +10358,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
         except Exception as e:
             logger.error(f"Error in scrape command: {e}")
             error_embed = discord.Embed(
-                title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+                title="🎮 ROBLOX PRIVATE SERVER LINKS",
                 description="Ocurrió un error durante el proceso de scraping.",
                 color=0x2F3136
             )
@@ -10355,7 +10400,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
                     color=0xff3333
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Ejemplos de búsqueda:",
+                    name="💡 Ejemplos de búsqueda:",
                     value="• `dress to impress` o `dti`\n• `murder mystery` o `mm2`\n• `tower of hell` o `toh`\n• `blox fruits`\n• `adopt me`\n• `10449761463` (ID directo)",
                     inline=False
                 )
@@ -10378,12 +10423,12 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
                 category_emoji = {
                     "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                     "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-                    "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+                    "building": "🏗️", "anime": "🌸", "other": "🎮"
                 }
                 
                 for i, game in enumerate(search_results[:5], 1):
                     category = game.get('category', 'other')
-                    emoji = category_emoji.get(category, '<a:control:1418490793223651409>')
+                    emoji = category_emoji.get(category, '🎮')
                     relevance_stars = "⭐" * min(int(game.get('relevance', 0) * 3) + 1, 3)
                     
                     embed.add_field(
@@ -10427,21 +10472,21 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
             try:
                 # Initial status embed
                 start_embed = discord.Embed(
-                    title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+                    title="🎮 ROBLOX PRIVATE SERVER LINKS",
                     description=f"¡Búsqueda automática iniciada para **{game_name}** (ID: {game_id})! Se seleccionó automáticamente la mejor coincidencia para '{juego}'.",
                     color=0x2F3136
                 )
                 start_embed.add_field(name="🎯 Juego Seleccionado", value=f"```{game_name}```", inline=True)
                 start_embed.add_field(name="🆔 ID", value=f"```{game_id}```", inline=True)
-                start_embed.add_field(name="<:stats:1418490788437823599> Estado", value="Inicializando...", inline=True)
+                start_embed.add_field(name="📊 Estado", value="Inicializando...", inline=True)
                 
                 category = best_match.get('category', 'other')
                 category_emoji = {
                     "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                     "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-                    "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+                    "building": "🏗️", "anime": "🌸", "other": "🎮"
                 }
-                start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '<a:control:1418490793223651409>')} {category.title()}", inline=True)
+                start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
                 
                 relevance_percentage = int(best_match.get('relevance', 0) * 100)
                 start_embed.add_field(name="🎯 Precisión", value=f"{relevance_percentage}%", inline=True)
@@ -10495,7 +10540,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
             description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.\n\n**Razón:** Prevención de spam y sobrecarga del sistema.",
             color=0xff9900
         )
-        embed.add_field(name="<a:foco:1418492184373755966> Mientras esperas:", value="• Usa `/servertest` para ver tus servidores\n• Usa `/favorites` para ver favoritos\n• Usa `/history` para ver historial", inline=False)
+        embed.add_field(name="💡 Mientras esperas:", value="• Usa `/servertest` para ver tus servidores\n• Usa `/favorites` para ver favoritos\n• Usa `/history` para ver historial", inline=False)
         await interaction.followup.send(embed=embed, ephemeral=True)
         return
 
@@ -10505,14 +10550,14 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
     try:
         # Initial status embed
         start_embed = discord.Embed(
-            title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+            title="🎮 ROBLOX PRIVATE SERVER LINKS",
             description=f"¡Se ha iniciado exitosamente la búsqueda de servidores para el juego ID: **{game_id}**! Manténlo seguro y no lo compartas con nadie.",
             color=0x2F3136
         )
         start_embed.add_field(name="🆔 ID del Juego", value=f"```{game_id}```", inline=True)
         # Get initial count for this user and game
         initial_count = len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', []))
-        start_embed.add_field(name="<:stats:1418490788437823599> Base de Datos Actual", value=f"{initial_count} servidores", inline=True)
+        start_embed.add_field(name="📊 Base de Datos Actual", value=f"{initial_count} servidores", inline=True)
         start_embed.add_field(name="🔄 Estado", value="Inicializando...", inline=True)
         start_time = time.time()
 
@@ -10534,7 +10579,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
     except Exception as e:
         logger.error(f"Error in scrape command: {e}")
         error_embed = discord.Embed(
-            title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+            title="🎮 ROBLOX PRIVATE SERVER LINKS",
             description="Ocurrió un error durante el proceso de scraping.",
             color=0x2F3136
         )
@@ -10671,7 +10716,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                 
                 # Embed de progreso genérico
                 progress_embed = discord.Embed(
-                    title="<a:control:1418490793223651409> ROBLOX PRIVATE SERVER LINKS",
+                    title="🎮 ROBLOX PRIVATE SERVER LINKS",
                     description=f"Procesando servidores para el juego ID: **{game_id}**... Búsqueda activa de servidores VIP.",
                     color=0x2F3136
                 )
@@ -10683,7 +10728,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                 # Animación de progreso
                 dots = "." * (int(elapsed) % 4)
                 progress_embed.add_field(
-                    name="<:stats:1418490788437823599> Progreso", 
+                    name="📊 Progreso", 
                     value=f"Analizando servidores{dots}", 
                     inline=False
                 )
@@ -10748,7 +10793,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         # Add to usage history
         scraper.add_usage_history(user_id, game_id, f"Found {new_links_count} servers", 'scrape_complete')
 
-        logger.info(f"<a:verify2:1418486831993061497> Scraping completed in {total_time:.1f}s")
+        logger.info(f"✅ Scraping completed in {total_time:.1f}s")
         logger.info(f"📈 Found {new_links_count} new VIP links (User Total: {game_info['total_links']})")
         scraper.save_links()
 
@@ -10757,7 +10802,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         category = game_info['category']
         
         complete_embed = discord.Embed(
-            title="<a:verify2:1418486831993061497> BÚSQUEDA COMPLETADA",
+            title="✅ BÚSQUEDA COMPLETADA",
             description=f"¡La búsqueda de servidores VIP ha sido completada exitosamente para **{game_name}** (ID: {game_id})! {discord_user.mention}",
             color=0x00ff88
         )
@@ -10768,18 +10813,18 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
             complete_embed.set_thumbnail(url=game_image_url)
 
         complete_embed.add_field(name="🆕 Nuevos Servidores", value=f"**{new_links_count}**", inline=True)
-        complete_embed.add_field(name="<:stats:1418490788437823599> Tu Total", value=f"**{game_info['total_links']}** servidores", inline=True)
+        complete_embed.add_field(name="📊 Tu Total", value=f"**{game_info['total_links']}** servidores", inline=True)
         complete_embed.add_field(name="⏱️ Duración", value=f"{total_time:.1f}s", inline=True)
 
         complete_embed.add_field(name="⚡ Velocidad", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
-        complete_embed.add_field(name="<a:verify2:1418486831993061497> Tasa de Éxito", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
+        complete_embed.add_field(name="✅ Tasa de Éxito", value=f"{(new_links_count / max(processed_count, 1) * 100):.1f}%", inline=True)
         
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-            "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
         }
-        complete_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '<a:control:1418490793223651409>')} {category.title()}", inline=True)
+        complete_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '🎮')} {category.title()}", inline=True)
 
         complete_embed.add_field(name="📈 Total Procesados", value=f"{processed_count} servidores", inline=True)
 
@@ -10806,7 +10851,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         class ExclusiveVIPButton(discord.ui.Button):
             def __init__(self, target_user_id, game_id, disabled=False):
                 super().__init__(
-                    label="<a:control:1418490793223651409> Obtener Servidor VIP",
+                    label="🎮 Obtener Servidor VIP",
                     style=discord.ButtonStyle.primary,
                     disabled=disabled
                 )
@@ -10882,11 +10927,11 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
             
             # Crear embed de notificación reutilizable
             notification_embed = discord.Embed(
-                title="<a:notification:1418491712317292646> ¡Nuevos Servidores Encontrados!",
+                title="🔔 ¡Nuevos Servidores Encontrados!",
                 description=f"¡Se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**!",
                 color=0x00ff88
             )
-            notification_embed.add_field(name="<a:control:1418490793223651409> Usa", value="`/servertest`", inline=True)
+            notification_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
             notification_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
             
             # Intentar enviar en el canal primero
@@ -10911,7 +10956,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                             logger.warning(f"Bot no tiene permisos para enviar embeds en canal {channel.id}")
                             # Intentar mensaje simple sin embed
                             try:
-                                simple_message = f"<a:notification:1418491712317292646> ¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**! Usa `/servertest` para acceder."
+                                simple_message = f"🔔 ¡{discord_user.mention}, se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**! Usa `/servertest` para acceder."
                                 await channel.send(simple_message, delete_after=10)
                                 logger.info(f"Notificación simple enviada exitosamente en canal {channel.id}")
                                 notification_sent = True
@@ -10943,11 +10988,11 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                     
                     # Crear embed específico para DM
                     dm_embed = discord.Embed(
-                        title="<a:notification:1418491712317292646> ¡Nuevos Servidores Encontrados!",
+                        title="🔔 ¡Nuevos Servidores Encontrados!",
                         description=f"¡Se encontraron **{new_links_count}** nuevos servidores VIP para **{game_name}**!",
                         color=0x00ff88
                     )
-                    dm_embed.add_field(name="<a:control:1418490793223651409> Usa", value="`/servertest`", inline=True)
+                    dm_embed.add_field(name="🎮 Usa", value="`/servertest`", inline=True)
                     dm_embed.add_field(name="⭐ O", value="Haz clic en **Obtener Servidor VIP**", inline=True)
                     dm_embed.add_field(
                         name="💬 Enviado por DM",
@@ -10958,7 +11003,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                     
                     # Enviar DM al usuario
                     await discord_user.send(embed=dm_embed)
-                    logger.info(f"<a:verify2:1418486831993061497> Notificación enviada exitosamente por DM al usuario {discord_user.id}")
+                    logger.info(f"✅ Notificación enviada exitosamente por DM al usuario {discord_user.id}")
                     notification_sent = True
                     
                 except discord.Forbidden:
@@ -10970,7 +11015,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
             
             # Log del resultado final
             if notification_sent:
-                logger.info(f"<a:verify2:1418486831993061497> Notificación de {new_links_count} nuevos servidores entregada exitosamente al usuario {discord_user.id}")
+                logger.info(f"✅ Notificación de {new_links_count} nuevos servidores entregada exitosamente al usuario {discord_user.id}")
             else:
                 logger.error(f"❌ No se pudo entregar notificación al usuario {discord_user.id} - ni por canal ni por DM")
 
@@ -11074,10 +11119,10 @@ class DebugMenuSelect(discord.ui.Select):
     def __init__(self):
         options = [
             discord.SelectOption(
-                label="<:stats:1418490788437823599> Métricas del Sistema",
+                label="📊 Métricas del Sistema",
                 description="Ver estadísticas generales del bot",
                 value="system_metrics",
-                emoji="<:stats:1418490788437823599>"
+                emoji="📊"
             ),
             discord.SelectOption(
                 label="👥 Gestión de Usuarios",
@@ -11148,7 +11193,7 @@ class DebugMenuSelect(discord.ui.Select):
     async def show_system_metrics(self, interaction):
         """Mostrar métricas del sistema"""
         embed = discord.Embed(
-            title="<:stats:1418490788437823599> Métricas del Sistema",
+            title="📊 Métricas del Sistema",
             description="Estadísticas generales del bot",
             color=0x3366ff,
             timestamp=datetime.now()
@@ -11170,7 +11215,7 @@ class DebugMenuSelect(discord.ui.Select):
         total_links = sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())
         total_games = sum(len(user_games) for user_games in scraper.links_by_user.values())
         
-        embed.add_field(name="<a:control:1418490793223651409> Usuarios con Datos", value=f"**{total_users_with_data}**", inline=True)
+        embed.add_field(name="🎮 Usuarios con Datos", value=f"**{total_users_with_data}**", inline=True)
         embed.add_field(name="🔗 Enlaces Totales", value=f"**{total_links}**", inline=True)
         embed.add_field(name="🎯 Juegos Totales", value=f"**{total_games}**", inline=True)
         
@@ -11180,7 +11225,7 @@ class DebugMenuSelect(discord.ui.Select):
         failed = scraper.scraping_stats.get('failed_extractions', 0)
         
         embed.add_field(name="📈 Total Escaneado", value=f"**{scraped}**", inline=True)
-        embed.add_field(name="<a:verify2:1418486831993061497> Exitosos", value=f"**{successful}**", inline=True)
+        embed.add_field(name="✅ Exitosos", value=f"**{successful}**", inline=True)
         embed.add_field(name="❌ Fallidos", value=f"**{failed}**", inline=True)
         
         # Cooldowns activos
@@ -11195,7 +11240,7 @@ class DebugMenuSelect(discord.ui.Select):
         embed.add_field(name="📌 Reservas Totales", value=f"**{total_reservations}**", inline=True)
         
         # Bot info
-        embed.add_field(name="<a:pepebot:1418489370129993728> Servidores Bot", value=f"**{len(bot.guilds)}**", inline=True)
+        embed.add_field(name="🤖 Servidores Bot", value=f"**{len(bot.guilds)}**", inline=True)
         embed.add_field(name="👤 Usuarios Bot", value=f"**{len(bot.users)}**", inline=True)
         
         await interaction.followup.send(embed=embed, ephemeral=True)
@@ -11229,7 +11274,7 @@ class DebugMenuSelect(discord.ui.Select):
         
         if recent_verified:
             embed.add_field(
-                name="<a:verify2:1418486831993061497> Verificados Recientes (últimas 24h)",
+                name="✅ Verificados Recientes (últimas 24h)",
                 value="\n".join(recent_verified[-5:]),
                 inline=False
             )
@@ -11369,7 +11414,7 @@ class DebugMenuSelect(discord.ui.Select):
             )
         else:
             embed.add_field(
-                name="<a:verify2:1418486831993061497> Integridad de Datos",
+                name="✅ Integridad de Datos",
                 value="Todos los datos están íntegros",
                 inline=False
             )
@@ -11410,7 +11455,7 @@ class DebugMenuSelect(discord.ui.Select):
                 expired_bans += 1
         
         embed.add_field(
-            name="<:stats:1418490788437823599> Estado de Limpieza",
+            name="📊 Estado de Limpieza",
             value=f"**Verificaciones expiradas:** {expired_verifications}\n**Bans expirados:** {expired_bans}\n**Cooldowns activos:** {len(scraper.user_cooldowns)}",
             inline=True
         )
@@ -11492,7 +11537,7 @@ class DebugMenuSelect(discord.ui.Select):
         success_rate = 0
         if stats.get('total_scraped', 0) > 0:
             success_rate = (stats.get('successful_extractions', 0) / stats.get('total_scraped', 1)) * 100
-        embed.add_field(name="<:stats:1418490788437823599> Tasa de Éxito", value=f"**{success_rate:.1f}%**", inline=True)
+        embed.add_field(name="📊 Tasa de Éxito", value=f"**{success_rate:.1f}%**", inline=True)
         
         # Último scraping
         if stats.get('last_scrape_time'):
@@ -11537,9 +11582,9 @@ class DebugMenuSelect(discord.ui.Select):
         embed.add_field(name="🚫 Duración Ban", value=f"**{BAN_DURATION//(24*3600)}d**", inline=True)
         embed.add_field(name="🆔 Owner ID", value=f"**916070251895091241**", inline=True)
         
-        embed.add_field(name="<a:control:1418490793223651409> Categorías", value=f"**{len(GAME_CATEGORIES)}** categorías", inline=True)
+        embed.add_field(name="🎮 Categorías", value=f"**{len(GAME_CATEGORIES)}** categorías", inline=True)
         embed.add_field(name="📁 Archivos Config", value="**4** archivos principales", inline=True)
-        embed.add_field(name="<a:pepebot:1418489370129993728> Prefijo", value="**/** (slash commands)", inline=True)
+        embed.add_field(name="🤖 Prefijo", value="**/** (slash commands)", inline=True)
         
         # Configuraciones actuales
         embed.add_field(
@@ -11581,7 +11626,7 @@ async def debug_menu_command(interaction: discord.Interaction):
     )
     
     embed.add_field(
-        name="<:stats:1418490788437823599> Información General",
+        name="📊 Información General",
         value="Este menú te permite acceder a todas las herramientas de administración y monitoreo del bot.",
         inline=False
     )
@@ -11715,12 +11760,12 @@ async def admin_command(interaction: discord.Interaction,
             
             # Embed de éxito
             embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Usuario Auto-Verificado",
+                title="✅ Usuario Auto-Verificado",
                 description=f"El usuario <@{usuario_id}> ha sido verificado automáticamente como **{roblox_username}**.",
                 color=0x00ff88
             )
             embed.add_field(name="👤 Usuario Discord", value=f"<@{usuario_id}>", inline=True)
-            embed.add_field(name="<a:control:1418490793223651409> Usuario Roblox", value=f"`{roblox_username}`", inline=True)
+            embed.add_field(name="🎮 Usuario Roblox", value=f"`{roblox_username}`", inline=True)
             embed.add_field(name="🔐 Código Asignado", value=f"`{verification_code}`", inline=True)
             embed.add_field(name="⏰ Duración", value="24 horas", inline=True)
             embed.add_field(name="👨‍💼 Verificado por", value=f"<@{interaction.user.id}> (Owner)", inline=True)
@@ -11736,12 +11781,12 @@ async def admin_command(interaction: discord.Interaction,
                 user = bot.get_user(int(usuario_id))
                 if user:
                     dm_embed = discord.Embed(
-                        title="<a:verify2:1418486831993061497> Verificación Automática Completada",
+                        title="✅ Verificación Automática Completada",
                         description=f"Has sido verificado automáticamente por un administrador como **{roblox_username}**.",
                         color=0x00ff88
                     )
                     dm_embed.add_field(
-                        name="<a:control:1418490793223651409> Ahora puedes usar:",
+                        name="🎮 Ahora puedes usar:",
                         value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
                         inline=False
                     )
@@ -11769,7 +11814,7 @@ async def admin_command(interaction: discord.Interaction,
                 roblox_verification.save_data()
                 
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Usuario Desverificado",
+                    title="✅ Usuario Desverificado",
                     description=f"El usuario <@{usuario_id}> ha sido desverificado (era **{old_username}**).",
                     color=0x00ff88
                 )
@@ -11828,7 +11873,7 @@ async def admin_command(interaction: discord.Interaction,
                 roblox_verification.save_bans()
                 
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Usuario Desbaneado",
+                    title="✅ Usuario Desbaneado",
                     description=f"El usuario <@{usuario_id}> ha sido desbaneado.",
                     color=0x00ff88
                 )
@@ -11854,7 +11899,7 @@ async def admin_command(interaction: discord.Interaction,
             
             # Información del usuario
             embed = discord.Embed(
-                title="<:stats:1418490788437823599> Información de Usuario",
+                title="📊 Información de Usuario",
                 description=f"Información detallada para <@{usuario_id}>:",
                 color=0x4169e1
             )
@@ -11865,7 +11910,7 @@ async def admin_command(interaction: discord.Interaction,
                 data = roblox_verification.verified_users[usuario_id]
                 verified_time = datetime.fromtimestamp(data['verified_at'])
                 embed.add_field(
-                    name="<a:verify2:1418486831993061497> Verificado",
+                    name="✅ Verificado",
                     value=f"**Roblox:** {data['roblox_username']}\n**Código:** {data['verification_code']}\n**Desde:** {verified_time.strftime('%d/%m/%Y %H:%M')}",
                     inline=False
                 )
@@ -11884,7 +11929,7 @@ async def admin_command(interaction: discord.Interaction,
                     inline=False
                 )
             else:
-                embed.add_field(name="<a:verify2:1418486831993061497> No Baneado", value="Usuario no está baneado", inline=False)
+                embed.add_field(name="✅ No Baneado", value="Usuario no está baneado", inline=False)
             
             # Advertencias
             warnings = roblox_verification.get_user_warnings(usuario_id)
@@ -11893,7 +11938,7 @@ async def admin_command(interaction: discord.Interaction,
             # Estadísticas de uso
             user_games = scraper.links_by_user.get(usuario_id, {})
             total_servers = sum(len(game_data.get('links', [])) for game_data in user_games.values())
-            embed.add_field(name="<a:control:1418490793223651409> Juegos", value=str(len(user_games)), inline=True)
+            embed.add_field(name="🎮 Juegos", value=str(len(user_games)), inline=True)
             embed.add_field(name="🔗 Servidores", value=str(total_servers), inline=True)
             
             favorites_count = len(scraper.user_favorites.get(usuario_id, []))
@@ -11906,7 +11951,7 @@ async def admin_command(interaction: discord.Interaction,
             if cooldown_remaining:
                 embed.add_field(name="⏰ Cooldown", value=f"{cooldown_remaining}s", inline=True)
             else:
-                embed.add_field(name="<a:verify2:1418486831993061497> Sin Cooldown", value="Disponible", inline=True)
+                embed.add_field(name="✅ Sin Cooldown", value="Disponible", inline=True)
             
             await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -11931,7 +11976,7 @@ async def admin_command(interaction: discord.Interaction,
                 color=0x00ff88
             )
             embed.add_field(
-                name="<:stats:1418490788437823599> Resultados",
+                name="📊 Resultados",
                 value=f"• **Verificaciones:** {old_verified_count} → {new_verified_count} (-{old_verified_count - new_verified_count})\n• **Bans:** {old_banned_count} → {new_banned_count} (-{old_banned_count - new_banned_count})\n• **Pendientes:** {old_pending_count} → {new_pending_count} (-{old_pending_count - new_pending_count})\n• **Cooldowns:** {old_cooldowns_count} → {new_cooldowns_count} (-{old_cooldowns_count - new_cooldowns_count})",
                 inline=False
             )
@@ -12035,7 +12080,7 @@ async def admin_command(interaction: discord.Interaction,
                 )
             else:
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Validación Exitosa",
+                    title="✅ Validación Exitosa",
                     description="No se encontraron problemas de integridad en los datos.",
                     color=0x00ff88
                 )
@@ -12082,7 +12127,7 @@ async def admin_command(interaction: discord.Interaction,
                 description=f"Mensaje enviado a usuarios verificados.",
                 color=0x00ff88
             )
-            embed.add_field(name="<a:verify2:1418486831993061497> Enviados", value=str(sent_count), inline=True)
+            embed.add_field(name="✅ Enviados", value=str(sent_count), inline=True)
             embed.add_field(name="❌ Fallidos", value=str(failed_count), inline=True)
             embed.add_field(name="📝 Mensaje", value=f"```{message_text[:100]}```", inline=False)
             
@@ -12105,7 +12150,7 @@ async def admin_command(interaction: discord.Interaction,
                 roblox_verification.save_warnings()
                 
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Advertencias Limpiadas",
+                    title="✅ Advertencias Limpiadas",
                     description=f"Se eliminaron **{old_warnings}** advertencias del usuario <@{usuario_id}>.",
                     color=0x00ff88
                 )
@@ -12122,7 +12167,7 @@ async def admin_command(interaction: discord.Interaction,
         elif accion.lower() == "stats":
             # Estadísticas globales avanzadas
             embed = discord.Embed(
-                title="<:stats:1418490788437823599> Estadísticas Globales del Bot",
+                title="📊 Estadísticas Globales del Bot",
                 description="Vista completa del sistema",
                 color=0x3366ff,
                 timestamp=datetime.now()
@@ -12146,14 +12191,14 @@ async def admin_command(interaction: discord.Interaction,
             total_favorites = sum(len(favorites) for favorites in scraper.user_favorites.values())
             total_reservations = sum(len(reservations) for reservations in scraper.user_reserved_servers.values())
             
-            embed.add_field(name="<a:control:1418490793223651409> Usuarios con Datos", value=str(total_users_with_data), inline=True)
+            embed.add_field(name="🎮 Usuarios con Datos", value=str(total_users_with_data), inline=True)
             embed.add_field(name="🔗 Enlaces Totales", value=str(total_links), inline=True)
             embed.add_field(name="🎯 Juegos Totales", value=str(total_games), inline=True)
             embed.add_field(name="⭐ Favoritos", value=str(total_favorites), inline=True)
             embed.add_field(name="📌 Reservas", value=str(total_reservations), inline=True)
             
             # Bot stats
-            embed.add_field(name="<a:pepebot:1418489370129993728> Servidores", value=str(len(bot.guilds)), inline=True)
+            embed.add_field(name="🤖 Servidores", value=str(len(bot.guilds)), inline=True)
             embed.add_field(name="👤 Usuarios Bot", value=str(len(bot.users)), inline=True)
             embed.add_field(name="⏰ Cooldowns", value=str(len(scraper.user_cooldowns)), inline=True)
             
@@ -12181,7 +12226,7 @@ async def admin_command(interaction: discord.Interaction,
                 inline=False
             )
             embed.add_field(
-                name="<a:foco:1418492184373755966> Consejo:",
+                name="💡 Consejo:",
                 value="Usa `/debug` para acceso al menú visual completo",
                 inline=False
             )
@@ -12222,7 +12267,7 @@ async def roblox_control_command(interaction: discord.Interaction,
             connected_scripts = remote_control.get_connected_scripts()
             
             embed = discord.Embed(
-                title="<a:pepebot:1418489370129993728> Estado del Control Remoto de Roblox",
+                title="🤖 Estado del Control Remoto de Roblox",
                 description="Scripts conectados y comandos activos",
                 color=0x3366ff,
                 timestamp=datetime.now()
@@ -12258,7 +12303,7 @@ async def roblox_control_command(interaction: discord.Interaction,
             
             completed_commands = [cmd for cmd in remote_control.active_commands.values() if cmd['status'] in ['completed', 'failed']]
             embed.add_field(
-                name="<a:verify2:1418486831993061497> Comandos Completados",
+                name="✅ Comandos Completados",
                 value=f"**{len(completed_commands)}** comandos procesados",
                 inline=True
             )
@@ -12284,7 +12329,7 @@ async def roblox_control_command(interaction: discord.Interaction,
                     inline=False
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Cómo obtener Job ID:",
+                    name="💡 Cómo obtener Job ID:",
                     value="• Ve al servidor donde quieres que se una el bot\n• Usa `/joinscript` o consulta la consola del juego\n• El Job ID aparece en game.JobId",
                     inline=False
                 )
@@ -12322,7 +12367,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
                 action='execute_script',
                 server_link=f"PlaceId:{place_id}|JobId:{job_id}",
                 target_user=None,
-                message='bot by RbxServers **Testing** <a:pepebot:1418489370129993728>',
+                message='bot by RbxServers **Testing** 🤖',
                 lua_script=lua_script
             )
             
@@ -12336,15 +12381,15 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
             embed.add_field(name="📝 Método", value="TeleportToPlaceInstance", inline=True)
             embed.add_field(name="🆔 ID Comando", value=f"`{result.get('command_id', 'unknown')}`", inline=True)
             embed.add_field(name="🔧 Acción", value="Join por Job ID", inline=True)
-            embed.add_field(name="<a:verify2:1418486831993061497> Compatibilidad", value="Cliente y Ejecutor", inline=True)
+            embed.add_field(name="✅ Compatibilidad", value="Cliente y Ejecutor", inline=True)
             
             # Mostrar preview del script generado
             script_preview = lua_script[:200] + "..." if len(lua_script) > 200 else lua_script
             embed.add_field(name="📜 Preview del Script", value=f"```lua\n{script_preview}\n```", inline=False)
             
             embed.add_field(
-                name="<a:foco:1418492184373755966> Ventajas del Nuevo Método:",
-                value="• <a:verify2:1418486831993061497> Funciona desde cliente (ejecutores)\n• <a:verify2:1418486831993061497> No requiere privateServerLinkCode\n• <a:verify2:1418486831993061497> Unión directa al servidor específico\n• <a:verify2:1418486831993061497> Compatible con TeleportService",
+                name="💡 Ventajas del Nuevo Método:",
+                value="• ✅ Funciona desde cliente (ejecutores)\n• ✅ No requiere privateServerLinkCode\n• ✅ Unión directa al servidor específico\n• ✅ Compatible con TeleportService",
                 inline=False
             )
             
@@ -12355,7 +12400,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
             result = await remote_control.send_command_to_roblox(
                 action='send_message',
                 target_user=usuario_objetivo,
-                message='bot by RbxServers **Testing** <a:pepebot:1418489370129993728>'
+                message='bot by RbxServers **Testing** 🤖'
             )
             
             embed = discord.Embed(
@@ -12363,7 +12408,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
                 description="Se envió la orden de escribir en el chat de Roblox.",
                 color=0x00ff88
             )
-            embed.add_field(name="📝 Mensaje", value="bot by RbxServers **Testing** <a:pepebot:1418489370129993728>", inline=False)
+            embed.add_field(name="📝 Mensaje", value="bot by RbxServers **Testing** 🤖", inline=False)
             embed.add_field(name="🎯 Usuario Objetivo", value=usuario_objetivo or "Ninguno específico", inline=True)
             embed.add_field(name="🆔 ID Comando", value=f"`{result.get('command_id', 'unknown')}`", inline=True)
             
@@ -12456,11 +12501,11 @@ async def recommendations_command(interaction: discord.Interaction):
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
             "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-            "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+            "building": "🏗️", "anime": "🌸", "other": "🎮"
         }
         
         for i, rec in enumerate(recommendations, 1):
-            emoji = category_emoji.get(rec.get('category', 'other'), '<a:control:1418490793223651409>')
+            emoji = category_emoji.get(rec.get('category', 'other'), '🎮')
             game_name = rec.get('game_name', f"Game {rec['game_id']}")
             reason = rec.get('recommendation_reason', 'Recomendación del sistema')
             
@@ -12534,7 +12579,7 @@ async def report_command(interaction: discord.Interaction, server_link: str, iss
         
         if result['success']:
             embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Reporte Enviado",
+                title="✅ Reporte Enviado",
                 description="Tu reporte ha sido enviado exitosamente.",
                 color=0x00ff88
             )
@@ -12610,7 +12655,7 @@ async def join_script_command(interaction: discord.Interaction, game_id: str):
         roblox_game_id, private_code = match.groups()
         
         # Generar script de Roblox
-        roblox_script = f'''-- <a:control:1418490793223651409> RbxServers Auto-Join Script
+        roblox_script = f'''-- 🎮 RbxServers Auto-Join Script
 -- Generado automáticamente para unirse a servidor privado
 -- Juego: {game_name}
 -- Usuario: {interaction.user.name}
@@ -12618,7 +12663,7 @@ async def join_script_command(interaction: discord.Interaction, game_id: str):
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
-print("<a:pepebot:1418489370129993728> RbxServers Auto-Join Script iniciando...")
+print("🤖 RbxServers Auto-Join Script iniciando...")
 print("🎯 Juego: {game_name}")
 print("🆔 Game ID: {roblox_game_id}")
 print("🔑 Private Code: {private_code}")
@@ -12635,7 +12680,7 @@ local function joinPrivateServer()
     end)
     
     if success then
-        print("<a:verify2:1418486831993061497> Teleport iniciado exitosamente!")
+        print("✅ Teleport iniciado exitosamente!")
         print("⏳ Esperando conexión al servidor...")
     else
         print("❌ Error en teleport: " .. tostring(errorMessage))
@@ -12647,14 +12692,14 @@ end
 
 -- Verificar que estamos en un juego (no en el lobby)
 if game.PlaceId and game.PlaceId > 0 then
-    print("<a:verify2:1418486831993061497> Ejecutándose desde dentro del juego")
+    print("✅ Ejecutándose desde dentro del juego")
     joinPrivateServer()
 else
     print("❌ Este script debe ejecutarse desde dentro de un juego de Roblox")
-    print("<a:foco:1418492184373755966> Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
+    print("💡 Ve a cualquier juego de Roblox y ejecuta este script en la consola (F9)")
 end
 
-print("<a:control:1418490793223651409> Script cargado - by RbxServers (hesiz)")'''
+print("🎮 Script cargado - by RbxServers (hesiz)")'''
         
         # Crear embed con el script
         embed = discord.Embed(
@@ -12724,12 +12769,12 @@ async def ping_command(interaction: discord.Interaction):
         )
         
         embed.add_field(name="📡 Latencia", value=f"{latency}ms", inline=True)
-        embed.add_field(name="<a:pepebot:1418489370129993728> Estado", value="<a:verify2:1418486831993061497> Online", inline=True)
+        embed.add_field(name="🤖 Estado", value="✅ Online", inline=True)
         embed.add_field(name="🔗 Servidores", value=f"{len(bot.guilds)}", inline=True)
         
         embed.add_field(name="👥 Usuarios Totales", value=f"{len(bot.users)}", inline=True)
-        embed.add_field(name="<:stats:1418490788437823599> Enlaces VIP", value=f"{sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())}", inline=True)
-        embed.add_field(name="<a:verify2:1418486831993061497> Verificados", value=f"{len(roblox_verification.verified_users)}", inline=True)
+        embed.add_field(name="📊 Enlaces VIP", value=f"{sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())}", inline=True)
+        embed.add_field(name="✅ Verificados", value=f"{len(roblox_verification.verified_users)}", inline=True)
         
         embed.set_footer(text="RbxServers Bot por hesiz")
         
@@ -12754,7 +12799,7 @@ async def robloxbot_command(interaction: discord.Interaction):
         roblox_bots = [
             {
                 "username": "RbxServersBot",
-                "status": "<a:verify2:1418486831993061497> Principal",
+                "status": "✅ Principal",
                 "role": "Bot principal para scraping y control remoto",
                 "profile_url": "https://www.roblox.com/users/search?keyword=RbxServersBot"
             },
@@ -12773,7 +12818,7 @@ async def robloxbot_command(interaction: discord.Interaction):
         ]
         
         embed = discord.Embed(
-            title="<a:pepebot:1418489370129993728> Cuentas Bot de Roblox del Sistema",
+            title="🤖 Cuentas Bot de Roblox del Sistema",
             description="Estas son las cuentas de Roblox que utiliza el bot de Discord para sus operaciones.",
             color=0x3366ff,
             timestamp=datetime.now()
@@ -12853,7 +12898,7 @@ async def export_command(interaction: discord.Interaction):
         # Crear contenido del archivo
         export_content = []
         export_content.append("=" * 60)
-        export_content.append("<a:control:1418490793223651409> EXPORTACIÓN DE ENLACES VIP - ROBLOX")
+        export_content.append("🎮 EXPORTACIÓN DE ENLACES VIP - ROBLOX")
         export_content.append("=" * 60)
         export_content.append(f"📅 Exportado: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
         export_content.append(f"👤 Usuario Discord: {interaction.user.name}#{interaction.user.discriminator}")
@@ -12861,7 +12906,7 @@ async def export_command(interaction: discord.Interaction):
         # Obtener datos del usuario verificado
         if user_id in roblox_verification.verified_users:
             roblox_username = roblox_verification.verified_users[user_id]['roblox_username']
-            export_content.append(f"<a:control:1418490793223651409> Usuario Roblox: {roblox_username}")
+            export_content.append(f"🎮 Usuario Roblox: {roblox_username}")
         
         export_content.append("=" * 60)
         export_content.append("")
@@ -12872,7 +12917,7 @@ async def export_command(interaction: discord.Interaction):
         total_favorites = len(scraper.user_favorites.get(user_id, []))
         total_reservations = len(scraper.get_reserved_servers(user_id))
         
-        export_content.append("<:stats:1418490788437823599> ESTADÍSTICAS GENERALES")
+        export_content.append("📊 ESTADÍSTICAS GENERALES")
         export_content.append("-" * 30)
         export_content.append(f"🎯 Total de Juegos: {total_games}")
         export_content.append(f"🔗 Total de Enlaces: {total_links}")
@@ -12895,14 +12940,14 @@ async def export_command(interaction: discord.Interaction):
             category_emoji = {
                 "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                 "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-                "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+                "building": "🏗️", "anime": "🌸", "other": "🎮"
             }
-            emoji = category_emoji.get(category, '<a:control:1418490793223651409>')
+            emoji = category_emoji.get(category, '🎮')
             export_content.append(f"{emoji} {category.title()}: {stats['games']} juegos, {stats['links']} enlaces")
         export_content.append("")
         
         # Enlaces detallados por juego
-        export_content.append("<a:control:1418490793223651409> ENLACES DETALLADOS POR JUEGO")
+        export_content.append("🎮 ENLACES DETALLADOS POR JUEGO")
         export_content.append("=" * 60)
         
         for game_id, game_data in user_games.items():
@@ -12960,7 +13005,7 @@ async def export_command(interaction: discord.Interaction):
         
         # Footer
         export_content.append("=" * 60)
-        export_content.append("<a:pepebot:1418489370129993728> Generado por RbxServers Bot")
+        export_content.append("🤖 Generado por RbxServers Bot")
         export_content.append("👤 Bot creado por: hesiz (Roblox)")
         export_content.append("🔗 https://www.roblox.com/users/11834624/profile")
         export_content.append("=" * 60)
@@ -12975,12 +13020,12 @@ async def export_command(interaction: discord.Interaction):
         
         # Crear embed de confirmación
         embed = discord.Embed(
-            title="<a:verify2:1418486831993061497> Exportación Completada",
+            title="✅ Exportación Completada",
             description=f"Se han exportado exitosamente **{total_links}** enlaces VIP de **{total_games}** juegos.",
             color=0x00ff88
         )
         
-        embed.add_field(name="<:stats:1418490788437823599> Contenido del Archivo", value=f"• Estadísticas generales\n• Enlaces organizados por juego\n• Detalles de servidores\n• Servidores reservados", inline=False)
+        embed.add_field(name="📊 Contenido del Archivo", value=f"• Estadísticas generales\n• Enlaces organizados por juego\n• Detalles de servidores\n• Servidores reservados", inline=False)
         embed.add_field(name="📁 Archivo", value=f"`{filename}`", inline=True)
         embed.add_field(name="📅 Fecha", value=datetime.now().strftime('%d/%m/%Y %H:%M'), inline=True)
         embed.add_field(name="📝 Líneas", value=str(len(export_content)), inline=True)
@@ -13018,7 +13063,7 @@ async def stats(interaction: discord.Interaction):
     
     try:
         embed = discord.Embed(
-            title="<:stats:1418490788437823599> Estadísticas de Base de Datos VIP",
+            title="📊 Estadísticas de Base de Datos VIP",
             description="**Vista completa de datos recopilados**",
             color=0x3366ff,
             timestamp=datetime.now()
@@ -13044,7 +13089,7 @@ async def stats(interaction: discord.Interaction):
                 total_links += len(game_data.get('links', []))
         
         embed.add_field(name="🗃️ Tus Enlaces", value=f"**{user_links}**", inline=True)
-        embed.add_field(name="<a:control:1418490793223651409> Tus Juegos", value=f"**{user_games_count}**", inline=True)
+        embed.add_field(name="🎮 Tus Juegos", value=f"**{user_games_count}**", inline=True)
         embed.add_field(name="⭐ Tus Favoritos", value=f"**{user_favorites_count}**", inline=True)
         
         embed.add_field(name="🌐 Enlaces Totales", value=f"**{total_links}**", inline=True)
@@ -13052,7 +13097,7 @@ async def stats(interaction: discord.Interaction):
         embed.add_field(name="📈 Total Escaneado", value=f"**{scraper.scraping_stats.get('total_scraped', 0)}**", inline=True)
 
         # Performance metrics
-        embed.add_field(name="<a:verify2:1418486831993061497> Exitosos", value=f"{scraper.scraping_stats.get('successful_extractions', 0)}", inline=True)
+        embed.add_field(name="✅ Exitosos", value=f"{scraper.scraping_stats.get('successful_extractions', 0)}", inline=True)
         embed.add_field(name="❌ Fallidos", value=f"{scraper.scraping_stats.get('failed_extractions', 0)}", inline=True)
         embed.add_field(name="⚡ Velocidad", value=f"{scraper.scraping_stats.get('servers_per_minute', 0)} serv/min", inline=True)
 
@@ -13061,14 +13106,14 @@ async def stats(interaction: discord.Interaction):
         if cooldown_remaining:
             embed.add_field(name="⏰ Cooldown", value=f"{cooldown_remaining}s restantes", inline=True)
         else:
-            embed.add_field(name="<a:verify2:1418486831993061497> Disponible", value="Sin cooldown", inline=True)
+            embed.add_field(name="✅ Disponible", value="Sin cooldown", inline=True)
 
         # Success rate calculation
         total_scraped = scraper.scraping_stats.get('total_scraped', 0)
         successful = scraper.scraping_stats.get('successful_extractions', 0)
         if total_scraped > 0:
             success_rate = (successful / total_scraped) * 100
-            embed.add_field(name="<:stats:1418490788437823599> Tasa de Éxito", value=f"{success_rate:.1f}%", inline=True)
+            embed.add_field(name="📊 Tasa de Éxito", value=f"{success_rate:.1f}%", inline=True)
 
         # Category breakdown for user
         user_categories = {}
@@ -13081,10 +13126,10 @@ async def stats(interaction: discord.Interaction):
             category_emoji = {
                 "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
                 "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
-                "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
+                "building": "🏗️", "anime": "🌸", "other": "🎮"
             }
             for category, count in sorted(user_categories.items(), key=lambda x: x[1], reverse=True):
-                emoji = category_emoji.get(category, '<a:control:1418490793223651409>')
+                emoji = category_emoji.get(category, '🎮')
                 category_text += f"{emoji} {category.title()}: {count}\n"
             
             embed.add_field(name="📂 Tus Categorías", value=category_text[:1024], inline=True)
@@ -13118,7 +13163,7 @@ async def stats(interaction: discord.Interaction):
 
         # Commands info
         embed.add_field(
-            name="<a:control:1418490793223651409> Comandos Disponibles", 
+            name="🎮 Comandos Disponibles", 
             value="• `/verify [usuario_roblox]` - 🔒 **REQUERIDO** Verificarse para usar el bot\n• `/scrape [id_o_nombre]` - 🚀 Buscar por ID o nombre automáticamente\n• `/servertest` - Ver servidores\n• `/categories` - 🗂️ Navegar por categorías\n• `/favorites` - Ver favoritos\n• `/reservas` - Ver reservas\n• `/history` - Ver historial", 
             inline=False
         )

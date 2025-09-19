@@ -25,12 +25,12 @@ def patch_scraper_save_method():
                 try:
                     # 🔄 APLICAR FILTRO DE SERVIDORES ÚNICOS
                     logger.info(f"🔍 Aplicando filtro de servidores únicos para usuario {user_id}")
-                    logger.info(f"<:stats:1418490788437823599> Servidores antes del filtro: {len(servers)}")
+                    logger.info(f"📊 Servidores antes del filtro: {len(servers)}")
                     
                     # Filtrar y marcar servidores únicos (ahora devuelve duplicados encontrados)
                     unique_servers, duplicates_count = unique_server_manager.filter_unique_servers_for_user(user_id, servers)
                     
-                    logger.info(f"<a:verify2:1418486831993061497> Servidores después del filtro: {len(unique_servers)}")
+                    logger.info(f"✅ Servidores después del filtro: {len(unique_servers)}")
                     
                     if duplicates_count > 0:
                         logger.info(f"🚫 Removidos {duplicates_count} servidores duplicados/ya entregados")
@@ -52,7 +52,7 @@ def patch_scraper_save_method():
                                 
                                 if replacement_servers:
                                     unique_servers.extend(replacement_servers)
-                                    logger.info(f"<a:verify2:1418486831993061497> Agregados {len(replacement_servers)} servidores de reemplazo")
+                                    logger.info(f"✅ Agregados {len(replacement_servers)} servidores de reemplazo")
                                     
                                     # Marcar los nuevos como entregados
                                     unique_server_manager.mark_servers_as_delivered(user_id, replacement_servers)
@@ -103,7 +103,7 @@ def integrate_unique_servers_with_scraping():
                     patch_func = patch_scraper_save_method()
                     if patch_func:
                         scraper.save_servers_directly_to_new_format = patch_func(original_method).__get__(scraper, scraper.__class__)
-                        logger.info("<a:verify2:1418486831993061497> Sistema de servidores únicos integrado con el scraper")
+                        logger.info("✅ Sistema de servidores únicos integrado con el scraper")
                         return True
                 
         logger.warning("⚠️ No se pudo integrar con el scraper principal")
@@ -121,7 +121,7 @@ def setup_commands(bot):
     integration_success = integrate_unique_servers_with_scraping()
     
     if integration_success:
-        logger.info("<a:verify2:1418486831993061497> Integración de servidores únicos configurada exitosamente")
+        logger.info("✅ Integración de servidores únicos configurada exitosamente")
     else:
         logger.warning("⚠️ Integración de servidores únicos no pudo completarse")
     

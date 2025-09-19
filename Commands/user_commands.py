@@ -89,7 +89,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="<a:verify2:1418486831993061497> Resultado" if has_badge else "❌ Resultado",
+                name="✅ Resultado" if has_badge else "❌ Resultado",
                 value="El usuario **SÍ tiene** esta insignia" if has_badge else "El usuario **NO tiene** esta insignia",
                 inline=False
             )
@@ -135,7 +135,7 @@ def setup_commands(bot):
                                 image_url = avatar_data['data'][0].get('imageUrl')
                                 if image_url:
                                     embed.set_image(url=image_url)
-                                    logger.info(f"<a:verify2:1418486831993061497> Imagen del avatar configurada: {image_url}")
+                                    logger.info(f"✅ Imagen del avatar configurada: {image_url}")
 
                 # Thumbnail más pequeño para la esquina
                 thumbnail_url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={user_id}&size=150x150&format=Png&isCircular=false"
@@ -164,7 +164,7 @@ def setup_commands(bot):
     # Registrar el grupo de comandos
     bot.tree.add_command(user_group)
 
-    logger.info("<a:verify2:1418486831993061497> Comandos de usuarios configurados exitosamente")
+    logger.info("✅ Comandos de usuarios configurados exitosamente")
     return True
 
 async def get_user_by_username(username: str):

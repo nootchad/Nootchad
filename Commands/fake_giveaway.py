@@ -267,7 +267,7 @@ def setup_commands(bot):
 
             # Mensaje de confirmación privado para el owner
             confirm_embed = discord.Embed(
-                title="<a:verify2:1418486831993061497> Giveaway Falso Creado",
+                title="✅ Giveaway Falso Creado",
                 description="El giveaway ha sido creado exitosamente.",
                 color=0x00ff88
             )
@@ -308,7 +308,7 @@ def setup_commands(bot):
             error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:200]}```", inline=False)
             await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-    logger.info("<a:verify2:1418486831993061497> Comando /giveaway (falso) configurado")
+    logger.info("✅ Comando /giveaway (falso) configurado")
     return True
 
 async def fake_giveaway_end(bot, channel, message_id, premio, winner_user, host_user, duration_seconds):

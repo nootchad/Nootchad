@@ -228,7 +228,7 @@ class SupabaseManager:
                 return False
                 
             self.connected = True
-            logger.info("<a:verify2:1418486831993061497> Conexión a Supabase establecida exitosamente con configuración robusta")
+            logger.info("✅ Conexión a Supabase establecida exitosamente con configuración robusta")
             return True
             
         except asyncio.TimeoutError:
@@ -873,15 +873,15 @@ class SupabaseManager:
             except FileNotFoundError:
                 logger.warning("⚠️ Archivo bans.json no encontrado")
                 
-            logger.info("<a:verify2:1418486831993061497> Migración completada exitosamente:")
+            logger.info("✅ Migración completada exitosamente:")
             logger.info(f"   👥 Usuarios: {results['users_migrated']}")
-            logger.info(f"   <a:verify2:1418486831993061497> Verificaciones: {results['verifications_migrated']}")
+            logger.info(f"   ✅ Verificaciones: {results['verifications_migrated']}")
             logger.info(f"   💰 Monedas: {results['coins_migrated']}")
-            logger.info(f"   <:stats:1418490788437823599> Transacciones: {results['transactions_migrated']}")
+            logger.info(f"   📊 Transacciones: {results['transactions_migrated']}")
             logger.info(f"   🔒 Fingerprints: {results['fingerprints_migrated']}")
             logger.info(f"   ⏱️ Cooldowns: {results['cooldowns_migrated']}")
             logger.info(f"   🚫 Blacklist: {results['blacklist_migrated']}")
-            logger.info(f"   <a:verify2:1418486831993061497> Whitelist: {results['whitelist_migrated']}")
+            logger.info(f"   ✅ Whitelist: {results['whitelist_migrated']}")
             logger.info(f"   ⚠️ Warnings: {results['warnings_migrated']}")
             logger.info(f"   🔨 Bans: {results['bans_migrated']}")
             
@@ -926,7 +926,7 @@ def check_supabase_config():
     if not db_url:
         logger.warning("⚠️ Variable DATABASE_URL no encontrada")
         
-    logger.info("<a:verify2:1418486831993061497> Configuración de Supabase verificada")
+    logger.info("✅ Configuración de Supabase verificada")
     return True
 
 if __name__ == "__main__":
@@ -937,10 +937,10 @@ if __name__ == "__main__":
         if check_supabase_config():
             success = await init_supabase()
             if success:
-                print("<a:verify2:1418486831993061497> Conexión a Supabase exitosa!")
+                print("✅ Conexión a Supabase exitosa!")
                 # Ejecutar migración si es necesario
                 # results = await migrate_all_data()
-                # print(f"<:stats:1418490788437823599> Resultados de migración: {results}")
+                # print(f"📊 Resultados de migración: {results}")
             else:
                 print("❌ Error conectando a Supabase")
         else:

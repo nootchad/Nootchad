@@ -33,14 +33,14 @@ class UniqueServerManager:
                 with open(self.delivered_servers_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.delivered_servers = data.get('delivered_servers', {})
-                    logger.info(f"<a:verify2:1418486831993061497> Cargados {len(self.delivered_servers)} servidores ya entregados")
+                    logger.info(f"✅ Cargados {len(self.delivered_servers)} servidores ya entregados")
             
             # Cargar historial de usuarios
             if Path(self.user_server_history_file).exists():
                 with open(self.user_server_history_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.user_history = data.get('user_history', {})
-                    logger.info(f"<a:verify2:1418486831993061497> Cargado historial de {len(self.user_history)} usuarios")
+                    logger.info(f"✅ Cargado historial de {len(self.user_history)} usuarios")
             
             # Si no existen archivos, inicializar desde user_game_servers.json
             if not self.delivered_servers and not self.user_history:
@@ -81,7 +81,7 @@ class UniqueServerManager:
             
             if initialized_servers > 0:
                 self.save_data()
-                logger.info(f"<a:verify2:1418486831993061497> Inicializados {initialized_servers} servidores únicos desde datos existentes")
+                logger.info(f"✅ Inicializados {initialized_servers} servidores únicos desde datos existentes")
                 
         except Exception as e:
             logger.error(f"❌ Error inicializando desde datos existentes: {e}")
@@ -187,7 +187,7 @@ class UniqueServerManager:
         
         # Guardar cambios inmediatamente
         self.save_data()
-        logger.info(f"<a:verify2:1418486831993061497> {len(server_list)} servidores marcados como entregados a usuario {user_id}")
+        logger.info(f"✅ {len(server_list)} servidores marcados como entregados a usuario {user_id}")
     
     def get_user_delivered_count(self, user_id: str) -> int:
         """Obtener cantidad de servidores entregados a un usuario"""
@@ -227,7 +227,7 @@ class UniqueServerManager:
                             if server not in self.delivered_servers:
                                 fresh_servers.append(server)
                         
-                        logger.info(f"<a:verify2:1418486831993061497> Encontrados {len(fresh_servers)} servidores frescos de reemplazo")
+                        logger.info(f"✅ Encontrados {len(fresh_servers)} servidores frescos de reemplazo")
                         return fresh_servers[:needed_count]
             
             logger.warning("⚠️ No se pudo acceder al scraper para buscar reemplazos")
@@ -275,8 +275,8 @@ def setup_commands(bot):
     # El manager ya está inicializado globalmente
     # Aquí podríamos agregar hooks a eventos del bot si fuera necesario
     
-    logger.info("<a:verify2:1418486831993061497> Sistema de gestión de servidores únicos configurado")
-    logger.info(f"<:stats:1418490788437823599> Estado actual: {unique_server_manager.get_global_delivered_count()} servidores únicos registrados")
+    logger.info("✅ Sistema de gestión de servidores únicos configurado")
+    logger.info(f"📊 Estado actual: {unique_server_manager.get_global_delivered_count()} servidores únicos registrados")
     
     return True
 

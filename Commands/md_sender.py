@@ -45,7 +45,7 @@ class MDSelectView(discord.ui.View):
                 label="Sugerencias",
                 description="Enviar contenido del archivo sugerencias.md",
                 value="sugerencias.md",
-                emoji="<a:foco:1418492184373755966>"
+                emoji="💡"
             ),
             discord.SelectOption(
                 label="Anuncios",
@@ -231,7 +231,7 @@ def setup_commands(bot):
             )
 
             instruction_embed.add_field(
-                name="<a:foco:1418492184373755966> Instrucciones:",
+                name="💡 Instrucciones:",
                 value="1. Usa el menú desplegable de abajo\n2. Selecciona el archivo deseado\n3. El contenido se enviará automáticamente",
                 inline=False
             )
@@ -265,7 +265,7 @@ def setup_commands(bot):
             else:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-    logger.info("<a:verify2:1418486831993061497> Comando /md configurado exitosamente")
+    logger.info("✅ Comando /md configurado exitosamente")
     return True
 
 def cleanup_commands(bot):

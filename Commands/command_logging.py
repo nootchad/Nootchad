@@ -25,7 +25,7 @@ class CommandLogger:
             if Path(self.config_file).exists():
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     self.config = json.load(f)
-                logger.info(f"<a:verify2:1418486831993061497> Configuración de logging cargada: {len(self.config.get('servers', {}))} servidores")
+                logger.info(f"✅ Configuración de logging cargada: {len(self.config.get('servers', {}))} servidores")
             else:
                 self.config = {
                     'servers': {},
@@ -125,7 +125,7 @@ class CommandLogger:
                     timeout=aiohttp.ClientTimeout(total=5)
                 ) as response:
                     if response.status == 200:
-                        logger.info(f"<a:verify2:1418486831993061497> Datos enviados a API Vercel para comando {command_name}")
+                        logger.info(f"✅ Datos enviados a API Vercel para comando {command_name}")
                     else:
                         logger.warning(f"⚠️ API Vercel respondió con status {response.status} para comando {command_name}")
 
@@ -257,7 +257,7 @@ def setup_commands(bot):
                     color=0xff0000
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Sugerencia:",
+                    name="💡 Sugerencia:",
                     value="Intenta nuevamente en unos momentos",
                     inline=False
                 )
@@ -308,7 +308,7 @@ def setup_commands(bot):
                     inline=False
                 )
                 embed.add_field(
-                    name="<a:foco:1418492184373755966> Reactivar:",
+                    name="💡 Reactivar:",
                     value="Usa `/logsetup` para reactivar el sistema",
                     inline=False
                 )
@@ -379,9 +379,9 @@ def setup_commands(bot):
             )
 
             # Estado actual
-            status = "<a:verify2:1418486831993061497> Activo" if server_config.get('enabled', False) else "⏸️ Deshabilitado"
+            status = "✅ Activo" if server_config.get('enabled', False) else "⏸️ Deshabilitado"
             embed.add_field(
-                name="<:stats:1418490788437823599> **Estado Actual**",
+                name="📊 **Estado Actual**",
                 value=f"• **Estado:** {status}\n• **Canal:** {channel.mention if channel else 'Canal no encontrado'}\n• **Comandos registrados:** {server_config.get('commands_logged', 0)}",
                 inline=False
             )
@@ -516,7 +516,7 @@ def setup_commands(bot):
         except Exception as e:
             logger.error(f"Error enviando comando fallido a API Vercel: {e}")
 
-    logger.info("<a:verify2:1418486831993061497> Sistema de logging de comandos configurado")
+    logger.info("✅ Sistema de logging de comandos configurado")
     return True
 
 def cleanup_commands(bot):

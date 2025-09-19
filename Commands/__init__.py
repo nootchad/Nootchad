@@ -23,7 +23,7 @@ def setup_commands(bot):
         # Lógica del comando aquí
         pass
     
-    logger.info("<a:verify2:1418486831993061497> Mi comando configurado")
+    logger.info("✅ Mi comando configurado")
     return True
 
 def cleanup_commands(bot):

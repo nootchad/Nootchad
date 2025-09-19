@@ -76,7 +76,7 @@ class RobloxControlCommands:
                         color=0xff0000
                     )
                     embed.add_field(
-                        name="<a:verify2:1418486831993061497> Acciones Disponibles:",
+                        name="✅ Acciones Disponibles:",
                         value="\n".join([f"• `{act}`" for act in valid_actions]),
                         inline=False
                     )
@@ -123,14 +123,14 @@ class RobloxControlCommands:
 
                     # Crear embed de confirmación
                     embed = discord.Embed(
-                        title="<a:verify2:1418486831993061497> Comando Enviado al Bot de Roblox",
+                        title="✅ Comando Enviado al Bot de Roblox",
                         description=f"El comando `{action}` ha sido enviado exitosamente al bot de Roblox.",
                         color=0x00ff88
                     )
 
-                    embed.add_field(name="<a:control:1418490793223651409> Acción", value=f"`{action}`", inline=True)
+                    embed.add_field(name="🎮 Acción", value=f"`{action}`", inline=True)
                     embed.add_field(name="🆔 Command ID", value=f"`{command_id}`", inline=True)
-                    embed.add_field(name="<a:pepebot:1418489370129993728> Scripts Conectados", value=f"{len(connected_scripts)}", inline=True)
+                    embed.add_field(name="🤖 Scripts Conectados", value=f"{len(connected_scripts)}", inline=True)
 
                     if target_user:
                         embed.add_field(name="👤 Usuario Objetivo", value=f"`{target_user}`", inline=True)
@@ -228,12 +228,12 @@ class RobloxControlCommands:
                     )
 
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Setup Completo Enviado",
+                    title="✅ Setup Completo Enviado",
                     description="Se enviaron ambos scripts: conexión automática y script principal.",
                     color=0x00ff88
                 )
                 embed.add_field(name="🔗 Paso 1", value="Script de auto-conexión enviado", inline=False)
-                embed.add_field(name="<a:pepebot:1418489370129993728> Paso 2", value=f"Script principal enviado ({len(script_content)} chars)", inline=False)
+                embed.add_field(name="🤖 Paso 2", value=f"Script principal enviado ({len(script_content)} chars)", inline=False)
                 embed.add_field(name="⏱️ Estado", value="Ejecutándose automáticamente", inline=False)
 
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -291,13 +291,13 @@ class RobloxControlCommands:
                 )
 
                 embed = discord.Embed(
-                    title="<a:verify2:1418486831993061497> Script Principal Enviado",
+                    title="✅ Script Principal Enviado",
                     description="El script principal de Roblox ha sido enviado para ejecución automática.",
                     color=0x00ff88
                 )
                 embed.add_field(name="📁 Archivo", value="`script.lua`", inline=True)
-                embed.add_field(name="<:stats:1418490788437823599> Tamaño", value=f"{len(script_content)} caracteres", inline=True)
-                embed.add_field(name="<a:control:1418490793223651409> Acción", value="execute_script", inline=True)
+                embed.add_field(name="📊 Tamaño", value=f"{len(script_content)} caracteres", inline=True)
+                embed.add_field(name="🎮 Acción", value="execute_script", inline=True)
 
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -333,7 +333,7 @@ class RobloxControlCommands:
                 active_commands = len([cmd for cmd in self.remote_control.active_commands.values() if cmd['status'] == 'pending'])
 
                 embed = discord.Embed(
-                    title="<a:pepebot:1418489370129993728> Estado del Sistema de Control Remoto",
+                    title="🤖 Estado del Sistema de Control Remoto",
                     description="Información actual del sistema de control de Roblox",
                     color=0x3366ff
                 )
@@ -383,7 +383,7 @@ class RobloxControlCommands:
                     timestamp = cmd_data.get('timestamp', 0)
 
                     time_ago = int(current_time - timestamp)
-                    status_emoji = "<a:verify2:1418486831993061497>" if status == "completed" else "❌" if status == "failed" else "⏳"
+                    status_emoji = "✅" if status == "completed" else "❌" if status == "failed" else "⏳"
 
                     recent_commands.append(f"{status_emoji} `{action}` - {time_ago}s")
 
@@ -435,14 +435,14 @@ class RobloxControlCommands:
 
                     # Crear nuevo embed con resultado
                     embed = discord.Embed(
-                        title=f"{'<a:verify2:1418486831993061497> Comando Completado' if success else '❌ Comando Fallido'}",
+                        title=f"{'✅ Comando Completado' if success else '❌ Comando Fallido'}",
                         description=f"El comando `{action}` ha sido {'ejecutado exitosamente' if success else 'fallido'} en el bot de Roblox.",
                         color=0x00ff88 if success else 0xff0000
                     )
 
-                    embed.add_field(name="<a:control:1418490793223651409> Acción", value=f"`{action}`", inline=True)
+                    embed.add_field(name="🎮 Acción", value=f"`{action}`", inline=True)
                     embed.add_field(name="🆔 Command ID", value=f"`{command_id}`", inline=True)
-                    embed.add_field(name="⏱️ Estado", value=f"{'<a:verify2:1418486831993061497> Completado' if success else '❌ Fallido'}", inline=True)
+                    embed.add_field(name="⏱️ Estado", value=f"{'✅ Completado' if success else '❌ Fallido'}", inline=True)
 
                     embed.add_field(
                         name="📝 Resultado:",
@@ -472,7 +472,7 @@ class RobloxControlCommands:
                 color=0xffaa00
             )
             embed.add_field(name="🆔 Command ID", value=f"`{command_id}`", inline=True)
-            embed.add_field(name="<a:foco:1418492184373755966> Nota", value="El comando puede completarse en segundo plano", inline=False)
+            embed.add_field(name="💡 Nota", value="El comando puede completarse en segundo plano", inline=False)
 
             try:
                 await message_obj.edit(embed=embed)
@@ -652,7 +652,7 @@ local function connectBot()
 
     if response and response.status == "success" then
         isConnected = true
-        print("<a:verify2:1418486831993061497> Conectado al bot RbxServers")
+        print("✅ Conectado al bot RbxServers")
         return true
     else
         print("❌ Error conectando al bot")
@@ -662,14 +662,14 @@ end
 
 -- Inicializar conexión
 if connectBot() then
-    print("<a:pepebot:1418489370129993728> RbxServers Bot conectado automáticamente")
+    print("🤖 RbxServers Bot conectado automáticamente")
 
     -- Enviar mensaje de confirmación
     spawn(function()
         wait(2)
         local player = Players.LocalPlayer
         if player and player.Character and player.Character:FindFirstChild("Head") then
-            game:GetService("Chat"):Chat(player.Character.Head, "<a:pepebot:1418489370129993728> Bot RbxServers conectado automáticamente", Enum.ChatColor.Green)
+            game:GetService("Chat"):Chat(player.Character.Head, "🤖 Bot RbxServers conectado automáticamente", Enum.ChatColor.Green)
         end
     end)
 end
@@ -685,5 +685,5 @@ def setup_roblox_control_commands(bot, remote_control):
     """Configurar comandos de control de Roblox en el bot principal"""
     control_commands = RobloxControlCommands(bot, remote_control)
     control_commands.setup_commands()
-    logger.info("<a:verify2:1418486831993061497> Comandos de control de Roblox configurados exitosamente")
+    logger.info("✅ Comandos de control de Roblox configurados exitosamente")
     return control_commands

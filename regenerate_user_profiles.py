@@ -31,12 +31,12 @@ def regenerate_user_profiles():
         data = json.load(f)
     
     user_profiles = data.get('user_profiles', {})
-    print(f"<:stats:1418490788437823599> Encontrados {len(user_profiles)} perfiles para regenerar")
+    print(f"📊 Encontrados {len(user_profiles)} perfiles para regenerar")
     
     # Importar bot desde main
     try:
         from main import bot
-        print("<a:verify2:1418486831993061497> Bot importado correctamente")
+        print("✅ Bot importado correctamente")
     except Exception as e:
         print(f"❌ Error importando bot: {e}")
         return
@@ -60,9 +60,9 @@ def regenerate_user_profiles():
                 'joined_at': discord_info.get('joined_at'),
             })
             
-            print(f"   <a:verify2:1418486831993061497> Actualizado: {discord_info.get('username', 'Usuario Desconocido')}")
-            print(f"      Avatar: {'<a:verify2:1418486831993061497>' if discord_info.get('avatar_url') else '❌'}")
-            print(f"      Fecha creación: {'<a:verify2:1418486831993061497>' if discord_info.get('created_at') else '❌'}")
+            print(f"   ✅ Actualizado: {discord_info.get('username', 'Usuario Desconocido')}")
+            print(f"      Avatar: {'✅' if discord_info.get('avatar_url') else '❌'}")
+            print(f"      Fecha creación: {'✅' if discord_info.get('created_at') else '❌'}")
             
             updated_count += 1
             
@@ -79,8 +79,8 @@ def regenerate_user_profiles():
         with open(profiles_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         
-        print(f"\n<a:verify2:1418486831993061497> REGENERACIÓN COMPLETADA")
-        print(f"<:stats:1418490788437823599> {updated_count}/{len(user_profiles)} perfiles actualizados")
+        print(f"\n✅ REGENERACIÓN COMPLETADA")
+        print(f"📊 {updated_count}/{len(user_profiles)} perfiles actualizados")
         print(f"💾 Archivo guardado: {profiles_file}")
         
     except Exception as e:

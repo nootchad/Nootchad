@@ -233,7 +233,7 @@ class WebAPI:
                 'verification_duration_hours': 24 * 30  # 30 días
             }
 
-            logger.info(f"<a:verify2:1418486831993061497> API: Enviados datos de {len(verified_users)} usuarios verificados")
+            logger.info(f"✅ API: Enviados datos de {len(verified_users)} usuarios verificados")
             return web.json_response(response_data)
 
         except Exception as e:
@@ -660,7 +660,7 @@ class WebAPI:
 
     async def external_verification_check(self, request):
         """API para verificar si el código fue puesto en la descripción"""
-        logger.info(f"<a:verify2:1418486831993061497> API Externa: Recibida solicitud de verificación CHECK desde {request.remote}")
+        logger.info(f"✅ API Externa: Recibida solicitud de verificación CHECK desde {request.remote}")
         logger.info(f"📋 Método: {request.method}, Path: {request.path}")
 
         try:
@@ -729,7 +729,7 @@ class WebAPI:
                         'verification_code': pending_data['verification_code']
                     }
 
-                    logger.info(f"<a:verify2:1418486831993061497> API Externa: Verificación exitosa para {discord_id} → {roblox_username}")
+                    logger.info(f"✅ API Externa: Verificación exitosa para {discord_id} → {roblox_username}")
                     return web.json_response(response_data)
                 else:
                     response_data = {
@@ -828,7 +828,7 @@ class WebAPI:
                 }
             }
 
-            logger.info(f"<:stats:1418490788437823599> API: Leaderboard generado con {len(leaderboard_data[:limit])} entradas")
+            logger.info(f"📊 API: Leaderboard generado con {len(leaderboard_data[:limit])} entradas")
             return web.json_response(response_data)
 
         except Exception as e:
@@ -1126,7 +1126,7 @@ class WebAPI:
                 # Guardar datos persistentemente
                 discord_oauth.save_oauth2_data()
 
-                logger.info(f"<a:verify2:1418486831993061497> Usuario OAuth2 guardado desde Vercel: {data.get('username')} (ID: {user_id})")
+                logger.info(f"✅ Usuario OAuth2 guardado desde Vercel: {data.get('username')} (ID: {user_id})")
 
                 return web.json_response({
                     'success': True,
@@ -1164,7 +1164,7 @@ class WebAPI:
 
     async def receive_web_analytics(self, request):
         """Endpoint para recibir analytics desde Vercel"""
-        logger.info(f"<:stats:1418490788437823599> Analytics: Recibida solicitud desde {request.remote}")
+        logger.info(f"📊 Analytics: Recibida solicitud desde {request.remote}")
 
         try:
             # Verificar método HTTP
@@ -1181,7 +1181,7 @@ class WebAPI:
 
             # Permitir tanto header como query parameter
             if not (auth_header == f"Bearer {WEBHOOK_SECRET}" or api_key_query == WEBHOOK_SECRET):
-                logger.info(f"<:stats:1418490788437823599> Analytics sin autenticación desde {request.remote} - permitido")
+                logger.info(f"📊 Analytics sin autenticación desde {request.remote} - permitido")
 
             # Leer datos del request
             try:
@@ -1210,7 +1210,7 @@ class WebAPI:
             success = await self.save_analytics_data(analytics_entry)
 
             if success:
-                logger.info(f"<a:verify2:1418486831993061497> Analytics guardado exitosamente desde {data.get('source', 'vercel')}")
+                logger.info(f"✅ Analytics guardado exitosamente desde {data.get('source', 'vercel')}")
                 return web.json_response({
                     'success': True,
                     'message': 'Analytics recibido y almacenado correctamente',
@@ -1290,7 +1290,7 @@ class WebAPI:
                 'generated_at': datetime.now().isoformat()
             }
 
-            logger.info(f"<:stats:1418490788437823599> Analytics enviados: {len(filtered_analytics)} eventos")
+            logger.info(f"📊 Analytics enviados: {len(filtered_analytics)} eventos")
             return web.json_response(response_data)
 
         except Exception as e:
@@ -1665,7 +1665,7 @@ mainFunction()
                     }
                 }
 
-                logger.info(f"<a:pepebot:1418489370129993728> Script IA generado para usuario {user_id}: {prompt[:50]}...")
+                logger.info(f"🤖 Script IA generado para usuario {user_id}: {prompt[:50]}...")
                 return web.json_response(response_data)
 
             except ImportError:
@@ -2394,7 +2394,7 @@ mainFunction()
                 ]
             }
 
-            logger.info("<:stats:1418490788437823599> Estadísticas globales generadas")
+            logger.info("📊 Estadísticas globales generadas")
             return web.json_response(response_data)
 
         except Exception as e:
@@ -2464,7 +2464,7 @@ mainFunction()
                 'update_interval': 30  # segundos
             }
 
-            logger.info(f"<:stats:1418490788437823599> Estadísticas de comandos enviadas: {commands_stats['total_commands']} total")
+            logger.info(f"📊 Estadísticas de comandos enviadas: {commands_stats['total_commands']} total")
             return web.json_response(response_data)
 
         except Exception as e:
@@ -2530,7 +2530,7 @@ mainFunction()
                 'update_interval': 60  # segundos
             }
 
-            logger.info(f"<a:control:1418490793223651409> Estadísticas de servidores enviadas: {servers_stats['total_servers']} total, {servers_stats['active_servers']} activos")
+            logger.info(f"🎮 Estadísticas de servidores enviadas: {servers_stats['total_servers']} total, {servers_stats['active_servers']} activos")
             return web.json_response(response_data)
 
         except Exception as e:

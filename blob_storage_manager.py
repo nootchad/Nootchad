@@ -27,7 +27,7 @@ class BlobStorageManager:
             logger.error("❌ BLOB_READ_WRITE_TOKEN no encontrado en variables de entorno")
             raise ValueError("Token de Blob Storage es requerido")
         
-        logger.info("<a:verify2:1418486831993061497> BlobStorageManager inicializado correctamente")
+        logger.info("✅ BlobStorageManager inicializado correctamente")
     
     def _get_headers(self, content_type: str = "application/json") -> dict:
         """Obtener headers para las peticiones a Blob Storage"""
@@ -50,7 +50,7 @@ class BlobStorageManager:
                     if response.status in [200, 201]:
                         response_data = await response.json()
                         url = response_data.get('url')
-                        logger.info(f"<a:verify2:1418486831993061497> Datos subidos a Blob: {filename}")
+                        logger.info(f"✅ Datos subidos a Blob: {filename}")
                         return url
                     else:
                         error_text = await response.text()
@@ -78,7 +78,7 @@ class BlobStorageManager:
                 async with session.get(real_url) as response:
                     if response.status == 200:
                         data = await response.json()
-                        logger.info(f"<a:verify2:1418486831993061497> Datos descargados desde Blob: {filename}")
+                        logger.info(f"✅ Datos descargados desde Blob: {filename}")
                         return data
                     elif response.status == 404:
                         logger.info(f"⚠️ Archivo no encontrado en URL: {real_url}")
@@ -316,7 +316,7 @@ class BlobStorageManager:
                     logger.error(f"❌ Error haciendo backup de {json_file}: {e}")
                     continue
             
-            logger.info(f"<a:verify2:1418486831993061497> Backup completado: {backed_up} archivos respaldados")
+            logger.info(f"✅ Backup completado: {backed_up} archivos respaldados")
             return backed_up > 0
         
         except Exception as e:
@@ -333,7 +333,7 @@ class BlobStorageManager:
                 with open(filename, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
                 
-                logger.info(f"<a:verify2:1418486831993061497> Datos restaurados desde backup: {backup_filename} -> {filename}")
+                logger.info(f"✅ Datos restaurados desde backup: {backup_filename} -> {filename}")
                 return True
             else:
                 logger.warning(f"⚠️ No se encontró backup: {backup_filename}")
@@ -376,7 +376,7 @@ class BlobStorageManager:
                     results['errors'] += 1
                     continue
             
-            logger.info(f"<:stats:1418490788437823599> Migración completada: {results}")
+            logger.info(f"📊 Migración completada: {results}")
             return results
         
         except Exception as e:
@@ -426,7 +426,7 @@ async def test_blob_connection():
         # Limpiar archivo de prueba
         await blob_manager.delete_file('test_connection.json')
         
-        logger.info("<a:verify2:1418486831993061497> Prueba de conexión con Blob Storage exitosa")
+        logger.info("✅ Prueba de conexión con Blob Storage exitosa")
         return True
     
     except Exception as e:
@@ -438,11 +438,11 @@ if __name__ == "__main__":
     async def main():
         success = await test_blob_connection()
         if success:
-            print("<a:verify2:1418486831993061497> Conexión a Blob Storage exitosa!")
+            print("✅ Conexión a Blob Storage exitosa!")
             
             # Probar migración
             results = await migrate_to_blob_storage()
-            print(f"<:stats:1418490788437823599> Resultados de migración: {results}")
+            print(f"📊 Resultados de migración: {results}")
         else:
             print("❌ Error conectando a Blob Storage")
     

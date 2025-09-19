@@ -38,7 +38,7 @@ def setup_commands(bot):
             )
 
             public_embed.add_field(
-                name="<a:verify2:1418486831993061497> **Alternativas Legales**",
+                name="✅ **Alternativas Legales**",
                 value="• Usa **Roblox Studio** para crear tus propios juegos\n• Aprende **programación en Lua** oficialmente\n• Participa en **eventos y concursos** de Roblox\n• Únete a **grupos de desarrolladores** legítimos",
                 inline=False
             )
@@ -122,7 +122,7 @@ def setup_commands(bot):
                 dm_embed.timestamp = datetime.now()
 
                 await user.send(embed=dm_embed)
-                logger.info(f"<a:verify2:1418486831993061497> DM educativo enviado exitosamente a {username}")
+                logger.info(f"✅ DM educativo enviado exitosamente a {username}")
 
             except discord.Forbidden:
                 # Si no se puede enviar DM, informar en la respuesta ephemeral
@@ -132,7 +132,7 @@ def setup_commands(bot):
                     color=0xff9900
                 )
                 no_dm_embed.add_field(
-                    name="<a:foco:1418492184373755966> Para recibir información completa:",
+                    name="💡 Para recibir información completa:",
                     value="1. Ve a **Configuración de Usuario** → **Privacidad y Seguridad**\n2. Habilita **Permitir mensajes directos de miembros del servidor**\n3. Ejecuta el comando nuevamente",
                     inline=False
                 )
@@ -164,7 +164,7 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-    logger.info("<a:verify2:1418486831993061497> Comando /ejecutores configurado correctamente")
+    logger.info("✅ Comando /ejecutores configurado correctamente")
     return True
 
 def cleanup_commands(bot):

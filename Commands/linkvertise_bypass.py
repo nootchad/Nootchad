@@ -61,7 +61,7 @@ def setup_commands(bot):
                 color=0x3366ff
             )
             initial_embed.add_field(name="🌐 URL:", value=f"```{url}```", inline=False)
-            initial_embed.add_field(name="<:stats:1418490788437823599> Estado:", value="Inicializando navegador...", inline=True)
+            initial_embed.add_field(name="📊 Estado:", value="Inicializando navegador...", inline=True)
             initial_embed.add_field(name="⏱️ Tiempo:", value="0s", inline=True)
 
             message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
@@ -223,7 +223,7 @@ async def execute_linkvertise_bypass(url: str, message: discord.WebhookMessage, 
         # Paso 9: Obtener URL final
         final_url = driver.current_url
 
-        logger.info(f"<a:verify2:1418486831993061497> URL final obtenida: {final_url}")
+        logger.info(f"✅ URL final obtenida: {final_url}")
         print(f"🔗 URL FINAL: {final_url}")  # Imprimir en consola como se solicitó
 
         return {
@@ -524,7 +524,7 @@ def is_real_skip_button(element, driver):
         if 'rgb(0, 0, 0)' in bg_color or 'black' in bg_color.lower():
             return False
 
-        logger.info(f"<a:verify2:1418486831993061497> Botón skip validado como real: posición Y={location['y']}, tamaño={size}, texto='{element_text}'")
+        logger.info(f"✅ Botón skip validado como real: posición Y={location['y']}, tamaño={size}, texto='{element_text}'")
         return True
 
     except Exception as e:
@@ -721,11 +721,11 @@ async def update_progress(message, status, steps, start_time):
             description="Bypass en progreso...",
             color=0xffaa00
         )
-        embed.add_field(name="<:stats:1418490788437823599> Estado:", value=status, inline=True)
+        embed.add_field(name="📊 Estado:", value=status, inline=True)
         embed.add_field(name="🔄 Pasos:", value=f"{steps}/10", inline=True)
         embed.add_field(name="⏱️ Tiempo:", value=f"{elapsed_time:.1f}s", inline=True)
         embed.add_field(
-            name="<a:foco:1418492184373755966> Progreso:",
+            name="💡 Progreso:",
             value=f"{'▰' * steps}{'▱' * (10-steps)} {int((steps/10)*100)}%",
             inline=False
         )

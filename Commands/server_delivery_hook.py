@@ -86,7 +86,7 @@ class ServerDeliveryMonitor(FileSystemEventHandler):
                 with open(servers_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
                 
-                logger.info("<a:verify2:1418486831993061497> Archivo user_game_servers.json actualizado con filtro de servidores únicos")
+                logger.info("✅ Archivo user_game_servers.json actualizado con filtro de servidores únicos")
             
         except Exception as e:
             logger.error(f"❌ Error procesando actualización de servidores: {e}")
@@ -140,7 +140,7 @@ def setup_commands(bot):
         import atexit
         atexit.register(stop_server_monitoring)
         
-        logger.info("<a:verify2:1418486831993061497> Hook automático de servidores únicos configurado")
+        logger.info("✅ Hook automático de servidores únicos configurado")
         return True
         
     except Exception as e:
