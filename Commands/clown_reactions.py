@@ -1,4 +1,3 @@
-
 """
 Comando /clown - Owner only
 Permite activar/desactivar reacciones automáticas con emoji clown en un canal
@@ -9,6 +8,7 @@ import logging
 import json
 from datetime import datetime
 from pathlib import Path
+import asyncio # Import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ def setup_commands(bot):
                 return
 
             current_status = clown_manager.is_channel_active(channel_id)
-            
+
             # Procesar acción
             if accion.lower() == "on":
                 if current_status:
@@ -218,69 +218,69 @@ def setup_commands(bot):
                     description=f"Estado actual en este canal: {status_text}",
                     color=0x00ff88 if current_status else 0x6c757d
                 )
-                
+
                 embed.add_field(
                     name="<:1000182750:1396420537227411587> Canal Actual:",
                     value=f"{interaction.channel.mention}\n`{interaction.channel.name}`",
                     inline=True
                 )
-                
+
                 embed.add_field(
                     name="<:stats:1418490788437823599> Canales Activos Globalmente:",
                     value=f"`{clown_manager.get_active_channels_count()}`",
                     inline=True
                 )
-                
+
                 # Verificar permisos en el canal actual
                 permissions = interaction.channel.permissions_for(interaction.guild.me)
                 perms_status = "✅ Completos" if (permissions.add_reactions and permissions.read_message_history) else "❌ Insuficientes"
-                
+
                 embed.add_field(
                     name="🔐 Permisos del Bot:",
                     value=perms_status,
                     inline=True
                 )
-                
+
                 # Verificar disponibilidad del emoji
                 emoji_available = False
                 for emoji in interaction.guild.emojis:
                     if emoji.id == 1418508263984463932:
                         emoji_available = True
                         break
-                
+
                 emoji_status = "✅ Disponible" if emoji_available else "❌ No disponible (usando 🤡)"
-                
+
                 embed.add_field(
                     name="<a:clown:1418508263984463932> Emoji Clown:",
                     value=emoji_status,
                     inline=True
                 )
-                
+
                 # Detalles de permisos
                 perm_details = []
                 if permissions.add_reactions:
                     perm_details.append("✅ Añadir Reacciones")
                 else:
                     perm_details.append("❌ Añadir Reacciones")
-                    
+
                 if permissions.read_message_history:
                     perm_details.append("✅ Leer Historial")
                 else:
                     perm_details.append("❌ Leer Historial")
-                    
+
                 if permissions.view_channel:
                     perm_details.append("✅ Ver Canal")
                 else:
                     perm_details.append("❌ Ver Canal")
-                
+
                 embed.add_field(
                     name="🔍 Detalles de Permisos:",
                     value="\n".join(perm_details),
                     inline=True
                 )
-                
+
                 embed.add_field(
-                    name="<:1000182751:1396420551798558781> Comandos Disponibles:",
+                    name="<:1000182751:1396420751798558781> Comandos Disponibles:",
                     value="• `/clown on` - Activar reacciones\n• `/clown off` - Desactivar reacciones\n• `/clown toggle` - Alternar estado\n• `/clown status` - Ver este estado\n• `/clown test` - Probar reacción",
                     inline=False
                 )
@@ -296,70 +296,85 @@ def setup_commands(bot):
                     # Test de reacción inmediata
                     try:
                         # Verificar emoji
-                        clown_emoji = "<a:clown:1418508263984463932>"
-                        emoji_found = False
+                        clown_emoji = None
                         for emoji in interaction.guild.emojis:
                             if emoji.id == 1418508263984463932:
-                                emoji_found = True
                                 clown_emoji = emoji
                                 break
-                        
-                        if not emoji_found:
-                            clown_emoji = "🤡"
-                        
-                        # Enviar mensaje de prueba
-                        test_message = await interaction.channel.send("🧪 **Mensaje de prueba para reacciones automáticas**")
-                        
-                        # Esperar un momento para la reacción automática
-                        await asyncio.sleep(2)
-                        
-                        # Verificar si la reacción se añadió
-                        fresh_message = await interaction.channel.fetch_message(test_message.id)
-                        reaction_found = False
-                        
-                        for reaction in fresh_message.reactions:
-                            if str(reaction.emoji) == str(clown_emoji):
-                                async for user in reaction.users():
-                                    if user.id == interaction.guild.me.id:
-                                        reaction_found = True
-                                        break
-                                break
-                        
-                        if reaction_found:
+
+                        if not clown_emoji:
                             embed = discord.Embed(
-                                title="✅ Test Exitoso",
-                                description="Las reacciones automáticas funcionan correctamente.",
-                                color=0x00ff88
-                            )
-                            embed.add_field(
-                                name="<a:clown:1418508263984463932> Resultado:",
-                                value=f"Reacción añadida con emoji: {clown_emoji}",
-                                inline=False
-                            )
-                        else:
-                            embed = discord.Embed(
-                                title="❌ Test Fallido",
-                                description="La reacción automática no funcionó o se eliminó.",
+                                title="❌ Emoji No Encontrado",
+                                description="El emoji clown personalizado no se encontró en este servidor. No se puede realizar la prueba.",
                                 color=0xff0000
                             )
-                            embed.add_field(
-                                name="🔍 Posibles causas:",
-                                value="• Rate limiting de Discord\n• Permisos insuficientes\n• Conflicto con otros bots\n• Emoji no disponible",
-                                inline=False
-                            )
-                        
-                        # Limpiar mensaje de prueba
-                        try:
-                            await test_message.delete()
-                        except:
-                            pass
-                            
+                        else:
+                            # Enviar mensaje de prueba
+                            test_message = await interaction.channel.send("🧪 **Mensaje de prueba para reacciones automáticas**")
+
+                            # Esperar un momento para la reacción automática
+                            await asyncio.sleep(2)
+
+                            # Verificar si la reacción se añadió
+                            fresh_message = await interaction.channel.fetch_message(test_message.id)
+                            reaction_found = False
+
+                            for reaction in fresh_message.reactions:
+                                if str(reaction.emoji) == str(clown_emoji):
+                                    async for user in reaction.users():
+                                        if user.id == interaction.guild.me.id:
+                                            reaction_found = True
+                                            break
+                                    break
+
+                            if reaction_found:
+                                embed = discord.Embed(
+                                    title="✅ Test Exitoso",
+                                    description="Las reacciones automáticas funcionan correctamente.",
+                                    color=0x00ff88
+                                )
+                                embed.add_field(
+                                    name="<a:clown:1418508263984463932> Resultado:",
+                                    value=f"Reacción añadida con emoji: {clown_emoji}",
+                                    inline=False
+                                )
+                            else:
+                                embed = discord.Embed(
+                                    title="❌ Test Fallido",
+                                    description="La reacción automática no funcionó o se eliminó.",
+                                    color=0xff0000
+                                )
+                                embed.add_field(
+                                    name="🔍 Posibles causas:",
+                                    value="• Rate limiting de Discord\n• Permisos insuficientes\n• Conflicto con otros bots\n• Emoji no disponible",
+                                    inline=False
+                                )
+
+                            # Limpiar mensaje de prueba
+                            try:
+                                await test_message.delete()
+                            except:
+                                pass
+
+                    except discord.Forbidden as e:
+                         embed = discord.Embed(
+                            title="❌ Permisos Insuficientes para Test",
+                            description=f"El bot no tiene permisos para enviar mensajes o reaccionar en este canal. Error: {e}",
+                            color=0xff0000
+                        )
+                    except discord.HTTPException as e:
+                        embed = discord.Embed(
+                            title="❌ Error HTTP durante el Test",
+                            description=f"Ocurrió un error de Discord al intentar la prueba: {str(e)[:200]}",
+                            color=0xff0000
+                        )
                     except Exception as test_error:
                         embed = discord.Embed(
                             title="❌ Error en Test",
                             description=f"Error durante la prueba: {str(test_error)[:200]}",
                             color=0xff0000
                         )
+
 
             else:
                 embed = discord.Embed(
@@ -374,13 +389,13 @@ def setup_commands(bot):
                 value=f"{interaction.channel.mention}",
                 inline=True
             )
-            
+
             embed.add_field(
                 name="<:1000182644:1396049313481625611> Ejecutado por:",
                 value=f"{username}",
                 inline=True
             )
-            
+
             embed.add_field(
                 name="<:1000182657:1396060091366637669> Hora:",
                 value=f"<t:{int(datetime.now().timestamp())}:T>",
@@ -416,7 +431,7 @@ def setup_commands(bot):
                 return
 
             channel_id = str(message.channel.id)
-            
+
             # Verificar si el canal tiene reacciones automáticas activadas
             if not clown_manager.is_channel_active(channel_id):
                 return
@@ -430,32 +445,30 @@ def setup_commands(bot):
             # Intentar reaccionar con el emoji clown
             try:
                 # Emoji personalizado animado clown
-                clown_emoji = "<a:clown:1418508263984463932>"
-                
+                clown_emoji = None
+
                 # Verificar si el emoji existe en el servidor primero
-                emoji_found = False
                 for emoji in message.guild.emojis:
                     if emoji.id == 1418508263984463932:  # ID del emoji clown
-                        emoji_found = True
                         clown_emoji = emoji
                         break
-                
-                if not emoji_found:
-                    # Intentar con emoji estático como fallback
-                    clown_emoji = "🤡"
-                    logger.warning(f"⚠️ Emoji clown personalizado no encontrado en servidor {message.guild.name}, usando 🤡")
-                
-                # Añadir reacción
+
+                if not clown_emoji:
+                    # Si no se encuentra el emoji personalizado, no reaccionar
+                    logger.warning(f"⚠️ Emoji clown personalizado no encontrado en servidor {message.guild.name}, saltando reacción")
+                    return
+
+                # Añadir reacción solo con emoji personalizado
                 reaction = await message.add_reaction(clown_emoji)
-                
+
                 # Verificar que la reacción se mantuvo después de un pequeño delay
                 await asyncio.sleep(1)
-                
+
                 # Refrescar el mensaje para verificar reacciones
                 try:
                     fresh_message = await message.channel.fetch_message(message.id)
                     bot_reaction_exists = False
-                    
+
                     for reaction in fresh_message.reactions:
                         if str(reaction.emoji) == str(clown_emoji):
                             async for user in reaction.users():
@@ -463,25 +476,25 @@ def setup_commands(bot):
                                     bot_reaction_exists = True
                                     break
                             break
-                    
+
                     if bot_reaction_exists:
                         logger.info(f"<a:clown:1418508263984463932> Reacción automática confirmada en mensaje {message.id} canal {channel_id}")
                     else:
                         logger.warning(f"⚠️ Reacción desapareció del mensaje {message.id} en canal {channel_id} - posible rate limit o conflicto")
-                        
+
                         # Intentar reaccionar de nuevo después de una pausa
                         await asyncio.sleep(2)
                         await message.add_reaction(clown_emoji)
                         logger.info(f"🔄 Reintento de reacción realizado en mensaje {message.id}")
-                        
+
                 except discord.NotFound:
                     logger.warning(f"⚠️ No se pudo verificar reacción - mensaje {message.id} eliminado")
-                
+
             except discord.NotFound:
                 logger.warning(f"⚠️ Mensaje {message.id} no encontrado para reaccionar")
             except discord.Forbidden as e:
                 logger.warning(f"⚠️ Sin permisos para reaccionar al mensaje {message.id} en canal {channel_id}: {e}")
-                
+
                 # Verificar permisos específicos
                 perms = message.channel.permissions_for(message.guild.me)
                 missing_perms = []
@@ -491,24 +504,19 @@ def setup_commands(bot):
                     missing_perms.append("Leer Historial")
                 if not perms.view_channel:
                     missing_perms.append("Ver Canal")
-                
+
                 logger.warning(f"⚠️ Permisos faltantes en canal {channel_id}: {', '.join(missing_perms)}")
-                
+
                 # Solo desactivar si faltan permisos críticos
                 if not perms.add_reactions:
                     clown_manager.deactivate_channel(channel_id)
                     logger.info(f"⏹️ Canal {channel_id} desactivado automáticamente por falta de permisos de reacción")
-                    
+
             except discord.HTTPException as e:
                 if "Unknown Emoji" in str(e):
                     logger.error(f"❌ Emoji clown no disponible en servidor del canal {channel_id}")
-                    # Intentar con emoji unicode como fallback
-                    try:
-                        await message.add_reaction("🤡")
-                        logger.info(f"🤡 Usando emoji unicode como fallback en canal {channel_id}")
-                    except:
-                        clown_manager.deactivate_channel(channel_id)
-                        logger.info(f"⏹️ Canal {channel_id} desactivado por problemas con emojis")
+                    clown_manager.deactivate_channel(channel_id)
+                    logger.info(f"⏹️ Canal {channel_id} desactivado por problemas con emojis")
                 elif "reaction blocked" in str(e).lower():
                     logger.warning(f"⚠️ Reacción bloqueada por el servidor en canal {channel_id}")
                 elif "rate limited" in str(e).lower():
