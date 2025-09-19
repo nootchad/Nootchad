@@ -11,7 +11,7 @@ import sys
 import argparse
 from pathlib import Path
 
-def replace_in_file(file_path, search_text, replace_text, dry_run=False):
+def replace_in_file(file_path, search_text, replace_text, dry_run=False, embed_only=False):
     """Reemplazar texto en un archivo específico"""
     try:
         # Leer el archivo con UTF-8 (estándar para Python)
@@ -22,22 +22,116 @@ def replace_in_file(file_path, search_text, replace_text, dry_run=False):
         if search_text not in content:
             return False, 0
 
-        # Contar ocurrencias
-        count = content.count(search_text)
+        # Si embed_only está activado, verificar que el archivo contenga código de embeds
+        if embed_only and not is_embed_related_file(content):
+            return False, 0
 
-        if not dry_run:
-            # Realizar el reemplazo
-            new_content = content.replace(search_text, replace_text)
+        # Si embed_only está activado, solo reemplazar en contexto de embeds
+        if embed_only:
+            lines = content.split('\n')
+            modified_lines = []
+            replacements_made = 0
+            
+            for i, line in enumerate(lines):
+                if search_text in line and is_embed_context(lines, i):
+                    modified_lines.append(line.replace(search_text, replace_text))
+                    replacements_made += line.count(search_text)
+                else:
+                    modified_lines.append(line)
+            
+            if replacements_made == 0:
+                return False, 0
+            
+            if not dry_run:
+                new_content = '\n'.join(modified_lines)
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+            
+            return True, replacements_made
+        
+        else:
+            # Comportamiento original para compatibilidad
+            count = content.count(search_text)
 
-            # Escribir el archivo modificado
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(new_content)
+            if not dry_run:
+                # Realizar el reemplazo
+                new_content = content.replace(search_text, replace_text)
 
-        return True, count
+                # Escribir el archivo modificado
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+
+            return True, count
 
     except Exception as e:
         print(f"❌ Error procesando {file_path}: {e}")
         return False, 0
+
+def is_embed_related_file(content):
+    """Verificar si el archivo contiene código relacionado con embeds de Discord"""
+    embed_indicators = [
+        'discord.Embed',
+        'Embed(',
+        '.add_field(',
+        '.set_footer(',
+        '.set_thumbnail(',
+        '.set_image(',
+        '.set_author(',
+        'embed =',
+        'embed.',
+        'title=',
+        'description=',
+        'color=0x'
+    ]
+    
+    return any(indicator in content for indicator in embed_indicators)
+
+def is_embed_context(lines, line_index):
+    """Verificar si una línea está en el contexto de un embed de Discord"""
+    # Buscar hacia atrás y hacia adelante para encontrar contexto de embed
+    start = max(0, line_index - 10)  # Buscar 10 líneas hacia atrás
+    end = min(len(lines), line_index + 10)  # Buscar 10 líneas hacia adelante
+    
+    context_lines = lines[start:end]
+    context_text = '\n'.join(context_lines)
+    
+    # Indicadores de que estamos en un contexto de embed
+    embed_context_indicators = [
+        'discord.Embed',
+        'Embed(',
+        '.add_field(',
+        '.set_footer(',
+        '.set_thumbnail(',
+        '.set_image(',
+        '.set_author(',
+        'embed =',
+        'embed.',
+        'title=',
+        'description=',
+        'value=',
+        'name=',
+        'inline='
+    ]
+    
+    # Verificar si hay indicadores de embed en el contexto
+    has_embed_context = any(indicator in context_text for indicator in embed_context_indicators)
+    
+    # Verificar si la línea actual parece ser parte de un embed
+    current_line = lines[line_index]
+    is_embed_line = any([
+        'title=' in current_line,
+        'description=' in current_line,
+        'value=' in current_line,
+        'name=' in current_line,
+        'embed' in current_line.lower(),
+        'add_field' in current_line,
+        'set_footer' in current_line,
+        'set_thumbnail' in current_line,
+        'set_image' in current_line,
+        'set_author' in current_line
+    ])
+    
+    return has_embed_context or is_embed_line
 
 def should_skip_directory(dir_path):
     """Verificar si un directorio debe ser omitido"""
@@ -58,6 +152,7 @@ Ejemplos de uso:
   python replace_text.py "texto_viejo" "texto_nuevo"
   python replace_text.py "💵" "money" --dry-run
   python replace_text.py "💵" "money" --directory Commands
+  python replace_text.py "💵" "money" --embed-only
         """
     )
 
@@ -67,6 +162,8 @@ Ejemplos de uso:
                        help='Solo mostrar qué archivos serían modificados sin hacer cambios')
     parser.add_argument('--directory', '-d', type=str, default='.',
                        help='Directorio donde buscar (por defecto: directorio actual)')
+    parser.add_argument('--embed-only', action='store_true',
+                       help='Solo hacer cambios en código relacionado con embeds de Discord')
 
     args = parser.parse_args()
 
@@ -89,6 +186,9 @@ Ejemplos de uso:
     print(f"📁 Directorio: {work_dir}")
     print(f"🐍 Solo procesando archivos Python (.py)")
 
+    if args.embed_only:
+        print("📝 MODO EMBED-ONLY - Solo se modificarán embeds de Discord")
+    
     if args.dry_run:
         print("🧪 MODO PRUEBA - No se realizarán cambios reales")
 
@@ -124,7 +224,7 @@ Ejemplos de uso:
         files_processed += 1
 
         # Intentar reemplazar en el archivo
-        was_modified, count = replace_in_file(file_path, args.search_text, args.replace_text, args.dry_run)
+        was_modified, count = replace_in_file(file_path, args.search_text, args.replace_text, args.dry_run, args.embed_only)
 
         if was_modified:
             files_modified += 1
@@ -149,9 +249,15 @@ Ejemplos de uso:
     if args.dry_run and files_modified > 0:
         print("\n💡 Para ejecutar los cambios reales, ejecuta el comando sin --dry-run")
     elif files_modified == 0:
-        print(f"\n⚠️  No se encontró '{args.search_text}' en ningún archivo Python")
+        if args.embed_only:
+            print(f"\n⚠️  No se encontró '{args.search_text}' en contexto de embeds en ningún archivo Python")
+        else:
+            print(f"\n⚠️  No se encontró '{args.search_text}' en ningún archivo Python")
     else:
-        print(f"\n🎉 ¡Reemplazo completado exitosamente!")
+        if args.embed_only:
+            print(f"\n🎉 ¡Reemplazo completado exitosamente en contexto de embeds!")
+        else:
+            print(f"\n🎉 ¡Reemplazo completado exitosamente!")
 
     return 0
 
