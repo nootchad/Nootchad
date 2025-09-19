@@ -94,7 +94,7 @@ def setup_commands(bot):
 
         if current_usage >= current_limit:
             remaining_uses = current_limit - current_usage
-            status_text = "🎁 Donador" if is_donator else "👤 Regular"
+            status_text = "🎁 Donador" if is_donator else "<:1000182614:1396049500375875646> Regular"
             limit_embed = discord.Embed(
                 title="⏳ Límite de Uso Diario Alcanzado",
                 description=f"Has alcanzado tu límite diario de usos para este comando.",
@@ -131,21 +131,21 @@ def setup_commands(bot):
 
             # Crear embed de cargando
             loading_embed = discord.Embed(
-                title="🔄 Obteniendo Servidores",
+                title="<a:loading:1418504453580918856> Obteniendo Servidores",
                 description=f"Consultando API externa para el juego ID: `{game_id}`",
                 color=0x6c757d
             )
             loading_embed.add_field(name="⏳ Estado", value="Conectando con la API...", inline=False)
             loading_embed.add_field(name="<a:control:1418490793223651409> ID del Juego", value=f"`{game_id}`", inline=True)
-            loading_embed.add_field(name="🌐 API", value="v0-discord-bot-api-snowy.vercel.app", inline=True)
-            loading_embed.add_field(name="👤 Solicitado por", value=f"{username}", inline=True)
+            loading_embed.add_field(name="<a:latencia:1418504412049182740> API", value="v0-discord-bot-api-snowy.vercel.app", inline=True)
+            loading_embed.add_field(name="<:1000182614:1396049500375875646> Solicitado por", value=f"{username}", inline=True)
 
             message = await interaction.followup.send(embed=loading_embed)
 
             # Hacer petición a la API
             api_url = f"https://v0-discord-bot-api-snowy.vercel.app/api/data?game_id={game_id}"
 
-            logger.info(f"🌐 Usuario público {username} haciendo petición a API: {api_url}")
+            logger.info(f"<a:latencia:1418504412049182740> Usuario público {username} haciendo petición a API: {api_url}")
 
             # Ejecutar la petición en un hilo separado para evitar bloquear asyncio
             def make_request():
@@ -188,7 +188,7 @@ def setup_commands(bot):
                         )
 
                         no_servers_embed.add_field(
-                            name="👤 Solicitado por",
+                            name="<:1000182614:1396049500375875646> Solicitado por",
                             value=f"{username}",
                             inline=True
                         )
@@ -200,7 +200,7 @@ def setup_commands(bot):
                         )
 
                         no_servers_embed.add_field(
-                            name="⏰ Consultado",
+                            name="<a:loading:1418504453580918856> Consultado",
                             value=f"<t:{int(datetime.now().timestamp())}:R>",
                             inline=True
                         )
@@ -212,7 +212,7 @@ def setup_commands(bot):
                             daily_limit_info = DAILY_LIMIT_DONATOR if is_donator_info else DAILY_LIMIT_REGULAR
                             remaining_uses = daily_limit_info - current_usage_info
 
-                            status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
+                            status_text = "🎁 Donador" if is_donator_info else "<:1000182614:1396049500375875646> Regular"
 
                             no_servers_embed.add_field(
                                 name="<:stats:1418490788437823599> Tu Estado de Uso",
@@ -258,7 +258,7 @@ def setup_commands(bot):
                             )
 
                             success_embed.add_field(
-                                name="🌐 Fuente",
+                                name="<a:latencia:1418504412049182740> Fuente",
                                 value="API Externa",
                                 inline=True
                             )
@@ -280,19 +280,19 @@ def setup_commands(bot):
 
                             # Información adicional
                             success_embed.add_field(
-                                name="⏰ Consultado",
+                                name="<a:loading:1418504453580918856> Consultado",
                                 value=f"<t:{int(datetime.now().timestamp())}:R>",
                                 inline=True
                             )
 
                             success_embed.add_field(
-                                name="👤 Solicitado por",
+                                name="<:1000182614:1396049500375875646> Solicitado por",
                                 value=f"{username}",
                                 inline=True
                             )
 
                             success_embed.add_field(
-                                name="📋 Limitación",
+                                name="<:portapapeles:1418506653279715500> Limitación",
                                 value=f"Mostrando {min(len(servers), max_servers_display)} de {len(servers)}",
                                 inline=True
                             )
@@ -304,7 +304,7 @@ def setup_commands(bot):
                                 daily_limit_info = DAILY_LIMIT_DONATOR if is_donator_info else DAILY_LIMIT_REGULAR
                                 remaining_uses = daily_limit_info - current_usage_info
 
-                                status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
+                                status_text = "🎁 Donador" if is_donator_info else "<:1000182614:1396049500375875646> Regular"
 
                                 success_embed.add_field(
                                     name="<:stats:1418490788437823599> Tu Estado de Uso",
@@ -341,7 +341,7 @@ def setup_commands(bot):
                             )
 
                             no_servers_embed.add_field(
-                                name="👤 Solicitado por",
+                                name="<:1000182614:1396049500375875646> Solicitado por",
                                 value=f"{username}",
                                 inline=True
                             )
@@ -353,7 +353,7 @@ def setup_commands(bot):
                             )
 
                             no_servers_embed.add_field(
-                                name="⏰ Consultado",
+                                name="<a:loading:1418504453580918856> Consultado",
                                 value=f"<t:{int(datetime.now().timestamp())}:R>",
                                 inline=True
                             )
@@ -365,7 +365,7 @@ def setup_commands(bot):
                                 daily_limit_info = DAILY_LIMIT_DONATOR if is_donator_info else DAILY_LIMIT_REGULAR
                                 remaining_uses = daily_limit_info - current_usage_info
 
-                                status_text = "🎁 Donador" if is_donator_info else "👤 Regular"
+                                status_text = "🎁 Donador" if is_donator_info else "<:1000182614:1396049500375875646> Regular"
 
                                 no_servers_embed.add_field(
                                     name="<:stats:1418490788437823599> Tu Estado de Uso",
@@ -390,7 +390,7 @@ def setup_commands(bot):
                             color=0x6c757d
                         )
                         error_embed.add_field(
-                            name="👤 Solicitado por",
+                            name="<:1000182614:1396049500375875646> Solicitado por",
                             value=f"{username}",
                             inline=True
                         )
@@ -410,7 +410,7 @@ def setup_commands(bot):
                         color=0x6c757d
                     )
                     error_embed.add_field(
-                        name="👤 Solicitado por",
+                        name="<:1000182614:1396049500375875646> Solicitado por",
                         value=f"{username}",
                         inline=True
                     )
@@ -444,7 +444,7 @@ def setup_commands(bot):
                 )
 
                 error_embed.add_field(
-                    name="👤 Solicitado por",
+                    name="<:1000182614:1396049500375875646> Solicitado por",
                     value=f"{username}",
                     inline=True
                 )
@@ -466,12 +466,12 @@ def setup_commands(bot):
 
         except requests.Timeout:
             timeout_embed = discord.Embed(
-                title="⏰ Timeout de API",
+                title="<a:loading:1418504453580918856> Timeout de API",
                 description="La API externa tardó demasiado en responder (más de 30 segundos).",
                 color=0x6c757d
             )
             timeout_embed.add_field(
-                name="👤 Solicitado por",
+                name="<:1000182614:1396049500375875646> Solicitado por",
                 value=f"{username}",
                 inline=True
             )
@@ -486,12 +486,12 @@ def setup_commands(bot):
 
         except requests.ConnectionError:
             connection_embed = discord.Embed(
-                title="🌐 Error de Conexión",
+                title="<a:latencia:1418504412049182740> Error de Conexión",
                 description="No se pudo conectar con la API externa.",
                 color=0x6c757d
             )
             connection_embed.add_field(
-                name="👤 Solicitado por",
+                name="<:1000182614:1396049500375875646> Solicitado por",
                 value=f"{username}",
                 inline=True
             )
@@ -514,7 +514,7 @@ def setup_commands(bot):
                 color=0x6c757d
             )
             error_embed.add_field(
-                name="👤 Solicitado por",
+                name="<:1000182614:1396049500375875646> Solicitado por",
                 value=f"{username}",
                 inline=True
             )

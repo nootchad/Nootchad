@@ -1,5 +1,11 @@
 {
-  "verified_users": {},
+  "verified_users": {
+    "916070251895091241": {
+      "roblox_username": "9011a22344",
+      "verification_code": "hesiz-2024xcheck",
+      "verified_at": 1758267474.8865342
+    }
+  },
   "pending_verifications": {},
-  "last_updated": "2025-09-19T07:35:37.232215"
+  "last_updated": "2025-09-19T07:37:54.886538"
 }

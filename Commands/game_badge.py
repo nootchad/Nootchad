@@ -60,7 +60,7 @@ def setup_commands(bot):
                 color=0xffaa00
             )
             if user:
-                initial_embed.add_field(name="👤 Usuario", value=f"`{user}`", inline=True)
+                initial_embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"`{user}`", inline=True)
             
             message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
             
@@ -121,7 +121,7 @@ def setup_commands(bot):
                 progress_percentage = (earned_count / len(badges)) * 100 if badges else 0
                 
                 result_embed.add_field(
-                    name="👤 Progreso del Usuario",
+                    name="<:1000182614:1396049500375875646> Progreso del Usuario",
                     value=f"**Usuario:** {user_info.get('displayName', user_info.get('name', user))}\n**Badges Obtenidos:** {earned_count}/{len(badges)} ({progress_percentage:.1f}%)\n**Badges Restantes:** {remaining_count}",
                     inline=False
                 )
@@ -301,7 +301,7 @@ def setup_commands(bot):
             if not image_configured:
                 fallback_url = f"https://thumbnails.roblox.com/v1/badges/icons?badgeIds={badge_id}&size=420x420&format=Png&isCircular=false"
                 result_embed.set_image(url=fallback_url)
-                logger.info(f"🔄 Usando URL de respaldo para badge {badge_id}")
+                logger.info(f"<a:loading:1418504453580918856> Usando URL de respaldo para badge {badge_id}")
             
             # Configurar thumbnail pequeño
             try:

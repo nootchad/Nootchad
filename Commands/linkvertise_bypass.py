@@ -60,7 +60,7 @@ def setup_commands(bot):
                 description=f"Iniciando bypass automático...",
                 color=0x3366ff
             )
-            initial_embed.add_field(name="🌐 URL:", value=f"```{url}```", inline=False)
+            initial_embed.add_field(name="<a:latencia:1418504412049182740> URL:", value=f"```{url}```", inline=False)
             initial_embed.add_field(name="<:stats:1418490788437823599> Estado:", value="Inicializando navegador...", inline=True)
             initial_embed.add_field(name="⏱️ Tiempo:", value="0s", inline=True)
 
@@ -722,7 +722,7 @@ async def update_progress(message, status, steps, start_time):
             color=0xffaa00
         )
         embed.add_field(name="<:stats:1418490788437823599> Estado:", value=status, inline=True)
-        embed.add_field(name="🔄 Pasos:", value=f"{steps}/10", inline=True)
+        embed.add_field(name="<a:loading:1418504453580918856> Pasos:", value=f"{steps}/10", inline=True)
         embed.add_field(name="⏱️ Tiempo:", value=f"{elapsed_time:.1f}s", inline=True)
         embed.add_field(
             name="<a:foco:1418492184373755966> Progreso:",

@@ -55,20 +55,20 @@ def setup_commands(bot):
 
             # Crear embed de cargando
             loading_embed = discord.Embed(
-                title="🔄 Obteniendo Servidores",
+                title="<a:loading:1418504453580918856> Obteniendo Servidores",
                 description=f"Consultando API externa para el juego ID: `{game_id}`",
                 color=0x6c757d
             )
             loading_embed.add_field(name="⏳ Estado", value="Conectando con la API...", inline=False)
             loading_embed.add_field(name="<a:control:1418490793223651409> ID del Juego", value=f"`{game_id}`", inline=True)
-            loading_embed.add_field(name="🌐 API", value="v0-discord-bot-api-snowy.vercel.app", inline=True)
+            loading_embed.add_field(name="<a:latencia:1418504412049182740> API", value="v0-discord-bot-api-snowy.vercel.app", inline=True)
 
             message = await interaction.followup.send(embed=loading_embed, ephemeral=True)
 
             # Hacer petición a la API
             api_url = f"https://v0-discord-bot-api-snowy.vercel.app/api/data?game_id={game_id}"
             
-            logger.info(f"🌐 Owner {username} haciendo petición a API: {api_url}")
+            logger.info(f"<a:latencia:1418504412049182740> Owner {username} haciendo petición a API: {api_url}")
 
             # Ejecutar la petición en un hilo separado para evitar bloquear asyncio
             def make_request():
@@ -117,7 +117,7 @@ def setup_commands(bot):
                         )
                         
                         no_servers_embed.add_field(
-                            name="⏰ Consultado",
+                            name="<a:loading:1418504453580918856> Consultado",
                             value=f"<t:{int(datetime.now().timestamp())}:R>",
                             inline=True
                         )
@@ -154,7 +154,7 @@ def setup_commands(bot):
                             )
                             
                             success_embed.add_field(
-                                name="🌐 Fuente",
+                                name="<a:latencia:1418504412049182740> Fuente",
                                 value="API Externa",
                                 inline=True
                             )
@@ -175,13 +175,13 @@ def setup_commands(bot):
                             
                             # Información adicional
                             success_embed.add_field(
-                                name="⏰ Consultado",
+                                name="<a:loading:1418504453580918856> Consultado",
                                 value=f"<t:{int(datetime.now().timestamp())}:R>",
                                 inline=True
                             )
                             
                             success_embed.add_field(
-                                name="👤 Solicitado por",
+                                name="<:1000182614:1396049500375875646> Solicitado por",
                                 value=f"{username}",
                                 inline=True
                             )
@@ -219,7 +219,7 @@ def setup_commands(bot):
                             )
                             
                             no_servers_embed.add_field(
-                                name="⏰ Consultado",
+                                name="<a:loading:1418504453580918856> Consultado",
                                 value=f"<t:{int(datetime.now().timestamp())}:R>",
                                 inline=True
                             )
@@ -298,7 +298,7 @@ def setup_commands(bot):
 
         except requests.Timeout:
             timeout_embed = discord.Embed(
-                title="⏰ Timeout de API",
+                title="<a:loading:1418504453580918856> Timeout de API",
                 description="La API externa tardó demasiado en responder (más de 30 segundos).",
                 color=0x6c757d
             )
@@ -313,7 +313,7 @@ def setup_commands(bot):
         
         except requests.ConnectionError:
             connection_embed = discord.Embed(
-                title="🌐 Error de Conexión",
+                title="<a:latencia:1418504412049182740> Error de Conexión",
                 description="No se pudo conectar con la API externa.",
                 color=0x6c757d
             )

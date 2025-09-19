@@ -85,7 +85,7 @@ def setup_commands(bot):
                 seconds = cooldown_remaining % 60
 
                 embed = discord.Embed(
-                    title="⏰ Cooldown Activo",
+                    title="<a:loading:1418504453580918856> Cooldown Activo",
                     description=f"Debes esperar **{minutes}m {seconds}s** antes de usar headless scrape nuevamente.",
                     color=0xffaa00
                 )
@@ -194,7 +194,7 @@ def setup_commands(bot):
                     color=0xff9900
                 )
                 error_embed.add_field(
-                    name="🔄 Posibles causas:",
+                    name="<a:loading:1418504453580918856> Posibles causas:",
                     value="• No hay servidores VIP activos\n• El juego no tiene servidores disponibles\n• Problema temporal del sitio",
                     inline=False
                 )
@@ -215,7 +215,7 @@ def setup_commands(bot):
                 color=0xff0000
             )
             error_embed.add_field(
-                name="🔄 Soluciones:",
+                name="<a:loading:1418504453580918856> Soluciones:",
                 value="• Intenta nuevamente en unos minutos\n• Usa `/scrape` como alternativa\n• Reporta si el problema persiste",
                 inline=False
             )
@@ -241,7 +241,7 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
 
         # Actualizar progreso: Obteniendo enlaces de servidores
         progress_embed = discord.Embed(
-            title="🔄 Headless Scrape en Progreso",
+            title="<a:loading:1418504453580918856> Headless Scrape en Progreso",
             description=f"**Paso 1/3:** Obteniendo enlaces de servidores para {game_name}",
             color=0xffaa00
         )

@@ -175,7 +175,7 @@ def setup_commands(bot):
                     
                     # Crear embed para el owner
                     owner_embed = discord.Embed(
-                        title="📋 Nueva Sugerencia Recibida",
+                        title="<:portapapeles:1418506653279715500> Nueva Sugerencia Recibida",
                         description=f"**{titulo}**",
                         color=0x7289da
                     )
@@ -193,7 +193,7 @@ def setup_commands(bot):
                     )
                     
                     owner_embed.add_field(
-                        name="👤 Usuario",
+                        name="<:1000182614:1396049500375875646> Usuario",
                         value=f"<:1000182614:1396049500375875646> {username} (`{user_id}`)",
                         inline=True
                     )
@@ -205,7 +205,7 @@ def setup_commands(bot):
                     )
                     
                     owner_embed.add_field(
-                        name="⏰ Fecha",
+                        name="<a:loading:1418504453580918856> Fecha",
                         value=f"<t:{int(datetime.now().timestamp())}:F>",
                         inline=False
                     )
@@ -243,19 +243,19 @@ def setup_commands(bot):
             )
             
             confirmacion_embed.add_field(
-                name="📋 Detalles",
+                name="<:portapapeles:1418506653279715500> Detalles",
                 value=f"**Título:** {titulo}\n**Categoría:** {categoria.title()}\n**ID:** `#{sugerencia_id}`",
                 inline=False
             )
             
             confirmacion_embed.add_field(
-                name="🔄 Proceso de Revisión",
+                name="<a:loading:1418504453580918856> Proceso de Revisión",
                 value="1. El owner <:1000182644:1396049313481625611> revisará tu sugerencia personalmente\n2. Recibirás una respuesta sobre el estado de tu sugerencia\n3. Las sugerencias aprobadas pueden ser implementadas\n4. Tu sugerencia queda guardada con ID único para seguimiento",
                 inline=False
             )
             
             confirmacion_embed.add_field(
-                name="⏰ Tiempo de Respuesta",
+                name="<a:loading:1418504453580918856> Tiempo de Respuesta",
                 value="El owner revisará tu sugerencia lo antes posible. Ten paciencia mientras evalúa tu propuesta.",
                 inline=False
             )
@@ -346,7 +346,7 @@ def setup_commands(bot):
                 estados_text = "Sin datos"
             
             stats_embed.add_field(
-                name="📋 Por Estado",
+                name="<:portapapeles:1418506653279715500> Por Estado",
                 value=estados_text,
                 inline=True
             )

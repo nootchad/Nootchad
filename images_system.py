@@ -71,9 +71,9 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                         color=0x00ff88
                     )
                     
-                    result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+                    result_embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{username}", inline=True)
                     result_embed.add_field(name="<a:pepebot:1418489370129993728> Generado por", value="RbxServers-v1 x Pollinations", inline=True)
-                    result_embed.add_field(name="⏰ Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
+                    result_embed.add_field(name="<a:loading:1418504453580918856> Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
                     
                     result_embed.set_footer(text="🎨 RbxServers-v1 x Pollinations • Generador de Imágenes IA")
                     result_embed.timestamp = datetime.now()
@@ -235,7 +235,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
     async def generate_fallback_image(self, message, descripcion, username):
         """Generar imagen usando servicios alternativos si falla el principal"""
         try:
-            logger.info("🔄 Intentando métodos alternativos de generación...")
+            logger.info("<a:loading:1418504453580918856> Intentando métodos alternativos de generación...")
             
             # Método 1: Intentar con DeepAI si hay API key
             image_file = await self.generate_image_with_deepai(descripcion)
@@ -249,7 +249,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                     color=0x00ff88
                 )
                 
-                result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+                result_embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{username}", inline=True)
                 result_embed.add_field(name="<a:pepebot:1418489370129993728> Generado por", value="RbxServers-v1 x DeepAI", inline=True)
                 result_embed.add_field(name="🎯 Método", value="Respaldo AI", inline=True)
                 
@@ -303,7 +303,7 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
             
             fallback_embed.set_image(url=image_url)
             
-            fallback_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+            fallback_embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{username}", inline=True)
             fallback_embed.add_field(name="<a:pepebot:1418489370129993728> Generado por", value="RbxServers-v1", inline=True)
             fallback_embed.add_field(name="🎯 Estilo", value=style_desc, inline=True)
             

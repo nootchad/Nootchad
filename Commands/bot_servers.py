@@ -122,7 +122,7 @@ def setup_commands(bot):
                     
                     for i, chunk in enumerate(chunks[:3]):  # Máximo 3 chunks
                         chunk_embed = discord.Embed(
-                            title=f"📋 Lista Completa de Servidores (Parte {i+1})",
+                            title=f"<:portapapeles:1418506653279715500> Lista Completa de Servidores (Parte {i+1})",
                             description=chunk,
                             color=0x3366ff
                         )
@@ -138,7 +138,7 @@ def setup_commands(bot):
                             break
                 else:
                     complete_embed = discord.Embed(
-                        title="📋 Lista Completa de Servidores",
+                        title="<:portapapeles:1418506653279715500> Lista Completa de Servidores",
                         description=all_servers_text,
                         color=0x3366ff
                     )
@@ -208,7 +208,7 @@ def setup_commands(bot):
             
             # Información básica
             embed.add_field(
-                name="📋 Información Básica",
+                name="<:portapapeles:1418506653279715500> Información Básica",
                 value=f"• **Nombre:** {guild.name}\n• **ID:** `{guild.id}`\n• **Miembros:** {guild.member_count:,}\n• **Creado:** <t:{int(guild.created_at.timestamp())}:F>",
                 inline=False
             )

@@ -45,7 +45,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="📋 Client ID",
+                name="<:portapapeles:1418506653279715500> Client ID",
                 value=f"`{discord_oauth.client_id}`",
                 inline=True
             )
@@ -63,7 +63,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="🌐 Authorize URL",
+                name="<a:latencia:1418504412049182740> Authorize URL",
                 value=f"`{discord_oauth.authorize_url}`",
                 inline=False
             )
@@ -154,7 +154,7 @@ def setup_commands(bot):
                     })
             
             embed = discord.Embed(
-                title="👥 Usuarios con OAuth2 Autorizado",
+                title="<a:people:1418503543366619247> Usuarios con OAuth2 Autorizado",
                 description=f"**{len(authorized_users)}** usuarios han autorizado el acceso OAuth2",
                 color=0x00ff88
             )

@@ -300,7 +300,7 @@ def setup_commands(bot):
                     scheduler_list += f"{status} `{scheduler['game_id']}` - {scheduler['time']} ({scheduler['quantity']} servidores)\n"
                 
                 embed.add_field(
-                    name="📋 **Tus Schedulers Activos**",
+                    name="<:portapapeles:1418506653279715500> **Tus Schedulers Activos**",
                     value=scheduler_list or "Ningún scheduler activo",
                     inline=False
                 )

@@ -35,7 +35,7 @@ def setup_commands(bot):
         user_id = str(interaction.user.id)
         username = f"{interaction.user.name}#{interaction.user.discriminator}"
         
-        logger.info(f"📋 Reporte enviado por {username} (ID: {user_id}) - Tipo: {tipo}")
+        logger.info(f"<:portapapeles:1418506653279715500> Reporte enviado por {username} (ID: {user_id}) - Tipo: {tipo}")
         
         await interaction.response.defer()
         
@@ -89,19 +89,19 @@ def setup_commands(bot):
                 inline=True
             )
             confirmacion_embed.add_field(
-                name="⏰ Enviado:",
+                name="<a:loading:1418504453580918856> Enviado:",
                 value=f"<t:{int(datetime.now().timestamp())}:F>",
                 inline=True
             )
             confirmacion_embed.add_field(
-                name="📋 Descripción:",
+                name="<:portapapeles:1418506653279715500> Descripción:",
                 value=f"```{descripcion[:200]}{'...' if len(descripcion) > 200 else ''}```",
                 inline=False
             )
             
             if usuario_reportado:
                 confirmacion_embed.add_field(
-                    name="👤 Usuario Reportado:",
+                    name="<:1000182614:1396049500375875646> Usuario Reportado:",
                     value=f"{usuario_reportado.mention} (`{usuario_reportado.id}`)",
                     inline=True
                 )
@@ -158,7 +158,7 @@ def setup_commands(bot):
         """Crear embed detallado del reporte para el owner"""
         
         embed = discord.Embed(
-            title="📋 Nuevo Reporte",
+            title="<:portapapeles:1418506653279715500> Nuevo Reporte",
             description=f"**Tipo:** `{tipo}`\n**ID:** `{report_id}`",
             color=0x808080,
             timestamp=datetime.now()
@@ -166,7 +166,7 @@ def setup_commands(bot):
         
         # Información del reportero
         embed.add_field(
-            name="👤 Reportado por:",
+            name="<:1000182614:1396049500375875646> Reportado por:",
             value=f"{reporter.mention}\n`{reporter.name}#{reporter.discriminator}`\nID: `{reporter.id}`",
             inline=True
         )
@@ -187,7 +187,7 @@ def setup_commands(bot):
         
         # Descripción del reporte
         embed.add_field(
-            name="📋 Descripción:",
+            name="<:portapapeles:1418506653279715500> Descripción:",
             value=f"```{descripcion}```",
             inline=False
         )
@@ -267,7 +267,7 @@ def setup_commands(bot):
                 inline=True
             )
             embed.add_field(
-                name="👤 Resuelto por:",
+                name="<:1000182614:1396049500375875646> Resuelto por:",
                 value=f"{interaction.user.mention}",
                 inline=True
             )
@@ -289,7 +289,7 @@ def setup_commands(bot):
                 inline=True
             )
             embed.add_field(
-                name="👤 Revisado por:",
+                name="<:1000182614:1396049500375875646> Revisado por:",
                 value=f"{interaction.user.mention}",
                 inline=True
             )
@@ -311,7 +311,7 @@ def setup_commands(bot):
                 inline=True
             )
             embed.add_field(
-                name="👤 Rechazado por:",
+                name="<:1000182614:1396049500375875646> Rechazado por:",
                 value=f"{interaction.user.mention}",
                 inline=True
             )

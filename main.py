@@ -1198,7 +1198,7 @@ def setup_commands(bot):
             inline=True
         )
         embed.add_field(
-            name="🔄 Carga",
+            name="<a:loading:1418504453580918856> Carga",
             value="Automática al iniciar el bot",
             inline=True
         )
@@ -1305,12 +1305,12 @@ def remove_delegated_owner(user_id: str) -> bool:
             user = bot.get_user(int(discord_id))
             if user:
                 embed = discord.Embed(
-                    title="⏰ Verificación Expirada",
+                    title="<a:loading:1418504453580918856> Verificación Expirada",
                     description=f"Tu verificación como **{roblox_username}** ha expirado después de 24 horas.",
                     color=0xff9900
                 )
                 embed.add_field(
-                    name="🔄 Para volver a usar el bot:",
+                    name="<a:loading:1418504453580918856> Para volver a usar el bot:",
                     value="Usa `/verify [tu_nombre_roblox]` nuevamente",
                     inline=False
                 )
@@ -3714,13 +3714,13 @@ class RobloxUserMonitoring:
                             )
                             
                             embed.add_field(
-                                name="👤 Usuario",
+                                name="<:1000182614:1396049500375875646> Usuario",
                                 value=f"[{roblox_username}](https://www.roblox.com/users/{roblox_user_id}/profile)",
                                 inline=True
                             )
                             
                             embed.add_field(
-                                name="⏰ Hora",
+                                name="<a:loading:1418504453580918856> Hora",
                                 value=f"<t:{int(time.time())}:T>",
                                 inline=True
                             )
@@ -4142,7 +4142,7 @@ class VerificationConfirmButton(discord.ui.Button):
                     inline=False
                 )
                 error_embed.add_field(
-                    name="🔄 Reintentar:",
+                    name="<a:loading:1418504453580918856> Reintentar:",
                     value="Puedes hacer clic en el botón de confirmación nuevamente después de agregar el código.",
                     inline=False
                 )
@@ -4194,12 +4194,12 @@ class VerificationConfirmButton(discord.ui.Button):
                 inline=False
             )
             success_embed.add_field(
-                name="⏰ Duración:",
+                name="<a:loading:1418504453580918856> Duración:",
                 value="24 horas",
                 inline=True
             )
             success_embed.add_field(
-                name="👤 Usuario de Roblox:",
+                name="<:1000182614:1396049500375875646> Usuario de Roblox:",
                 value=f"`{roblox_username}`",
                 inline=True
             )
@@ -4834,7 +4834,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
             description=f"Procesando **{cantidad_real}** solicitudes de amistad para el usuario ID: `{user_id}`",
             color=0xffaa00
         )
-        initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        initial_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
         initial_embed.add_field(name="🍪 Cookies Disponibles", value=f"{len(cookies_disponibles)} total", inline=True)
         initial_embed.add_field(name="<:stats:1418490788437823599> Cantidad Solicitada", value=f"{cantidad_real}/{cantidad}", inline=True)
         initial_embed.add_field(name="⏳ Estado", value="Iniciando envío...", inline=False)
@@ -4861,12 +4861,12 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
                     description=f"Procesando solicitud **{i + 1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
                     color=0xffaa00
                 )
-                progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+                progress_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
                 progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
                 progress_embed.add_field(name="🚪 Logout", value="<a:verify2:1418486831993061497> Completo entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
                 progress_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
-                progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+                progress_embed.add_field(name="<a:people:1418503543366619247> Ya Amigos", value=f"{ya_amigos}", inline=True)
                 
                 await message.edit(embed=progress_embed)
                 
@@ -4976,7 +4976,7 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
             title = "<a:verify2:1418486831993061497> Solicitudes Completadas"
         elif ya_amigos > 0:
             color = 0xffaa00  # Amarillo si ya son amigos
-            title = "👥 Solicitudes Procesadas"
+            title = "<a:people:1418503543366619247> Solicitudes Procesadas"
         else:
             color = 0xff0000  # Rojo si todas fallaron
             title = "❌ Solicitudes Fallidas"
@@ -4987,13 +4987,13 @@ async def friend_command(interaction: discord.Interaction, user_id: int, cantida
             color=color
         )
         
-        final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        final_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
         final_embed.add_field(name="<:stats:1418490788437823599> Total Procesadas", value=f"{cantidad_real}", inline=True)
         final_embed.add_field(name="🍪 Cookies Usadas", value=f"{len(cookies_a_usar)}", inline=True)
         
         final_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
         final_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
-        final_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+        final_embed.add_field(name="<a:people:1418503543366619247> Ya Amigos", value=f"{ya_amigos}", inline=True)
         
         # Agregar detalles de cookies usadas
         cookies_detail = "\n".join([f"• {cookie['source']}" for cookie in cookies_a_usar[:5]])
@@ -5168,7 +5168,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                                 else:
                                     response_embed.description = gemini_response
                                 
-                                response_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+                                response_embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{username}", inline=True)
                                 response_embed.add_field(name="🧠 Modelo", value="RbxServers-v1", inline=True)
                                 response_embed.add_field(name="📝 Petición", value=f"`{peticion[:100]}{'...' if len(peticion) > 100 else ''}`", inline=True)
                                 
@@ -5180,7 +5180,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
                                         inline=True
                                     )
                                     response_embed.add_field(
-                                        name="📋 Instrucciones:",
+                                        name="<:portapapeles:1418506653279715500> Instrucciones:",
                                         value="Copia el código y ejecútalo en Roblox Studio o un executor",
                                         inline=True
                                     )
@@ -5238,7 +5238,7 @@ Ahora sí, continúa con lo que pide el usuario: """ + peticion
             
             except asyncio.TimeoutError:
                 timeout_embed = discord.Embed(
-                    title="⏰ Timeout",
+                    title="<a:loading:1418504453580918856> Timeout",
                     description="La petición a RbxServers-v1 tardó demasiado en responder.",
                     color=0xff9900
                 )
@@ -5293,7 +5293,7 @@ async def sync_command(interaction: discord.Interaction):
             color=0x00ff88
         )
         embed.add_field(
-            name="📋 Comandos Sincronizados",
+            name="<:portapapeles:1418506653279715500> Comandos Sincronizados",
             value="\n".join([f"• /{cmd.name}" for cmd in synced[:10]]) + 
                   (f"\n• ... y {len(synced) - 10} más" if len(synced) > 10 else ""),
             inline=False
@@ -5537,9 +5537,9 @@ Genera una imagen que sea visualmente impactante y que capture perfectamente la 
                     color=0x00ff88
                 )
                 
-                result_embed.add_field(name="👤 Usuario", value=f"{username}", inline=True)
+                result_embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{username}", inline=True)
                 result_embed.add_field(name="<a:pepebot:1418489370129993728> Generado por", value="RbxServers-v1 x Pollinations", inline=True)
-                result_embed.add_field(name="⏰ Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
+                result_embed.add_field(name="<a:loading:1418504453580918856> Fecha", value=f"<t:{int(datetime.now().timestamp())}:F>", inline=True)
                 
                 result_embed.set_footer(text="🎨 RbxServers-v1 x Pollinations • Generador de Imágenes IA")
                 result_embed.timestamp = datetime.now()
@@ -5944,9 +5944,9 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             description=f"Iniciando creación automatizada de cuenta con username: **{new_username}**",
             color=0xffaa00
         )
-        embed.add_field(name="👤 Username Propuesto", value=f"`{new_username}`", inline=True)
+        embed.add_field(name="<:1000182614:1396049500375875646> Username Propuesto", value=f"`{new_username}`", inline=True)
         embed.add_field(name="🖥️ Modo", value="Automatizado con NopeCHA API", inline=True)
-        embed.add_field(name="🔄 Estado", value="Inicializando navegador...", inline=True)
+        embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Inicializando navegador...", inline=True)
         embed.add_field(name="<a:pepebot:1418489370129993728> Anti-CAPTCHA", value="<a:verify2:1418486831993061497> NopeCHA API Configurada", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
@@ -6030,13 +6030,13 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
             
             # Actualizar estado
             update_embed = discord.Embed(
-                title="🌐 Navegador Iniciado",
+                title="<a:latencia:1418504412049182740> Navegador Iniciado",
                 description="Navegador Chrome iniciado exitosamente. Navegando a Roblox...",
                 color=0x3366ff
             )
-            update_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+            update_embed.add_field(name="<:1000182614:1396049500375875646> Username", value=f"`{new_username}`", inline=True)
             update_embed.add_field(name="🖥️ Modo", value="Chrome + NopeCHA API", inline=True)
-            update_embed.add_field(name="🔄 Estado", value="Navegando a Roblox...", inline=True)
+            update_embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Navegando a Roblox...", inline=True)
             update_embed.add_field(name="<a:pepebot:1418489370129993728> CAPTCHA Solver", value="<a:verify2:1418486831993061497> API Lista", inline=True)
             await message.edit(embed=update_embed)
             
@@ -6052,9 +6052,9 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                 description="Página de Roblox cargada. Aplicando script de registro automatizado...",
                 color=0x3366ff
             )
-            progress_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+            progress_embed.add_field(name="<:1000182614:1396049500375875646> Username", value=f"`{new_username}`", inline=True)
             progress_embed.add_field(name="🖥️ Estado", value="Procesando formulario", inline=True)
-            progress_embed.add_field(name="🌐 Página", value="Roblox.com cargada", inline=True)
+            progress_embed.add_field(name="<a:latencia:1418504412049182740> Página", value="Roblox.com cargada", inline=True)
             await message.edit(embed=progress_embed)
             
             # APLICAR SCRIPT DE REGISTRO AUTOMATIZADO
@@ -6242,8 +6242,8 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                             if sitekey:
                                 logger.info(f"🎯 CAPTCHA DETECTADO EXITOSAMENTE!")
                                 logger.info(f"🔑 Sitekey encontrado: {sitekey}")
-                                logger.info(f"🌐 URL donde se detectó: {driver.current_url}")
-                                logger.info(f"🔄 Intento #{captcha_attempts} de {max_captcha_attempts}")
+                                logger.info(f"<a:latencia:1418504412049182740> URL donde se detectó: {driver.current_url}")
+                                logger.info(f"<a:loading:1418504453580918856> Intento #{captcha_attempts} de {max_captcha_attempts}")
                                 
                                 # Actualizar estado de CAPTCHA detectado
                                 captcha_detect_embed = discord.Embed(
@@ -6252,7 +6252,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                                     color=0xff9900
                                 )
                                 captcha_detect_embed.add_field(name="🔑 Sitekey", value=f"`{sitekey[:20]}...`", inline=True)
-                                captcha_detect_embed.add_field(name="🔄 Intento", value=f"{captcha_attempts}/{max_captcha_attempts}", inline=True)
+                                captcha_detect_embed.add_field(name="<a:loading:1418504453580918856> Intento", value=f"{captcha_attempts}/{max_captcha_attempts}", inline=True)
                                 captcha_detect_embed.add_field(name="<a:pepebot:1418489370129993728> API", value="NopeCHA API", inline=True)
                                 
                                 await message.edit(embed=captcha_detect_embed)
@@ -6282,7 +6282,7 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                                         )
                                         captcha_success_embed.add_field(name="<a:pepebot:1418489370129993728> Método", value="NopeCHA API", inline=True)
                                         captcha_success_embed.add_field(name="⏱️ Intento", value=f"{captcha_attempts}", inline=True)
-                                        captcha_success_embed.add_field(name="🔄 Estado", value="Finalizando registro...", inline=True)
+                                        captcha_success_embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Finalizando registro...", inline=True)
                                         
                                         await message.edit(embed=captcha_success_embed)
                                         
@@ -6317,19 +6317,19 @@ async def createaccount_command(interaction: discord.Interaction, username_suffi
                                 description=f"El proceso de registro para **{new_username}** ha sido completado exitosamente.",
                                 color=0x00ff88
                             )
-                            final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+                            final_embed.add_field(name="<:1000182614:1396049500375875646> Username", value=f"`{new_username}`", inline=True)
                             final_embed.add_field(name="🔒 Password", value=f"`{strong_password}`", inline=True)
                             final_embed.add_field(name="<a:pepebot:1418489370129993728> CAPTCHA", value="<a:verify2:1418486831993061497> Resuelto automáticamente", inline=True)
                             final_embed.add_field(name="<:stats:1418490788437823599> Campos Completados", value=f"{fields_completed}/5", inline=True)
-                            final_embed.add_field(name="🔄 Intentos CAPTCHA", value=f"{captcha_attempts}", inline=True)
-                            final_embed.add_field(name="⏰ Estado", value="Proceso finalizado", inline=True)
+                            final_embed.add_field(name="<a:loading:1418504453580918856> Intentos CAPTCHA", value=f"{captcha_attempts}", inline=True)
+                            final_embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Proceso finalizado", inline=True)
                         else:
                             final_embed = discord.Embed(
                                 title="⚠️ Proceso Parcialmente Completado",
                                 description=f"El formulario se completó pero el CAPTCHA no pudo resolverse automáticamente después de {max_captcha_attempts} intentos.",
                                 color=0xff9900
                             )
-                            final_embed.add_field(name="👤 Username", value=f"`{new_username}`", inline=True)
+                            final_embed.add_field(name="<:1000182614:1396049500375875646> Username", value=f"`{new_username}`", inline=True)
                             final_embed.add_field(name="<:stats:1418490788437823599> Campos", value=f"{fields_completed}/5 completados", inline=True)
                             final_embed.add_field(name="<a:pepebot:1418489370129993728> CAPTCHA", value="⚠️ Requiere resolución manual", inline=True)
                         
@@ -6501,11 +6501,11 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
         
         # Crear embed inicial
         initial_embed = discord.Embed(
-            title="🌐 Enviando Friend Requests via Navegador",
+            title="<a:latencia:1418504412049182740> Enviando Friend Requests via Navegador",
             description=f"Procesando **{cantidad_real}** solicitudes usando navegador con logout automático para el usuario ID: `{user_id}`",
             color=0xffaa00
         )
-        initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        initial_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
         initial_embed.add_field(name="🍪 Cookies Disponibles", value=f"{len(cookies_disponibles)} total", inline=True)
         initial_embed.add_field(name="<a:pepebot:1418489370129993728> Método", value="Navegador + Logout automático", inline=True)
         initial_embed.add_field(name="⏳ Estado", value="Iniciando navegador...", inline=False)
@@ -6533,16 +6533,16 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
                 
                 # Actualizar progreso
                 progress_embed = discord.Embed(
-                    title="🌐 Enviando Friend Requests via Navegador",
+                    title="<a:latencia:1418504412049182740> Enviando Friend Requests via Navegador",
                     description=f"Procesando solicitud **{i + 1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
                     color=0xffaa00
                 )
-                progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+                progress_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
                 progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
                 progress_embed.add_field(name="🚪 Logout", value="<a:verify2:1418486831993061497> Automático entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
                 progress_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
-                progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+                progress_embed.add_field(name="<a:people:1418503543366619247> Ya Amigos", value=f"{ya_amigos}", inline=True)
                 
                 await message.edit(embed=progress_embed)
                 
@@ -6581,7 +6581,7 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
             title = "<a:verify2:1418486831993061497> Friend Requests Completados via Navegador"
         elif ya_amigos > 0:
             color = 0xffaa00  # Amarillo si ya son amigos
-            title = "👥 Friend Requests Procesados via Navegador"
+            title = "<a:people:1418503543366619247> Friend Requests Procesados via Navegador"
         else:
             color = 0xff0000  # Rojo si todas fallaron
             title = "❌ Friend Requests Fallidos via Navegador"
@@ -6592,13 +6592,13 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
             color=color
         )
         
-        final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        final_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
         final_embed.add_field(name="<:stats:1418490788437823599> Total Procesadas", value=f"{cantidad_real}", inline=True)
         final_embed.add_field(name="<a:pepebot:1418489370129993728> Método", value="Navegador + Logout", inline=True)
         
         final_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
         final_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
-        final_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+        final_embed.add_field(name="<a:people:1418503543366619247> Ya Amigos", value=f"{ya_amigos}", inline=True)
         
         # Agregar detalles de cookies usadas
         cookies_detail = "\n".join([f"• {cookie['source']}" for cookie in cookies_a_usar[:5]])
@@ -6613,7 +6613,7 @@ async def friendbrowser_command(interaction: discord.Interaction, user_id: int, 
         
         # Agregar ventajas del método navegador
         final_embed.add_field(
-            name="🌐 Ventajas del Navegador:",
+            name="<a:latencia:1418504412049182740> Ventajas del Navegador:",
             value="• <a:verify2:1418486831993061497> Logout automático entre cookies\n• <a:verify2:1418486831993061497> Sesiones completamente separadas\n• <a:verify2:1418486831993061497> Emulación real de usuario\n• <a:verify2:1418486831993061497> Mayor tasa de éxito",
             inline=False
         )
@@ -7031,7 +7031,7 @@ async def perform_complete_logout(previous_cookie):
             description=f"Procesando **{cantidad_real}** solicitudes de amistad para el usuario ID: `{user_id}`",
             color=0xffaa00
         )
-        initial_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        initial_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
         initial_embed.add_field(name="🍪 Cookies Disponibles", value=f"{len(cookies_disponibles)} total", inline=True)
         initial_embed.add_field(name="<:stats:1418490788437823599> Cantidad Solicitada", value=f"{cantidad_real}/{cantidad}", inline=True)
         initial_embed.add_field(name="⏳ Estado", value="Iniciando envío...", inline=False)
@@ -7058,12 +7058,12 @@ async def perform_complete_logout(previous_cookie):
                     description=f"Procesando solicitud **{i + 1}** de **{cantidad_real}** para usuario ID: `{user_id}`",
                     color=0xffaa00
                 )
-                progress_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+                progress_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
                 progress_embed.add_field(name="🍪 Cookie Actual", value=f"{cookie_data['source']} (#{i + 1})", inline=True)
                 progress_embed.add_field(name="🚪 Logout", value="<a:verify2:1418486831993061497> Completo entre cookies" if i > 0 else "➖ Primera cookie", inline=True)
                 progress_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
                 progress_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
-                progress_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+                progress_embed.add_field(name="<a:people:1418503543366619247> Ya Amigos", value=f"{ya_amigos}", inline=True)
                 
                 await message.edit(embed=progress_embed)
                 
@@ -7173,7 +7173,7 @@ async def perform_complete_logout(previous_cookie):
             title = "<a:verify2:1418486831993061497> Solicitudes Completadas"
         elif ya_amigos > 0:
             color = 0xffaa00  # Amarillo si ya son amigos
-            title = "👥 Solicitudes Procesadas"
+            title = "<a:people:1418503543366619247> Solicitudes Procesadas"
         else:
             color = 0xff0000  # Rojo si todas fallaron
             title = "❌ Solicitudes Fallidas"
@@ -7184,13 +7184,13 @@ async def perform_complete_logout(previous_cookie):
             color=color
         )
         
-        final_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+        final_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
         final_embed.add_field(name="<:stats:1418490788437823599> Total Procesadas", value=f"{cantidad_real}", inline=True)
         final_embed.add_field(name="🍪 Cookies Usadas", value=f"{len(cookies_a_usar)}", inline=True)
         
         final_embed.add_field(name="<a:verify2:1418486831993061497> Exitosas", value=f"{exitosas}", inline=True)
         final_embed.add_field(name="❌ Fallidas", value=f"{fallidas}", inline=True)
-        final_embed.add_field(name="👥 Ya Amigos", value=f"{ya_amigos}", inline=True)
+        final_embed.add_field(name="<a:people:1418503543366619247> Ya Amigos", value=f"{ya_amigos}", inline=True)
         
         # Agregar detalles de cookies usadas
         cookies_detail = "\n".join([f"• {cookie['source']}" for cookie in cookies_a_usar[:5]])
@@ -7248,7 +7248,7 @@ async def perform_complete_logout(previous_cookie):
 async def send_friend_request_with_browser(driver, user_id, cookie_data, cookie_index):
     """Enviar solicitud de amistad usando navegador con logout automático entre cookies"""
     try:
-        logger.info(f"🌐 Enviando friend request via navegador - Cookie {cookie_index + 1} ({cookie_data['source']})")
+        logger.info(f"<a:latencia:1418504412049182740> Enviando friend request via navegador - Cookie {cookie_index + 1} ({cookie_data['source']})")
         
         # Hacer logout de la sesión anterior si no es la primera cookie
         if cookie_index > 0:
@@ -7431,7 +7431,7 @@ async def handle_friend_response(response, message, user_id, user_name):
                 description=f"La solicitud de amistad fue enviada exitosamente al usuario ID: `{user_id}`",
                 color=0x00ff88
             )
-            success_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+            success_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
             success_embed.add_field(name="<:stats:1418490788437823599> Estado", value="<a:verify2:1418486831993061497> Completado", inline=True)
             success_embed.add_field(name="🕐 Tiempo", value=f"<t:{int(asyncio.get_event_loop().time())}:R>", inline=True)
             success_embed.add_field(
@@ -7457,7 +7457,7 @@ async def handle_friend_response(response, message, user_id, user_name):
                 description=f"La solicitud de amistad no se pudo procesar para el usuario ID: `{user_id}`",
                 color=0xffaa00
             )
-            warning_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+            warning_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
             warning_embed.add_field(name="<:stats:1418490788437823599> Código", value=f"`{response.status}`", inline=True)
             warning_embed.add_field(name="📝 Motivo", value=f"```{error_message[:100]}{'...' if len(error_message) > 100 else ''}```", inline=False)
             warning_embed.add_field(
@@ -7474,7 +7474,7 @@ async def handle_friend_response(response, message, user_id, user_name):
                 description="La cookie de autenticación no es válida o ha expirado.",
                 color=0xff0000
             )
-            auth_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+            auth_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
             auth_embed.add_field(name="<:stats:1418490788437823599> Código", value=f"`{response.status}`", inline=True)
             auth_embed.add_field(
                 name="🔧 Solución:",
@@ -7492,7 +7492,7 @@ async def handle_friend_response(response, message, user_id, user_name):
                 color=0xff0000
             )
             error_embed.add_field(name="<:stats:1418490788437823599> Código de Estado", value=f"`{response.status}`", inline=True)
-            error_embed.add_field(name="👤 Usuario Objetivo", value=f"`{user_id}`", inline=True)
+            error_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{user_id}`", inline=True)
             error_embed.add_field(name="📝 Respuesta", value=f"```{response_text[:200]}{'...' if len(response_text) > 200 else ''}```", inline=False)
             await message.edit(embed=embed)
             
@@ -7691,7 +7691,7 @@ async def cookielog_command(interaction: discord.Interaction, vnc_mode: bool = F
             # Actualizar estado
             mode_status = "VNC iniciado" if vnc_mode else "headless iniciado"
             update_embed = discord.Embed(
-                title="🌐 Navegador Iniciado",
+                title="<a:latencia:1418504412049182740> Navegador Iniciado",
                 description=f"Navegador {mode_status} exitosamente. Navegando a Roblox y probando cookies...",
                 color=0x3366ff
             )
@@ -7879,7 +7879,7 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         )
         
         embed.add_field(
-            name="👤 Información de Cuenta",
+            name="<:1000182614:1396049500375875646> Información de Cuenta",
             value=f"**ID:** {account_info['id']}\n**Username:** {account_info['username']}\n**Display Name:** {account_info['display_name']}",
             inline=True
         )
@@ -7903,7 +7903,7 @@ Inventario: https://www.roblox.com/users/{account_info['id']}/inventory
         )
         
         embed.add_field(
-            name="🌐 Estado del Navegador",
+            name="<a:latencia:1418504412049182740> Estado del Navegador",
             value="<a:verify2:1418486831993061497> Cookie aplicada en VNC\n<a:verify2:1418486831993061497> Login verificado\n<a:verify2:1418486831993061497> Navegador cerrado",
             inline=True
         )
@@ -7993,7 +7993,7 @@ async def grant_access_command(interaction: discord.Interaction, user_id: str):
                 description=f"Se ha otorgado acceso de owner al usuario.",
                 color=0x00ff88
             )
-            embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
+            embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
             embed.add_field(name="🆔 User ID", value=f"`{user_id}`", inline=True)
             embed.add_field(name="👑 Acceso", value="Comandos de Owner", inline=True)
             
@@ -8022,7 +8022,7 @@ async def grant_access_command(interaction: discord.Interaction, user_id: str):
                 description=f"El usuario ya tiene acceso de owner.",
                 color=0xffaa00
             )
-            embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
+            embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
             embed.add_field(name="<:stats:1418490788437823599> Estado", value="Ya delegado", inline=True)
         
         await interaction.followup.send(embed=embed, ephemeral=True)
@@ -8091,7 +8091,7 @@ async def revoke_access_command(interaction: discord.Interaction, user_id: str):
                 description=f"Se ha revocado el acceso de owner al usuario.",
                 color=0x00ff88
             )
-            embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
+            embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
             embed.add_field(name="🆔 User ID", value=f"`{user_id}`", inline=True)
             embed.add_field(name="🚫 Acceso", value="Revocado", inline=True)
             
@@ -8099,7 +8099,7 @@ async def revoke_access_command(interaction: discord.Interaction, user_id: str):
                 embed.add_field(name="📝 Nombre", value=f"{target_user.name}#{target_user.discriminator}", inline=True)
             
             embed.add_field(
-                name="📋 Comandos Afectados:",
+                name="<:portapapeles:1418506653279715500> Comandos Afectados:",
                 value="• Ya no puede usar `/createaccount`\n• Ya no puede usar `/cookielog`\n• Ya no puede usar `/control`\n• Ya no puede usar otros comandos de owner",
                 inline=False
             )
@@ -8114,7 +8114,7 @@ async def revoke_access_command(interaction: discord.Interaction, user_id: str):
                 description=f"El usuario no tenía acceso de owner previamente.",
                 color=0xffaa00
             )
-            embed.add_field(name="👤 Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
+            embed.add_field(name="<:1000182614:1396049500375875646> Usuario", value=f"{target_user.mention if target_user else f'ID: {user_id}'}", inline=True)
             embed.add_field(name="<:stats:1418490788437823599> Estado", value="Sin acceso previo", inline=True)
         
         await interaction.followup.send(embed=embed, ephemeral=True)
@@ -8181,16 +8181,16 @@ async def alerts_command(interaction: discord.Interaction,
                 )
                 embed.add_field(
                     name="<a:notification:1418491712317292646> Tipos de Alertas:",
-                    value="• 🟢 Cuando se conecte\n• 🔴 Cuando se desconecte\n• <a:control:1418490793223651409> Cuando empiece a jugar\n• ⏹️ Cuando deje de jugar\n• 🔄 Cuando cambie de juego",
+                    value="• 🟢 Cuando se conecte\n• 🔴 Cuando se desconecte\n• <a:control:1418490793223651409> Cuando empiece a jugar\n• ⏹️ Cuando deje de jugar\n• <a:loading:1418504453580918856> Cuando cambie de juego",
                     inline=False
                 )
                 embed.add_field(
-                    name="⏰ Frecuencia:",
+                    name="<a:loading:1418504453580918856> Frecuencia:",
                     value="Verificación cada 5 minutos",
                     inline=True
                 )
                 embed.add_field(
-                    name="👤 Usuario Monitoreado:",
+                    name="<:1000182614:1396049500375875646> Usuario Monitoreado:",
                     value=f"[{usuario_roblox}](https://www.roblox.com/users/{user_monitoring.monitored_users[user_id]['roblox_user_id']}/profile)",
                     inline=True
                 )
@@ -8280,7 +8280,7 @@ async def alerts_command(interaction: discord.Interaction,
             )
             
             embed.add_field(
-                name="👤 Usuario Monitoreado:",
+                name="<:1000182614:1396049500375875646> Usuario Monitoreado:",
                 value=f"[{roblox_username}](https://www.roblox.com/users/{roblox_user_id}/profile)",
                 inline=True
             )
@@ -8314,13 +8314,13 @@ async def alerts_command(interaction: discord.Interaction,
                     last_check_dt = datetime.fromisoformat(last_check.replace('Z', '+00:00'))
                     timestamp = int(last_check_dt.timestamp())
                     embed.add_field(
-                        name="⏰ Última Verificación:",
+                        name="<a:loading:1418504453580918856> Última Verificación:",
                         value=f"<t:{timestamp}:R>",
                         inline=True
                     )
                 except:
                     embed.add_field(
-                        name="⏰ Última Verificación:",
+                        name="<a:loading:1418504453580918856> Última Verificación:",
                         value="Hace un momento",
                         inline=True
                     )
@@ -8411,13 +8411,13 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
         # Mensaje inicial
         mode_display = "VNC (visible)" if vnc_mode else "headless (optimizado)"
         embed = discord.Embed(
-            title="👤 Enviando Seguidor Bot via Navegador",
+            title="<:1000182614:1396049500375875646> Enviando Seguidor Bot via Navegador",
             description=f"Iniciando proceso para enviar 1 seguidor bot a **{roblox_username}** usando navegador automatizado en modo {mode_display}",
             color=0xffaa00
         )
-        embed.add_field(name="👤 Usuario Objetivo", value=f"`{roblox_username}`", inline=True)
+        embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{roblox_username}`", inline=True)
         embed.add_field(name="<a:pepebot:1418489370129993728> Método", value=f"Selenium + JavaScript ({mode_display})", inline=True)
-        embed.add_field(name="🔄 Estado", value="Iniciando navegador...", inline=True)
+        embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Iniciando navegador...", inline=True)
         
         message = await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -8464,11 +8464,11 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
         
         # Actualizar estado - Iniciando navegador
         browser_embed = discord.Embed(
-            title="🌐 Iniciando Navegador",
+            title="<a:latencia:1418504412049182740> Iniciando Navegador",
             description=f"Usuario **{roblox_username}** encontrado. Iniciando navegador Chrome con cookies en modo {mode_display}...",
             color=0x3366ff
         )
-        browser_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
+        browser_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
         browser_embed.add_field(name="🆔 Display Name", value=target_display_name, inline=True)
         browser_embed.add_field(name="🖥️ Modo", value=mode_display, inline=True)
         
@@ -8576,9 +8576,9 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
             description=f"Navegador iniciado exitosamente. Navegando al perfil de **{roblox_username}**...",
             color=0x00ff88
         )
-        nav_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
+        nav_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"{roblox_username} (ID: {target_user_id})", inline=True)
         nav_embed.add_field(name="🍪 Cookies", value="<a:verify2:1418486831993061497> Aplicadas", inline=True)
-        nav_embed.add_field(name="🔄 Estado", value="Navegando al perfil...", inline=True)
+        nav_embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Navegando al perfil...", inline=True)
         
         await message.edit(embed=nav_embed)
         
@@ -8601,13 +8601,13 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
         
         # Actualizar estado - Buscando botón de follow
         search_embed = discord.Embed(
-            title="👥 Procesando Seguimiento",
+            title="<a:people:1418503543366619247> Procesando Seguimiento",
             description=f"En el perfil de **{roblox_username}**. Buscando botón de follow...",
             color=0xffaa00
         )
-        search_embed.add_field(name="👤 Perfil Cargado", value=f"{roblox_username}", inline=True)
+        search_embed.add_field(name="<:1000182614:1396049500375875646> Perfil Cargado", value=f"{roblox_username}", inline=True)
         search_embed.add_field(name="🔗 URL", value=f"[Ver Perfil]({profile_url})", inline=True)
-        search_embed.add_field(name="🔄 Estado", value="Ejecutando JavaScript...", inline=True)
+        search_embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Ejecutando JavaScript...", inline=True)
         
         await message.edit(embed=search_embed)
         
@@ -8767,7 +8767,7 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
                 description=f"El bot ha seguido exitosamente a **{roblox_username}** usando el navegador automatizado",
                 color=0x00ff88
             )
-            success_embed.add_field(name="👤 Usuario Seguido", value=f"{roblox_username}", inline=True)
+            success_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Seguido", value=f"{roblox_username}", inline=True)
             success_embed.add_field(name="<a:pepebot:1418489370129993728> Método", value="Navegador + JavaScript", inline=True)
             success_embed.add_field(name="<:stats:1418490788437823599> Resultado", value=f"`{result}`", inline=True)
             success_embed.add_field(
@@ -8790,7 +8790,7 @@ async def follow_command(interaction: discord.Interaction, roblox_username: str,
                 description=f"El script se ejecutó pero no se pudo confirmar el seguimiento automáticamente",
                 color=0xff9900
             )
-            error_embed.add_field(name="👤 Usuario Objetivo", value=f"{roblox_username}", inline=True)
+            error_embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"{roblox_username}", inline=True)
             error_embed.add_field(name="<a:pepebot:1418489370129993728> Script", value=f"`{result}`", inline=True)
             error_embed.add_field(name="🔍 Verificación", value=f"`{verification_result}`", inline=True)
             error_embed.add_field(
@@ -8878,7 +8878,7 @@ async def list_access_command(interaction: discord.Interaction):
                     users_info.append(f"• **Usuario No Encontrado**\n  ID: `{user_id}`")
             
             embed.add_field(
-                name="📋 Usuarios con Acceso:",
+                name="<:portapapeles:1418506653279715500> Usuarios con Acceso:",
                 value="\n\n".join(users_info) if users_info else "Ninguno",
                 inline=False
             )
@@ -9017,13 +9017,13 @@ async def verify_command(interaction: discord.Interaction, roblox_username: str)
         )
         
         embed.add_field(
-            name="⏰ Tiempo límite:",
+            name="<a:loading:1418504453580918856> Tiempo límite:",
             value="Tienes **10 minutos** para completar la verificación",
             inline=True
         )
         
         embed.add_field(
-            name="👤 Usuario de Roblox:",
+            name="<:1000182614:1396049500375875646> Usuario de Roblox:",
             value=f"`{roblox_username}`",
             inline=True
         )
@@ -9239,7 +9239,7 @@ class ServerBrowserView(discord.ui.View):
         # Add category
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
         }
         embed.add_field(
@@ -9337,10 +9337,10 @@ class ServerOptionsSelect(discord.ui.Select):
                 emoji="<:stats:1418490788437823599>"
             ),
             discord.SelectOption(
-                label="🔄 Actualizar Vista",
+                label="<a:loading:1418504453580918856> Actualizar Vista",
                 description="Recargar la información del servidor",
                 value="refresh_view",
-                emoji="🔄"
+                emoji="<a:loading:1418504453580918856>"
             )
         ]
         
@@ -9469,7 +9469,7 @@ class GameSearchSelect(discord.ui.Select):
         cooldown_remaining = scraper.check_cooldown(self.user_id)
         if cooldown_remaining:
             embed = discord.Embed(
-                title="⏰ Cooldown Activo",
+                title="<a:loading:1418504453580918856> Cooldown Activo",
                 description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.",
                 color=0xff9900
             )
@@ -9520,7 +9520,7 @@ class CategoryFilterSelect(discord.ui.Select):
         
         category_emoji = {
             "all": "<a:control:1418490793223651409>", "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "📦"
         }
         
@@ -9646,7 +9646,7 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
         cooldown_remaining = scraper.check_cooldown(user_id, 2)  # 2 minute cooldown for search
         if cooldown_remaining:
             embed = discord.Embed(
-                title="⏰ Cooldown Activo",
+                title="<a:loading:1418504453580918856> Cooldown Activo",
                 description=f"Debes esperar **{cooldown_remaining}** segundos antes de buscar nuevamente.",
                 color=0xff9900
             )
@@ -9679,7 +9679,7 @@ async def search_game_command(interaction: discord.Interaction, nombre: str):
         
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
         }
         
@@ -9724,7 +9724,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
         cooldown_remaining = scraper.check_cooldown(user_id)
         if cooldown_remaining:
             embed = discord.Embed(
-                title="⏰ Cooldown Activo",
+                title="<a:loading:1418504453580918856> Cooldown Activo",
                 description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar game nuevamente.",
                 color=0xff9900
             )
@@ -9766,7 +9766,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
             
             category_emoji = {
                 "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-                "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
                 "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
             }
             
@@ -9813,7 +9813,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
             category = best_match.get('category', 'other')
             category_emoji = {
                 "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-                "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
                 "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
             }
             start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '<a:control:1418490793223651409>')} {category.title()}", inline=True)
@@ -9826,7 +9826,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
             # Create view with follow button
             start_view = discord.ui.View(timeout=None)
             follow_button_start = discord.ui.Button(
-                label="👤 Seguir a hesiz",
+                label="<:1000182614:1396049500375875646> Seguir a hesiz",
                 style=discord.ButtonStyle.secondary,
                 url="https://www.roblox.com/users/11834624/profile"
             )
@@ -9848,7 +9848,7 @@ async def game_command(interaction: discord.Interaction, nombre: str):
                 description="Ocurrió un error durante el scraping automático.",
                 color=0xff0000
             )
-            error_embed.add_field(name="🔄 Alternativa", value=f"Usa `/scrape {game_id}` para intentar manualmente", inline=False)
+            error_embed.add_field(name="<a:loading:1418504453580918856> Alternativa", value=f"Usa `/scrape {game_id}` para intentar manualmente", inline=False)
             await interaction.followup.send(embed=error_embed, ephemeral=True)
         
     except Exception as e:
@@ -9888,7 +9888,7 @@ async def favorites_command(interaction: discord.Interaction):
         
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
         }
         
@@ -9950,7 +9950,7 @@ async def remove_favorite_command(interaction: discord.Interaction, game_id: str
                 color=0x00ff88
             )
             embed.add_field(
-                name="🔄 Para volver a agregarlo:",
+                name="<a:loading:1418504453580918856> Para volver a agregarlo:",
                 value="Usa `/servertest` y navega hasta el juego, luego haz clic en ⭐",
                 inline=False
             )
@@ -10074,7 +10074,7 @@ async def reservations_command(interaction: discord.Interaction):
         
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
         }
         
@@ -10147,7 +10147,7 @@ async def clear_reservations_command(interaction: discord.Interaction):
             color=0x00ff88
         )
         embed.add_field(
-            name="🔄 Para reservar nuevamente:",
+            name="<a:loading:1418504453580918856> Para reservar nuevamente:",
             value="Usa `/servertest` y haz clic en **📌 Reservar Servidor**",
             inline=False
         )
@@ -10315,7 +10315,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
         cooldown_remaining = scraper.check_cooldown(user_id)
         if cooldown_remaining:
             embed = discord.Embed(
-                title="⏰ Cooldown Activo",
+                title="<a:loading:1418504453580918856> Cooldown Activo",
                 description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.\n\n**Razón:** Prevención de spam y sobrecarga del sistema.",
                 color=0xff9900
             )
@@ -10337,13 +10337,13 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
             # Get initial count for this user and game
             initial_count = len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', []))
             start_embed.add_field(name="<:stats:1418490788437823599> Base de Datos Actual", value=f"{initial_count} servidores", inline=True)
-            start_embed.add_field(name="🔄 Estado", value="Inicializando...", inline=True)
+            start_embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Inicializando...", inline=True)
             start_time = time.time()
 
             # Create view with follow button
             start_view = discord.ui.View(timeout=None)
             follow_button_start = discord.ui.Button(
-                label="👤 Seguir a hesiz",
+                label="<:1000182614:1396049500375875646> Seguir a hesiz",
                 style=discord.ButtonStyle.secondary,
                 url="https://www.roblox.com/users/11834624/profile"
             )
@@ -10363,12 +10363,12 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
                 color=0x2F3136
             )
             error_embed.add_field(name="📝 Detalles del Error", value=f"```{str(e)[:200]}```", inline=False)
-            error_embed.add_field(name="🔄 Reintentar", value="Puedes ejecutar `/scrape` nuevamente", inline=False)
+            error_embed.add_field(name="<a:loading:1418504453580918856> Reintentar", value="Puedes ejecutar `/scrape` nuevamente", inline=False)
 
             # Error view with follow button
             error_view = discord.ui.View(timeout=None)
             follow_button_error = discord.ui.Button(
-                label="👤 Seguir a hesiz",
+                label="<:1000182614:1396049500375875646> Seguir a hesiz",
                 style=discord.ButtonStyle.secondary,
                 url="https://www.roblox.com/users/11834624/profile"
             )
@@ -10383,7 +10383,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
             cooldown_remaining = scraper.check_cooldown(user_id, 2)  # 2 minute cooldown for search
             if cooldown_remaining:
                 embed = discord.Embed(
-                    title="⏰ Cooldown Activo",
+                    title="<a:loading:1418504453580918856> Cooldown Activo",
                     description=f"Debes esperar **{cooldown_remaining}** segundos antes de buscar nuevamente.",
                     color=0xff9900
                 )
@@ -10422,7 +10422,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
                 
                 category_emoji = {
                     "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-                    "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                    "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
                     "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
                 }
                 
@@ -10458,7 +10458,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
             cooldown_remaining = scraper.check_cooldown(user_id)
             if cooldown_remaining:
                 embed = discord.Embed(
-                    title="⏰ Cooldown Activo",
+                    title="<a:loading:1418504453580918856> Cooldown Activo",
                     description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.",
                     color=0xff9900
                 )
@@ -10483,7 +10483,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
                 category = best_match.get('category', 'other')
                 category_emoji = {
                     "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-                    "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                    "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
                     "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
                 }
                 start_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '<a:control:1418490793223651409>')} {category.title()}", inline=True)
@@ -10496,7 +10496,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
                 # Create view with follow button
                 start_view = discord.ui.View(timeout=None)
                 follow_button_start = discord.ui.Button(
-                    label="👤 Seguir a hesiz",
+                    label="<:1000182614:1396049500375875646> Seguir a hesiz",
                     style=discord.ButtonStyle.secondary,
                     url="https://www.roblox.com/users/11834624/profile"
                 )
@@ -10518,7 +10518,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
                     description="Ocurrió un error durante el scraping automático.",
                     color=0xff0000
                 )
-                error_embed.add_field(name="🔄 Alternativa", value=f"Usa `/scrape {game_id}` para intentar manualmente", inline=False)
+                error_embed.add_field(name="<a:loading:1418504453580918856> Alternativa", value=f"Usa `/scrape {game_id}` para intentar manualmente", inline=False)
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
                 
         except Exception as e:
@@ -10536,7 +10536,7 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
     cooldown_remaining = scraper.check_cooldown(user_id)
     if cooldown_remaining:
         embed = discord.Embed(
-            title="⏰ Cooldown Activo",
+            title="<a:loading:1418504453580918856> Cooldown Activo",
             description=f"Debes esperar **{cooldown_remaining}** segundos antes de usar scrape nuevamente.\n\n**Razón:** Prevención de spam y sobrecarga del sistema.",
             color=0xff9900
         )
@@ -10558,13 +10558,13 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
         # Get initial count for this user and game
         initial_count = len(scraper.links_by_user.get(user_id, {}).get(game_id, {}).get('links', []))
         start_embed.add_field(name="<:stats:1418490788437823599> Base de Datos Actual", value=f"{initial_count} servidores", inline=True)
-        start_embed.add_field(name="🔄 Estado", value="Inicializando...", inline=True)
+        start_embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Inicializando...", inline=True)
         start_time = time.time()
 
         # Create view with follow button
         start_view = discord.ui.View(timeout=None)
         follow_button_start = discord.ui.Button(
-            label="👤 Seguir a hesiz",
+            label="<:1000182614:1396049500375875646> Seguir a hesiz",
             style=discord.ButtonStyle.secondary,
             url="https://www.roblox.com/users/11834624/profile"
         )
@@ -10584,12 +10584,12 @@ async def scrape_command(interaction: discord.Interaction, juego: str):
             color=0x2F3136
         )
         error_embed.add_field(name="📝 Detalles del Error", value=f"```{str(e)[:200]}```", inline=False)
-        error_embed.add_field(name="🔄 Reintentar", value="Puedes ejecutar `/scrape` nuevamente", inline=False)
+        error_embed.add_field(name="<a:loading:1418504453580918856> Reintentar", value="Puedes ejecutar `/scrape` nuevamente", inline=False)
 
         # Error view with follow button
         error_view = discord.ui.View(timeout=None)
         follow_button_error = discord.ui.Button(
-            label="👤 Seguir a hesiz",
+            label="<:1000182614:1396049500375875646> Seguir a hesiz",
             style=discord.ButtonStyle.secondary,
             url="https://www.roblox.com/users/11834624/profile"
         )
@@ -10722,7 +10722,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
                 )
                 
                 progress_embed.add_field(name="⏱️ Tiempo Transcurrido", value=f"{elapsed:.0f}s", inline=True)
-                progress_embed.add_field(name="🔄 Estado", value="Procesando...", inline=True)
+                progress_embed.add_field(name="<a:loading:1418504453580918856> Estado", value="Procesando...", inline=True)
                 progress_embed.add_field(name="🆔 ID del Juego", value=f"```{game_id}```", inline=True)
 
                 # Animación de progreso
@@ -10735,7 +10735,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
 
                 view = discord.ui.View(timeout=None)
                 follow_button = discord.ui.Button(
-                    label="👤 Seguir a hesiz",
+                    label="<:1000182614:1396049500375875646> Seguir a hesiz",
                     style=discord.ButtonStyle.secondary,
                     url="https://www.roblox.com/users/11834624/profile"
                 )
@@ -10765,7 +10765,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
             )
             view = discord.ui.View(timeout=None)
             follow_button = discord.ui.Button(
-                label="👤 Seguir a hesiz",
+                label="<:1000182614:1396049500375875646> Seguir a hesiz",
                 style=discord.ButtonStyle.secondary,
                 url="https://www.roblox.com/users/11834624/profile"
             )
@@ -10821,7 +10821,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
         }
         complete_embed.add_field(name="📂 Categoría", value=f"{category_emoji.get(category, '<a:control:1418490793223651409>')} {category.title()}", inline=True)
@@ -11028,7 +11028,7 @@ async def scrape_with_updates(message, start_time, game_id, user_id, discord_use
         )
         view = discord.ui.View(timeout=None)
         follow_button = discord.ui.Button(
-            label="👤 Seguir a hesiz",
+            label="<:1000182614:1396049500375875646> Seguir a hesiz",
             style=discord.ButtonStyle.secondary,
             url="https://www.roblox.com/users/11834624/profile"
         )
@@ -11082,7 +11082,7 @@ async def categories_command(interaction: discord.Interaction):
         
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "📦"
         }
         
@@ -11096,7 +11096,7 @@ async def categories_command(interaction: discord.Interaction):
             )
         
         embed.add_field(
-            name="📋 Instrucciones",
+            name="<:portapapeles:1418506653279715500> Instrucciones",
             value="Usa el menú desplegable abajo para seleccionar una categoría y navegar por sus servidores.",
             inline=False
         )
@@ -11125,10 +11125,10 @@ class DebugMenuSelect(discord.ui.Select):
                 emoji="<:stats:1418490788437823599>"
             ),
             discord.SelectOption(
-                label="👥 Gestión de Usuarios",
+                label="<a:people:1418503543366619247> Gestión de Usuarios",
                 description="Ver y gestionar usuarios del bot",
                 value="user_management",
-                emoji="👥"
+                emoji="<a:people:1418503543366619247>"
             ),
             discord.SelectOption(
                 label="💾 Base de Datos",
@@ -11205,7 +11205,7 @@ class DebugMenuSelect(discord.ui.Select):
         total_warnings = len(roblox_verification.warnings)
         total_pending = len(roblox_verification.pending_verifications)
         
-        embed.add_field(name="👥 Usuarios Verificados", value=f"**{total_verified}**", inline=True)
+        embed.add_field(name="<a:people:1418503543366619247> Usuarios Verificados", value=f"**{total_verified}**", inline=True)
         embed.add_field(name="🚫 Usuarios Baneados", value=f"**{total_banned}**", inline=True)
         embed.add_field(name="⚠️ Con Advertencias", value=f"**{total_warnings}**", inline=True)
         embed.add_field(name="⏳ Verificaciones Pendientes", value=f"**{total_pending}**", inline=True)
@@ -11230,7 +11230,7 @@ class DebugMenuSelect(discord.ui.Select):
         
         # Cooldowns activos
         active_cooldowns = len(scraper.user_cooldowns)
-        embed.add_field(name="⏰ Cooldowns Activos", value=f"**{active_cooldowns}**", inline=True)
+        embed.add_field(name="<a:loading:1418504453580918856> Cooldowns Activos", value=f"**{active_cooldowns}**", inline=True)
         
         # Favoritos y reservas
         total_favorites = sum(len(favorites) for favorites in scraper.user_favorites.values())
@@ -11241,14 +11241,14 @@ class DebugMenuSelect(discord.ui.Select):
         
         # Bot info
         embed.add_field(name="<a:pepebot:1418489370129993728> Servidores Bot", value=f"**{len(bot.guilds)}**", inline=True)
-        embed.add_field(name="👤 Usuarios Bot", value=f"**{len(bot.users)}**", inline=True)
+        embed.add_field(name="<:1000182614:1396049500375875646> Usuarios Bot", value=f"**{len(bot.users)}**", inline=True)
         
         await interaction.followup.send(embed=embed, ephemeral=True)
     
     async def show_user_management(self, interaction):
         """Mostrar gestión de usuarios"""
         embed = discord.Embed(
-            title="👥 Gestión de Usuarios",
+            title="<a:people:1418503543366619247> Gestión de Usuarios",
             description="Usuarios del bot y sus estados",
             color=0x3366ff,
             timestamp=datetime.now()
@@ -11437,7 +11437,7 @@ class DebugMenuSelect(discord.ui.Select):
         )
         
         embed.add_field(
-            name="🔄 Comandos Útiles",
+            name="<a:loading:1418504453580918856> Comandos Útiles",
             value="`/admin cleanup` - Limpiar datos expirados\n`/admin reset_cooldowns` - Resetear todos los cooldowns\n`/admin backup` - Crear respaldo\n`/admin validate` - Validar integridad",
             inline=False
         )
@@ -11578,7 +11578,7 @@ class DebugMenuSelect(discord.ui.Select):
             timestamp=datetime.now()
         )
         
-        embed.add_field(name="⏰ Duración Verificación", value=f"**{VERIFICATION_DURATION//3600}h**", inline=True)
+        embed.add_field(name="<a:loading:1418504453580918856> Duración Verificación", value=f"**{VERIFICATION_DURATION//3600}h**", inline=True)
         embed.add_field(name="🚫 Duración Ban", value=f"**{BAN_DURATION//(24*3600)}d**", inline=True)
         embed.add_field(name="🆔 Owner ID", value=f"**916070251895091241**", inline=True)
         
@@ -11588,7 +11588,7 @@ class DebugMenuSelect(discord.ui.Select):
         
         # Configuraciones actuales
         embed.add_field(
-            name="📋 Archivos de Datos",
+            name="<:portapapeles:1418506653279715500> Archivos de Datos",
             value=f"• `{FOLLOWERS_FILE}`\n• `{BANS_FILE}`\n• `{WARNINGS_FILE}`\n• `{scraper.vip_links_file}`",
             inline=False
         )
@@ -11716,7 +11716,7 @@ async def admin_command(interaction: discord.Interaction,
                     color=0xffaa00
                 )
                 embed.add_field(
-                    name="🔄 Para actualizar:",
+                    name="<a:loading:1418504453580918856> Para actualizar:",
                     value="Primero usa `/admin unverify` y luego `/admin autoverify` nuevamente.",
                     inline=False
                 )
@@ -11764,10 +11764,10 @@ async def admin_command(interaction: discord.Interaction,
                 description=f"El usuario <@{usuario_id}> ha sido verificado automáticamente como **{roblox_username}**.",
                 color=0x00ff88
             )
-            embed.add_field(name="👤 Usuario Discord", value=f"<@{usuario_id}>", inline=True)
+            embed.add_field(name="<:1000182614:1396049500375875646> Usuario Discord", value=f"<@{usuario_id}>", inline=True)
             embed.add_field(name="<a:control:1418490793223651409> Usuario Roblox", value=f"`{roblox_username}`", inline=True)
             embed.add_field(name="🔐 Código Asignado", value=f"`{verification_code}`", inline=True)
-            embed.add_field(name="⏰ Duración", value="24 horas", inline=True)
+            embed.add_field(name="<a:loading:1418504453580918856> Duración", value="24 horas", inline=True)
             embed.add_field(name="👨‍💼 Verificado por", value=f"<@{interaction.user.id}> (Owner)", inline=True)
             
             current_time = datetime.now().strftime('%H:%M:%S')
@@ -11790,8 +11790,8 @@ async def admin_command(interaction: discord.Interaction,
                         value="• `/scrape` - Buscar servidores VIP\n• `/servertest` - Ver servidores disponibles\n• `/game` - Buscar por nombre de juego\n• Y todos los demás comandos",
                         inline=False
                     )
-                    dm_embed.add_field(name="⏰ Duración:", value="30 dias", inline=True)
-                    dm_embed.add_field(name="👤 Usuario de Roblox:", value=f"`{roblox_username}`", inline=True)
+                    dm_embed.add_field(name="<a:loading:1418504453580918856> Duración:", value="30 dias", inline=True)
+                    dm_embed.add_field(name="<:1000182614:1396049500375875646> Usuario de Roblox:", value=f"`{roblox_username}`", inline=True)
                     
                     await user.send(embed=dm_embed)
                     logger.info(f"ADMIN: Auto-verification notification sent to user {usuario_id}")
@@ -11949,7 +11949,7 @@ async def admin_command(interaction: discord.Interaction,
             # Cooldown
             cooldown_remaining = scraper.check_cooldown(usuario_id)
             if cooldown_remaining:
-                embed.add_field(name="⏰ Cooldown", value=f"{cooldown_remaining}s", inline=True)
+                embed.add_field(name="<a:loading:1418504453580918856> Cooldown", value=f"{cooldown_remaining}s", inline=True)
             else:
                 embed.add_field(name="<a:verify2:1418486831993061497> Sin Cooldown", value="Disponible", inline=True)
             
@@ -11989,7 +11989,7 @@ async def admin_command(interaction: discord.Interaction,
             scraper.user_cooldowns.clear()
             
             embed = discord.Embed(
-                title="⏰ Cooldowns Reseteados",
+                title="<a:loading:1418504453580918856> Cooldowns Reseteados",
                 description=f"Se han eliminado **{cooldown_count}** cooldowns activos.",
                 color=0x00ff88
             )
@@ -12179,7 +12179,7 @@ async def admin_command(interaction: discord.Interaction,
             total_warnings = len(roblox_verification.warnings)
             total_pending = len(roblox_verification.pending_verifications)
             
-            embed.add_field(name="👥 Verificados", value=str(total_verified), inline=True)
+            embed.add_field(name="<a:people:1418503543366619247> Verificados", value=str(total_verified), inline=True)
             embed.add_field(name="🚫 Baneados", value=str(total_banned), inline=True)
             embed.add_field(name="⚠️ Con Advertencias", value=str(total_warnings), inline=True)
             embed.add_field(name="⏳ Pendientes", value=str(total_pending), inline=True)
@@ -12199,8 +12199,8 @@ async def admin_command(interaction: discord.Interaction,
             
             # Bot stats
             embed.add_field(name="<a:pepebot:1418489370129993728> Servidores", value=str(len(bot.guilds)), inline=True)
-            embed.add_field(name="👤 Usuarios Bot", value=str(len(bot.users)), inline=True)
-            embed.add_field(name="⏰ Cooldowns", value=str(len(scraper.user_cooldowns)), inline=True)
+            embed.add_field(name="<:1000182614:1396049500375875646> Usuarios Bot", value=str(len(bot.users)), inline=True)
+            embed.add_field(name="<a:loading:1418504453580918856> Cooldowns", value=str(len(scraper.user_cooldowns)), inline=True)
             
             await interaction.followup.send(embed=embed, ephemeral=True)
         
@@ -12211,7 +12211,7 @@ async def admin_command(interaction: discord.Interaction,
                 color=0xff0000
             )
             embed.add_field(
-                name="👥 Gestión de Usuarios:",
+                name="<a:people:1418503543366619247> Gestión de Usuarios:",
                 value="• `autoverify [user_id] [roblox_username]` - Verificar automáticamente\n• `unverify [user_id]` - Desverificar usuario\n• `ban [user_id]` - Banear usuario del bot\n• `unban [user_id]` - Desbanear usuario\n• `info [user_id]` - Ver información detallada\n• `clearwarnings [user_id]` - Limpiar advertencias",
                 inline=False
             )
@@ -12278,8 +12278,8 @@ async def roblox_control_command(interaction: discord.Interaction,
                 for script_id, script_data in connected_scripts.items():
                     last_heartbeat = asyncio.get_event_loop().time() - script_data['last_heartbeat']
                     scripts_text += f"• **{script_id}** ({script_data['roblox_username']})\n"
-                    scripts_text += f"  📡 Último ping: {int(last_heartbeat)}s ago\n"
-                    scripts_text += f"  🔄 Estado: {script_data['status']}\n\n"
+                    scripts_text += f"  <a:latencia:1418504412049182740> Último ping: {int(last_heartbeat)}s ago\n"
+                    scripts_text += f"  <a:loading:1418504453580918856> Estado: {script_data['status']}\n\n"
                 
                 embed.add_field(
                     name="🔗 Scripts Conectados",
@@ -12296,7 +12296,7 @@ async def roblox_control_command(interaction: discord.Interaction,
             # Comandos activos
             active_commands = [cmd for cmd in remote_control.active_commands.values() if cmd['status'] == 'pending']
             embed.add_field(
-                name="📋 Comandos Pendientes",
+                name="<:portapapeles:1418506653279715500> Comandos Pendientes",
                 value=f"**{len(active_commands)}** comandos en cola",
                 inline=True
             )
@@ -12309,7 +12309,7 @@ async def roblox_control_command(interaction: discord.Interaction,
             )
             
             embed.add_field(
-                name="🌐 Servidor Web",
+                name="<a:latencia:1418504412049182740> Servidor Web",
                 value=f"Puerto {REMOTE_CONTROL_PORT} activo",
                 inline=True
             )
@@ -12430,7 +12430,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
             )
             
             embed = discord.Embed(
-                title="👥 Seguimiento Activado",
+                title="<a:people:1418503543366619247> Seguimiento Activado",
                 description=f"El bot de Roblox ahora seguirá a **{usuario_objetivo}**.",
                 color=0x00ff88
             )
@@ -12446,7 +12446,7 @@ game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, game.
                 color=0xff0000
             )
             embed.add_field(
-                name="📋 Comandos Disponibles:",
+                name="<:portapapeles:1418506653279715500> Comandos Disponibles:",
                 value="• `status` - Ver estado de scripts conectados\n• `join_server [place_id] [job_id]` - Unirse a servidor específico\n• `send_message [usuario]` - Enviar mensaje en chat\n• `follow_user [usuario]` - Seguir a un usuario",
                 inline=False
             )
@@ -12500,7 +12500,7 @@ async def recommendations_command(interaction: discord.Interaction):
         
         category_emoji = {
             "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-            "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+            "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
             "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
         }
         
@@ -12713,7 +12713,7 @@ print("<a:control:1418490793223651409> Script cargado - by RbxServers (hesiz)")'
         embed.add_field(name="🔑 Private Code", value=f"```{private_code}```", inline=True)
         
         embed.add_field(
-            name="📋 Instrucciones de Uso",
+            name="<:portapapeles:1418506653279715500> Instrucciones de Uso",
             value="1. **Copia** el script del archivo adjunto\n2. **Ve a cualquier juego** de Roblox\n3. **Presiona F9** para abrir la consola\n4. **Pega y ejecuta** el script\n5. **¡El script te llevará automáticamente al servidor privado!**",
             inline=False
         )
@@ -12725,7 +12725,7 @@ print("<a:control:1418490793223651409> Script cargado - by RbxServers (hesiz)")'
         )
         
         embed.add_field(
-            name="🌐 Alternativa Web",
+            name="<a:latencia:1418504412049182740> Alternativa Web",
             value=f"También puedes generar el script en: [Control Remoto Web](https://63aad61e-e3d3-4eda-9563-c784fd96ab81-00-26xq6e44gkeg1.picard.replit.dev)",
             inline=False
         )
@@ -12768,11 +12768,11 @@ async def ping_command(interaction: discord.Interaction):
             timestamp=datetime.now()
         )
         
-        embed.add_field(name="📡 Latencia", value=f"{latency}ms", inline=True)
+        embed.add_field(name="<a:latencia:1418504412049182740> Latencia", value=f"{latency}ms", inline=True)
         embed.add_field(name="<a:pepebot:1418489370129993728> Estado", value="<a:verify2:1418486831993061497> Online", inline=True)
         embed.add_field(name="🔗 Servidores", value=f"{len(bot.guilds)}", inline=True)
         
-        embed.add_field(name="👥 Usuarios Totales", value=f"{len(bot.users)}", inline=True)
+        embed.add_field(name="<a:people:1418503543366619247> Usuarios Totales", value=f"{len(bot.users)}", inline=True)
         embed.add_field(name="<:stats:1418490788437823599> Enlaces VIP", value=f"{sum(len(game_data.get('links', [])) for user_games in scraper.links_by_user.values() for game_data in user_games.values())}", inline=True)
         embed.add_field(name="<a:verify2:1418486831993061497> Verificados", value=f"{len(roblox_verification.verified_users)}", inline=True)
         
@@ -12851,7 +12851,7 @@ async def robloxbot_command(interaction: discord.Interaction):
             scripts_info = "Sin scripts conectados"
             
         embed.add_field(
-            name="📡 Control Remoto",
+            name="<a:latencia:1418504412049182740> Control Remoto",
             value=f"Estado: {scripts_info}\nPuerto: {REMOTE_CONTROL_PORT}",
             inline=True
         )
@@ -13092,8 +13092,8 @@ async def stats(interaction: discord.Interaction):
         embed.add_field(name="<a:control:1418490793223651409> Tus Juegos", value=f"**{user_games_count}**", inline=True)
         embed.add_field(name="⭐ Tus Favoritos", value=f"**{user_favorites_count}**", inline=True)
         
-        embed.add_field(name="🌐 Enlaces Totales", value=f"**{total_links}**", inline=True)
-        embed.add_field(name="👥 Usuarios Totales", value=f"**{total_users}**", inline=True)
+        embed.add_field(name="<a:latencia:1418504412049182740> Enlaces Totales", value=f"**{total_links}**", inline=True)
+        embed.add_field(name="<a:people:1418503543366619247> Usuarios Totales", value=f"**{total_users}**", inline=True)
         embed.add_field(name="📈 Total Escaneado", value=f"**{scraper.scraping_stats.get('total_scraped', 0)}**", inline=True)
 
         # Performance metrics
@@ -13104,7 +13104,7 @@ async def stats(interaction: discord.Interaction):
         # Cooldown status
         cooldown_remaining = scraper.check_cooldown(user_id)
         if cooldown_remaining:
-            embed.add_field(name="⏰ Cooldown", value=f"{cooldown_remaining}s restantes", inline=True)
+            embed.add_field(name="<a:loading:1418504453580918856> Cooldown", value=f"{cooldown_remaining}s restantes", inline=True)
         else:
             embed.add_field(name="<a:verify2:1418486831993061497> Disponible", value="Sin cooldown", inline=True)
 
@@ -13125,7 +13125,7 @@ async def stats(interaction: discord.Interaction):
             category_text = ""
             category_emoji = {
                 "rpg": "⚔️", "simulator": "🏗️", "action": "💥", "racing": "🏁",
-                "horror": "👻", "social": "👥", "sports": "⚽", "puzzle": "🧩",
+                "horror": "👻", "social": "<a:people:1418503543366619247>", "sports": "⚽", "puzzle": "🧩",
                 "building": "🏗️", "anime": "🌸", "other": "<a:control:1418490793223651409>"
             }
             for category, count in sorted(user_categories.items(), key=lambda x: x[1], reverse=True):

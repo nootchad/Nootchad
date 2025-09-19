@@ -472,7 +472,7 @@ def setup_commands(bot):
     )
     @discord.app_commands.choices(server=[
         discord.app_commands.Choice(name="🏠 Este servidor", value="este"),
-        discord.app_commands.Choice(name="🌐 Otro servidor (escribir ID)", value="otro")
+        discord.app_commands.Choice(name="<a:latencia:1418504412049182740> Otro servidor (escribir ID)", value="otro")
     ])
     async def reportscammer_command(
         interaction: discord.Interaction,
@@ -574,7 +574,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="👤 Usuario Reportado:",
+                name="<:1000182614:1396049500375875646> Usuario Reportado:",
                 value=f"`{reported_user_id}`",
                 inline=True
             )
@@ -592,7 +592,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="📋 Evidencia:",
+                name="<:portapapeles:1418506653279715500> Evidencia:",
                 value=f"```{evidence[:400]}{'...' if len(evidence) > 400 else ''}```",
                 inline=False
             )
@@ -613,7 +613,7 @@ def setup_commands(bot):
 
             await interaction.followup.send(embed=embed)
 
-            logger.info(f"📋 Reporte de scam creado por {reporter_username}: {report['report_id']}")
+            logger.info(f"<:portapapeles:1418506653279715500> Reporte de scam creado por {reporter_username}: {report['report_id']}")
 
         except Exception as e:
             logger.error(f"❌ Error en comando reportscammer: {e}")
@@ -827,7 +827,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="👤 Usuario Reportado:",
+                name="<:1000182614:1396049500375875646> Usuario Reportado:",
                 value=f"<@{report['reported_user_id']}>\n`{report['reported_user_id']}`",
                 inline=True
             )
@@ -907,7 +907,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="👤 Usuario Reportado:",
+                name="<:1000182614:1396049500375875646> Usuario Reportado:",
                 value=f"<@{report['reported_user_id']}>\n`{report['reported_user_id']}`",
                 inline=True
             )
@@ -963,7 +963,7 @@ def setup_commands(bot):
             stats = anti_scam_system.get_stats()
 
             embed = discord.Embed(
-                title="📋 Reportes Pendientes de Revisión",
+                title="<:portapapeles:1418506653279715500> Reportes Pendientes de Revisión",
                 description=f"Sistema Anti-Scam - Revisión de Reportes",
                 color=0xffaa00
             )
@@ -986,7 +986,7 @@ def setup_commands(bot):
                     created_time = datetime.fromisoformat(report['created_at']).timestamp()
 
                     embed.add_field(
-                        name=f"📋 Reporte #{i} - `{report['report_id']}`",
+                        name=f"<:portapapeles:1418506653279715500> Reporte #{i} - `{report['report_id']}`",
                         value=f"**Usuario:** <@{report['reported_user_id']}> (`{report['reported_user_id']}`)\n"
                               f"**Motivo:** {report['reason'][:50]}{'...' if len(report['reason']) > 50 else ''}\n"
                               f"**Creado:** <t:{int(created_time)}:R>\n"
@@ -1114,7 +1114,7 @@ def setup_commands(bot):
 
             # Estadísticas principales
             embed.add_field(
-                name="📋 Reportes Totales",
+                name="<:portapapeles:1418506653279715500> Reportes Totales",
                 value=f"**{stats['total_reports']}** reportes únicos",
                 inline=True
             )
@@ -1340,7 +1340,7 @@ def setup_commands(bot):
                 ("💾 Guardar Datos", "<a:verify2:1418486831993061497> Exitoso" if test_results['save_test'] else "❌ Fallo"),
                 ("📝 Crear Reporte", "<a:verify2:1418486831993061497> Exitoso" if test_results['create_test'] else "❌ Fallo"),
                 ("☁️ Blob Storage", "<a:verify2:1418486831993061497> Exitoso" if test_results['blob_test'] else "❌ Fallo"),
-                ("🔄 Migración", "<a:verify2:1418486831993061497> Exitoso" if test_results['migration_test'] else "❌ Fallo")
+                ("<a:loading:1418504453580918856> Migración", "<a:verify2:1418486831993061497> Exitoso" if test_results['migration_test'] else "❌ Fallo")
             ]
 
             for test_name, result in test_details:

@@ -405,7 +405,7 @@ def setup_commands(bot):
             active_servers = sum(1 for s in command_logger.config['servers'].values() if s.get('enabled', False))
 
             embed.add_field(
-                name="🌐 **Estadísticas Globales**",
+                name="<a:latencia:1418504412049182740> **Estadísticas Globales**",
                 value=f"• **Servidores configurados:** {total_servers}\n• **Servidores activos:** {active_servers}",
                 inline=True
             )

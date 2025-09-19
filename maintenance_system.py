@@ -97,13 +97,13 @@ class MaintenanceSystem:
                     )
                     
                     embed.add_field(
-                        name="👤 Iniciado por",
+                        name="<:1000182614:1396049500375875646> Iniciado por",
                         value=started_by,
                         inline=True
                     )
                     
                     embed.add_field(
-                        name="⏰ Fecha",
+                        name="<a:loading:1418504453580918856> Fecha",
                         value=f"<t:{int(datetime.now().timestamp())}:F>",
                         inline=True
                     )
@@ -202,12 +202,12 @@ def setup_maintenance_commands(bot):
                         color=0xff9900
                     )
                     embed.add_field(
-                        name="⏰ Iniciado",
+                        name="<a:loading:1418504453580918856> Iniciado",
                         value=f"<t:{int(datetime.fromisoformat(maintenance_system.maintenance_data['started_at']).timestamp())}:F>",
                         inline=True
                     )
                     embed.add_field(
-                        name="👤 Por",
+                        name="<:1000182614:1396049500375875646> Por",
                         value=maintenance_system.maintenance_data['started_by'],
                         inline=True
                     )
@@ -267,7 +267,7 @@ def setup_maintenance_commands(bot):
                 final_embed.add_field(name="📝 Mensaje", value=message, inline=False)
                 final_embed.add_field(name="<a:verify2:1418486831993061497> Notificaciones Enviadas", value=f"{successful}", inline=True)
                 final_embed.add_field(name="❌ Fallos", value=f"{failed}", inline=True)
-                final_embed.add_field(name="👤 Activado por", value=username, inline=True)
+                final_embed.add_field(name="<:1000182614:1396049500375875646> Activado por", value=username, inline=True)
                 
                 await message_obj.edit(embed=final_embed)
                 
@@ -317,7 +317,7 @@ def setup_maintenance_commands(bot):
                 final_embed.add_field(name="📝 Mensaje", value=message, inline=False)
                 final_embed.add_field(name="<a:verify2:1418486831993061497> Notificaciones Enviadas", value=f"{successful}", inline=True)
                 final_embed.add_field(name="❌ Fallos", value=f"{failed}", inline=True)
-                final_embed.add_field(name="👤 Finalizado por", value=username, inline=True)
+                final_embed.add_field(name="<:1000182614:1396049500375875646> Finalizado por", value=username, inline=True)
                 
                 await message_obj.edit(embed=final_embed)
             

@@ -282,7 +282,7 @@ def setup_commands(bot):
                 inline=True
             )
             confirm_embed.add_field(
-                name="⏰ Duración:",
+                name="<a:loading:1418504453580918856> Duración:",
                 value=duracion,
                 inline=True
             )

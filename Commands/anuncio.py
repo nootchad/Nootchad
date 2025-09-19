@@ -68,7 +68,7 @@ def setup_commands(bot):
             )
             
             embed_anuncio.add_field(
-                name="👤 Enviado por",
+                name="<:1000182614:1396049500375875646> Enviado por",
                 value=f"{interaction.user.mention} (Owner)",
                 inline=True
             )

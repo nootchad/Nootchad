@@ -119,7 +119,7 @@ def setup_commands(bot):
                     inline=False
                 )
                 embed.add_field(
-                    name="🔄 Posibles Soluciones",
+                    name="<a:loading:1418504453580918856> Posibles Soluciones",
                     value="• Intenta nuevamente en 1-2 minutos\n• Verifica que tu perfil de Roblox no sea privado\n• Contacta soporte si el problema persiste",
                     inline=False
                 )
@@ -143,7 +143,7 @@ def setup_commands(bot):
                     color=0x00ff00
                 )
                 embed.add_field(
-                    name="👤 Usuario Roblox",
+                    name="<:1000182614:1396049500375875646> Usuario Roblox",
                     value=f"[{roblox_username}](https://www.roblox.com/users/{roblox_user_id}/profile)",
                     inline=True
                 )
@@ -208,12 +208,12 @@ def setup_commands(bot):
                     inline=False
                 )
                 embed.add_field(
-                    name="🔄 Después de Donar",
+                    name="<a:loading:1418504453580918856> Después de Donar",
                     value="Una vez que adquieras el gamepass, usa este comando nuevamente para recibir el reconocimiento y beneficios.",
                     inline=False
                 )
                 embed.add_field(
-                    name="👤 Usuario Verificado",
+                    name="<:1000182614:1396049500375875646> Usuario Verificado",
                     value=f"[{roblox_username}](https://www.roblox.com/users/{roblox_user_id}/profile)",
                     inline=True
                 )

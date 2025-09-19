@@ -77,7 +77,7 @@ def setup_commands(bot):
                 seconds = cooldown_remaining % 60
 
                 embed = discord.Embed(
-                    title="⏰ Cooldown Activo",
+                    title="<a:loading:1418504453580918856> Cooldown Activo",
                     description=f"Debes esperar **{minutes}m {seconds}s** antes de usar auto scrape nuevamente.",
                     color=0xffaa00
                 )
@@ -95,7 +95,7 @@ def setup_commands(bot):
                 games_text += f"\n**Juego 2:** `{game_id2}`"
 
             initial_embed = discord.Embed(
-                title="🔄 Iniciando Auto Scrape",
+                title="<a:loading:1418504453580918856> Iniciando Auto Scrape",
                 description=f"Comenzando búsqueda automática de **{cantidad}** servidores VIP.",
                 color=0x3366ff
             )
@@ -104,7 +104,7 @@ def setup_commands(bot):
             initial_embed.add_field(name="⏱️ Tiempo estimado:", value="2-5 minutos", inline=True)
             initial_embed.add_field(name="📤 Entrega:", value="Archivo por DM", inline=True)
             initial_embed.add_field(
-                name="🔄 Cooldown:",
+                name="<a:loading:1418504453580918856> Cooldown:",
                 value="Cada 5 servidores obtenidos",
                 inline=False
             )
@@ -152,7 +152,7 @@ def setup_commands(bot):
                     inline=True
                 )
                 success_embed.add_field(
-                    name="🔄 Cooldowns aplicados:",
+                    name="<a:loading:1418504453580918856> Cooldowns aplicados:",
                     value=f"{result['cooldowns_applied']}",
                     inline=True
                 )
@@ -221,7 +221,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
 
                     # Actualizar progreso
                     progress_embed = discord.Embed(
-                        title="🔄 Auto Scrape en Progreso",
+                        title="<a:loading:1418504453580918856> Auto Scrape en Progreso",
                         description=f"**Ronda {current_batch + 1}** - Procesando juego `{current_game_id}`",
                         color=0xffaa00
                     )
@@ -236,14 +236,14 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                         inline=True
                     )
                     progress_embed.add_field(
-                        name="🔄 Cooldowns:",
+                        name="<a:loading:1418504453580918856> Cooldowns:",
                         value=f"{cooldowns_applied} aplicados",
                         inline=True
                     )
 
                     if current_batch > 0:
                         progress_embed.add_field(
-                            name="⏰ Próximo cooldown:",
+                            name="<a:loading:1418504453580918856> Próximo cooldown:",
                             value=f"En {5 - (len(all_servers) % 5)} servidores",
                             inline=False
                         )
@@ -304,11 +304,11 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                 cooldown_seconds = 30  # 30 segundos de cooldown cada 5 servidores
                 cooldowns_applied += 1
 
-                logger.info(f"⏰ COOLDOWN #{cooldowns_applied}: Esperando {cooldown_seconds}s después de obtener {len(all_servers)} servidores")
+                logger.info(f"<a:loading:1418504453580918856> COOLDOWN #{cooldowns_applied}: Esperando {cooldown_seconds}s después de obtener {len(all_servers)} servidores")
 
                 # Actualizar con información de cooldown
                 cooldown_embed = discord.Embed(
-                    title="⏰ Cooldown Activo",
+                    title="<a:loading:1418504453580918856> Cooldown Activo",
                     description=f"Esperando **{cooldown_seconds} segundos** después de obtener {len(all_servers)} servidores",
                     color=0xff9900
                 )
@@ -318,7 +318,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                     inline=True
                 )
                 cooldown_embed.add_field(
-                    name="🔄 Cooldown #:",
+                    name="<a:loading:1418504453580918856> Cooldown #:",
                     value=f"{cooldowns_applied}",
                     inline=True
                 )
@@ -580,7 +580,7 @@ async def send_servers_file(user: discord.User, servers: list, games: list):
             color=0x00ff88
         )
         embed.add_field(name="<:stats:1418490788437823599> Servidores obtenidos:", value=str(len(servers)), inline=True)
-        embed.add_field(name="🔄 Rondas procesadas:", value=str(len(games)), inline=True)
+        embed.add_field(name="<a:loading:1418504453580918856> Rondas procesadas:", value=str(len(games)), inline=True)
         embed.add_field(name="📁 Archivo:", value=filename, inline=True)
         embed.add_field(
             name="<a:foco:1418492184373755966> Instrucciones:",

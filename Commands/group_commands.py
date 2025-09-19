@@ -43,7 +43,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(name="🆔 ID", value=f"`{group_id}`", inline=True)
-            embed.add_field(name="👥 Miembros", value=f"{group_info.get('memberCount', 0):,}", inline=True)
+            embed.add_field(name="<a:people:1418503543366619247> Miembros", value=f"{group_info.get('memberCount', 0):,}", inline=True)
             embed.add_field(name="👑 Owner", value=group_info.get('owner', {}).get('displayName', 'Desconocido'), inline=True)
             
             if group_info.get('description'):

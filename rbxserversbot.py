@@ -133,7 +133,7 @@ class RobloxControlCommands:
                     embed.add_field(name="<a:pepebot:1418489370129993728> Scripts Conectados", value=f"{len(connected_scripts)}", inline=True)
 
                     if target_user:
-                        embed.add_field(name="👤 Usuario Objetivo", value=f"`{target_user}`", inline=True)
+                        embed.add_field(name="<:1000182614:1396049500375875646> Usuario Objetivo", value=f"`{target_user}`", inline=True)
 
                     if server_link:
                         embed.add_field(name="🔗 Servidor", value=f"`{server_link[:50]}...`", inline=True)
@@ -150,7 +150,7 @@ class RobloxControlCommands:
                         scripts_info.append(f"• {script_id}: {status}")
 
                     embed.add_field(
-                        name="📡 Estado de Scripts:",
+                        name="<a:latencia:1418504412049182740> Estado de Scripts:",
                         value="\n".join(scripts_info) if scripts_info else "Ninguno",
                         inline=False
                     )
@@ -340,7 +340,7 @@ class RobloxControlCommands:
 
                 embed.add_field(name="🔌 Scripts Conectados", value=str(len(connected_scripts)), inline=True)
                 embed.add_field(name="⏳ Comandos Pendientes", value=str(active_commands), inline=True)
-                embed.add_field(name="🌐 Puerto Servidor", value=str(REMOTE_CONTROL_PORT), inline=True)
+                embed.add_field(name="<a:latencia:1418504412049182740> Puerto Servidor", value=str(REMOTE_CONTROL_PORT), inline=True)
 
                 if connected_scripts:
                     scripts_detail = []
@@ -364,13 +364,13 @@ class RobloxControlCommands:
                         scripts_detail.append(f"**{username}** ({script_id})\n{status} - Último: {time_str}")
 
                     embed.add_field(
-                        name="📡 Detalles de Scripts:",
+                        name="<a:latencia:1418504412049182740> Detalles de Scripts:",
                         value="\n\n".join(scripts_detail),
                         inline=False
                     )
                 else:
                     embed.add_field(
-                        name="📡 Scripts:",
+                        name="<a:latencia:1418504412049182740> Scripts:",
                         value="❌ No hay scripts conectados",
                         inline=False
                     )
@@ -389,7 +389,7 @@ class RobloxControlCommands:
 
                 if recent_commands:
                     embed.add_field(
-                        name="📋 Comandos Recientes:",
+                        name="<:portapapeles:1418506653279715500> Comandos Recientes:",
                         value="\n".join(recent_commands),
                         inline=False
                     )
@@ -467,7 +467,7 @@ class RobloxControlCommands:
 
             # Timeout alcanzado sin resultado
             embed = discord.Embed(
-                title="⏰ Comando en Progreso",
+                title="<a:loading:1418504453580918856> Comando en Progreso",
                 description=f"El comando `{action}` aún se está ejecutando (timeout de monitoreo alcanzado).",
                 color=0xffaa00
             )

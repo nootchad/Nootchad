@@ -27,7 +27,7 @@ class MDSelectView(discord.ui.View):
                 label="Reglas",
                 description="Enviar contenido del archivo reglas.md",
                 value="reglas.md",
-                emoji="📋"
+                emoji="<:portapapeles:1418506653279715500>"
             ),
             discord.SelectOption(
                 label="Reportar",
@@ -225,7 +225,7 @@ def setup_commands(bot):
             )
 
             instruction_embed.add_field(
-                name="📋 Archivos Disponibles:",
+                name="<:portapapeles:1418506653279715500> Archivos Disponibles:",
                 value="• **Reglas** - Reglas del servidor\n• **Reportar** - Guía de reportes\n• **Artículos** - Artículos informativos\n• **Sugerencias** - Información de sugerencias\n• **Anuncios** - Anuncios del bot\n• **Importante** - Información importante\n• **Verificación** - Guía de verificación",
                 inline=False
             )

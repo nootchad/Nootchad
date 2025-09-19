@@ -38,7 +38,7 @@ def setup_commands(bot):
             detailed_info = await get_user_details(user_id)
 
             embed = discord.Embed(
-                title="👤 Información de Usuario",
+                title="<:1000182614:1396049500375875646> Información de Usuario",
                 description=f"**{user_info['displayName']} (@{user_info['name']})**",
                 color=0x00ff88
             )

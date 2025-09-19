@@ -89,14 +89,14 @@ def setup_commands(bot):
 
             # Información inicial
             initial_embed = discord.Embed(
-                title="🔄 Owner Scrape Iniciado",
+                title="<a:loading:1418504453580918856> Owner Scrape Iniciado",
                 description=f"Iniciando scraping de **{cantidad}** servidores para envío a API externa.",
                 color=0x3366ff
             )
             initial_embed.add_field(name="<a:control:1418490793223651409> Juego", value=f"```{game_name}```", inline=True)
             initial_embed.add_field(name="🆔 ID", value=f"```{game_id}```", inline=True)
             initial_embed.add_field(name="<:stats:1418490788437823599> Cantidad", value=f"```{cantidad}```", inline=True)
-            initial_embed.add_field(name="🌐 API URL", value=f"```{api_url[:50]}...```", inline=False)
+            initial_embed.add_field(name="<a:latencia:1418504412049182740> API URL", value=f"```{api_url[:50]}...```", inline=False)
             initial_embed.add_field(name="⏱️ Estado", value="Iniciando scraping...", inline=False)
 
             message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
@@ -138,9 +138,9 @@ def setup_commands(bot):
                 )
                 success_embed.add_field(name="<a:control:1418490793223651409> Juego", value=game_name, inline=True)
                 success_embed.add_field(name="<:stats:1418490788437823599> Servidores", value=str(len(scraped_servers)), inline=True)
-                success_embed.add_field(name="🌐 API", value="<a:verify2:1418486831993061497> Enviado", inline=True)
+                success_embed.add_field(name="<a:latencia:1418504412049182740> API", value="<a:verify2:1418486831993061497> Enviado", inline=True)
                 success_embed.add_field(
-                    name="📋 Respuesta API",
+                    name="<:portapapeles:1418506653279715500> Respuesta API",
                     value=f"```{str(response_data)[:100]}...```",
                     inline=False
                 )
@@ -164,7 +164,7 @@ def setup_commands(bot):
                 )
                 error_embed.add_field(name="<a:control:1418490793223651409> Juego", value=game_name, inline=True)
                 error_embed.add_field(name="<:stats:1418490788437823599> Servidores", value=str(len(scraped_servers)), inline=True)
-                error_embed.add_field(name="🌐 API", value="❌ Error", inline=True)
+                error_embed.add_field(name="<a:latencia:1418504412049182740> API", value="❌ Error", inline=True)
                 error_embed.add_field(
                     name="❌ Error API",
                     value=f"```{str(response_data)[:200]}...```",
@@ -193,11 +193,11 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
     from main import scraper
 
     try:
-        logger.info(f"🔄 Iniciando owner scrape para juego {game_id}: {cantidad} servidores")
+        logger.info(f"<a:loading:1418504453580918856> Iniciando owner scrape para juego {game_id}: {cantidad} servidores")
 
         # Actualizar progreso
         progress_embed = discord.Embed(
-            title="🔄 Owner Scrape en Progreso",
+            title="<a:loading:1418504453580918856> Owner Scrape en Progreso",
             description=f"Ejecutando scraping para **{cantidad}** servidores...",
             color=0xffaa00
         )

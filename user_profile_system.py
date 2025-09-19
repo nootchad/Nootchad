@@ -101,7 +101,7 @@ class ProfileView(discord.ui.View):
 
         # Información básica
         embed.add_field(
-            name="👤 Usuario de Discord",
+            name="<:1000182614:1396049500375875646> Usuario de Discord",
             value=f"**Nombre:** {self.target_user.name}\n**ID:** `{self.target_user.id}`\n**Cuenta creada:** <t:{int(self.target_user.created_at.timestamp())}:R>",
             inline=True
         )
@@ -248,7 +248,7 @@ class ProfileView(discord.ui.View):
         if user_servers:
             last_server_time = profile.get('last_server_added', time.time())
             embed.add_field(
-                name="⏰ Último Servidor Agregado",
+                name="<a:loading:1418504453580918856> Último Servidor Agregado",
                 value=f"<t:{int(last_server_time)}:R>",
                 inline=True
             )
@@ -324,7 +324,7 @@ class ProfileView(discord.ui.View):
 
         if is_verified and roblox_username != 'No disponible':
             embed.add_field(
-                name="👤 Cuenta de Roblox",
+                name="<:1000182614:1396049500375875646> Cuenta de Roblox",
                 value=f"**Usuario:** [{roblox_username}](https://www.roblox.com/users/profile?username={roblox_username})\n**Perfil:** [Ver en Roblox](https://www.roblox.com/users/profile?username={roblox_username})",
                 inline=True
             )
@@ -356,7 +356,7 @@ class ProfileView(discord.ui.View):
             if time_remaining > 0:
                 days_remaining = int(time_remaining / (24 * 60 * 60))
                 embed.add_field(
-                    name="⏰ Tiempo Restante",
+                    name="<a:loading:1418504453580918856> Tiempo Restante",
                     value=f"**{days_remaining}** días hasta expiración\n**Expira:** <t:{int(expiry_time)}:R>",
                     inline=True
                 )
@@ -424,13 +424,13 @@ class ProfileView(discord.ui.View):
                 trans_text.append(f"{trans_type} **{trans['amount']:,}** - {trans['reason'][:30]}...")
 
             embed.add_field(
-                name="⏰ Transacciones Recientes",
+                name="<a:loading:1418504453580918856> Transacciones Recientes",
                 value="\n".join(trans_text),
                 inline=False
             )
         else:
             embed.add_field(
-                name="⏰ Transacciones Recientes",
+                name="<a:loading:1418504453580918856> Transacciones Recientes",
                 value="Sin transacciones recientes",
                 inline=False
             )
@@ -528,7 +528,7 @@ class ProfileView(discord.ui.View):
             hours_text = "Sin datos"
 
         embed.add_field(
-            name="⏰ Horarios Más Activos",
+            name="<a:loading:1418504453580918856> Horarios Más Activos",
             value=f"**Horas pico:** {hours_text}",
             inline=True
         )
@@ -578,7 +578,7 @@ class ProfileView(discord.ui.View):
             account_age_days = account_age_hours / 24
 
             embed.add_field(
-                name="👤 Información de Cuenta",
+                name="<:1000182614:1396049500375875646> Información de Cuenta",
                 value=f"**Antigüedad:** {account_age_days:.1f} días\n**Score de confianza:** {fingerprint_data.get('trust_score', 0):.2f}\n**Actividades sospechosas:** {len(fingerprint_data.get('suspicious_activities', []))}",
                 inline=True
             )
@@ -668,7 +668,7 @@ class ProfileView(discord.ui.View):
             codes_text = "Sin códigos canjeados recientemente"
 
         embed.add_field(
-            name="⏰ Códigos Recientes",
+            name="<a:loading:1418504453580918856> Códigos Recientes",
             value=codes_text,
             inline=True
         )

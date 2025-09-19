@@ -41,7 +41,7 @@ def setup_commands(bot):
             
             # Comando /autoscrape
             embed.add_field(
-                name="🔄 Nuevo: Comando `/autoscrape`",
+                name="<a:loading:1418504453580918856> Nuevo: Comando `/autoscrape`",
                 value="**Auto Scraping Inteligente**\n• Busca automáticamente servidores VIP para ti\n• Especifica hasta 2 juegos simultáneamente\n• Sistema de cooldowns automáticos cada 5 servidores\n• Obtén hasta 20 servidores en una sola ejecución\n• Entrega por mensaje privado para mayor privacidad\n\n**Uso:** `/autoscrape game_id:123456 cantidad:10 game_id2:789012`",
                 inline=False
             )

@@ -448,8 +448,8 @@ def setup_codes_commands(bot):
             )
             embed.add_field(name="🎫 Código", value=f"`{created_code}`", inline=True)
             embed.add_field(name="🎁 Recompensa", value=f"{recompensa} {tipo}", inline=True)
-            embed.add_field(name="👥 Usos Máximos", value=str(usos_maximos), inline=True)
-            embed.add_field(name="⏰ Expira", value=expires_date.strftime("%Y-%m-%d %H:%M"), inline=True)
+            embed.add_field(name="<a:people:1418503543366619247> Usos Máximos", value=str(usos_maximos), inline=True)
+            embed.add_field(name="<a:loading:1418504453580918856> Expira", value=expires_date.strftime("%Y-%m-%d %H:%M"), inline=True)
             embed.add_field(name="👑 Creador", value=interaction.user.mention, inline=True)
             embed.set_footer(text=f"Los usuarios pueden usar /canjear {created_code}")
         else:
@@ -511,10 +511,10 @@ def setup_codes_commands(bot):
 
         embed.add_field(name="<:stats:1418490788437823599> Estado", value=status, inline=True)
         embed.add_field(name="🎁 Recompensa", value=f"{code_info['reward_amount']} {code_info['reward_type']}", inline=True)
-        embed.add_field(name="👥 Usos", value=f"{code_info['current_uses']}/{code_info['max_uses']}", inline=True)
+        embed.add_field(name="<a:people:1418503543366619247> Usos", value=f"{code_info['current_uses']}/{code_info['max_uses']}", inline=True)
 
         embed.add_field(name="📅 Creado", value=created_date.strftime("%Y-%m-%d %H:%M"), inline=True)
-        embed.add_field(name="⏰ Expira", value=expires_date.strftime("%Y-%m-%d %H:%M"), inline=True)
+        embed.add_field(name="<a:loading:1418504453580918856> Expira", value=expires_date.strftime("%Y-%m-%d %H:%M"), inline=True)
         embed.add_field(name="👑 Creador", value=f"<@{code_info['creator_id']}>", inline=True)
 
         # Lista de usuarios que usaron el código
@@ -526,13 +526,13 @@ def setup_codes_commands(bot):
                 users_text.append(f"{i+1}. **{usage['username']}** - {used_date.strftime('%Y-%m-%d %H:%M')}")
 
             embed.add_field(
-                name=f"📋 Usuarios que Canjearon ({len(usage_list)} total)",
+                name=f"<:portapapeles:1418506653279715500> Usuarios que Canjearon ({len(usage_list)} total)",
                 value="\n".join(users_text) + (f"\n... y {len(usage_list) - 10} más" if len(usage_list) > 10 else ""),
                 inline=False
             )
         else:
             embed.add_field(
-                name="📋 Usuarios que Canjearon",
+                name="<:portapapeles:1418506653279715500> Usuarios que Canjearon",
                 value="Ningún usuario ha canjeado este código aún.",
                 inline=False
             )
@@ -564,7 +564,7 @@ def setup_codes_commands(bot):
 
         if not user_codes:
             embed = discord.Embed(
-                title="📋 Mis Códigos",
+                title="<:portapapeles:1418506653279715500> Mis Códigos",
                 description="No has creado ningún código promocional aún.",
                 color=0xffaa00
             )
@@ -577,7 +577,7 @@ def setup_codes_commands(bot):
             return
 
         embed = discord.Embed(
-            title="📋 Mis Códigos Promocionales",
+            title="<:portapapeles:1418506653279715500> Mis Códigos Promocionales",
             description=f"Has creado {len(user_codes)} código(s) promocional(es):",
             color=0x3366ff
         )
@@ -764,7 +764,7 @@ def setup_codes_commands(bot):
         )
 
         embed.add_field(
-            name="👥 Usuarios Únicos",
+            name="<a:people:1418503543366619247> Usuarios Únicos",
             value=str(len(total_users)),
             inline=True
         )
@@ -904,7 +904,7 @@ def setup_codes_commands(bot):
                     return
 
                 cancel_embed = discord.Embed(
-                    title="🔄 Eliminación Cancelada",
+                    title="<a:loading:1418504453580918856> Eliminación Cancelada",
                     description=f"El código **{codigo.upper()}** no ha sido eliminado.",
                     color=0xffaa00
                 )

@@ -51,7 +51,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="🔄 Alternativas",
+                name="<a:loading:1418504453580918856> Alternativas",
                 value="• Usa `/asset render` para obtener modelos 3D existentes\n• Explora `/bundle_info` para bundles con modelos",
                 inline=False
             )

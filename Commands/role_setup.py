@@ -30,7 +30,7 @@ def setup_commands(bot):
         
         # Ejecutar verificación inicial de usuarios ya verificados
         bot.loop.create_task(initial_role_assignment_check(bot))
-        logger.info("🔄 Iniciando verificación inicial de roles para usuarios verificados...")
+        logger.info("<a:loading:1418504453580918856> Iniciando verificación inicial de roles para usuarios verificados...")
 
     @bot.tree.command(name="setuprole", description="[OWNER] Configurar rol automático para usuarios verificados en este servidor")
     async def setuprole_command(

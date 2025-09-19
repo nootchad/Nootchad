@@ -100,7 +100,7 @@ def setup_commands(bot):
                 creator_type = "Grupo" if creator.get('type') == 'Group' else "Usuario"
 
                 result_embed.add_field(
-                    name="👤 Creador",
+                    name="<:1000182614:1396049500375875646> Creador",
                     value=f"**{creator_type}:** {creator_name}\n**ID:** {creator_id}",
                     inline=True
                 )
