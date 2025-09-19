@@ -22,7 +22,7 @@ class MaintenanceSystem:
             if Path(self.maintenance_file).exists():
                 with open(self.maintenance_file, 'r', encoding='utf-8') as f:
                     self.maintenance_data = json.load(f)
-                    logger.info(f"✅ Datos de mantenimiento cargados")
+                    logger.info(f"<a:verify2:1418486831993061497> Datos de mantenimiento cargados")
             else:
                 self.maintenance_data = {
                     'active': False,
@@ -47,7 +47,7 @@ class MaintenanceSystem:
         try:
             with open(self.maintenance_file, 'w', encoding='utf-8') as f:
                 json.dump(self.maintenance_data, f, indent=2, ensure_ascii=False)
-            logger.info(f"✅ Datos de mantenimiento guardados")
+            logger.info(f"<a:verify2:1418486831993061497> Datos de mantenimiento guardados")
         except Exception as e:
             logger.error(f"❌ Error guardando datos de mantenimiento: {e}")
 
@@ -78,9 +78,9 @@ class MaintenanceSystem:
             color = 0xff9900
             icon = "🔧"
         else:  # end
-            title = "✅ Mantenimiento Completado"
+            title = "<a:verify2:1418486831993061497> Mantenimiento Completado"
             color = 0x00ff88
-            icon = "✅"
+            icon = "<a:verify2:1418486831993061497>"
         
         for user_id in verified_users:
             try:
@@ -110,7 +110,7 @@ class MaintenanceSystem:
                     
                     if action == "start":
                         embed.add_field(
-                            name="💡 Durante el mantenimiento",
+                            name="<a:foco:1418492184373755966> Durante el mantenimiento",
                             value="• Los comandos del bot pueden estar limitados\n• Algunas funciones pueden no estar disponibles\n• Te notificaremos cuando termine",
                             inline=False
                         )
@@ -213,7 +213,7 @@ def setup_maintenance_commands(bot):
                     )
                 else:
                     embed = discord.Embed(
-                        title="✅ Sin Mantenimiento",
+                        title="<a:verify2:1418486831993061497> Sin Mantenimiento",
                         description="El bot está operando normalmente",
                         color=0x00ff88
                     )
@@ -265,7 +265,7 @@ def setup_maintenance_commands(bot):
                     color=0xff9900
                 )
                 final_embed.add_field(name="📝 Mensaje", value=message, inline=False)
-                final_embed.add_field(name="✅ Notificaciones Enviadas", value=f"{successful}", inline=True)
+                final_embed.add_field(name="<a:verify2:1418486831993061497> Notificaciones Enviadas", value=f"{successful}", inline=True)
                 final_embed.add_field(name="❌ Fallos", value=f"{failed}", inline=True)
                 final_embed.add_field(name="👤 Activado por", value=username, inline=True)
                 
@@ -286,7 +286,7 @@ def setup_maintenance_commands(bot):
                 
                 # Mostrar progreso inicial
                 progress_embed = discord.Embed(
-                    title="✅ Finalizando Mantenimiento",
+                    title="<a:verify2:1418486831993061497> Finalizando Mantenimiento",
                     description="Enviando notificaciones de finalización...",
                     color=0xffaa00
                 )
@@ -310,12 +310,12 @@ def setup_maintenance_commands(bot):
                 
                 # Actualizar con resultados
                 final_embed = discord.Embed(
-                    title="✅ Mantenimiento Finalizado",
+                    title="<a:verify2:1418486831993061497> Mantenimiento Finalizado",
                     description="El modo mantenimiento ha sido desactivado exitosamente",
                     color=0x00ff88
                 )
                 final_embed.add_field(name="📝 Mensaje", value=message, inline=False)
-                final_embed.add_field(name="✅ Notificaciones Enviadas", value=f"{successful}", inline=True)
+                final_embed.add_field(name="<a:verify2:1418486831993061497> Notificaciones Enviadas", value=f"{successful}", inline=True)
                 final_embed.add_field(name="❌ Fallos", value=f"{failed}", inline=True)
                 final_embed.add_field(name="👤 Finalizado por", value=username, inline=True)
                 

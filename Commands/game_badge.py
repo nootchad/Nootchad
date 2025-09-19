@@ -83,7 +83,7 @@ def setup_commands(bot):
                     description=f"**{game_info.get('name', 'Juego desconocido')}** no tiene badges disponibles.",
                     color=0xffaa00
                 )
-                no_badges_embed.add_field(name="🎮 Juego", value=game_info.get('name', 'Desconocido'), inline=True)
+                no_badges_embed.add_field(name="<a:control:1418490793223651409> Juego", value=game_info.get('name', 'Desconocido'), inline=True)
                 no_badges_embed.add_field(name="🆔 ID", value=f"`{game_id}`", inline=True)
                 await message.edit(embed=no_badges_embed)
                 return
@@ -109,7 +109,7 @@ def setup_commands(bot):
             
             # Información del juego
             result_embed.add_field(
-                name="🎮 Información del Juego",
+                name="<a:control:1418490793223651409> Información del Juego",
                 value=f"**Nombre:** {game_info.get('name', 'Desconocido')}\n**ID:** `{game_id}`\n**Total Badges:** {len(badges)}",
                 inline=False
             )
@@ -129,7 +129,7 @@ def setup_commands(bot):
                 # Crear barra de progreso visual
                 progress_bar = create_progress_bar(progress_percentage)
                 result_embed.add_field(
-                    name="📊 Progreso Visual",
+                    name="<:stats:1418490788437823599> Progreso Visual",
                     value=f"{progress_bar} {progress_percentage:.1f}%",
                     inline=False
                 )
@@ -145,7 +145,7 @@ def setup_commands(bot):
             user_badge_ids = [badge['id'] for badge in user_badges] if user_badges else []
             
             for i, badge in enumerate(badges[:10], 1):
-                status = "✅" if badge['id'] in user_badge_ids else "❌"
+                status = "<a:verify2:1418486831993061497>" if badge['id'] in user_badge_ids else "❌"
                 badge_name = badge.get('name', 'Badge desconocido')
                 badges_text += f"{status} **{badge_name}**\n"
                 
@@ -252,7 +252,7 @@ def setup_commands(bot):
             if badge_info.get('awardingUniverse'):
                 universe_info = badge_info['awardingUniverse']
                 result_embed.add_field(
-                    name="🎮 Juego Asociado",
+                    name="<a:control:1418490793223651409> Juego Asociado",
                     value=f"**Nombre:** {universe_info.get('name', 'Desconocido')}\n**ID:** `{universe_info.get('id', 'Desconocido')}`",
                     inline=False
                 )
@@ -261,7 +261,7 @@ def setup_commands(bot):
             if badge_info.get('statistics'):
                 stats = badge_info['statistics']
                 result_embed.add_field(
-                    name="📊 Estadísticas",
+                    name="<:stats:1418490788437823599> Estadísticas",
                     value=f"**Otorgados:** {stats.get('awardedCount', 0):,}\n**Porcentaje de Ganancia:** {stats.get('winRatePercentage', 0):.2f}%",
                     inline=True
                 )
@@ -281,7 +281,7 @@ def setup_commands(bot):
                                 if image_url and image_url != 'https://tr.rbxcdn.com/':
                                     result_embed.set_image(url=image_url)
                                     image_configured = True
-                                    logger.info(f"✅ Imagen configurada desde API de thumbnails: {image_url}")
+                                    logger.info(f"<a:verify2:1418486831993061497> Imagen configurada desde API de thumbnails: {image_url}")
             except Exception as thumb_error:
                 logger.warning(f"⚠️ Error obteniendo thumbnail desde API: {thumb_error}")
             
@@ -293,7 +293,7 @@ def setup_commands(bot):
                     direct_image_url = f"https://assetdelivery.roblox.com/v1/asset?id={icon_image_id}"
                     result_embed.set_image(url=direct_image_url)
                     image_configured = True
-                    logger.info(f"✅ Imagen configurada desde iconImageId: {direct_image_url}")
+                    logger.info(f"<a:verify2:1418486831993061497> Imagen configurada desde iconImageId: {direct_image_url}")
                 except Exception as icon_error:
                     logger.warning(f"⚠️ Error usando iconImageId: {icon_error}")
             
@@ -329,7 +329,7 @@ def setup_commands(bot):
     # Registrar los grupos de comandos
     bot.tree.add_command(game_group)
     
-    logger.info("✅ Comandos de badges de juegos configurados")
+    logger.info("<a:verify2:1418486831993061497> Comandos de badges de juegos configurados")
     return True
 
 async def get_game_info(game_id: str) -> dict:

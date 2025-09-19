@@ -72,7 +72,7 @@ def setup_commands(bot):
                 donators = load_donators()
                 donator_data = donators[user_id]
                 embed = discord.Embed(
-                    title="✅ Donador Verificado",
+                    title="<a:verify2:1418486831993061497> Donador Verificado",
                     description=f"Ya tienes el estado de donador verificado con la cuenta **{donator_data['roblox_username']}**.",
                     color=0x00ff00
                 )
@@ -96,7 +96,7 @@ def setup_commands(bot):
                     color=0xff0000
                 )
                 embed.add_field(
-                    name="💡 Verificaciones",
+                    name="<a:foco:1418492184373755966> Verificaciones",
                     value="• Asegúrate de escribir el username correctamente\n• Verifica que la cuenta no esté baneada\n• Intenta nuevamente en unos momentos",
                     inline=False
                 )
@@ -148,7 +148,7 @@ def setup_commands(bot):
                     inline=True
                 )
                 embed.add_field(
-                    name="✅ Estado de Donación",
+                    name="<a:verify2:1418486831993061497> Estado de Donación",
                     value="**CONFIRMADO**",
                     inline=True
                 )
@@ -354,7 +354,7 @@ async def check_user_has_gamepass(user_id: str, gamepass_id: str):
         logger.error(f"Error crítico verificando gamepass: {e}")
         return None
 
-    logger.info("✅ Comando /donacion configurado exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Comando /donacion configurado exitosamente")
     return True
 
 def cleanup_commands(bot):

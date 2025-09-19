@@ -39,14 +39,14 @@ def setup_commands(bot):
             
             # Crear embed principal
             embed = discord.Embed(
-                title="🤖 Servidores del Bot RbxServers",
+                title="<a:pepebot:1418489370129993728> Servidores del Bot RbxServers",
                 description=f"El bot está activo en **{total_guilds}** servidores con un total de **{total_members:,}** miembros.",
                 color=0x00ff88
             )
             
             # Estadísticas generales
             embed.add_field(
-                name="📊 Estadísticas Generales",
+                name="<:stats:1418490788437823599> Estadísticas Generales",
                 value=f"• **Total Servidores:** {total_guilds}\n• **Total Miembros:** {total_members:,}\n• **Promedio por Servidor:** {total_members // total_guilds if total_guilds > 0 else 0} miembros",
                 inline=False
             )
@@ -249,26 +249,26 @@ def setup_commands(bot):
             permissions = bot_member.guild_permissions
             
             embed.add_field(
-                name="🤖 Bot en el Servidor",
-                value=f"• **Se unió:** <t:{int(joined_at.timestamp())}:F>\n• **Admin:** {'✅' if permissions.administrator else '❌'}\n• **Nickname:** {bot_member.display_name}",
+                name="<a:pepebot:1418489370129993728> Bot en el Servidor",
+                value=f"• **Se unió:** <t:{int(joined_at.timestamp())}:F>\n• **Admin:** {'<a:verify2:1418486831993061497>' if permissions.administrator else '❌'}\n• **Nickname:** {bot_member.display_name}",
                 inline=False
             )
             
             # Permisos importantes
             important_perms = []
             if permissions.administrator:
-                important_perms.append("✅ Administrador")
+                important_perms.append("<a:verify2:1418486831993061497> Administrador")
             else:
                 if permissions.manage_guild:
-                    important_perms.append("✅ Gestionar Servidor")
+                    important_perms.append("<a:verify2:1418486831993061497> Gestionar Servidor")
                 if permissions.manage_channels:
-                    important_perms.append("✅ Gestionar Canales")
+                    important_perms.append("<a:verify2:1418486831993061497> Gestionar Canales")
                 if permissions.manage_roles:
-                    important_perms.append("✅ Gestionar Roles")
+                    important_perms.append("<a:verify2:1418486831993061497> Gestionar Roles")
                 if permissions.send_messages:
-                    important_perms.append("✅ Enviar Mensajes")
+                    important_perms.append("<a:verify2:1418486831993061497> Enviar Mensajes")
                 if permissions.embed_links:
-                    important_perms.append("✅ Insertar Enlaces")
+                    important_perms.append("<a:verify2:1418486831993061497> Insertar Enlaces")
                 if not permissions.send_messages:
                     important_perms.append("❌ Enviar Mensajes")
                 if not permissions.embed_links:
@@ -317,7 +317,7 @@ def setup_commands(bot):
             error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:200]}```", inline=False)
             await interaction.followup.send(embed=error_embed, ephemeral=True)
     
-    logger.info("✅ Comandos de información de servidores configurados")
+    logger.info("<a:verify2:1418486831993061497> Comandos de información de servidores configurados")
     return True
 
 def cleanup_commands(bot):

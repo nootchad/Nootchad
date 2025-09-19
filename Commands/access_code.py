@@ -79,7 +79,7 @@ def setup_commands(bot):
                 
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 
-                logger.info(f"✅ Código generado exitosamente para {username}: {access_code}")
+                logger.info(f"<a:verify2:1418486831993061497> Código generado exitosamente para {username}: {access_code}")
                 
             else:
                 embed = discord.Embed(
@@ -155,7 +155,7 @@ def setup_commands(bot):
         
         logger.info(f"Usuario {interaction.user.name} consultó información de códigos de acceso")
     
-    logger.info("✅ Comandos de códigos de acceso configurados")
+    logger.info("<a:verify2:1418486831993061497> Comandos de códigos de acceso configurados")
     return True
 
 # Función opcional de limpieza

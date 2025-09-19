@@ -63,7 +63,7 @@ def setup_commands(bot):
                 return
 
             embed.add_field(
-                name="📊 Información",
+                name="<:stats:1418490788437823599> Información",
                 value=f"**Tasa DevEx:** {DEVEX_RATE} Robux = $1.00 USD\n**Nota:** Esta es la tasa oficial de Roblox DevEx",
                 inline=False
             )
@@ -109,7 +109,7 @@ def setup_commands(bot):
                     inline=False
                 )
                 error_embed.add_field(
-                    name="💡 Sugerencia:",
+                    name="<a:foco:1418492184373755966> Sugerencia:",
                     value="Intenta usar `/limited search [nombre_del_item]` para buscar un ítem específico.",
                     inline=False
                 )
@@ -225,7 +225,7 @@ def setup_commands(bot):
                     percentage_sold = (sold_copies / total_copies) * 100
                     progress_bar = create_stock_progress_bar(percentage_sold)
                     embed.add_field(
-                        name="📊 Progreso de Ventas",
+                        name="<:stats:1418490788437823599> Progreso de Ventas",
                         value=f"{progress_bar} {percentage_sold:.1f}% vendido",
                         inline=False
                     )
@@ -257,7 +257,7 @@ def setup_commands(bot):
                                 image_url = image_data['data'][0].get('imageUrl')
                                 if image_url and image_url != 'https://tr.rbxcdn.com/':
                                     embed.set_image(url=image_url)
-                                    logger.info(f"✅ Imagen del ítem configurada: {image_url}")
+                                    logger.info(f"<a:verify2:1418486831993061497> Imagen del ítem configurada: {image_url}")
 
                     # Thumbnail más pequeño
                     thumb_url = f"https://thumbnails.roblox.com/v1/assets?assetIds={item_info['id']}&size=150x150&format=Png&isCircular=false"
@@ -282,7 +282,7 @@ def setup_commands(bot):
     # Registrar comandos
     bot.tree.add_command(limited_group)
 
-    logger.info("✅ Comandos de economía configurados exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Comandos de economía configurados exitosamente")
     return True
 
 async def get_cheapest_limited():

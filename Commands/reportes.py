@@ -74,7 +74,7 @@ def setup_commands(bot):
             
             # Enviar confirmación al canal
             confirmacion_embed = discord.Embed(
-                title="✅ Reporte Enviado Exitosamente",
+                title="<a:verify2:1418486831993061497> Reporte Enviado Exitosamente",
                 description=f"Tu reporte ha sido enviado y será revisado por el equipo de administración.",
                 color=0x00ff88
             )
@@ -122,7 +122,7 @@ def setup_commands(bot):
             
             confirmacion_embed.add_field(
                 name="📨 Estado del Envío:",
-                value="✅ Enviado al owner" if owner_sent else "⚠️ Error enviando al owner",
+                value="<a:verify2:1418486831993061497> Enviado al owner" if owner_sent else "⚠️ Error enviando al owner",
                 inline=False
             )
             
@@ -131,7 +131,7 @@ def setup_commands(bot):
             await interaction.followup.send(embed=confirmacion_embed)
             
             # Log del reporte
-            logger.info(f"✅ Reporte {report_id} procesado exitosamente - Usuario: {username}, Tipo: {tipo}")
+            logger.info(f"<a:verify2:1418486831993061497> Reporte {report_id} procesado exitosamente - Usuario: {username}, Tipo: {tipo}")
             
         except Exception as e:
             logger.error(f"❌ Error procesando reporte de {username}: {e}")
@@ -147,7 +147,7 @@ def setup_commands(bot):
                 inline=False
             )
             error_embed.add_field(
-                name="💡 Sugerencia:",
+                name="<a:foco:1418492184373755966> Sugerencia:",
                 value="Si el problema persiste, contacta directamente al owner del bot.",
                 inline=False
             )
@@ -253,10 +253,10 @@ def setup_commands(bot):
             super().__init__(timeout=None)  # Sin timeout para reportes
             self.report_id = report_id
         
-        @discord.ui.button(label="✅ Resuelto", style=discord.ButtonStyle.success)
+        @discord.ui.button(label="<a:verify2:1418486831993061497> Resuelto", style=discord.ButtonStyle.success)
         async def resuelto_button(self, interaction: discord.Interaction, button: discord.ui.Button):
             embed = discord.Embed(
-                title="✅ Reporte Marcado como Resuelto",
+                title="<a:verify2:1418486831993061497> Reporte Marcado como Resuelto",
                 description=f"El reporte `{self.report_id}` ha sido marcado como resuelto.",
                 color=0x00ff88,
                 timestamp=datetime.now()
@@ -273,7 +273,7 @@ def setup_commands(bot):
             )
             
             await interaction.response.edit_message(embed=embed, view=None)
-            logger.info(f"✅ Reporte {self.report_id} marcado como resuelto por {interaction.user}")
+            logger.info(f"<a:verify2:1418486831993061497> Reporte {self.report_id} marcado como resuelto por {interaction.user}")
         
         @discord.ui.button(label="📝 Necesita Info", style=discord.ButtonStyle.secondary)
         async def info_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -321,7 +321,7 @@ def setup_commands(bot):
     
     
     
-    logger.info("✅ Sistema de reportes configurado exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Sistema de reportes configurado exitosamente")
     return True
 
 # Función opcional de limpieza cuando se recarga el módulo

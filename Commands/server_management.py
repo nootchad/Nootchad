@@ -86,7 +86,7 @@ def setup_commands(bot):
                 inline=True
             )
             
-            embed.set_footer(text="💡 Usa /serverstats para ver estadísticas detalladas")
+            embed.set_footer(text="<a:foco:1418492184373755966> Usa /serverstats para ver estadísticas detalladas")
             
             await interaction.followup.send(embed=embed, ephemeral=True)
             
@@ -141,7 +141,7 @@ def setup_commands(bot):
             
             # Estadísticas generales
             embed.add_field(
-                name="📊 **Resumen General**",
+                name="<:stats:1418490788437823599> **Resumen General**",
                 value=f"• **Total de servidores:** {stats['total_servers']}\n• **Juegos únicos:** {stats['unique_games']}\n• **Servidor más antiguo:** {stats['oldest_server_date']}\n• **Último agregado:** {stats['newest_server_date']}",
                 inline=False
             )
@@ -153,7 +153,7 @@ def setup_commands(bot):
                     top_games_text += f"**{i}.** {game_name} - {count} servidores\n"
                 
                 embed.add_field(
-                    name="🎮 **Top 5 Juegos**",
+                    name="<a:control:1418490793223651409> **Top 5 Juegos**",
                     value=top_games_text or "No hay datos suficientes",
                     inline=True
                 )
@@ -176,7 +176,7 @@ def setup_commands(bot):
             recommendations = generate_recommendations(stats)
             if recommendations:
                 embed.add_field(
-                    name="💡 **Recomendaciones**",
+                    name="<a:foco:1418492184373755966> **Recomendaciones**",
                     value=recommendations,
                     inline=False
                 )
@@ -223,7 +223,7 @@ def setup_commands(bot):
                     color=0xff0000
                 )
                 embed.add_field(
-                    name="✅ Ejemplos válidos:",
+                    name="<a:verify2:1418486831993061497> Ejemplos válidos:",
                     value="• `09:30` (9:30 AM)\n• `14:45` (2:45 PM)\n• `23:00` (11:00 PM)",
                     inline=False
                 )
@@ -260,8 +260,8 @@ def setup_commands(bot):
                     color=0x00aa55
                 )
                 embed.add_field(
-                    name="🎮 **Configuración**",
-                    value=f"• **Juego ID:** `{game_id}`\n• **Hora:** `{hora}` (24h)\n• **Cantidad:** {cantidad} servidores\n• **Estado:** Activo ✅",
+                    name="<a:control:1418490793223651409> **Configuración**",
+                    value=f"• **Juego ID:** `{game_id}`\n• **Hora:** `{hora}` (24h)\n• **Cantidad:** {cantidad} servidores\n• **Estado:** Activo <a:verify2:1418486831993061497>",
                     inline=False
                 )
                 embed.add_field(
@@ -275,7 +275,7 @@ def setup_commands(bot):
                     inline=False
                 )
                 embed.add_field(
-                    name="💡 **Gestión**",
+                    name="<a:foco:1418492184373755966> **Gestión**",
                     value="• Usa `/scheduler` con `activar: False` para desactivar\n• Puedes tener múltiples schedulers activos\n• Los schedulers se pausan si no usas el bot por 7 días",
                     inline=False
                 )
@@ -286,7 +286,7 @@ def setup_commands(bot):
                     color=0xff9900
                 )
                 embed.add_field(
-                    name="📊 **Estado**",
+                    name="<:stats:1418490788437823599> **Estado**",
                     value="• Scheduler pausado\n• No se ejecutarán más scraping automáticos\n• Configuración guardada para reactivación futura",
                     inline=False
                 )
@@ -296,7 +296,7 @@ def setup_commands(bot):
             if user_schedulers:
                 scheduler_list = ""
                 for scheduler in user_schedulers[:5]:  # Mostrar máximo 5
-                    status = "✅" if scheduler['active'] else "⏸️"
+                    status = "<a:verify2:1418486831993061497>" if scheduler['active'] else "⏸️"
                     scheduler_list += f"{status} `{scheduler['game_id']}` - {scheduler['time']} ({scheduler['quantity']} servidores)\n"
                 
                 embed.add_field(

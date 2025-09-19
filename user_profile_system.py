@@ -18,19 +18,19 @@ class ProfileView(discord.ui.View):
         self.current_section = "overview"
 
     @discord.ui.select(
-        placeholder="📊 Selecciona una sección para ver...",
+        placeholder="<:stats:1418490788437823599> Selecciona una sección para ver...",
         options=[
             discord.SelectOption(
-                label="📊 Resumen General",
+                label="<:stats:1418490788437823599> Resumen General",
                 description="Vista general del perfil del usuario",
                 value="overview",
-                emoji="📊"
+                emoji="<:stats:1418490788437823599>"
             ),
             discord.SelectOption(
-                label="🎮 Servidores de Juegos",
+                label="<a:control:1418490793223651409> Servidores de Juegos",
                 description="Servidores VIP encontrados y favoritos",
                 value="servers",
-                emoji="🎮"
+                emoji="<a:control:1418490793223651409>"
             ),
             discord.SelectOption(
                 label="🔐 Verificación Roblox",
@@ -93,7 +93,7 @@ class ProfileView(discord.ui.View):
     def create_overview_embed(self):
         """Crear embed de resumen general"""
         embed = discord.Embed(
-            title=f"📊 Perfil de {self.target_user.name}",
+            title=f"<:stats:1418490788437823599> Perfil de {self.target_user.name}",
             description="Resumen general de la actividad en RbxServers",
             color=0x3366ff,
             timestamp=datetime.now()
@@ -110,12 +110,12 @@ class ProfileView(discord.ui.View):
         profile = self.profile_data
         embed.add_field(
             name="⚡ Estadísticas Rápidas",
-            value=f"**🎮 Juegos:** {profile.get('total_games', 0)}\n**🖥️ Servidores:** {profile.get('total_servers', 0)}\n**💰 Monedas:** {profile.get('coins_balance', 0):,}",
+            value=f"**<a:control:1418490793223651409> Juegos:** {profile.get('total_games', 0)}\n**🖥️ Servidores:** {profile.get('total_servers', 0)}\n**💰 Monedas:** {profile.get('coins_balance', 0):,}",
             inline=True
         )
 
         # Estado de verificación
-        verification_status = "✅ Verificado" if profile.get('is_verified', False) else "❌ No verificado"
+        verification_status = "<a:verify2:1418486831993061497> Verificado" if profile.get('is_verified', False) else "❌ No verificado"
         roblox_name = profile.get('roblox_username', 'No disponible')
 
         embed.add_field(
@@ -148,7 +148,7 @@ class ProfileView(discord.ui.View):
     def create_servers_embed(self):
         """Crear embed de información de servidores sin límite"""
         embed = discord.Embed(
-            title=f"🎮 Servidores de {self.target_user.name}",
+            title=f"<a:control:1418490793223651409> Servidores de {self.target_user.name}",
             description="Información detallada sobre servidores VIP y actividad de juegos (sin límite)",
             color=0x00ff88
         )
@@ -163,7 +163,7 @@ class ProfileView(discord.ui.View):
         servers_by_game = servers_data.get('servers_by_game', {})
 
         embed.add_field(
-            name="📊 Estadísticas de Servidores (Sin Límite)",
+            name="<:stats:1418490788437823599> Estadísticas de Servidores (Sin Límite)",
             value=f"**🖥️ Total de servidores:** {total_servers:,}\n**🎯 Juegos únicos:** {total_games}\n**📈 Sin límite de servidores**",
             inline=True
         )
@@ -284,7 +284,7 @@ class ProfileView(discord.ui.View):
             "142823291": "🔍 Murder Mystery 2",
             "4646477729": "⭐ All Star Tower Defense"
         }
-        return game_names.get(game_id, f"🎮 Game {game_id}")
+        return game_names.get(game_id, f"<a:control:1418490793223651409> Game {game_id}")
 
     def create_verification_embed(self):
         """Crear embed de información de verificación"""
@@ -302,7 +302,7 @@ class ProfileView(discord.ui.View):
         verified_at = profile.get('verified_at')
 
         if is_verified:
-            status_text = "✅ **VERIFICADO**"
+            status_text = "<a:verify2:1418486831993061497> **VERIFICADO**"
             status_color = 0x00ff00
 
             if verified_at:
@@ -333,7 +333,7 @@ class ProfileView(discord.ui.View):
             roblox_info = profile.get('roblox_info', {})
             if roblox_info:
                 embed.add_field(
-                    name="📊 Información Adicional",
+                    name="<:stats:1418490788437823599> Información Adicional",
                     value=f"**ID de Roblox:** {roblox_info.get('user_id', 'No disponible')}\n**Último check:** <t:{int(roblox_info.get('last_check', time.time()))}:R>",
                     inline=True
                 )
@@ -410,7 +410,7 @@ class ProfileView(discord.ui.View):
         avg_transaction = (total_earned + total_spent) / max(total_transactions, 1)
 
         embed.add_field(
-            name="📊 Estadísticas de Transacciones",
+            name="<:stats:1418490788437823599> Estadísticas de Transacciones",
             value=f"**Total transacciones:** {total_transactions}\n**Promedio por transacción:** {avg_transaction:.1f} monedas\n**Eficiencia:** {((total_earned - total_spent) / max(total_earned, 1) * 100):.1f}%",
             inline=False
         )
@@ -477,7 +477,7 @@ class ProfileView(discord.ui.View):
         first_seen = profile.get('first_seen')
 
         embed.add_field(
-            name="📊 Estadísticas Generales",
+            name="<:stats:1418490788437823599> Estadísticas Generales",
             value=f"**Comandos usados:** {total_commands:,}\n**Días activo:** {active_days}\n**Miembro desde:** <t:{int(first_seen or time.time())}:R>",
             inline=True
         )
@@ -629,7 +629,7 @@ class ProfileView(discord.ui.View):
 
             if recommendations:
                 embed.add_field(
-                    name="💡 Recomendaciones",
+                    name="<a:foco:1418492184373755966> Recomendaciones",
                     value="\n".join(recommendations),
                     inline=False
                 )
@@ -704,7 +704,7 @@ class ProfileView(discord.ui.View):
             stats_text = "Sin estadísticas de códigos"
 
         embed.add_field(
-            name="📊 Códigos por Categoría",
+            name="<:stats:1418490788437823599> Códigos por Categoría",
             value=stats_text,
             inline=True
         )
@@ -789,7 +789,7 @@ class UserProfileSystem:
                 with open(self.profiles_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.user_profiles = data.get('user_profiles', {})
-                    logger.info(f"✅ Perfiles cargados para {len(self.user_profiles)} usuarios")
+                    logger.info(f"<a:verify2:1418486831993061497> Perfiles cargados para {len(self.user_profiles)} usuarios")
             else:
                 self.user_profiles = {}
                 logger.info("⚠️ Archivo de perfiles no encontrado, inicializando vacío")
@@ -936,7 +936,7 @@ class UserProfileSystem:
             self.user_profiles[user_id] = data
             self.save_profiles_data()
 
-            logger.info(f"📊 Datos recopilados para usuario {user_id}: verificado={data['is_verified']}, juegos={data['total_games']}, servidores={data['total_servers']:,} (sin límite)")
+            logger.info(f"<:stats:1418490788437823599> Datos recopilados para usuario {user_id}: verificado={data['is_verified']}, juegos={data['total_games']}, servidores={data['total_servers']:,} (sin límite)")
             return data
 
         except Exception as e:
@@ -1134,7 +1134,7 @@ class UserProfileSystem:
             "142823291": "🔍 Murder Mystery 2",
             "4646477729": "⭐ All Star Tower Defense"
         }
-        return game_names.get(game_id, f"🎮 Game {game_id}")
+        return game_names.get(game_id, f"<a:control:1418490793223651409> Game {game_id}")
 
     def save_user_servers_simple(self, user_id: str, servers: list):
         """Guardar servidores de usuario en la estructura simplificada"""
@@ -1176,7 +1176,7 @@ class UserProfileSystem:
             with open(servers_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
-            logger.info(f"✅ Servidores guardados para usuario {user_id}: {len(servers)} servidores")
+            logger.info(f"<a:verify2:1418486831993061497> Servidores guardados para usuario {user_id}: {len(servers)} servidores")
             return True
 
         except Exception as e:

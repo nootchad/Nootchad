@@ -286,7 +286,7 @@ class UserAccessCodeSystem:
                         oauth_info = token_info['user_info'].copy()
                         oauth_info['data_source'] = 'oauth2_authorized'
                         oauth_info['authorization_status'] = 'active'
-                        logger.info(f"✅ Usuario {user_id} obtenido via OAuth2: {oauth_info.get('username', 'N/A')}")
+                        logger.info(f"<a:verify2:1418486831993061497> Usuario {user_id} obtenido via OAuth2: {oauth_info.get('username', 'N/A')}")
                         return oauth_info
                     else:
                         # Token expirado, limpiar
@@ -313,7 +313,7 @@ class UserAccessCodeSystem:
                 if hasattr(bot, 'get_user') and bot.get_user:
                     user = bot.get_user(user_id_int)
                     if user:
-                        logger.info(f"✅ Usuario {user_id} encontrado en caché del bot: {user.name}")
+                        logger.info(f"<a:verify2:1418486831993061497> Usuario {user_id} encontrado en caché del bot: {user.name}")
                     else:
                         logger.debug(f"Usuario {user_id} no encontrado en caché del bot")
             except Exception as e:
@@ -327,7 +327,7 @@ class UserAccessCodeSystem:
                             member = guild.get_member(user_id_int)
                             if member:
                                 user = member
-                                logger.info(f"✅ Usuario {user_id} encontrado en servidor {guild.name}: {member.name}")
+                                logger.info(f"<a:verify2:1418486831993061497> Usuario {user_id} encontrado en servidor {guild.name}: {member.name}")
                                 break
                         except Exception as guild_error:
                             logger.debug(f"Error buscando en guild {guild.id}: {guild_error}")
@@ -643,7 +643,7 @@ class UserAccessAPI:
                     
             logger.info(f"<:verify:1396087763388072006> {len(registered_routes)} rutas de acceso registradas:")
             for route_info in registered_routes:
-                logger.info(f"  ✅ {route_info}")
+                logger.info(f"  <a:verify2:1418486831993061497> {route_info}")
                 
         except Exception as e:
             logger.error(f"<:1000182563:1396420770904932372> Error configurando rutas: {e}")

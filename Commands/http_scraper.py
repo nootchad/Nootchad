@@ -32,7 +32,7 @@ class HTTPScraper:
         # Configurar timeouts optimizados para hosting web
         self.session.timeout = (10, 30)  # (connect, read)
 
-        logger.info("✅ HTTP Scraper inicializado para hosting web sin VNC")
+        logger.info("<a:verify2:1418486831993061497> HTTP Scraper inicializado para hosting web sin VNC")
 
     def get_game_servers_fast(self, game_id: str, max_servers: int = 5) -> List[str]:
         """
@@ -62,7 +62,7 @@ class HTTPScraper:
                     if len(server_links) >= max_servers:
                         break
 
-            logger.info(f"✅ Encontrados {len(server_links)} enlaces de servidores")
+            logger.info(f"<a:verify2:1418486831993061497> Encontrados {len(server_links)} enlaces de servidores")
             return server_links
 
         except Exception as e:
@@ -90,7 +90,7 @@ class HTTPScraper:
             for input_tag in vip_inputs:
                 value = input_tag.get('value', '')
                 if 'roblox.com/games' in value and 'privateServerLinkCode' in value:
-                    logger.debug(f"✅ VIP link encontrado: {value[:50]}...")
+                    logger.debug(f"<a:verify2:1418486831993061497> VIP link encontrado: {value[:50]}...")
                     return value
 
             # Buscar también en el código JavaScript o texto
@@ -101,7 +101,7 @@ class HTTPScraper:
                     vip_pattern = r'https://www\.roblox\.com/games/\d+\?privateServerLinkCode=[A-Za-z0-9\-_]+'
                     matches = re.findall(vip_pattern, script.string)
                     if matches:
-                        logger.debug(f"✅ VIP link en JS: {matches[0][:50]}...")
+                        logger.debug(f"<a:verify2:1418486831993061497> VIP link en JS: {matches[0][:50]}...")
                         return matches[0]
 
             logger.debug(f"⚠️ No se encontró VIP link en: {server_url}")
@@ -139,7 +139,7 @@ class HTTPScraper:
                     break
 
             duration = time.time() - start_time
-            logger.info(f"✅ HTTP Scraping completado: {len(vip_links)} VIP links en {duration:.1f}s")
+            logger.info(f"<a:verify2:1418486831993061497> HTTP Scraping completado: {len(vip_links)} VIP links en {duration:.1f}s")
 
             return vip_links
 
@@ -186,7 +186,7 @@ def setup_commands(bot):
                 links_text = "\n".join([f"• {link}" for link in vip_links])
 
                 result_embed = discord.Embed(
-                    title="✅ Fast Scrape Completado",
+                    title="<a:verify2:1418486831993061497> Fast Scrape Completado",
                     description=f"**{len(vip_links)}** servidores encontrados usando HTTP",
                     color=0x00ff88
                 )

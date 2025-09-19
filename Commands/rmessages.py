@@ -132,7 +132,7 @@ def create_roblox_driver():
         except Exception as e:
             logger.warning(f"No se pudo ocultar propiedad webdriver: {e}")
 
-        logger.info("✅ Driver de Chrome creado exitosamente para VNC")
+        logger.info("<a:verify2:1418486831993061497> Driver de Chrome creado exitosamente para VNC")
         return driver
 
     except Exception as e:
@@ -162,7 +162,7 @@ def apply_roblox_cookie(driver, cookie):
         driver.refresh()
         time.sleep(3)
 
-        logger.info("✅ Cookie de Roblox aplicada exitosamente")
+        logger.info("<a:verify2:1418486831993061497> Cookie de Roblox aplicada exitosamente")
         return True
 
     except Exception as e:
@@ -190,7 +190,7 @@ def click_chat_element(driver):
         for selector in chat_selectors:
             try:
                 chat_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                logger.info(f"✅ Elemento del chat encontrado con selector: {selector}")
+                logger.info(f"<a:verify2:1418486831993061497> Elemento del chat encontrado con selector: {selector}")
                 break
             except TimeoutException:
                 logger.debug(f"No se encontró elemento con selector: {selector}")
@@ -200,7 +200,7 @@ def click_chat_element(driver):
             # Buscar por texto si no se encuentra por selectores
             try:
                 chat_element = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Chat')]")))
-                logger.info("✅ Elemento del chat encontrado por texto")
+                logger.info("<a:verify2:1418486831993061497> Elemento del chat encontrado por texto")
             except TimeoutException:
                 logger.error("❌ No se pudo encontrar el elemento del chat")
                 return False
@@ -212,12 +212,12 @@ def click_chat_element(driver):
         # Intentar click normal primero
         try:
             chat_element.click()
-            logger.info("✅ Click normal en elemento del chat exitoso")
+            logger.info("<a:verify2:1418486831993061497> Click normal en elemento del chat exitoso")
         except Exception as e:
             # Si falla, usar JavaScript click
             logger.info(f"Click normal falló ({e}), usando JavaScript click...")
             driver.execute_script("arguments[0].click();", chat_element)
-            logger.info("✅ JavaScript click en elemento del chat exitoso")
+            logger.info("<a:verify2:1418486831993061497> JavaScript click en elemento del chat exitoso")
 
         time.sleep(3)  # Esperar a que se abra el chat
 
@@ -246,7 +246,7 @@ def find_and_click_friend(driver, friend_name):
         for selector in friend_selectors:
             try:
                 friend_element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
-                logger.info(f"✅ Amigo {friend_name} encontrado con selector: {selector}")
+                logger.info(f"<a:verify2:1418486831993061497> Amigo {friend_name} encontrado con selector: {selector}")
                 break
             except TimeoutException:
                 logger.debug(f"No se encontró amigo con selector: {selector}")
@@ -262,12 +262,12 @@ def find_and_click_friend(driver, friend_name):
 
         try:
             friend_element.click()
-            logger.info(f"✅ Click en amigo {friend_name} exitoso")
+            logger.info(f"<a:verify2:1418486831993061497> Click en amigo {friend_name} exitoso")
         except Exception as e:
             # Si falla, usar JavaScript click
             logger.info(f"Click normal falló ({e}), usando JavaScript click...")
             driver.execute_script("arguments[0].click();", friend_element)
-            logger.info(f"✅ JavaScript click en amigo {friend_name} exitoso")
+            logger.info(f"<a:verify2:1418486831993061497> JavaScript click en amigo {friend_name} exitoso")
 
         time.sleep(2)  # Esperar a que se abra la conversación
 
@@ -297,7 +297,7 @@ def send_message_to_friend(driver, message, count=1):
         for selector in message_input_selectors:
             try:
                 message_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
-                logger.info(f"✅ Campo de mensaje encontrado con selector: {selector}")
+                logger.info(f"<a:verify2:1418486831993061497> Campo de mensaje encontrado con selector: {selector}")
                 break
             except TimeoutException:
                 logger.debug(f"No se encontró campo con selector: {selector}")
@@ -323,7 +323,7 @@ def send_message_to_friend(driver, message, count=1):
                 from selenium.webdriver.common.keys import Keys
                 message_input.send_keys(Keys.RETURN)
 
-                logger.info(f"✅ Mensaje {i+1}/{count} enviado exitosamente")
+                logger.info(f"<a:verify2:1418486831993061497> Mensaje {i+1}/{count} enviado exitosamente")
 
                 # Esperar entre mensajes (excepto el último)
                 if i < count - 1:
@@ -343,7 +343,7 @@ def send_message_to_friend(driver, message, count=1):
             message_input.send_keys("powered by rbxserversbot")
             time.sleep(1)
             message_input.send_keys(Keys.RETURN)
-            logger.info("✅ Mensaje automático 'powered by rbxserversbot' enviado exitosamente")
+            logger.info("<a:verify2:1418486831993061497> Mensaje automático 'powered by rbxserversbot' enviado exitosamente")
             time.sleep(2)
         except Exception as e:
             logger.warning(f"⚠️ Error enviando mensaje automático: {e}")
@@ -376,7 +376,7 @@ def setup_commands(bot):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        logger.info(f"🤖 Owner {username} (ID: {user_id}) ejecutó comando /rmessages")
+        logger.info(f"<a:pepebot:1418489370129993728> Owner {username} (ID: {user_id}) ejecutó comando /rmessages")
 
         await interaction.response.defer(ephemeral=True)
 
@@ -634,7 +634,7 @@ def setup_commands(bot):
             except:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-    logger.info("✅ Comando /rmessages configurado exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Comando /rmessages configurado exitosamente")
     return True
 
 def cleanup_commands(bot):

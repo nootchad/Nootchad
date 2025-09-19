@@ -26,7 +26,7 @@ def setup_commands(bot):
     # Iniciar el sistema de monitoreo automático
     if verification_monitor_task is None:
         verification_monitor_task = bot.loop.create_task(monitor_verification_changes(bot))
-        logger.info("✅ Sistema de monitoreo de verificaciones iniciado")
+        logger.info("<a:verify2:1418486831993061497> Sistema de monitoreo de verificaciones iniciado")
         
         # Ejecutar verificación inicial de usuarios ya verificados
         bot.loop.create_task(initial_role_assignment_check(bot))
@@ -120,7 +120,7 @@ def setup_commands(bot):
                         inline=False
                     )
                     embed.add_field(
-                        name="💡 **Funcionamiento**",
+                        name="<a:foco:1418492184373755966> **Funcionamiento**",
                         value="• Los nuevos usuarios verificados recibirán este rol automáticamente\n• Usa `/assignroles` para asignar roles a usuarios ya verificados",
                         inline=False
                     )
@@ -146,7 +146,7 @@ def setup_commands(bot):
                 )
 
                 embed.add_field(
-                    name="📊 **Resultados de Asignación**",
+                    name="<:stats:1418490788437823599> **Resultados de Asignación**",
                     value=f"• **Exitosos:** {success_count} usuarios\n• **Fallidos:** {failed_count} usuarios\n• **Total procesados:** {len(verified_users)} usuarios",
                     inline=True
                 )
@@ -179,17 +179,17 @@ def setup_commands(bot):
                     color=0xff9900
                 )
                 embed.add_field(
-                    name="📊 **Estado**",
+                    name="<:stats:1418490788437823599> **Estado**",
                     value=f"• **Servidor:** {guild_name}\n• **Rol:** {rol.mention}\n• **Estado:** Desactivado\n• **Modificado por:** <:1000182644:1396049313481625611> {username}",
                     inline=False
                 )
                 embed.add_field(
-                    name="💡 **Nota**",
+                    name="<a:foco:1418492184373755966> **Nota**",
                     value="• Los usuarios existentes conservan el rol\n• Los nuevos usuarios verificados no recibirán el rol\n• Puedes reactivarlo usando este comando con `activar: True`",
                     inline=False
                 )
 
-            embed.set_footer(text="💡 Usa /assignroles para asignar roles manualmente • Configuración guardada automáticamente")
+            embed.set_footer(text="<a:foco:1418492184373755966> Usa /assignroles para asignar roles manualmente • Configuración guardada automáticamente")
 
             await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -272,7 +272,7 @@ def setup_commands(bot):
                     color=0xff9900
                 )
                 embed.add_field(
-                    name="💡 **Información**",
+                    name="<a:foco:1418492184373755966> **Información**",
                     value="• Los usuarios deben estar verificados con `/verify`\n• Los usuarios deben estar en este servidor\n• El proceso es automático cuando se configure el rol",
                     inline=False
                 )
@@ -292,7 +292,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="📊 **Resultados**",
+                name="<:stats:1418490788437823599> **Resultados**",
                 value=f"• **Exitosos:** {success_count} usuarios\n• **Fallidos:** {failed_count} usuarios\n• **Total procesados:** {len(verified_users)} usuarios",
                 inline=True
             )
@@ -328,7 +328,7 @@ def setup_commands(bot):
                         inline=False
                     )
 
-            embed.set_footer(text="💡 Los nuevos usuarios verificados recibirán el rol automáticamente")
+            embed.set_footer(text="<a:foco:1418492184373755966> Los nuevos usuarios verificados recibirán el rol automáticamente")
 
             await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -402,7 +402,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="📊 **Estado General**",
+                name="<:stats:1418490788437823599> **Estado General**",
                 value=f"• **Estado:** {status_emoji} {status_text}\n• **Rol configurado:** {role_mention}\n• **Servidor:** {interaction.guild.name}",
                 inline=False
             )
@@ -432,7 +432,7 @@ def setup_commands(bot):
                 inline=False
             )
 
-            embed.set_footer(text="💡 La configuración se guarda automáticamente y persiste al reiniciar el bot")
+            embed.set_footer(text="<a:foco:1418492184373755966> La configuración se guarda automáticamente y persiste al reiniciar el bot")
 
             await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -529,7 +529,7 @@ def setup_commands(bot):
             )
 
             embed.add_field(
-                name="📊 **Estado General**",
+                name="<:stats:1418490788437823599> **Estado General**",
                 value=f"• **Monitor:** {status_emoji} {status_text}\n• **Última verificación:** {last_verification_check or 'Nunca'}\n• **Servidores configurados:** {len(active_configs)}",
                 inline=False
             )
@@ -575,7 +575,7 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    logger.info("✅ Comandos de configuración de roles cargados exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Comandos de configuración de roles cargados exitosamente")
     return True
 
 async def get_verified_users_in_guild(guild: discord.Guild) -> List[Dict]:
@@ -637,7 +637,7 @@ async def assign_roles_to_verified_users(guild: discord.Guild, role: discord.Rol
             })
             success_count += 1
 
-            logger.info(f"✅ Rol {role.name} asignado a {username} en {guild.name}")
+            logger.info(f"<a:verify2:1418486831993061497> Rol {role.name} asignado a {username} en {guild.name}")
 
             # Pequeña pausa para evitar rate limits
             await asyncio.sleep(0.5)
@@ -706,7 +706,7 @@ def save_role_config(guild_id: str, guild_name: str, role_id: int, role_name: st
         with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
-        logger.info(f"✅ Configuración de rol guardada para servidor {guild_id}")
+        logger.info(f"<a:verify2:1418486831993061497> Configuración de rol guardada para servidor {guild_id}")
         return True
 
     except Exception as e:
@@ -816,7 +816,7 @@ async def monitor_verification_changes(bot: commands.Bot):
             with open(followers_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 known_verified_users = set(data.get('verified_users', {}).keys())
-                logger.info(f"📊 Cargados {len(known_verified_users)} usuarios verificados conocidos")
+                logger.info(f"<:stats:1418490788437823599> Cargados {len(known_verified_users)} usuarios verificados conocidos")
     except Exception as e:
         logger.error(f"Error cargando usuarios verificados iniciales: {e}")
     
@@ -904,7 +904,7 @@ async def process_user_verification_in_all_guilds(bot: commands.Bot, discord_id:
                 
                 if success:
                     successful_assignments += 1
-                    logger.info(f"✅ Rol asignado automáticamente a {roblox_username} en {guild.name}")
+                    logger.info(f"<a:verify2:1418486831993061497> Rol asignado automáticamente a {roblox_username} en {guild.name}")
                 else:
                     logger.warning(f"❌ No se pudo asignar rol a {roblox_username} en {guild.name}")
                 
@@ -916,7 +916,7 @@ async def process_user_verification_in_all_guilds(bot: commands.Bot, discord_id:
                 continue
         
         if total_attempts > 0:
-            logger.info(f"📊 Usuario {roblox_username}: {successful_assignments}/{total_attempts} asignaciones exitosas")
+            logger.info(f"<:stats:1418490788437823599> Usuario {roblox_username}: {successful_assignments}/{total_attempts} asignaciones exitosas")
         else:
             logger.debug(f"Usuario {roblox_username} no está en ningún servidor configurado")
             
@@ -976,7 +976,7 @@ async def initial_role_assignment_check(bot: commands.Bot):
                         
                         # Verificar si ya tiene el rol
                         if role in member.roles:
-                            logger.debug(f"✅ Usuario {member.name} ya tiene el rol en {guild.name}")
+                            logger.debug(f"<a:verify2:1418486831993061497> Usuario {member.name} ya tiene el rol en {guild.name}")
                             continue
                         
                         # Asignar el rol
@@ -986,7 +986,7 @@ async def initial_role_assignment_check(bot: commands.Bot):
                             total_roles_assigned += 1
                             
                             roblox_username = user_data.get('roblox_username', 'Unknown')
-                            logger.info(f"✅ Rol asignado automáticamente a {member.name} ({roblox_username}) en {guild.name}")
+                            logger.info(f"<a:verify2:1418486831993061497> Rol asignado automáticamente a {member.name} ({roblox_username}) en {guild.name}")
                             
                             # Pequeña pausa para evitar rate limits
                             await asyncio.sleep(0.5)
@@ -1003,18 +1003,18 @@ async def initial_role_assignment_check(bot: commands.Bot):
                         continue
                 
                 if verified_users_in_server > 0:
-                    logger.info(f"📊 Servidor {guild.name}: {roles_assigned_in_server}/{verified_users_in_server} usuarios recibieron el rol")
+                    logger.info(f"<:stats:1418490788437823599> Servidor {guild.name}: {roles_assigned_in_server}/{verified_users_in_server} usuarios recibieron el rol")
                 else:
-                    logger.info(f"📊 Servidor {guild.name}: No hay usuarios verificados en este servidor")
+                    logger.info(f"<:stats:1418490788437823599> Servidor {guild.name}: No hay usuarios verificados en este servidor")
                 
             except Exception as e:
                 logger.error(f"❌ Error procesando servidor {guild_id}: {e}")
                 continue
         
         if total_users_checked > 0:
-            logger.info(f"✅ Verificación inicial completada: {total_roles_assigned}/{total_users_checked} roles asignados")
+            logger.info(f"<a:verify2:1418486831993061497> Verificación inicial completada: {total_roles_assigned}/{total_users_checked} roles asignados")
         else:
-            logger.info("📊 Verificación inicial completada: No hay usuarios verificados en servidores configurados")
+            logger.info("<:stats:1418490788437823599> Verificación inicial completada: No hay usuarios verificados en servidores configurados")
             
     except Exception as e:
         logger.error(f"❌ Error crítico en verificación inicial: {e}")

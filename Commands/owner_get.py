@@ -60,7 +60,7 @@ def setup_commands(bot):
                 color=0x6c757d
             )
             loading_embed.add_field(name="⏳ Estado", value="Conectando con la API...", inline=False)
-            loading_embed.add_field(name="🎮 ID del Juego", value=f"`{game_id}`", inline=True)
+            loading_embed.add_field(name="<a:control:1418490793223651409> ID del Juego", value=f"`{game_id}`", inline=True)
             loading_embed.add_field(name="🌐 API", value="v0-discord-bot-api-snowy.vercel.app", inline=True)
 
             message = await interaction.followup.send(embed=loading_embed, ephemeral=True)
@@ -99,19 +99,19 @@ def setup_commands(bot):
                         )
                         
                         no_servers_embed.add_field(
-                            name="🎮 ID del Juego",
+                            name="<a:control:1418490793223651409> ID del Juego",
                             value=f"`{game_id}`",
                             inline=True
                         )
                         
                         no_servers_embed.add_field(
-                            name="📊 Servidores Encontrados",
+                            name="<:stats:1418490788437823599> Servidores Encontrados",
                             value="`0`",
                             inline=True
                         )
                         
                         no_servers_embed.add_field(
-                            name="💡 Sugerencia",
+                            name="<a:foco:1418492184373755966> Sugerencia",
                             value="• Verifica que el ID del juego sea correcto\n• El juego podría no tener servidores VIP\n• Intenta con otro ID de juego",
                             inline=False
                         )
@@ -135,20 +135,20 @@ def setup_commands(bot):
                         if servers:
                             # Crear embed con servidores encontrados
                             success_embed = discord.Embed(
-                                title="✅ Servidores Obtenidos",
+                                title="<a:verify2:1418486831993061497> Servidores Obtenidos",
                                 description=f"Se encontraron **{len(servers)}** servidores para el juego ID: `{game_id}`",
                                 color=0x495057
                             )
                             
                             # Agregar información del juego
                             success_embed.add_field(
-                                name="🎮 ID del Juego",
+                                name="<a:control:1418490793223651409> ID del Juego",
                                 value=f"`{data.get('game_id', game_id)}`",
                                 inline=True
                             )
                             
                             success_embed.add_field(
-                                name="📊 Total de Servidores",
+                                name="<:stats:1418490788437823599> Total de Servidores",
                                 value=f"`{len(servers)}`",
                                 inline=True
                             )
@@ -190,7 +190,7 @@ def setup_commands(bot):
                             
                             await message.edit(embed=success_embed)
                             
-                            logger.info(f"✅ Owner {username} obtuvo {len(servers)} servidores para juego {game_id}")
+                            logger.info(f"<a:verify2:1418486831993061497> Owner {username} obtuvo {len(servers)} servidores para juego {game_id}")
                         
                         else:
                             # No se encontraron servidores
@@ -201,19 +201,19 @@ def setup_commands(bot):
                             )
                             
                             no_servers_embed.add_field(
-                                name="🎮 ID del Juego",
+                                name="<a:control:1418490793223651409> ID del Juego",
                                 value=f"`{game_id}`",
                                 inline=True
                             )
                             
                             no_servers_embed.add_field(
-                                name="📊 Servidores Encontrados",
+                                name="<:stats:1418490788437823599> Servidores Encontrados",
                                 value="`0`",
                                 inline=True
                             )
                             
                             no_servers_embed.add_field(
-                                name="💡 Sugerencia",
+                                name="<a:foco:1418492184373755966> Sugerencia",
                                 value="• Verifica que el ID del juego sea correcto\n• El juego podría no tener servidores VIP\n• Intenta con otro ID de juego",
                                 inline=False
                             )
@@ -270,7 +270,7 @@ def setup_commands(bot):
                 )
                 
                 error_embed.add_field(
-                    name="🎮 ID del Juego",
+                    name="<a:control:1418490793223651409> ID del Juego",
                     value=f"`{game_id}`",
                     inline=True
                 )
@@ -288,7 +288,7 @@ def setup_commands(bot):
                 )
                 
                 error_embed.add_field(
-                    name="💡 Posibles Causas",
+                    name="<a:foco:1418492184373755966> Posibles Causas",
                     value="• ID de juego no existe en la API\n• Problemas temporales del servidor\n• API sobrecargada",
                     inline=False
                 )
@@ -303,7 +303,7 @@ def setup_commands(bot):
                 color=0x6c757d
             )
             timeout_embed.add_field(
-                name="💡 Sugerencia",
+                name="<a:foco:1418492184373755966> Sugerencia",
                 value="Intenta nuevamente en unos momentos",
                 inline=False
             )
@@ -318,7 +318,7 @@ def setup_commands(bot):
                 color=0x6c757d
             )
             connection_embed.add_field(
-                name="💡 Posibles Causas",
+                name="<a:foco:1418492184373755966> Posibles Causas",
                 value="• Problemas de conectividad\n• API temporalmente no disponible\n• DNS no resuelve correctamente",
                 inline=False
             )
@@ -341,14 +341,14 @@ def setup_commands(bot):
                 inline=False
             )
             error_embed.add_field(
-                name="💡 Sugerencia",
+                name="<a:foco:1418492184373755966> Sugerencia",
                 value="Contacta al desarrollador si el problema persiste",
                 inline=False
             )
             
             await message.edit(embed=error_embed)
 
-    logger.info("✅ Comando /ownerget registrado correctamente")
+    logger.info("<a:verify2:1418486831993061497> Comando /ownerget registrado correctamente")
     return True
 
 

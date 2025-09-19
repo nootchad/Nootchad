@@ -33,7 +33,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="💡 ¿Qué hace este comando?",
+                name="<a:foco:1418492184373755966> ¿Qué hace este comando?",
                 value="Este comando convertirá imágenes en modelos 3D de Roblox usando tecnología de IA.",
                 inline=False
             )
@@ -69,7 +69,7 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=error_embed, ephemeral=True)
     
-    logger.info("✅ Comando /img2model (deshabilitado) configurado")
+    logger.info("<a:verify2:1418486831993061497> Comando /img2model (deshabilitado) configurado")
     return True
 
 def cleanup_commands(bot):

@@ -70,7 +70,7 @@ def setup_commands(bot):
 
             # Información básica del bundle
             result_embed.add_field(
-                name="📊 Información Básica",
+                name="<:stats:1418490788437823599> Información Básica",
                 value=f"**ID:** `{bundle_id}`\n**Nombre:** {bundle_info.get('name', 'Desconocido')}\n**Tipo:** {bundle_info.get('bundleType', 'Desconocido')}",
                 inline=False
             )
@@ -172,7 +172,7 @@ def setup_commands(bot):
                                 image_url = image_data['data'][0].get('imageUrl')
                                 if image_url and image_url != 'https://tr.rbxcdn.com/':
                                     result_embed.set_image(url=image_url)
-                                    logger.info(f"✅ Imagen del bundle configurada: {image_url}")
+                                    logger.info(f"<a:verify2:1418486831993061497> Imagen del bundle configurada: {image_url}")
 
                     # Thumbnail más pequeño
                     thumb_url = f"https://thumbnails.roblox.com/v1/bundles/thumbnails?bundleIds={bundle_id}&size=150x150&format=Png&isCircular=false"
@@ -202,7 +202,7 @@ def setup_commands(bot):
             except:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-    logger.info("✅ Comando /bundle_info configurado exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Comando /bundle_info configurado exitosamente")
     return True
 
 async def get_bundle_info(bundle_id: str):

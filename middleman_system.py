@@ -175,7 +175,7 @@ class MiddlemanSystem:
                 
             # Crear tablas usando raw SQL a través de Supabase
             self._create_tables_if_not_exist()
-            logger.info("✅ Tablas de base de datos verificadas/creadas exitosamente")
+            logger.info("<a:verify2:1418486831993061497> Tablas de base de datos verificadas/creadas exitosamente")
             
         except Exception as e:
             logger.error(f"Error configurando base de datos: {e}")
@@ -186,7 +186,7 @@ class MiddlemanSystem:
             # Verificar si la tabla ya existe intentando hacer una query
             try:
                 result = self.supabase_client.table("middleman_applications").select("id").limit(1).execute()
-                logger.info("✅ Tablas de middleman ya existen")
+                logger.info("<a:verify2:1418486831993061497> Tablas de middleman ya existen")
                 return True
             except Exception as e:
                 if "PGRST205" in str(e) or "Could not find the table" in str(e):

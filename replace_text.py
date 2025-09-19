@@ -116,7 +116,7 @@ Ejemplos de uso:
                 if file.endswith('.py'):
                     python_files.append(Path(root) / file)
 
-    print(f"📊 Encontrados {len(python_files)} archivos Python para procesar")
+    print(f"<:stats:1418490788437823599> Encontrados {len(python_files)} archivos Python para procesar")
     print("-" * 60)
 
     # Procesar cada archivo Python
@@ -137,17 +137,17 @@ Ejemplos de uso:
                 rel_path = file_path
 
             status = "SERÍA MODIFICADO" if args.dry_run else "MODIFICADO"
-            print(f"✅ {status}: {rel_path} ({count} reemplazo{'s' if count != 1 else ''})")
+            print(f"<a:verify2:1418486831993061497> {status}: {rel_path} ({count} reemplazo{'s' if count != 1 else ''})")
 
     # Mostrar resumen
     print("-" * 60)
-    print(f"📊 RESUMEN:")
+    print(f"<:stats:1418490788437823599> RESUMEN:")
     print(f"   • Archivos Python procesados: {files_processed}")
     print(f"   • Archivos modificados: {files_modified}")
     print(f"   • Total de reemplazos: {total_replacements}")
 
     if args.dry_run and files_modified > 0:
-        print("\n💡 Para ejecutar los cambios reales, ejecuta el comando sin --dry-run")
+        print("\n<a:foco:1418492184373755966> Para ejecutar los cambios reales, ejecuta el comando sin --dry-run")
     elif files_modified == 0:
         print(f"\n⚠️  No se encontró '{args.search_text}' en ningún archivo Python")
     else:

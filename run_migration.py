@@ -74,7 +74,7 @@ async def main():
             print("Verifica que las variables SUPABASE_URL y SUPABASE_API_KEY estén configuradas")
             return
         
-        print("✅ Conexión a Supabase establecida")
+        print("<a:verify2:1418486831993061497> Conexión a Supabase establecida")
         
         # Ejecutar migración usando el método implementado
         logger.info("Ejecutando migración de datos...")
@@ -83,13 +83,13 @@ async def main():
         # Mostrar resultados
         print("\n=== RESULTADOS DE LA MIGRACIÓN ===")
         print(f"👥 Usuarios migrados: {results['users_migrated']}")
-        print(f"✅ Verificaciones migradas: {results['verifications_migrated']}")
+        print(f"<a:verify2:1418486831993061497> Verificaciones migradas: {results['verifications_migrated']}")
         print(f"💰 Cuentas de monedas migradas: {results['coins_migrated']}")
-        print(f"📊 Transacciones migradas: {results['transactions_migrated']}")
+        print(f"<:stats:1418490788437823599> Transacciones migradas: {results['transactions_migrated']}")
         print(f"🔒 Fingerprints anti-alt migrados: {results['fingerprints_migrated']}")
         print(f"⏱️ Cooldowns migrados: {results['cooldowns_migrated']}")
         print(f"🚫 Blacklist migrados: {results['blacklist_migrated']}")
-        print(f"✅ Whitelist migrados: {results['whitelist_migrated']}")
+        print(f"<a:verify2:1418486831993061497> Whitelist migrados: {results['whitelist_migrated']}")
         print(f"⚠️ Warnings migrados: {results['warnings_migrated']}")
         print(f"🔨 Bans migrados: {results['bans_migrated']}")
         
@@ -120,7 +120,7 @@ async def main():
         
         # Cerrar conexiones
         await manager.close()
-        print("\n✅ Migración finalizada exitosamente")
+        print("\n<a:verify2:1418486831993061497> Migración finalizada exitosamente")
         
     except Exception as e:
         logger.error(f"Error crítico durante la migración: {e}")

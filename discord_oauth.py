@@ -201,7 +201,7 @@ class DiscordOAuth2System:
                     logger.info(f"🕐 {len(expired_users)} tokens expirados removidos al cargar")
                     self.save_oauth2_data()  # Guardar sin tokens expirados
                 
-                logger.info(f"✅ Datos OAuth2 cargados: {len(self.user_tokens)} usuarios autorizados")
+                logger.info(f"<a:verify2:1418486831993061497> Datos OAuth2 cargados: {len(self.user_tokens)} usuarios autorizados")
             else:
                 logger.info("📄 No existe archivo OAuth2, iniciando con datos vacíos")
                 self.save_oauth2_data()  # Crear archivo inicial
@@ -352,7 +352,7 @@ class DiscordOAuth2System:
             # Guardar datos persistentemente
             self.save_oauth2_data()
             
-            logger.info(f"✅ Usuario autorizado correctamente: {user_info['username']} (ID: {user_id})")
+            logger.info(f"<a:verify2:1418486831993061497> Usuario autorizado correctamente: {user_info['username']} (ID: {user_id})")
             
             # Respuesta exitosa
             success_html = f"""
@@ -366,7 +366,7 @@ class DiscordOAuth2System:
                 </style>
             </head>
             <body>
-                <h1 class="success">✅ ¡Autorización Exitosa!</h1>
+                <h1 class="success"><a:verify2:1418486831993061497> ¡Autorización Exitosa!</h1>
                 <div class="info">
                     <h3>Información Obtenida:</h3>
                     <p><strong>Usuario:</strong> {user_info['display_name']} (@{user_info['username']})</p>

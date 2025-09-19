@@ -93,9 +93,9 @@ def setup_commands(bot):
                 description=f"Iniciando scraping de **{cantidad}** servidores para envío a API externa.",
                 color=0x3366ff
             )
-            initial_embed.add_field(name="🎮 Juego", value=f"```{game_name}```", inline=True)
+            initial_embed.add_field(name="<a:control:1418490793223651409> Juego", value=f"```{game_name}```", inline=True)
             initial_embed.add_field(name="🆔 ID", value=f"```{game_id}```", inline=True)
-            initial_embed.add_field(name="📊 Cantidad", value=f"```{cantidad}```", inline=True)
+            initial_embed.add_field(name="<:stats:1418490788437823599> Cantidad", value=f"```{cantidad}```", inline=True)
             initial_embed.add_field(name="🌐 API URL", value=f"```{api_url[:50]}...```", inline=False)
             initial_embed.add_field(name="⏱️ Estado", value="Iniciando scraping...", inline=False)
 
@@ -132,13 +132,13 @@ def setup_commands(bot):
             if success:
                 # Éxito
                 success_embed = discord.Embed(
-                    title="✅ Owner Scrape Completado",
+                    title="<a:verify2:1418486831993061497> Owner Scrape Completado",
                     description=f"Se obtuvieron **{len(scraped_servers)}** servidores y se enviaron exitosamente a la API.",
                     color=0x00ff88
                 )
-                success_embed.add_field(name="🎮 Juego", value=game_name, inline=True)
-                success_embed.add_field(name="📊 Servidores", value=str(len(scraped_servers)), inline=True)
-                success_embed.add_field(name="🌐 API", value="✅ Enviado", inline=True)
+                success_embed.add_field(name="<a:control:1418490793223651409> Juego", value=game_name, inline=True)
+                success_embed.add_field(name="<:stats:1418490788437823599> Servidores", value=str(len(scraped_servers)), inline=True)
+                success_embed.add_field(name="🌐 API", value="<a:verify2:1418486831993061497> Enviado", inline=True)
                 success_embed.add_field(
                     name="📋 Respuesta API",
                     value=f"```{str(response_data)[:100]}...```",
@@ -162,8 +162,8 @@ def setup_commands(bot):
                     description=f"Se obtuvieron **{len(scraped_servers)}** servidores pero falló el envío a la API.",
                     color=0xffaa00
                 )
-                error_embed.add_field(name="🎮 Juego", value=game_name, inline=True)
-                error_embed.add_field(name="📊 Servidores", value=str(len(scraped_servers)), inline=True)
+                error_embed.add_field(name="<a:control:1418490793223651409> Juego", value=game_name, inline=True)
+                error_embed.add_field(name="<:stats:1418490788437823599> Servidores", value=str(len(scraped_servers)), inline=True)
                 error_embed.add_field(name="🌐 API", value="❌ Error", inline=True)
                 error_embed.add_field(
                     name="❌ Error API",
@@ -181,10 +181,10 @@ def setup_commands(bot):
                 color=0xff0000
             )
             error_embed.add_field(name="🐛 Error", value=f"```{str(e)[:150]}{'...' if len(str(e)) > 150 else ''}```", inline=False)
-            error_embed.add_field(name="💡 Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
+            error_embed.add_field(name="<a:foco:1418492184373755966> Sugerencia", value="Verifica las cookies y la conexión a internet", inline=False)
             await interaction.followup.send(embed=error_embed, ephemeral=True)
 
-    logger.info("✅ Comando /ownerscrape registrado correctamente")
+    logger.info("<a:verify2:1418486831993061497> Comando /ownerscrape registrado correctamente")
     return True
 
 
@@ -201,7 +201,7 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
             description=f"Ejecutando scraping para **{cantidad}** servidores...",
             color=0xffaa00
         )
-        progress_embed.add_field(name="📊 Estado", value="Obteniendo enlaces de servidores...", inline=False)
+        progress_embed.add_field(name="<:stats:1418490788437823599> Estado", value="Obteniendo enlaces de servidores...", inline=False)
 
         try:
             await message.edit(embed=progress_embed)
@@ -227,7 +227,7 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
             logger.info(f"🎯 Procesando hasta {len(server_links)} enlaces de servidores para obtener {cantidad} servidores...")
 
             # Actualizar progreso
-            progress_embed.set_field_at(0, name="📊 Estado", value=f"Procesando {len(server_links)} enlaces para obtener {cantidad} servidores...", inline=False)
+            progress_embed.set_field_at(0, name="<:stats:1418490788437823599> Estado", value=f"Procesando {len(server_links)} enlaces para obtener {cantidad} servidores...", inline=False)
             try:
                 await message.edit(embed=progress_embed)
             except:
@@ -239,7 +239,7 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
 
             for server_url in server_links:
                 if len(extracted_servers) >= cantidad:
-                    logger.info(f"✅ Meta alcanzada: {cantidad} servidores extraídos exitosamente")
+                    logger.info(f"<a:verify2:1418486831993061497> Meta alcanzada: {cantidad} servidores extraídos exitosamente")
                     break
 
                 try:
@@ -250,14 +250,14 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
                     vip_link = scraper.extract_vip_link(driver, server_url, game_id)
                     if vip_link:
                         extracted_servers.append(vip_link)
-                        logger.info(f"✅ Servidor {len(extracted_servers)}/{cantidad} extraído exitosamente")
+                        logger.info(f"<a:verify2:1418486831993061497> Servidor {len(extracted_servers)}/{cantidad} extraído exitosamente")
 
                         # Actualizar progreso cada 3 servidores (más frecuente para owner)
                         if len(extracted_servers) % 3 == 0 or len(extracted_servers) == cantidad:
                             progress_embed.set_field_at(
                                 0, 
-                                name="📊 Estado", 
-                                value=f"✅ Obtenidos: {len(extracted_servers)}/{cantidad} servidores (Procesados: {processed}/{len(server_links)})", 
+                                name="<:stats:1418490788437823599> Estado", 
+                                value=f"<a:verify2:1418486831993061497> Obtenidos: {len(extracted_servers)}/{cantidad} servidores (Procesados: {processed}/{len(server_links)})", 
                                 inline=False
                             )
                             try:
@@ -273,7 +273,7 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
                     logger.error(f"❌ Error procesando {server_url}: {e}")
                     continue
 
-            logger.info(f"📊 Resultados finales: {len(extracted_servers)} servidores extraídos, {failed_extractions} fallos, {processed} procesados total")
+            logger.info(f"<:stats:1418490788437823599> Resultados finales: {len(extracted_servers)} servidores extraídos, {failed_extractions} fallos, {processed} procesados total")
 
         finally:
             # Cerrar WebDriver
@@ -284,7 +284,7 @@ async def execute_owner_scrape(game_id: str, cantidad: int, interaction: discord
         if temp_user_id in scraper.links_by_user:
             del scraper.links_by_user[temp_user_id]
 
-        logger.info(f"✅ Owner scrape completado: {len(extracted_servers)} servidores extraídos")
+        logger.info(f"<a:verify2:1418486831993061497> Owner scrape completado: {len(extracted_servers)} servidores extraídos")
         return extracted_servers
 
     except Exception as e:
@@ -329,7 +329,7 @@ async def send_to_external_api(api_url: str, data: dict):
             except:
                 response_data = {"raw_response": response.text}
 
-            logger.info(f"✅ API responded successfully: {response.status_code}")
+            logger.info(f"<a:verify2:1418486831993061497> API responded successfully: {response.status_code}")
             return True, response_data
         else:
             logger.error(f"❌ API responded with error: {response.status_code} - {response.text}")
