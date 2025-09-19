@@ -376,7 +376,7 @@ def setup_commands(bot):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        logger.info(f"🤖 Owner {username} (ID: {user_id}) ejecutó comando /rmessages")
+        logger.info(f"<a:pepebot:1418489370129993728> Owner {username} (ID: {user_id}) ejecutó comando /rmessages")
 
         await interaction.response.defer(ephemeral=True)
 

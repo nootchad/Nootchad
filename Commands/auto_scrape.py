@@ -82,7 +82,7 @@ def setup_commands(bot):
                     color=0xffaa00
                 )
                 embed.add_field(
-                    name="💡 Mientras esperas:",
+                    name="<a:foco:1418492184373755966> Mientras esperas:",
                     value="• Usa `/servertest` para ver servidores existentes\n• Revisa tus servidores favoritos\n• Explora otros comandos del bot",
                     inline=False
                 )
@@ -99,8 +99,8 @@ def setup_commands(bot):
                 description=f"Comenzando búsqueda automática de **{cantidad}** servidores VIP.",
                 color=0x3366ff
             )
-            initial_embed.add_field(name="🎮 Juegos:", value=games_text, inline=False)
-            initial_embed.add_field(name="📊 Meta:", value=f"{cantidad} servidores", inline=True)
+            initial_embed.add_field(name="<a:control:1418490793223651409> Juegos:", value=games_text, inline=False)
+            initial_embed.add_field(name="<:stats:1418490788437823599> Meta:", value=f"{cantidad} servidores", inline=True)
             initial_embed.add_field(name="⏱️ Tiempo estimado:", value="2-5 minutos", inline=True)
             initial_embed.add_field(name="📤 Entrega:", value="Archivo por DM", inline=True)
             initial_embed.add_field(
@@ -132,7 +132,7 @@ def setup_commands(bot):
 
                 # Confirmar éxito
                 success_embed = discord.Embed(
-                    title="✅ Auto Scrape Completado",
+                    title="<a:verify2:1418486831993061497> Auto Scrape Completado",
                     description=f"Se obtuvieron **{len(result['servers'])}** servidores exitosamente.",
                     color=0x00ff88
                 )
@@ -147,7 +147,7 @@ def setup_commands(bot):
                     inline=True
                 )
                 success_embed.add_field(
-                    name="🎮 Juegos procesados:",
+                    name="<a:control:1418490793223651409> Juegos procesados:",
                     value=str(len(result['games'])),
                     inline=True
                 )
@@ -217,7 +217,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
 
                     # Buscando hasta {servers_to_try} servidores (optimizado)
 
-                    logger.info(f"🎮 Ronda {current_batch + 1} - Procesando juego {current_game_id} - Buscando hasta {servers_to_try} servidores (modo rápido)")
+                    logger.info(f"<a:control:1418490793223651409> Ronda {current_batch + 1} - Procesando juego {current_game_id} - Buscando hasta {servers_to_try} servidores (modo rápido)")
 
                     # Actualizar progreso
                     progress_embed = discord.Embed(
@@ -226,7 +226,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                         color=0xffaa00
                     )
                     progress_embed.add_field(
-                        name="📊 Progreso:",
+                        name="<:stats:1418490788437823599> Progreso:",
                         value=f"{len(all_servers)}/{target_amount} servidores",
                         inline=True
                     )
@@ -313,7 +313,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                     color=0xff9900
                 )
                 cooldown_embed.add_field(
-                    name="📊 Progreso:",
+                    name="<:stats:1418490788437823599> Progreso:",
                     value=f"{len(all_servers)}/{target_amount} servidores",
                     inline=True
                 )
@@ -328,7 +328,7 @@ async def execute_auto_scrape_with_cooldowns(user_id: str, username: str, game_i
                     inline=True
                 )
                 cooldown_embed.add_field(
-                    name="💡 Razón:",
+                    name="<a:foco:1418492184373755966> Razón:",
                     value="Cooldown automático cada 5 servidores para evitar límites",
                     inline=False
                 )
@@ -579,20 +579,20 @@ async def send_servers_file(user: discord.User, servers: list, games: list):
             description=f"Tu auto scrape ha sido completado exitosamente.",
             color=0x00ff88
         )
-        embed.add_field(name="📊 Servidores obtenidos:", value=str(len(servers)), inline=True)
+        embed.add_field(name="<:stats:1418490788437823599> Servidores obtenidos:", value=str(len(servers)), inline=True)
         embed.add_field(name="🔄 Rondas procesadas:", value=str(len(games)), inline=True)
         embed.add_field(name="📁 Archivo:", value=filename, inline=True)
         embed.add_field(
-            name="💡 Instrucciones:",
+            name="<a:foco:1418492184373755966> Instrucciones:",
             value="• Descarga el archivo adjunto\n• Copia los enlaces que necesites\n• Pégalos en tu navegador para unirte",
             inline=False
         )
         embed.add_field(
-            name="✅ Guardado:",
+            name="<a:verify2:1418486831993061497> Guardado:",
             value="Los servidores están guardados en tu perfil",
             inline=False
         )
-        embed.set_footer(text="🤖 RbxServers Bot - Auto Scrape System con Cooldowns")
+        embed.set_footer(text="<a:pepebot:1418489370129993728> RbxServers Bot - Auto Scrape System con Cooldowns")
 
         # Enviar por DM
         await user.send(embed=embed, file=discord_file)

@@ -132,13 +132,13 @@ def setup_commands(bot):
 
             # Embed de resultado final
             embed_resultado = discord.Embed(
-                title="✅ Anuncio Enviado",
+                title="<a:verify2:1418486831993061497> Anuncio Enviado",
                 description="El anuncio ha sido procesado y enviado.",
                 color=0x00ff88
             )
             
             embed_resultado.add_field(
-                name="📊 Estadísticas",
+                name="<:stats:1418490788437823599> Estadísticas",
                 value=f"**Exitosos:** {exitosos}\n**Fallidos:** {fallidos}\n**Total:** {len(usuarios_verificados)}",
                 inline=True
             )
@@ -198,7 +198,7 @@ def setup_commands(bot):
             
             if not logs:
                 embed = discord.Embed(
-                    title="📊 Estadísticas de Anuncios",
+                    title="<:stats:1418490788437823599> Estadísticas de Anuncios",
                     description="No hay anuncios registrados aún.",
                     color=0xff9900
                 )
@@ -212,7 +212,7 @@ def setup_commands(bot):
             ultimo_anuncio = logs[-1] if logs else None
 
             embed = discord.Embed(
-                title="📊 Estadísticas de Anuncios",
+                title="<:stats:1418490788437823599> Estadísticas de Anuncios",
                 description="Resumen de anuncios enviados por el bot",
                 color=0x7289da
             )
@@ -247,7 +247,7 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=embed_error, ephemeral=True)
     
-    logger.info("✅ Comandos de anuncios configurados exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Comandos de anuncios configurados exitosamente")
     return True
 
 async def obtener_usuarios_verificados():

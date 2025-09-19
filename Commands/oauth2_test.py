@@ -87,7 +87,7 @@ def setup_commands(bot):
             )
             
             embed.add_field(
-                name="✅ Estado",
+                name="<a:verify2:1418486831993061497> Estado",
                 value="Sistema OAuth2 configurado correctamente",
                 inline=True
             )
@@ -173,7 +173,7 @@ def setup_commands(bot):
                 
                 if len(authorized_users) > 10:
                     embed.add_field(
-                        name="📊 Información Adicional",
+                        name="<:stats:1418490788437823599> Información Adicional",
                         value=f"*Mostrando 10 de {len(authorized_users)} usuarios*\nUsa la API `/auth/discord/users` para ver todos",
                         inline=False
                     )
@@ -208,7 +208,7 @@ def setup_commands(bot):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
     
-    logger.info("✅ Comando OAuth2 info configurado")
+    logger.info("<a:verify2:1418486831993061497> Comando OAuth2 info configurado")
     return True
 
 # Función opcional de limpieza

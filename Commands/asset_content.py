@@ -74,7 +74,7 @@ async def handle_asset_command(update, context):
                         image_url = image_data['data'][0].get('imageUrl')
                         if image_url and image_url != 'https://tr.rbxcdn.com/':
                             embed.set_image(url=image_url)
-                            logger.info(f"✅ Imagen del asset configurada: {image_url}")
+                            logger.info(f"<a:verify2:1418486831993061497> Imagen del asset configurada: {image_url}")
 
             # Thumbnail más pequeño
             thumb_url = f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=150x150&format=Png&isCircular=false"

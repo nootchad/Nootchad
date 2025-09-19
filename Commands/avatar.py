@@ -215,7 +215,7 @@ def setup_commands(bot):
             else:
                 await interaction.followup.send(embed=embed, ephemeral=True)
     
-    logger.info("✅ Comando /avatar configurado exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Comando /avatar configurado exitosamente")
     return True
 
 async def get_roblox_user_info(username: str):

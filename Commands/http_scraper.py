@@ -186,7 +186,7 @@ def setup_commands(bot):
                 links_text = "\n".join([f"• {link}" for link in vip_links])
 
                 result_embed = discord.Embed(
-                    title="✅ Fast Scrape Completado",
+                    title="<a:verify2:1418486831993061497> Fast Scrape Completado",
                     description=f"**{len(vip_links)}** servidores encontrados usando HTTP",
                     color=0x00ff88
                 )

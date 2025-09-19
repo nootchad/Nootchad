@@ -90,7 +90,7 @@ def setup_commands(bot):
                     color=0xffaa00
                 )
                 embed.add_field(
-                    name="💡 Ventajas del Headless Scrape:",
+                    name="<a:foco:1418492184373755966> Ventajas del Headless Scrape:",
                     value="• Más rápido que scraping normal\n• Optimizado para hosting web\n• No requiere VNC\n• Menor uso de recursos",
                     inline=False
                 )
@@ -111,7 +111,7 @@ def setup_commands(bot):
                         color=0xff0000
                     )
                     embed.add_field(
-                        name="💡 Sugerencias:",
+                        name="<a:foco:1418492184373755966> Sugerencias:",
                         value="• Usa el ID del juego directamente\n• Prueba con nombres más comunes\n• Verifica la ortografía",
                         inline=False
                     )
@@ -132,7 +132,7 @@ def setup_commands(bot):
                 color=0x00aaff
             )
             start_embed.add_field(name="🎯 Juego", value=f"```{game_name}```", inline=True)
-            start_embed.add_field(name="📊 Cantidad", value=f"```{cantidad} servidores```", inline=True)
+            start_embed.add_field(name="<:stats:1418490788437823599> Cantidad", value=f"```{cantidad} servidores```", inline=True)
             start_embed.add_field(name="⚡ Modo", value="```Headless (Sin VNC)```", inline=True)
             start_embed.add_field(
                 name="🔧 Optimizaciones:",
@@ -155,7 +155,7 @@ def setup_commands(bot):
             if result['success'] and result['servers']:
                 # Mostrar resultados exitosos
                 success_embed = discord.Embed(
-                    title="✅ Headless Scrape Completado",
+                    title="<a:verify2:1418486831993061497> Headless Scrape Completado",
                     description=f"Se obtuvieron **{len(result['servers'])}** servidores usando scraping headless.",
                     color=0x00ff88
                 )
@@ -176,7 +176,7 @@ def setup_commands(bot):
                 success_embed.add_field(name="🚀 Método", value="Headless", inline=True)
                 success_embed.add_field(name="💾 Guardado", value="Automático", inline=True)
                 success_embed.add_field(
-                    name="💡 Próximos pasos:",
+                    name="<a:foco:1418492184373755966> Próximos pasos:",
                     value="• Usa `/servertest` para ver tus servidores\n• Los enlaces están guardados en tu perfil\n• Copia y pega en tu navegador",
                     inline=False
                 )
@@ -184,7 +184,7 @@ def setup_commands(bot):
                 await message.edit(embed=success_embed)
 
                 # Log exitoso
-                logger.info(f"✅ Headless scrape exitoso para {username}: {len(result['servers'])} servidores de {game_name}")
+                logger.info(f"<a:verify2:1418486831993061497> Headless scrape exitoso para {username}: {len(result['servers'])} servidores de {game_name}")
 
             else:
                 # Error o sin resultados
@@ -199,7 +199,7 @@ def setup_commands(bot):
                     inline=False
                 )
                 error_embed.add_field(
-                    name="💡 Alternativas:",
+                    name="<a:foco:1418492184373755966> Alternativas:",
                     value="• Prueba con otro juego\n• Usa `/scrape` tradicional\n• Intenta más tarde",
                     inline=False
                 )
@@ -247,7 +247,7 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
         )
         progress_embed.add_field(name="🎯 Juego", value=f"```{game_name}```", inline=True)
         progress_embed.add_field(name="⚡ Modo", value="```Headless```", inline=True)
-        progress_embed.add_field(name="📊 Estado", value="```Buscando servidores...```", inline=True)
+        progress_embed.add_field(name="<:stats:1418490788437823599> Estado", value="```Buscando servidores...```", inline=True)
 
         try:
             await message.edit(embed=progress_embed)
@@ -281,7 +281,7 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
             # Limitar cantidad de servidores a procesar
             server_links = server_links[:min(target_amount + 2, 7)]  # Procesar algunos extra por si fallan
 
-            logger.info(f"📊 Procesando {len(server_links)} enlaces de servidores en modo headless")
+            logger.info(f"<:stats:1418490788437823599> Procesando {len(server_links)} enlaces de servidores en modo headless")
 
             # Actualizar progreso: Extrayendo VIP links
             progress_embed.description = f"**Paso 2/3:** Extrayendo VIP links de {len(server_links)} servidores"
@@ -306,7 +306,7 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
 
                     if vip_link and vip_link not in extracted_links:
                         extracted_links.append(vip_link)
-                        logger.info(f"✅ VIP link extraído: {len(extracted_links)}/{target_amount}")
+                        logger.info(f"<a:verify2:1418486831993061497> VIP link extraído: {len(extracted_links)}/{target_amount}")
 
                     processed_count += 1
 
@@ -336,7 +336,7 @@ async def execute_headless_scraping(game_id: str, game_name: str, user_id: str, 
 
         # Actualizar progreso: Guardando resultados
         progress_embed.description = f"**Paso 3/3:** Guardando {len(extracted_links)} servidores VIP"
-        progress_embed.set_field_at(2, name="📊 Estado", value="```Guardando...```", inline=True)
+        progress_embed.set_field_at(2, name="<:stats:1418490788437823599> Estado", value="```Guardando...```", inline=True)
 
         try:
             await message.edit(embed=progress_embed)

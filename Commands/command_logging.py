@@ -257,7 +257,7 @@ def setup_commands(bot):
                     color=0xff0000
                 )
                 embed.add_field(
-                    name="💡 Sugerencia:",
+                    name="<a:foco:1418492184373755966> Sugerencia:",
                     value="Intenta nuevamente en unos momentos",
                     inline=False
                 )
@@ -308,7 +308,7 @@ def setup_commands(bot):
                     inline=False
                 )
                 embed.add_field(
-                    name="💡 Reactivar:",
+                    name="<a:foco:1418492184373755966> Reactivar:",
                     value="Usa `/logsetup` para reactivar el sistema",
                     inline=False
                 )
@@ -379,9 +379,9 @@ def setup_commands(bot):
             )
 
             # Estado actual
-            status = "✅ Activo" if server_config.get('enabled', False) else "⏸️ Deshabilitado"
+            status = "<a:verify2:1418486831993061497> Activo" if server_config.get('enabled', False) else "⏸️ Deshabilitado"
             embed.add_field(
-                name="📊 **Estado Actual**",
+                name="<:stats:1418490788437823599> **Estado Actual**",
                 value=f"• **Estado:** {status}\n• **Canal:** {channel.mention if channel else 'Canal no encontrado'}\n• **Comandos registrados:** {server_config.get('commands_logged', 0)}",
                 inline=False
             )

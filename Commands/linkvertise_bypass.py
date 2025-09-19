@@ -61,7 +61,7 @@ def setup_commands(bot):
                 color=0x3366ff
             )
             initial_embed.add_field(name="🌐 URL:", value=f"```{url}```", inline=False)
-            initial_embed.add_field(name="📊 Estado:", value="Inicializando navegador...", inline=True)
+            initial_embed.add_field(name="<:stats:1418490788437823599> Estado:", value="Inicializando navegador...", inline=True)
             initial_embed.add_field(name="⏱️ Tiempo:", value="0s", inline=True)
 
             message = await interaction.followup.send(embed=initial_embed, ephemeral=True)
@@ -721,11 +721,11 @@ async def update_progress(message, status, steps, start_time):
             description="Bypass en progreso...",
             color=0xffaa00
         )
-        embed.add_field(name="📊 Estado:", value=status, inline=True)
+        embed.add_field(name="<:stats:1418490788437823599> Estado:", value=status, inline=True)
         embed.add_field(name="🔄 Pasos:", value=f"{steps}/10", inline=True)
         embed.add_field(name="⏱️ Tiempo:", value=f"{elapsed_time:.1f}s", inline=True)
         embed.add_field(
-            name="💡 Progreso:",
+            name="<a:foco:1418492184373755966> Progreso:",
             value=f"{'▰' * steps}{'▱' * (10-steps)} {int((steps/10)*100)}%",
             inline=False
         )

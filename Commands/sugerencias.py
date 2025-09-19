@@ -237,7 +237,7 @@ def setup_commands(bot):
             
             # Confirmación al usuario
             confirmacion_embed = discord.Embed(
-                title="✅ Sugerencia Enviada",
+                title="<a:verify2:1418486831993061497> Sugerencia Enviada",
                 description=f"Tu sugerencia **#{sugerencia_id}** ha sido enviada al owner para revisión.",
                 color=0x00ff88
             )
@@ -291,7 +291,7 @@ def setup_commands(bot):
                 color=0xff0000
             )
             error_embed.add_field(
-                name="💡 Sugerencia",
+                name="<a:foco:1418492184373755966> Sugerencia",
                 value="Si el problema persiste, contacta al owner usando `/reportes`",
                 inline=False
             )
@@ -321,7 +321,7 @@ def setup_commands(bot):
             sugerencias = sugerencias_system.sugerencias_data.get('sugerencias', [])
             
             stats_embed = discord.Embed(
-                title="📊 Estadísticas del Sistema de Sugerencias",
+                title="<:stats:1418490788437823599> Estadísticas del Sistema de Sugerencias",
                 description="Panel de control para el owner",
                 color=0x7289da
             )
@@ -398,7 +398,7 @@ def setup_commands(bot):
             )
             await interaction.response.send_message(embed=error_embed, ephemeral=True)
     
-    logger.info("✅ Sistema de sugerencias configurado exitosamente")
+    logger.info("<a:verify2:1418486831993061497> Sistema de sugerencias configurado exitosamente")
     return True
 
 def cleanup_commands(bot):

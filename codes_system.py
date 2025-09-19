@@ -295,7 +295,7 @@ def setup_codes_commands(bot):
                 color=0xff0000
             )
             embed.add_field(
-                name="💡 ¿Cómo verificarse?",
+                name="<a:foco:1418492184373755966> ¿Cómo verificarse?",
                 value="Usa el comando `/verify` para verificar tu cuenta de Roblox",
                 inline=False
             )
@@ -319,7 +319,7 @@ def setup_codes_commands(bot):
                 color=0xff0000
             )
             embed.add_field(
-                name="💡 Información",
+                name="<a:foco:1418492184373755966> Información",
                 value="Si crees que esto es un error, contacta a un administrador.",
                 inline=False
             )
@@ -346,7 +346,7 @@ def setup_codes_commands(bot):
 
             # Crear embed de éxito
             embed = discord.Embed(
-                title="✅ Código Canjeado",
+                title="<a:verify2:1418486831993061497> Código Canjeado",
                 description=f"¡Has canjeado exitosamente el código **{codigo}**!",
                 color=0x00ff88
             )
@@ -442,7 +442,7 @@ def setup_codes_commands(bot):
             expires_date = datetime.now() + timedelta(hours=expira_en_horas)
 
             embed = discord.Embed(
-                title="✅ Código Creado",
+                title="<a:verify2:1418486831993061497> Código Creado",
                 description=f"El código promocional **{created_code}** ha sido creado exitosamente.",
                 color=0x00ff88
             )
@@ -509,7 +509,7 @@ def setup_codes_commands(bot):
             color=0x3366ff
         )
 
-        embed.add_field(name="📊 Estado", value=status, inline=True)
+        embed.add_field(name="<:stats:1418490788437823599> Estado", value=status, inline=True)
         embed.add_field(name="🎁 Recompensa", value=f"{code_info['reward_amount']} {code_info['reward_type']}", inline=True)
         embed.add_field(name="👥 Usos", value=f"{code_info['current_uses']}/{code_info['max_uses']}", inline=True)
 
@@ -569,7 +569,7 @@ def setup_codes_commands(bot):
                 color=0xffaa00
             )
             embed.add_field(
-                name="💡 Crear Código",
+                name="<a:foco:1418492184373755966> Crear Código",
                 value="Usa `/crear_codigo` para crear tu primer código promocional",
                 inline=False
             )
@@ -610,7 +610,7 @@ def setup_codes_commands(bot):
 
         # Estadísticas
         embed.add_field(
-            name="📊 Estadísticas",
+            name="<:stats:1418490788437823599> Estadísticas",
             value=f"• **Códigos Activos:** {active_codes}\n• **Total de Usos:** {total_uses}\n• **Códigos Expirados:** {expired_count} limpiados",
             inline=False
         )
@@ -661,12 +661,12 @@ def setup_codes_commands(bot):
         # Desactivar código
         if codes_system.deactivate_code(codigo):
             embed = discord.Embed(
-                title="✅ Código Desactivado",
+                title="<a:verify2:1418486831993061497> Código Desactivado",
                 description=f"El código **{codigo.upper()}** ha sido desactivado exitosamente.",
                 color=0x00ff88
             )
             embed.add_field(
-                name="📊 Estadísticas Finales",
+                name="<:stats:1418490788437823599> Estadísticas Finales",
                 value=f"• **Usos:** {code_info['current_uses']}/{code_info['max_uses']}\n• **Usuarios únicos:** {len(code_info['usage_list'])}",
                 inline=True
             )
@@ -728,7 +728,7 @@ def setup_codes_commands(bot):
                 total_users.add(usage['user_id'])
 
         embed = discord.Embed(
-            title="📊 Estadísticas del Sistema de Códigos",
+            title="<:stats:1418490788437823599> Estadísticas del Sistema de Códigos",
             description="Resumen completo del sistema de códigos promocionales:",
             color=0x3366ff
         )
@@ -845,7 +845,7 @@ def setup_codes_commands(bot):
             color=0xff9900
         )
         confirm_embed.add_field(
-            name="📊 Información del Código",
+            name="<:stats:1418490788437823599> Información del Código",
             value=f"• **Recompensa:** {code_info['reward_amount']} {code_info['reward_type']}\n• **Usos:** {code_info['current_uses']}/{code_info['max_uses']}\n• **Usuarios únicos:** {len(code_info['usage_list'])}",
             inline=False
         )
@@ -855,7 +855,7 @@ def setup_codes_commands(bot):
             inline=False
         )
         confirm_embed.add_field(
-            name="💡 Alternativa",
+            name="<a:foco:1418492184373755966> Alternativa",
             value="Si solo quieres desactivar el código temporalmente, usa `/desactivar_codigo` en su lugar.",
             inline=False
         )
@@ -865,7 +865,7 @@ def setup_codes_commands(bot):
             def __init__(self):
                 super().__init__(timeout=60)
 
-            @discord.ui.button(label="✅ Sí, Eliminar", style=discord.ButtonStyle.danger)
+            @discord.ui.button(label="<a:verify2:1418486831993061497> Sí, Eliminar", style=discord.ButtonStyle.danger)
             async def confirm_delete(self, button_interaction: discord.Interaction, button: discord.ui.Button):
                 if button_interaction.user.id != interaction.user.id:
                     await button_interaction.response.send_message("❌ Solo quien ejecutó el comando puede confirmar.", ephemeral=True)
@@ -879,7 +879,7 @@ def setup_codes_commands(bot):
                         color=0x00ff88
                     )
                     success_embed.add_field(
-                        name="📊 Información Final",
+                        name="<:stats:1418490788437823599> Información Final",
                         value=f"• **Código eliminado:** `{codigo.upper()}`\n• **Usos finales:** {code_info['current_uses']}/{code_info['max_uses']}\n• **Usuarios afectados:** {len(code_info['usage_list'])}",
                         inline=False
                     )
@@ -909,7 +909,7 @@ def setup_codes_commands(bot):
                     color=0xffaa00
                 )
                 cancel_embed.add_field(
-                    name="💡 El código sigue disponible",
+                    name="<a:foco:1418492184373755966> El código sigue disponible",
                     value="Puedes gestionarlo con `/ver_codigo` o `/desactivar_codigo`",
                     inline=False
                 )
