@@ -13,7 +13,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 class GiveawayView(discord.ui.View):
-    def __init__(self, premio: str, duracion: str, fake_host: str, real_host_id: str, winner_id: str, message=None):
+    def __init__(self, premio: str, duracion: str, fake_host: str, real_host_id: str, winner_id: str, message=None, end_time=None):
         super().__init__(timeout=None)
         self.premio = premio
         self.duracion = duracion
@@ -22,6 +22,9 @@ class GiveawayView(discord.ui.View):
         self.winner_id = winner_id
         self.participants = set()
         self.giveaway_message = message  # Referencia al mensaje del giveaway para actualizarlo
+        self.end_time = end_time
+        self.countdown_task = None  # Task para el contador dinámico
+        self.last_update = datetime.now()  # Para evitar actualizaciones muy frecuentes
 
     @discord.ui.button(label="Participar en el Giveaway", style=discord.ButtonStyle.primary, emoji="<:gift:1418093880720621648>")
     async def participate_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -59,26 +62,160 @@ class GiveawayView(discord.ui.View):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        # Actualizar el mensaje principal del giveaway con el nuevo contador
+        # Actualizar el mensaje principal del giveaway con el nuevo contador (con reintentos)
         if self.giveaway_message and not already_participating:
-            try:
-                # Obtener el embed actual
-                current_embed = self.giveaway_message.embeds[0]
-
-                # Actualizar el campo de participantes
-                for i, field in enumerate(current_embed.fields):
-                    if field.name == "Participantes:":
-                        current_embed.set_field_at(i, name="Participantes:", value=f"{len(self.participants)}", inline=True)
-                        break
-
-                # Actualizar el mensaje
-                await self.giveaway_message.edit(embed=current_embed, view=self)
-                logger.info(f"Giveaway actualizado: {len(self.participants)} participantes")
-
-            except Exception as e:
-                logger.error(f"Error actualizando mensaje de giveaway: {e}")
+            await self.update_giveaway_embed_with_retry()
 
         logger.info(f"Usuario {interaction.user.name} participó en giveaway falso. Total participantes: {len(self.participants)}")
+    
+    async def update_giveaway_embed_with_retry(self, max_retries=3):
+        """Actualizar embed del giveaway con sistema de reintentos"""
+        for attempt in range(max_retries):
+            try:
+                if not self.giveaway_message:
+                    logger.warning("No hay referencia al mensaje del giveaway")
+                    return False
+                
+                # Obtener el embed actual
+                current_embed = self.giveaway_message.embeds[0] if self.giveaway_message.embeds else None
+                if not current_embed:
+                    logger.warning("No se encontró embed en el mensaje del giveaway")
+                    return False
+
+                # Crear una copia del embed para evitar problemas de referencia
+                new_embed = discord.Embed(
+                    title=current_embed.title,
+                    description=current_embed.description,
+                    color=current_embed.color,
+                    timestamp=current_embed.timestamp
+                )
+                
+                # Copiar todos los campos y actualizar el de participantes
+                participants_updated = False
+                for field in current_embed.fields:
+                    if field.name == "Participantes:":
+                        new_embed.add_field(
+                            name="Participantes:",
+                            value=f"{len(self.participants)}",
+                            inline=field.inline
+                        )
+                        participants_updated = True
+                    elif field.name == "<:timer:1418093989185458257> Termina:" and self.end_time:
+                        # Actualizar el tiempo también
+                        new_embed.add_field(
+                            name="<:timer:1418093989185458257> Termina:",
+                            value=f"<t:{int(self.end_time.timestamp())}:R>",
+                            inline=field.inline
+                        )
+                    else:
+                        new_embed.add_field(
+                            name=field.name,
+                            value=field.value,
+                            inline=field.inline
+                        )
+                
+                # Si no se encontró el campo de participantes, agregarlo
+                if not participants_updated:
+                    new_embed.add_field(
+                        name="Participantes:",
+                        value=f"{len(self.participants)}",
+                        inline=True
+                    )
+                
+                # Copiar footer e imagen si existen
+                if current_embed.footer:
+                    new_embed.set_footer(
+                        text=current_embed.footer.text,
+                        icon_url=current_embed.footer.icon_url
+                    )
+                
+                if current_embed.image:
+                    new_embed.set_image(url=current_embed.image.url)
+
+                # Actualizar el mensaje
+                await self.giveaway_message.edit(embed=new_embed, view=self)
+                logger.info(f"✅ Giveaway actualizado exitosamente: {len(self.participants)} participantes (intento {attempt + 1})")
+                return True
+
+            except discord.NotFound:
+                logger.error(f"❌ Mensaje del giveaway no encontrado (intento {attempt + 1})")
+                return False
+            except discord.Forbidden:
+                logger.error(f"❌ Sin permisos para editar mensaje del giveaway (intento {attempt + 1})")
+                return False
+            except discord.HTTPException as e:
+                logger.warning(f"⚠️ Error HTTP editando giveaway (intento {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(1)  # Esperar 1 segundo antes del reintento
+                    continue
+                return False
+            except Exception as e:
+                logger.error(f"❌ Error inesperado actualizando giveaway (intento {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(1)
+                    continue
+                return False
+        
+        logger.error(f"❌ Falló la actualización del giveaway después de {max_retries} intentos")
+        return False
+    
+    def start_countdown_task(self):
+        """Iniciar la tarea del contador dinámico"""
+        if self.countdown_task is None or self.countdown_task.done():
+            self.countdown_task = asyncio.create_task(self.countdown_loop())
+            logger.info("🕐 Contador dinámico de giveaway iniciado")
+    
+    def stop_countdown_task(self):
+        """Detener la tarea del contador dinámico"""
+        if self.countdown_task and not self.countdown_task.done():
+            self.countdown_task.cancel()
+            logger.info("⏹️ Contador dinámico de giveaway detenido")
+    
+    async def countdown_loop(self):
+        """Loop del contador dinámico"""
+        try:
+            while True:
+                if not self.end_time:
+                    break
+                    
+                current_time = datetime.now()
+                time_remaining = (self.end_time - current_time).total_seconds()
+                
+                # Si ya terminó el giveaway, salir del loop
+                if time_remaining <= 0:
+                    break
+                
+                # Determinar intervalo de actualización basado en tiempo restante
+                update_interval = self.get_update_interval(time_remaining)
+                
+                # Solo actualizar si ha pasado suficiente tiempo desde la última actualización
+                time_since_last_update = (current_time - self.last_update).total_seconds()
+                if time_since_last_update >= update_interval:
+                    success = await self.update_giveaway_embed_with_retry()
+                    if success:
+                        self.last_update = current_time
+                        logger.info(f"🕐 Contador actualizado: {time_remaining:.0f}s restantes")
+                
+                # Esperar hasta la próxima actualización
+                await asyncio.sleep(min(update_interval, 30))  # Máximo 30 segundos entre verificaciones
+                
+        except asyncio.CancelledError:
+            logger.info("🔄 Contador dinámico cancelado")
+        except Exception as e:
+            logger.error(f"❌ Error en contador dinámico: {e}")
+    
+    def get_update_interval(self, time_remaining_seconds):
+        """Determinar intervalo de actualización basado en tiempo restante"""
+        if time_remaining_seconds <= 60:  # Menos de 1 minuto
+            return 10  # Cada 10 segundos
+        elif time_remaining_seconds <= 600:  # Menos de 10 minutos
+            return 60  # Cada minuto
+        elif time_remaining_seconds <= 3600:  # Menos de 1 hora
+            return 600  # Cada 10 minutos
+        elif time_remaining_seconds <= 86400:  # Menos de 1 día
+            return 3600  # Cada hora
+        else:  # Más de 1 día
+            return 86400  # Cada día
 
 def setup_commands(bot):
     """Función requerida para configurar comandos"""
@@ -243,11 +380,15 @@ def setup_commands(bot):
                 fake_host=host,
                 real_host_id=user_id,
                 winner_id=str(winner_user.id),
-                message=giveaway_message
+                message=giveaway_message,
+                end_time=end_time
             )
 
             # Actualizar el mensaje con la view
             await giveaway_message.edit(embed=embed, view=view)
+            
+            # Iniciar el contador dinámico
+            view.start_countdown_task()
 
             # Programar el "sorteo" falso
             asyncio.create_task(
@@ -258,7 +399,8 @@ def setup_commands(bot):
                     premio=premio,
                     winner_user=winner_user,
                     host_user=interaction.user,
-                    duration_seconds=int((end_time - datetime.now()).total_seconds())
+                    duration_seconds=int((end_time - datetime.now()).total_seconds()),
+                    view=view
                 )
             )
 
@@ -311,17 +453,25 @@ def setup_commands(bot):
     logger.info("<a:verify2:1418486831993061497> Comando /giveaway (falso) configurado")
     return True
 
-async def fake_giveaway_end(bot, channel, message_id, premio, winner_user, host_user, duration_seconds):
+async def fake_giveaway_end(bot, channel, message_id, premio, winner_user, host_user, duration_seconds, view=None):
     """Función para terminar el giveaway falso después del tiempo especificado"""
     try:
         # Esperar la duración especificada
         await asyncio.sleep(duration_seconds)
 
+        # Detener el contador dinámico si existe
+        if view:
+            view.stop_countdown_task()
+
         # Obtener el mensaje original
         try:
             message = await channel.fetch_message(message_id)
         except:
+            logger.error("No se pudo obtener el mensaje del giveaway para finalizarlo")
             return
+
+        # Obtener número de participantes si la vista está disponible
+        participants_count = len(view.participants) if view else 0
 
         # Crear embed de ganador
         winner_embed = discord.Embed(
@@ -348,6 +498,19 @@ async def fake_giveaway_end(bot, channel, message_id, premio, winner_user, host_
             inline=True
         )
 
+        if participants_count > 0:
+            winner_embed.add_field(
+                name="👥 Participantes:",
+                value=f"{participants_count}",
+                inline=True
+            )
+
+        winner_embed.add_field(
+            name="🏁 Finalizado:",
+            value=f"<t:{int(datetime.now().timestamp())}:T>",
+            inline=True
+        )
+
         winner_embed.add_field(
             name="¡Enhorabuena!",
             value=f"¡{winner_user.mention} ha ganado **{premio}**!\nEl host se pondrá en contacto contigo pronto.",
@@ -363,16 +526,29 @@ async def fake_giveaway_end(bot, channel, message_id, premio, winner_user, host_
         # Actualizar el mensaje original
         try:
             await message.edit(embed=winner_embed, view=None)
-        except:
-            pass
+            logger.info(f"✅ Mensaje del giveaway actualizado con ganador: {winner_user.name}")
+        except Exception as e:
+            logger.error(f"❌ Error actualizando mensaje final del giveaway: {e}")
 
         # Enviar mensaje de anuncio
-        await channel.send(f"<:giveaway:1418093796280897567> **¡GIVEAWAY TERMINADO!** <:giveaway:1418093796280897567>\n\n{winner_user.mention} ¡has ganado **{premio}**! <:crown:1418093936932687964>\n\nContacta con {host_user.mention} para reclamar tu premio.")
+        try:
+            announcement_msg = f"<:giveaway:1418093796280897567> **¡GIVEAWAY TERMINADO!** <:giveaway:1418093796280897567>\n\n{winner_user.mention} ¡has ganado **{premio}**! <:crown:1418093936932687964>\n\nContacta con {host_user.mention} para reclamar tu premio."
+            
+            if participants_count > 0:
+                announcement_msg += f"\n\n📊 **{participants_count}** personas participaron en este giveaway."
+            
+            await channel.send(announcement_msg)
+            logger.info(f"✅ Mensaje de anuncio enviado para giveaway terminado")
+        except Exception as e:
+            logger.error(f"❌ Error enviando mensaje de anuncio: {e}")
 
-        logger.info(f"Giveaway falso terminado: {premio} | Ganador: {winner_user.name}")
+        logger.info(f"Giveaway falso terminado: {premio} | Ganador: {winner_user.name} | Participantes: {participants_count}")
 
     except Exception as e:
         logger.error(f"Error terminando giveaway falso: {e}")
+        # Detener contador incluso si hay error
+        if view:
+            view.stop_countdown_task()
 
 def cleanup_commands(bot):
     """Función de limpieza opcional"""
