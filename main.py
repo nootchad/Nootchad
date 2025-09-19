@@ -1300,46 +1300,27 @@ def remove_delegated_owner(user_id: str) -> bool:
     return False
 
 class VIPServerScraper:
-        """Limpiar datos expirados"""
-        current_time = time.time()
-        
-        # Limpiar usuarios verificados expirados
-        expired_verified = []
-        for discord_id, data in self.verified_users.items():
-            if current_time - data['verified_at'] > VERIFICATION_DURATION:
-                expired_verified.append((discord_id, data['roblox_username']))
-        
-        for discord_id, roblox_username in expired_verified:
-            del self.verified_users[discord_id]
-            logger.info(f"Verification expired for user {discord_id}")
-            # Enviar alerta por DM de forma asíncrona
-            asyncio.create_task(self.send_expiration_alert(discord_id, roblox_username))
-        
-        # Limpiar verificaciones pendientes expiradas (10 minutos)
-        expired_pending = []
-        for discord_id, data in self.pending_verifications.items():
-            if current_time - data['created_at'] > 600:  # 10 minutos
-                expired_pending.append(discord_id)
-        
-        for discord_id in expired_pending:
-            del self.pending_verifications[discord_id]
-            logger.info(f"Pending verification expired for user {discord_id}")
-        
-        # Limpiar usuarios baneados expirados
-        expired_banned = []
-        for discord_id, ban_time in self.banned_users.items():
-            if current_time - ban_time > BAN_DURATION:
-                expired_banned.append(discord_id)
-        
-        for discord_id in expired_banned:
-            del self.banned_users[discord_id]
-            logger.info(f"Ban expired for user {discord_id}")
-        
-        # Guardar archivos por separado solo si hay cambios
-        if expired_verified or expired_pending:
-            self.save_data()
-        if expired_banned:
-            self.save_bans()
+    def __init__(self):
+        self.vip_links_file = "vip_links.json"
+        self.users_servers_file = "users_servers.json"
+        self.cookies_file = "roblox_cookies.json"
+        self.unique_vip_links: Set[str] = set()
+        self.server_details: Dict[str, Dict] = {}
+        self.scraping_stats = {
+            'total_scraped': 0,
+            'successful_extractions': 0,
+            'failed_extractions': 0,
+            'last_scrape_time': None,
+            'scrape_duration': 0,
+            'servers_per_minute': 0
+        }
+        self.user_game_servers: Dict[str, Dict] = {}
+        self.user_favorites: Dict[str, Set[str]] = {}
+        self.usage_history: Dict[str, List[Dict]] = {}
+        self.user_cooldowns: Dict[str, float] = {}
+        self.server_reservations: Dict[str, List[Dict]] = {}
+        self.load_existing_links()
+        self.load_roblox_cookies()
 
     def is_user_banned(self, discord_id: str) -> bool:
         """Verificar si el usuario está baneado"""
