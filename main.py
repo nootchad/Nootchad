@@ -2545,7 +2545,7 @@ class VIPServerScraper:
             "anime adventures": {"id": "8304191830", "name": "🎌 Anime Adventures", "category": "rpg"},
             "all star tower defense": {"id": "4646477729", "name": "⭐ All Star Tower Defense", "category": "rpg"},
             "astd": {"id": "4646477729", "name": "⭐ All Star Tower Defense", "category": "rpg"},
-            "anime defenders": {"id": "15186202290", "name": "🛡️ Anime Defenders", "category": "rpg"},
+            "anime defenders": {"id": "15186202290", "name": "<:1000182637:1396049292879200256> Anime Defenders", "category": "rpg"},
             "deepwoken": {"id": "4111023553", "name": "Deepwoken", "category": "rpg"},
             "rogue lineage": {"id": "3016661674", "name": "🗡️ Rogue Lineage", "category": "rpg"},
             "world zero": {"id": "4738545896", "name": "⚔️ World // Zero", "category": "rpg"},
@@ -5858,7 +5858,7 @@ async def executors_command(interaction: discord.Interaction):
         )
         
         embed.add_field(
-            name="🛡️ Seguridad",
+            name="<:1000182637:1396049292879200256> Seguridad",
             value="• Enlaces verificados ✅\n• Actualizados ✅\n• Sin virus ✅",
             inline=True
         )

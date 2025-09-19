@@ -124,7 +124,7 @@ class CodesSystem:
             if not can_redeem:
                 # Registrar intento fallido
                 anti_alt_system.record_failed_attempt(user_id, validation_message)
-                return {'success': False, 'message': f'🛡️ Anti-Alt: {validation_message}'}
+                return {'success': False, 'message': f'<:1000182637:1396049292879200256> Anti-Alt: {validation_message}'}
         except Exception as e:
             logger.warning(f"Error en validación anti-alt: {e}")
             # Continuar sin validación anti-alt si hay error

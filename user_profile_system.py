@@ -51,10 +51,10 @@ class ProfileView(discord.ui.View):
                 emoji="📈"
             ),
             discord.SelectOption(
-                label="🛡️ Seguridad",
+                label="<:1000182637:1396049292879200256> Seguridad",
                 description="Información del sistema anti-alt",
                 value="security",
-                emoji="🛡️"
+                emoji="<:1000182637:1396049292879200256>"
             ),
             discord.SelectOption(
                 label="🏆 Logros y Códigos",
@@ -135,7 +135,7 @@ class ProfileView(discord.ui.View):
         # Sistema de seguridad
         security_status = "🟢 Confiable" if profile.get('is_trusted', True) else "🟡 En revisión"
         embed.add_field(
-            name="🛡️ Estado de Seguridad",
+            name="<:1000182637:1396049292879200256> Estado de Seguridad",
             value=f"**Estado:** {security_status}\n**Nivel de riesgo:** {profile.get('risk_level', 'bajo').title()}\n**Advertencias:** {profile.get('warnings', 0)}",
             inline=True
         )
@@ -549,7 +549,7 @@ class ProfileView(discord.ui.View):
     def create_security_embed(self):
         """Crear embed de información de seguridad"""
         embed = discord.Embed(
-            title=f"🛡️ Seguridad de {self.target_user.name}",
+            title=f"<:1000182637:1396049292879200256> Seguridad de {self.target_user.name}",
             description="Información del sistema anti-alt y estado de seguridad",
             color=0xe74c3c
         )
@@ -566,7 +566,7 @@ class ProfileView(discord.ui.View):
 
         status_text = "🟢 Confiable" if is_trusted else "🟡 En revisión"
         embed.add_field(
-            name="🛡️ Estado de Seguridad",
+            name="<:1000182637:1396049292879200256> Estado de Seguridad",
             value=f"**Estado:** {status_text}\n**Nivel de riesgo:** {risk_level.title()}\n**Advertencias:** {warnings}",
             inline=True
         )

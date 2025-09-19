@@ -165,7 +165,7 @@ def setup_commands(bot):
                         "scraping": "🔍",
                         "vip": "⭐",
                         "interfaz": "🎨",
-                        "seguridad": "🛡️",
+                        "seguridad": "<:1000182637:1396049292879200256>",
                         "comunidad": "<:1000182614:1396049500375875646>",
                         "eventos": "🎉",
                         "otro": "📝"
