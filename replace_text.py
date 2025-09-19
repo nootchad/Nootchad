@@ -123,10 +123,6 @@ Ejemplos de uso:
     for file_path in python_files:
         files_processed += 1
 
-        # Mostrar progreso cada 10 archivos
-        if files_processed % 10 == 0:
-            print(f"📋 Procesando archivo {files_processed}/{len(python_files)}...")
-
         # Intentar reemplazar en el archivo
         was_modified, count = replace_in_file(file_path, args.search_text, args.replace_text, args.dry_run)
 
